@@ -2584,11 +2584,12 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		// Burning map resolution
 		BMapsResolution = getBurningMapResolution(spatialIncrement
 														 , params->getDouble("minimalPropagativeFrontDepth"));
-
 		localBMapSizeX = (size_t) (dx/BMapsResolution );
+		if ( localBMapSizeX < 1 ) localBMapSizeX = 1;
 		params->setDouble("bmapResolution", BMapsResolution);
 		params->setSize("localBMapSizeX", localBMapSizeX);
 		localBMapSizeY = (size_t) (dy/BMapsResolution);
+		if ( localBMapSizeY < 1 ) localBMapSizeY = 1;
 		params->setSize("localBMapSizeY", localBMapSizeY);
 		globalBMapSizeX = atmoNX*localBMapSizeX;
 		globalBMapSizeY = atmoNY*localBMapSizeY;
