@@ -907,21 +907,37 @@ void DataBroker::loadFromNCFile(string filename) {
 	NcFile dataFile(filename.c_str(), NcFile::read);
 	propGetterMap::const_iterator pg;
 	if (!dataFile.isNull()) {
-
-		
+	 
 		std::multimap<std::string, NcVar> allVariables = dataFile.getVars();
 		NcVarAtt layerTypeNC;
 		string layerType;
 		for (auto it = allVariables.begin(); it != allVariables.end(); ++it){
- 
-            	layerTypeNC = it->second.getAtt("type");
-				if(layerTypeNC.isNull()) {
-					layerType="";
-				} else{
-					 layerTypeNC.getValues(layerType);
-				}
-			
+ 				
+				try {
+                    layerTypeNC = it->second.getAtt("type");
+                    if (layerTypeNC.isNull()) {
+                        layerType = "";
+                    } else {
+                        layerTypeNC.getValues(layerType);
+                    }
+                } catch (const NcException& e) {
+                    std::cout << "Warning: Variable " << it->first 
+                              << " does not have a 'type' attribute or it could not be read. Skipping..." 
+                              << std::endl;
+                    continue; // Skip this variable and move to the next one
+                }
+			 
+				if (layerType.empty()) {
+								std::cout << "Skipping variable " << it->first 
+										<< " because 'type' attribute is missing." 
+										<< std::endl;
+								continue;
+							}
+
 				string varName = it->first;
+
+				 
+
 				if (varName == "wind") {
 					XYZTDataLayer<double> * wul = constructXYZTLayerFromFile(&dataFile, "wind",0);
 					registerLayer("windU", wul);
