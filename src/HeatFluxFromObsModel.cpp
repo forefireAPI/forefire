@@ -187,9 +187,11 @@ double HeatFluxFromObsModel::getValue(double* valueOf
     double nominalHeatFlux_s = valueOf[nominalHeatFlux_s_data];
 	
     SensibleheatFlux sensibleheatFlux = computeHeatFLuxFromBmap(burningTime,residenceTime,nominalHeatFlux_f,nominalHeatFlux_s,bt,et,at+evaporationTime);
-    //cout << nominalHeatFlux_f << endl;	
-	//if (burningTime>=0)
-	//	cout << "formObs " << et << ' ' << bt << ' ' << at << ' ' << burningTime << ' ' << nominalHeatFlux << ' ' << mm << '\n';
+	if (at >= 0)
+		cout << "formObs " << et << ' ' << bt << ' ' << at << ' ' << "  -  " 
+             <<                     burningTime/500 << '|' << residenceTime 
+             << ' ' << nominalHeatFlux_f/1.8e6        << '|' <<nominalHeatFlux_s << ' '
+             << ' ' << sensibleheatFlux.flaming << '|' <<  sensibleheatFlux.smoldering << endl;
 	
 	return sensibleheatFlux.flaming + sensibleheatFlux.smoldering ;
 

@@ -74,7 +74,7 @@ string TroisPourcent::getName(){
 
 double TroisPourcent::getSpeed(double* valueOf){
 	double overspeed = windFactor*valueOf[normalWind] + slopeFactor*(1.+valueOf[effectiveSlope]);
-	if ( overspeed > 0. ) {
+    if ( overspeed > 0. ) {
 		return R0 + overspeed;
 	} else {
 		return R0;

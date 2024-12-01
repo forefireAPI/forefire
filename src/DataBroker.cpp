@@ -912,7 +912,6 @@ void DataBroker::loadFromNCFile(string filename) {
 		NcVarAtt layerTypeNC;
 		string layerType;
 		for (auto it = allVariables.begin(); it != allVariables.end(); ++it){
- 				
 				try {
                     layerTypeNC = it->second.getAtt("type");
                     if (layerTypeNC.isNull()) {
@@ -935,8 +934,6 @@ void DataBroker::loadFromNCFile(string filename) {
 							}
 
 				string varName = it->first;
-
-				 
 
 				if (varName == "wind") {
 					XYZTDataLayer<double> * wul = constructXYZTLayerFromFile(&dataFile, "wind",0);

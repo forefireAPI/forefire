@@ -237,9 +237,8 @@ void FFPutDoubleArray(const char* mname, double* x,
 	string tmpname(mname);
 	// searching for concerned layer
 
-	//cout<<session->fd->getDomainID()<<" is putting "<<tmpname<<endl;
+    //cout<<session->fd->getDomainID()<<" is putting "<<tmpname<<endl;
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
-
 	if ( myLayer ){
 		FFArray<double>* myMatrix;
 		// getting the pointer
@@ -247,7 +246,6 @@ void FFPutDoubleArray(const char* mname, double* x,
 
 		myMatrix->copyDataToFortran(x);
 	} else {
-		cout<<"Error trying to put data from unknown layer "<<tmpname<<endl;
 	}
 }
 
