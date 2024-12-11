@@ -2585,11 +2585,19 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		BMapsResolution = getBurningMapResolution(spatialIncrement
 														 , params->getDouble("minimalPropagativeFrontDepth"));
 		localBMapSizeX = (size_t) (dx/BMapsResolution );
-		if ( localBMapSizeX < 1 ) localBMapSizeX = 1;
+		if ( localBMapSizeX < 1 ){
+			cout<<"Warning, atmo (fluxes integration) cell has less than 1 BMap point given "
+			<<BMapsResolution<<" BMap resolution and "<< dx<< " atmo resolution, changing to 1"<<endl;
+			localBMapSizeX = 1;
+		 }
 		params->setDouble("bmapResolution", BMapsResolution);
 		params->setSize("localBMapSizeX", localBMapSizeX);
 		localBMapSizeY = (size_t) (dy/BMapsResolution);
-		if ( localBMapSizeY < 1 ) localBMapSizeY = 1;
+		if ( localBMapSizeY < 1 ) {
+						cout<<"Warning, atmo (fluxes integration) cell has less than 1 BMap point given "
+			<<BMapsResolution<<" BMap resolution and "<< dx<< " atmo resolution, changing to 1"<<endl;
+			localBMapSizeY = 1;
+			}
 		params->setSize("localBMapSizeY", localBMapSizeY);
 		globalBMapSizeX = atmoNX*localBMapSizeX;
 		globalBMapSizeY = atmoNY*localBMapSizeY;

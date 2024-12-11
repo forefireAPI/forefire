@@ -91,7 +91,6 @@ RothermelAndrews2018::RothermelAndrews2018(const int & mindex, DataBroker* db)
 
 	wv_ = registerProperty("normalWind");
 	slope_ = registerProperty("slope");
-
 	wo_ = registerProperty("fuel.fl1h_tac");
 	fd_ = registerProperty("fuel.fd_ft");
 	fpsa_ = registerProperty("fuel.SAVcar_ftinv");
@@ -125,7 +124,6 @@ string RothermelAndrews2018::getName(){
 /* *********************************************** */
 
 double RothermelAndrews2018::getSpeed(double* valueOf){
-
 	// Constants
 	double msToftmin = 196.85039;
 	double ftminToms = 0.00508;

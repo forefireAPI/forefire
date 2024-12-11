@@ -106,16 +106,24 @@ double ANNPropagationModel::getSpeed(double* valueOf) {
     double result = static_cast<double>(outputs[0]);
 
     /* Print inputs followed by result
-    
+    std::cout << outputs[0]<< ";"  ;
     for (size_t i = 0; i < inputs.size(); ++i) {
         std::cout << inputs[i];
         if (i != inputs.size() - 1) {
-            std::cout << ", ";
+            std::cout << ";";
         }
     }
-    std::cout << " = " << outputs[0] << std::endl;*/
-    return result < 0 ? 0 : result;
+    std::cout << std::endl;
+   */
+  if (result < 0)
+    {
+        return 0.0;
+    }
+  if (result > 2){
+    return 2;
+  }
 
+    return result ;
    
 }
 

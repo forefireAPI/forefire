@@ -356,7 +356,6 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 		if ( interp == InterpolationBilinearT ){
 					int it = (int) (t-startTime)/dt;
 
-
 					T tsw1 = getVal(uu,vv,0,it);
 					T tnw1 = getVal(uu,vv+1,0,it);
 					T tne1 = getVal(uu+1,vv+1,0,it);

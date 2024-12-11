@@ -974,7 +974,7 @@ void DataBroker::loadFromNCFile(string filename) {
 							&dataFile, varName.c_str(),-1);
 					registerLayer(varName, temp);
 				}else if (varName == "moisture") {
-					// wind is given by the NetCDF file
+					// moinsture is given by the NetCDF file
 					XYZTDataLayer<double> * moist = constructXYZTLayerFromFile(
 							&dataFile, varName.c_str(),-1);
 					registerLayer(varName, moist);

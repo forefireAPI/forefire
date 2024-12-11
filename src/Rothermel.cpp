@@ -53,15 +53,17 @@ class Rothermel: public PropagationModel {
 	size_t Deltah;
 	size_t DeltaH;
 	size_t Cp;
+	size_t Cpa;
 	size_t Ti;
 	size_t X0;
 	size_t r00;
 	size_t Blai;
-
+	size_t Me;
+	
 	/*! coefficients needed by the model */
 
 	/*! local variables */
-
+	std::ofstream csvfile;
 	/*! result of the model */
 	double getSpeed(double*);
 
@@ -112,20 +114,37 @@ Rothermel::Rothermel(const int & mindex, DataBroker* db)
 	Deltah = registerProperty("fuel.Deltah");
 	DeltaH = registerProperty("fuel.DeltaH");
 	Cp = registerProperty("fuel.Cp");
+	Cpa = registerProperty("fuel.Cpa");
 	Ti = registerProperty("fuel.Ti");
 	X0 = registerProperty("fuel.X0");
 	r00 = registerProperty("fuel.r00");
 	Blai = registerProperty("fuel.Blai");
+	Me = registerProperty("fuel.me");
 
-
-
-
-	/* allocating the vector for the values of these properties */
 	if ( numProperties > 0 ) properties =  new double[numProperties];
-
-	/* registering the model in the data broker */
 	dataBroker->registerPropagationModel(this);
+	/* registering the model in the data broker */
+    if (params->isValued("RothermelLoggerCSVPath")) {
+        csvfile.open(params->getParameter("RothermelLoggerCSVPath"));
+    }
 
+    
+    if (csvfile.is_open()) {
+     
+        csvfile << "ROS";
+        std::cout << "Props: ";
+        for (const auto& inputName : wantedProperties) {
+            csvfile << ";" << inputName;
+            std::cout << inputName << " ";
+        }
+        std::cout << std::endl;
+
+        
+        csvfile << std::endl;
+
+       
+      
+    } 
 	/* Definition of the coefficients */
 }
 
@@ -170,7 +189,7 @@ double Rothermel::getSpeed(double* valueOf){
 	if (tanangle<0) tanangle=0;
 
 
-	double Mchi = 0.3; // Moisture of extinction
+	double Mchi = valueOf[Me]; // Moisture of extinction
 
 	double Etas = 1; // no mineral damping
 
@@ -228,13 +247,23 @@ double Rothermel::getSpeed(double* valueOf){
 	if(R < R0)  R = R0;
 
 	if(R > 0.0) {
-		//cout << "Rothermel =" << R * 0.0050 << endl; 
-		return R * 0.00508 ; // ft/min -> m/s
+		R=  R * 0.00508 ; // ft/min -> m/s
 	}else{
-		//cout << " Rhod "<< lRhod << " lMd "<< lMd << " lsd "<< lsd << " le "<< le << " lSigmad "<< lSigmad <<endl;
-		//cout << " R "<< R << " R0 "<< R0 << " phiv " << phiV <<" phiP" << phiP <<endl;
+		R=0;
 	}
-	return 0;
+
+   
+  
+
+    if (csvfile.is_open()) {
+        csvfile << R ;   
+        for (size_t i = 0; i < wantedProperties.size(); ++i) {
+            csvfile << ";" << valueOf[i] ;
+        }
+        csvfile << std::endl;
+    }
+
+	return R;
 }
 
 } /* namespace libforefire */

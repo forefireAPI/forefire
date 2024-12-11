@@ -132,7 +132,7 @@ struct Network {
     void loadFromFile(const char* filename) {
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            throw std::runtime_error("Failed to open network structure file.");
+            throw std::runtime_error(std::string("Failed to open network structure file: ") + filename);
         }
 
         char header[9] = {0};
