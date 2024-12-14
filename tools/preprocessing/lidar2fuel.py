@@ -28,6 +28,7 @@ import json
 from rasterio.mask import mask
 import pycrs 
 import zipfile
+import math
 import io
 
 
@@ -161,10 +162,12 @@ def filter_las_files_with_attributes(file_paths, left, bottom, right, top, remov
 
         # Dynamically handle other attributes
         for attribute in inFile.point_format.dimension_names:
-            if attribute not in ['x', 'y', 'z', 'intensity', 'red', 'green', 'blue']:
+            print(">>>>>>",attribute)
+            if attribute not in ['x', 'y', 'z', 'intensity', 'red', 'green', 'blue','gps_time','return_number','scan_angle','user_data','edge_of_flight_line', 'number_of_returns','synthetic','key_point', 'withheld','overlap','scanner_channel','scan_direction_flag']:
                 if attribute not in all_filtered_points:
                     all_filtered_points[attribute] = []
                 filtered_attribute = getattr(inFile, attribute)[mask]
+                print("ADDING ",attribute)
                 all_filtered_points[attribute].extend(filtered_attribute)
 
     # Convert lists to numpy arrays for all attributes collected as lists
@@ -222,7 +225,7 @@ def filter_las_files_with_single_attributes(file_paths, left, bottom, right, top
     print("filtered box ", left, bottom, right, top," from files ", file_paths)
     return all_filtered_points
 
-def save_filtered_las_color_classification_and_coords(all_filtered_points, output_file_path):
+def save_filtered_las_color_classification_and_coords(all_filtered_points, output_file_path, classificationKey='classification', TFLCBH=False):
     # Set up LAS file with a point format that supports RGB colors and extended classification
     header = laspy.LasHeader(version="1.4", point_format=7)  # Point format 7 supports RGB and extended classification
     outFile = laspy.LasData(header)
@@ -233,21 +236,39 @@ def save_filtered_las_color_classification_and_coords(all_filtered_points, outpu
     outFile.intensity = all_filtered_points['intensity']
     
     # Set classification; make sure it is compatible with extended values
-    outFile.classification = all_filtered_points['classification'].astype(np.uint8)
+    outFile.classification = all_filtered_points[classificationKey].astype(np.uint8)
     
     # Set RGB colors; scale colors to 16-bit if necessary
+    scaleFactor = 1
     if np.max(all_filtered_points['color']) <= 255:
         scaleFactor = 65535 / 255
+    
+    if TFLCBH:
+        print("Saving with TFL and light")
+        # Set TFL and CBH values less than 1000 to 0
+        all_filtered_points["TFL"][all_filtered_points["TFL"] > 1000] = 0
+        tflMax = all_filtered_points["TFL"].max()
+        
+        all_filtered_points["CBH"][all_filtered_points["CBH"] > 1000] = 0
+        cbhMax = all_filtered_points["CBH"].max()
+        print("Saving with TFL and light",tflMax,cbhMax)
+        # Combine RGB channels for the red attribute
+        outFile.red = ((all_filtered_points['color'][:, 0] + 
+                      all_filtered_points['color'][:, 1] + 
+                      all_filtered_points['color'][:, 2])*0.8*scaleFactor).astype(np.uint16)
+        
+        # Scale TFL and CBH for green and blue attributes
+        outFile.green = ((all_filtered_points['TFL'] / tflMax) * scaleFactor * 65535).astype(np.uint16)
+        outFile.blue = ((all_filtered_points['CBH'] / cbhMax) * scaleFactor * 65535).astype(np.uint16)
+        
+    else:
         outFile.red = (all_filtered_points['color'][:, 0] * scaleFactor).astype(np.uint16)
         outFile.green = (all_filtered_points['color'][:, 1] * scaleFactor).astype(np.uint16)
         outFile.blue = (all_filtered_points['color'][:, 2] * scaleFactor).astype(np.uint16)
-    else:
-        outFile.red = all_filtered_points['color'][:, 0].astype(np.uint16)
-        outFile.green = all_filtered_points['color'][:, 1].astype(np.uint16)
-        outFile.blue = all_filtered_points['color'][:, 2].astype(np.uint16)
-
+    
     outFile.write(output_file_path)
     print("Saved LAS as ", output_file_path)
+
 
 def save_filtered_las(all_filtered_points, output_file_path):
     # Create a new LAS file with appropriate header setup
@@ -318,7 +339,7 @@ def toImage(red,green,blue, outF):
     print("saved RVB bands to ", outF)
     rgb_image.save(outF)
 
-def assign_colors_from_tif(filtered_points, tif_path, bands=[1,2,3],scale=[255.0,255.0,255.0]):
+def assign_colors_from_tif(filtered_points, tif_path, bands=[1,2,3],scale=[255.0,255.0,255.0],tfl=False):
     # Lire l'image TIF avec rasterio
     with rasterio.open(tif_path) as src:
  
@@ -484,7 +505,7 @@ def webMapsToTif(west, south, east, north, outF, providerSRC=cx.providers.Geopor
                          ll=True,
                          path=tempOUT,
                                          zoom=zoomLevel,
-                                         source=cx.providers.GeoportailFrance.orthos
+                                         source=providerSRC
      
                         )
     
@@ -515,6 +536,36 @@ def webMapsToTif(west, south, east, north, outF, providerSRC=cx.providers.Geopor
         dest.write(out_img)
     
     print("Extracted image from contextily bounds:",west, south, east, north," zoom ", zoomLevel, " out files ",outF," and temporary ",tempOUT)
+
+def FileToTif(west, south, east, north,inF, outF):
+
+    
+    data = rasterio.open(inF) 
+    
+    bbox = box(west, south, east, north)
+    
+    geo = gpd.GeoDataFrame({'geometry': bbox}, index=[0], crs=from_epsg(4326))
+    geo = geo.to_crs(crs=data.crs.data)
+
+    coords = [json.loads(geo.to_json())['features'][0]['geometry']]
+      
+    out_img, out_transform = mask(data, shapes=coords, crop=True)
+    epsg_code = int(data.crs.data['init'][5:])
+    out_meta = data.meta.copy()
+    print(out_meta)
+    
+    
+    out_meta.update({"driver": "GTiff",
+                        "height": out_img.shape[1],
+                        "width": out_img.shape[2],
+                         "transform": out_transform,
+                        "crs": pycrs.parse.from_epsg_code(epsg_code).to_proj4()}
+                               )
+    
+    with rasterio.open(outF, "w", **out_meta) as dest:
+        dest.write(out_img)
+    
+  #  print("Extracted image from contextily bounds:",west, south, east, north," zoom ", zoomLevel, " out files ",outF," and temporary ",tempOUT)
 
 def findfileToDownload(west, south, east, north,laslist = [], lidarCRS=2154,step=1000,prefix="https://wxs.ign.fr/2s53j8r4gxyr0bfcounndiea/telechargement/prepackage/LIDARHD_PACK_IP_2021$LIDARHD_1-0_LAZ_IP-"):
     points = []
@@ -676,13 +727,58 @@ def las_to_compressed_bin2(file_path, output_filename='output.bin'):
       
         print(f"Data saved to {output_filename}")
 
-def las_to_compressed_bin(file_path, output_filename='output.zip'):
+def las_to_compressed_bin_quantized(file_path, output_filename='output.zip', scaleFactorN=65535):
     inFile = laspy.read(file_path)
+    total_points = inFile.header.point_count
+    min_x, min_y, min_z = np.min(inFile.x), np.min(inFile.y), np.min(inFile.z)
+    max_x, max_y, max_z = np.max(inFile.x), np.max(inFile.y), np.max(inFile.z)
+
+    # Calculate scales for quantization
+    scale_x = scaleFactorN / (max_x - min_x) if max_x != min_x else 1
+    scale_y = scaleFactorN / (max_y - min_y) if max_y != min_y else 1
+    scale_z = scaleFactorN / (max_z - min_z) if max_z != min_z else 1
+
+    # Quantize positions to uint16
+    qx = np.clip(((inFile.x - min_x) * scale_x).astype(np.uint16), 0, 65535)
+    qy = np.clip(((inFile.y - min_y) * scale_y).astype(np.uint16), 0, 65535)
+    qz = np.clip(((inFile.z - min_z) * scale_z).astype(np.uint16), 0, 65535)
+
+    # Scale colors
+    scaleFactor = 255 / 65535  # Assuming colors are 16-bit in LAS
+    colors = np.vstack((
+        np.clip((inFile.red * scaleFactor).astype(np.uint8), 0, 255),
+        np.clip((inFile.green * scaleFactor).astype(np.uint8), 0, 255),
+        np.clip((inFile.blue * scaleFactor).astype(np.uint8), 0, 255)
+    )).T
+
+    classifications = inFile.classification.astype(np.uint8)
+
+    binary_data = bytearray()
+
+    # Header: min_x, min_y, min_z as float64, total_points as uint32
+    binary_data.extend(struct.pack('<3dI', min_x, min_y, min_z, total_points))
+
+    # Position scales: scale_x, scale_y, scale_z as float64
+    binary_data.extend(struct.pack('<3d', scale_x, scale_y, scale_z))
+
+    # Points: qx, qy, qz as uint16, r, g, b as uint8, classification as uint8
+    for x, y, z, color, classification in zip(qx, qy, qz, colors, classifications):
+        packed_data = struct.pack('<3H3B1B', x, y, z, *color, classification)
+        binary_data.extend(packed_data)
+
+    with zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr('data.bin', binary_data)
+
+    print(f"Data saved to {output_filename}")
+
+def las_to_compressed_bin(file_path, output_filename='output.zip', scaleFactorN = 255):
+    inFile = laspy.read(file_path)
+    print(file_path )
     total_points = inFile.header.point_count
     min_x, min_y, min_z = np.min(inFile.x), np.min(inFile.y), np.min(inFile.z)
     
     coords = np.vstack((inFile.x - min_x, inFile.y - min_y, inFile.z - min_z)).T
-    scaleFactor = 255 / 65535
+    scaleFactor = scaleFactorN / 65535
     colors = np.vstack((inFile.red * scaleFactor, inFile.green * scaleFactor, inFile.blue * scaleFactor)).T
     classifications = inFile.classification
     
@@ -713,6 +809,32 @@ def download_urs_set(urls,basepath):
         print(f"Downloading {url}")
         download_file(url,basepath)
         print(f"Finished downloading {url.split('/')[-1]}")
+
+
+def aroundLL(latcenter, loncenter, distance=300):
+    # Earth radius in meters
+    earth_radius = 6371000
+
+    # Convert the distance to radians (angular distance)
+    angular_distance = distance / earth_radius
+
+    # Latitude and longitude in radians
+    latcenter_rad = math.radians(latcenter)
+    loncenter_rad = math.radians(loncenter)
+
+    # Latitude bounds (north and south)
+    lat_ne = math.degrees(latcenter_rad + angular_distance)
+    lat_sw = math.degrees(latcenter_rad - angular_distance)
+
+    # Longitude bounds (east and west)
+    lon_ne = math.degrees(loncenter_rad + angular_distance / math.cos(latcenter_rad))
+    lon_sw = math.degrees(loncenter_rad - angular_distance / math.cos(latcenter_rad))
+
+    return lat_sw, lon_sw, lat_ne, lon_ne
+
+# Example usage
+lat_sw, lon_sw, lat_ne, lon_ne = aroundLL(44.153, -1.160, distance=300)
+print(f"SW: ({lat_sw}, {lon_sw}), NE: ({lat_ne}, {lon_ne})")
 
 
 las1 = "/Users/filippi_j/data/2023/prunelli/LIDARHD_1-0_LAZ_VT-1224_6123-2021/Semis_2021_1224_6122_LA93_IGN78.laz"
@@ -765,41 +887,60 @@ llPoint = [42.094471,   9.362104]
 lat_sw, lon_sw = llPoint[0]-0.0005 , llPoint[1]-0.0005
 lat_ne, lon_ne = llPoint[0]+0.0005 ,  llPoint[1]+0.0005
 
-
+# casa pieraggi
 lat_sw, lon_sw =  42.091867 , 9.359683
 lat_ne, lon_ne =  42.098067,    9.365923
 
-dirout = "/Users/filippi_j/data/2024/prunelli/pieraggi/"
-lidarDir = "/Users/filippi_j/data/2024/prunelli/pieraggi/lidarHD/"
-dirout = "/Users/filippi_j/data/2024/prunelli/tmp/"
+# aerodrome
+lat_sw, lon_sw =  44.146 , -1.167
+lat_ne, lon_ne =  44.152,  -1.157
 
-subsetFDS = "%ssubsetFDS.TIF"%dirout
-subsetFDSLamb = "%ssubsetFDSLAMBERT.TIF"%dirout
-lidplot = "%sslidarColor.png"%dirout
-outLAS = "%sslidarAreaS.laz"%dirout
-lidarVTKout = "%sslidarArea.vtk"%dirout
-orthoTIF = "%sortho.tif"%dirout
-orthoTIFLamb = "%sorthoLambert.tif"%dirout
+# crossing
+lat_sw, lon_sw =  44.150414 , -1.163900
+lat_ne, lon_ne =  44.155909 , -1.156034
 
-compressedBin = "%spieraggiS.zip"%dirout
+# crossing
+lat_sw, lon_sw = 44.14550203518225, -1.1655600169073632 
+lat_ne, lon_ne =  44.15089796481776, -1.1580399830926367
+#print(lon_sw,lat_sw, lon_ne,lat_ne)
 
-selectedLidarHDURLS = pieraggiurls
+#3 padule 41.464450, 9.232926
+
+lon_sw,lat_sw, lon_ne,lat_ne = aroundLL(44.1482 , -1.1618, distance=300)
+
+print(lon_sw,lat_sw, lon_ne,lat_ne)
+nickname = "landesCarrefourHD"
+
+dirout = "/Users/filippi_j/data/2024/landes/"
+lidarDir = "/Users/filippi_j/data/2024/landes/LIDAR/"
+dirout = "/Users/filippi_j/data/2024/landes/"
+
+subsetFDS = f"{dirout}subsetFDS.TIF"
+subsetFDSLamb = f"{dirout}subsetFDSLAMBERT.TIF"
+outLAS = f"{dirout}aeroS.laz"
+ 
+orthoTIF = f"{dirout}{nickname}ortho.tif"
+orthoTIFLamb = f"{dirout}{nickname}orthoLambert.tif"
+
+compressedBin = f"{dirout}{nickname}.zip"
+
+ 
 
 west, south, east, north = lon_sw,lat_sw, lon_ne,lat_ne
 
 download_lidar_files = False
 # downloading ultraHD zoom18 image of orthophoto
 if download_lidar_files:
-    download_urs_set(selectedLidarHDURLS,lidarDir)
+    download_urs_set(pieraggiurls,lidarDir)
 
-get_orthophoto = False
+get_orthophoto = True
 # downloading ultraHD zoom18 image of orthophoto
 if get_orthophoto:
     webMapsToTif(west, south, east, north, orthoTIF, zoomLevel=19)
 
-
+FileToTif(west, south, east, north, "/Users/filippi_j/data/2024/landes/landesCarrefourortho.tif_temp.tif", orthoTIF)
 # reprojection using lambert 2154 to match crs in corsica of lidar
-project_orthophoto = False
+project_orthophoto = True
 if project_orthophoto:
     reprojectTif(orthoTIF,orthoTIFLamb,destCRS=2154)
 
@@ -809,11 +950,10 @@ if project_orthophoto:
 filter_las_points = True
 if filter_las_points:
     left,right,bottom,top = getLeftRightBottomTop(orthoTIFLamb)  
-    all_filtered_points = filter_las_files_with_attributes(  list_laz_files(lidarDir), left, bottom, right, top,remove_ratio=0.9 )
-
+    all_filtered_points = filter_las_files_with_attributes( list_laz_files(lidarDir), left, bottom, right, top,remove_ratio=0.0 )
     all_filtered_points_colored = assign_colors_from_tif(all_filtered_points, orthoTIFLamb)
-    save_filtered_las_color_classification_and_coords(all_filtered_points_colored, outLAS)
-    save_points_to_vtk(all_filtered_points_colored, filename=lidarVTKout)
+    save_filtered_las_color_classification_and_coords(all_filtered_points_colored, outLAS, classificationKey='Fuel_Type',TFLCBH=True)
+    #save_points_to_vtk(all_filtered_points_colored, filename=lidarVTKout)
 
 
 # gives some info
@@ -827,7 +967,7 @@ save_compressed_bin = True
 if save_compressed_bin:
     las_to_compressed_bin(outLAS,output_filename=compressedBin)
 
-
+#/Users/filippi_j/data/2024/landes/LIDARHD/clip_zone_aeroport_300m_Fueltype_TFL_CBH.laz
 
 #plot_colored_points_3d(all_filtered_points_colored, filename=lidplot)
 #print("plotted")

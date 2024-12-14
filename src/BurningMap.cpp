@@ -80,16 +80,6 @@ FFArray<double>* BurningMap::getMap(){
 // Mutators
 void BurningMap::loadBin(std::ifstream&  FileIn){
 
-				/*	size_t nny;
-					size_t nnz;
-					size_t nnt;
-		double vals[sizeX*sizeY];
-		FileIn.read((char *)&nnx, sizeof(size_t));
-		FileIn.read((char *)&nny, sizeof(size_t));
-		FileIn.read((char *)&nnz, sizeof(size_t));
-		FileIn.read((char *)&nnt, sizeof(size_t));
-		FileIn.read((char *)&vals, sizeof(vals));*/
-	//cout<<" EHHHOUI "<<arrivalTimeMap->loadBin()<<" and "<<nnx*nny<<endl;
 		arrivalTimeMap->loadBin(	FileIn);
  
 	

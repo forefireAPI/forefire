@@ -56,10 +56,10 @@ namespace libforefire{
 	bool FireDomain::recycleNodes = false;
 	bool FireDomain::recycleFronts = false;
 	
-	list<FireDomain::distributedDomainInfo*> FireDomain::parallelDispatchDomains;
-	list<FireNode*> FireDomain::createdNodes;
-	list<FireNode*> FireDomain::trashNodes;
-	list<FireFront*> FireDomain::trashFronts;
+	std::list<FireDomain::distributedDomainInfo*> FireDomain::parallelDispatchDomains;
+	std::list<FireNode*> FireDomain::createdNodes;
+	std::list<FireNode*> FireDomain::trashNodes;
+	std::list<FireFront*> FireDomain::trashFronts;
 
 	FireFrontData* FireDomain::mainFrontBackup;
 	size_t FireDomain::atmoIterNumber = 0;
@@ -93,7 +93,7 @@ namespace libforefire{
 	: ForeFireAtom(t), SWCorner(swc), NECorner(nec) {
 		isFireActive = false;
 		propagationSpeedAdjustmentFactor =1;
-		numberOfRispatchDomains = 0;
+		//parallelDispatchDomains.size() = 0;
 		params = SimulationParameters::GetInstance();
 		numIterationAtmoModel = 0;
 		// Maximum time-step for Firenodes is not constrained
@@ -104,13 +104,13 @@ namespace libforefire{
 		if (params->getParameter("runmode") == "masterMNH"){
 
 			
-			readMultiDomainMetadata();
+			//readMultiDomainMetadata();
 
-			
+			cout<<"all inited, the big now with "<<parallelDispatchDomains.size()<<" total "<<parallelDispatchDomains.size()<<endl;
 
  
 	
-			if(numberOfRispatchDomains >0){
+			if(parallelDispatchDomains.size() >0){
 
 			
 			distributedDomainInfo* fit = parallelDispatchDomains.front();
@@ -279,7 +279,7 @@ namespace libforefire{
 		SWCorner = FFPoint(meshx[0], meshy[0]);
 		NECorner = FFPoint(2.*meshx[atmoNX-1]-meshx[atmoNX-2]
 						   , 2.*meshy[atmoNY-1]-meshy[atmoNY-2]);
-		bool dumpDomainInfo = true;
+		bool dumpDomainInfo = false;
 
 		string ffDomPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+params->getParameter("mpirank")+".domainData");
 		if (dumpDomainInfo){
@@ -291,6 +291,7 @@ namespace libforefire{
 			FileOut.write(reinterpret_cast<const char*>(&SWCorner.y), sizeof(double));
 			FileOut.write(reinterpret_cast<const char*>(&NECorner.x), sizeof(double));
 			FileOut.write(reinterpret_cast<const char*>(&NECorner.y), sizeof(double));
+			
 			FileOut.flush();   
 			FileOut.rdbuf()->pubsync(); 		
 			FileOut.close();
@@ -372,36 +373,40 @@ inline size_t fileSize(const std::string& name) {
     }
     return buffer.st_size;   
 }
+void FireDomain::pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney) {
+    distributedDomainInfo *currentInfo = new distributedDomainInfo;
+	std::cout << "F" << id << " atmoNX: " << atmoNX 
+			<< ", atmoNY: " << atmoNY 
+			<< ", SWCorner.x: " << nswx
+			<< ", SWCorner.y: " << nswy
+			<< ", NECorner.x: " << nnex
+			<< ", NECorner.y: " << nney
+			<< std::endl;
+    currentInfo->ID = id;
+    currentInfo->lastTime = lastTime;
+    currentInfo->atmoNX = atmoNX;
+    currentInfo->atmoNY = atmoNY;
+    currentInfo->SWCorner = new FFPoint(nswx, nswy);
+    currentInfo->NECorner = new FFPoint(nnex, nney);
+	
+    parallelDispatchDomains.push_back(currentInfo);
+}
 void FireDomain::readMultiDomainMetadata(){
-
 		if (getDomainID()!=0) return;
-	/*	if (numberOfRispatchDomains > 0) return;
- 
-		if (getNumIterationAtmoModel() < 1) return;*/
-		size_t numReadDom = 1;
 
-		//read all files for smaller domains
+		size_t numReadDom = 1;
 		string ffDomPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/');
- 		//string ffDomPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("fireOutputDirectory")+'/'+params->getParameter("outputFiles")+".");
- 
-		size_t domFileSize = fileSize(ffDomPattern+std::to_string(numReadDom)+".domainData");
+ 		size_t domFileSize = fileSize(ffDomPattern+std::to_string(numReadDom)+".domainData");
 		while(domFileSize > 0){
- 
-			numReadDom++;
+ 			numReadDom++;
 			domFileSize = fileSize(ffDomPattern+std::to_string(numReadDom)+".domainData");
 		}
 		numReadDom -=1;
  
-		numberOfRispatchDomains = numReadDom;
-	 
-		distributedDomainInfo *currentInfo = new distributedDomainInfo;
+		//parallelDispatchDomains.size() = numReadDom;
 
 		while(numReadDom > 0){
 
-			currentInfo->ID = numReadDom;
-		    
-			currentInfo->lastTime = 0;
-	  
 		    ifstream FileIn((ffDomPattern+std::to_string(numReadDom)+".domainData").c_str(), ios_base::binary);
 
 			size_t anx = 0;
@@ -418,13 +423,8 @@ void FireDomain::readMultiDomainMetadata(){
 			FileIn.read((char *)&nnex, sizeof(double));
 			FileIn.read((char *)&nney, sizeof(double));
 		    FileIn.close();
-			currentInfo->atmoNX = anx;
-			currentInfo->atmoNY = any;
-			currentInfo->SWCorner = new FFPoint(nswx, nswy);
-			currentInfo->NECorner = new FFPoint(nnex, nney);
+			//pushMultiDomainMetadataInList(numReadDom,0,anx,any,nswx,nswy,nnex,nney);
 
-			parallelDispatchDomains.push_back(currentInfo);;
-			currentInfo = new distributedDomainInfo;
 			numReadDom--;
 		}	
 	
@@ -735,7 +735,8 @@ void FireDomain::readMultiDomainMetadata(){
     }
     
     // Set the parameter with the joined string
-    params->setParameter(model->getName() + ".keys", properties);
+    	params->setParameter(model->getName() + ".keys", properties);
+		//cout<< "loading"<< model->getName()<<index<<endl;
 		propModelsTable[index] = model;
 	}
 
@@ -1382,9 +1383,19 @@ void FireDomain::readMultiDomainMetadata(){
 
 		return propModelsTable[modelIndex]->getSpeedForNode(fn) * propagationSpeedAdjustmentFactor;
 	}
-		
-	vector<string> FireDomain::getFirstPropagationModelKeys() {
-		return propModelsTable[0]->wantedProperties;
+
+
+
+    PropagationModel* FireDomain::getPropagationModel(const std::string& key) {
+		// Iterate from the last index down to 0
+		for (int i = static_cast<int>(NUM_MAX_PROPMODELS) - 1; i >= 0; --i) {
+			if (propModelsTable[i] != nullptr) {
+				if (propModelsTable[i]->getName() == key) {
+					return propModelsTable[i];
+				}
+			}
+		}
+		return nullptr; // Return nullptr if not found
 	}
 
 	// Computing the flux at a given location according to a given flux model
@@ -1565,16 +1576,36 @@ void FireDomain::readMultiDomainMetadata(){
 			}
 		}
 	}
-void FireDomain::dumpWindDataInBinary(){
-	dataBroker->dumpWindDataInBinary();
+	
+FireDomain::distributedDomainInfo* FireDomain::getParallelDomainInfo(size_t forID) {
+    if (getDomainID() != 0) return nullptr;
+    if (params->getParameter("runmode") != "masterMNH") return nullptr;
+
+    distributedDomainInfo* found = nullptr;
+    for (std::list<distributedDomainInfo*>::iterator it = parallelDispatchDomains.begin(); 
+         it != parallelDispatchDomains.end(); 
+         ++it) 
+    {
+        if ((*it)->ID == forID) {
+            found = *it;
+        }
+    }
+
+    if (found != nullptr) {
+        return found;
+    }
+
+    return nullptr;
 }
+
+
 void FireDomain::loadWindDataInBinary(double refTime){
 			if(getDomainID()!=0)return;
 			if (params->getParameter("runmode") != "masterMNH") return;
 	
-		if(numberOfRispatchDomains >0){
-			size_t refNXs[numberOfRispatchDomains];
-			size_t refNYs[numberOfRispatchDomains];
+		if(parallelDispatchDomains.size() >0){
+			size_t refNXs[parallelDispatchDomains.size()];
+			size_t refNYs[parallelDispatchDomains.size()];
 			list<distributedDomainInfo*>::iterator it;
 			size_t numreadDom = 0;
 			for (it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); it++)

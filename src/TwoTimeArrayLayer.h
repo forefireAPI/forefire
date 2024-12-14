@@ -350,38 +350,29 @@ void TwoTimeArrayLayer<T>::getMatrix(FFArray<T>** matrix, const double& time){
 template<typename T> void TwoTimeArrayLayer<T>::loadMultiWindBin(string filePattern,double refTime,size_t numberOfDomains, size_t* startI, size_t* startJ){
 
 	FFArray<double>* tmpArray = arrayt1;
-//	string windFileName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string(FireDomain::atmoIterNumber%2)+"/");
-//	string windFileName(params->getParameter("caseDirectory")+'/'+params->getParameter("fireOutputDirectory")+'/'+params->getParameter("outputFiles")+".");
-    struct stat buffer;  
+  struct stat buffer;  
 
 	for (size_t i = 0; i < numberOfDomains; ++i) {
 		string domInName(filePattern+to_string(i+1)+"."+this->getKey());	 
         if(stat(domInName.c_str(), &buffer) == 0){
 			ifstream FileIn(domInName.c_str(), ios_base::binary);
+			
 			tmpArray->loadBinAtLoc(FileIn,startI[i],startJ[i],buffer.st_size);
 			FileIn.close();
 		}
     }
-	
 	time1= time2;
-	// pointing the future array to other memory
 	arrayt2 = tmpArray;
 	time2 = refTime;
-   /* string windFullFileName(filePattern+"0."+this->getKey());
-	ofstream FileOut(windFullFileName.c_str(), ios_base::binary);
-	tmpArray->dumpBin(FileOut);
-	FileOut.flush();   
-	FileOut.rdbuf()->pubsync(); 
-	FileOut.close();*/
-	
-
 }
 
 template<typename T>
 void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 		, const size_t& sizein, size_t& sizeout, const double& newTime){
+				
 	if ( tmpMatrix->getSize() == sizein ){
 		if ( mname == "windU" or mname == "windV" ){
+			
 			/* Information concerning the whole domain */
 			// pointing the current array to the future one
 			FFArray<double>* tmpArray = arrayt1;
@@ -393,14 +384,14 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 			// copying data from atmospheric matrix
 			tmpMatrix->copyDataFromFortran(inMatrix);
 			copyDomainInformation(tmpMatrix, arrayt2);
+/*
 			size_t atmoIterNumber = params->getInt("atmoIterNumber");
 			string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string((atmoIterNumber+1)%2)+"/"+params->getParameter("mpirank")+"."+this->getKey());
 			ofstream FileOut(domInName.c_str(), ios_base::binary);
-	
 			arrayt2->dumpBin(FileOut);
 			FileOut.flush();   
 			FileOut.rdbuf()->pubsync(); 
-			FileOut.close();
+			FileOut.close();*/
 
 		} else if ( mname == "outerWindU" or mname == "outerWindV" ){
 			/* Information concerning the outer wind velocities */

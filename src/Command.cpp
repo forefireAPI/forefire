@@ -99,6 +99,7 @@ Command::CmdDictEntry Command::cmdDict[] =	{
 		,CmdDictEntry("save[]","saves the simulation arrival_times in netcdf format")
 		,CmdDictEntry("load[...]","loads the simulation arrival_times in netcdf format")
 		,CmdDictEntry("plot[...]","generates a png or jpg of the simulation")
+		,CmdDictEntry("computeSpeed[...]","main prop model activation with vector")
 		,CmdDictEntry("help","displays messages about the usage of commands")
 		,CmdDictEntry("man[command]","displays the man page of the desired 'command'")
 		,CmdDictEntry("loadData[...]","load a NC landscape data file")
@@ -145,8 +146,9 @@ int Command::createDomain(const string& arg, size_t& numTabs){
 		if ( currentSession.fd != 0 ){
  
 			if(currentSession.fd->getDomainID() == 1){
-					cout<<"creating FD as 1"<<endl;
+				cout<<"creating FD as 1 but one already exist" <<endl;
 				currentSession.params->setParameter("runmode", "masterMNH");
+
 				currentSession.fdp = new FireDomain(t, SW, NE);
 				currentSession.fdp->setTimeTable(currentSession.tt);
 				//currentSession.ff = currentSession.fdp->getDomainFront();
@@ -213,12 +215,6 @@ int Command::startFire(const string& arg, size_t& numTabs){
 	}
     
 	FireDomain* refDomain = getDomain();
-	//if (currentSession.fdp != 0) {
-	//		cout<<"Starting fire reference from "<<refDomain->getDomainID()<<" to "<<currentSession.fdp->getDomainID()<<endl;
-     //       refDomain = currentSession.fdp;
-      //  } 
-
-		
 	  
     SimulationParameters *simParam = SimulationParameters::GetInstance();
     
@@ -556,9 +552,7 @@ int Command::stepSimulation(const string& arg, size_t& numTabs){
 	etime<<"t="<<endTime;
 	goTo(etime.str().c_str(), numTabs);
     
-    SimulationParameters *simParam = SimulationParameters::GetInstance();
-    simParam->setParameter("ISOdate", simParam->FormatISODate(simParam->getInt("refTime") + getDomain()->getSimulationTime(), getDomain()->getReferenceYear(), getDomain()->getReferenceDay()));
-    
+
 	return normal;
 }
 
@@ -604,12 +598,14 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			/* ******************************************** */
 			//cout<<getDomain()->getDomainID()<<"  iteration : "<<FireDomain::atmoIterNumber<<" and "<<getDomain()->getNumIterationAtmoModel()<<endl;
 			FireDomain::atmoIterNumber = FireDomain::atmoIterNumber+1;
+
 			currentSession.params->setInt("atmoIterNumber",FireDomain::atmoIterNumber);
 			currentSession.fd->loadCellsInBinary();
-			getDomain()->loadWindDataInBinary(endTime);
+			//getDomain()->loadWindDataInBinary(endTime);
+
 			currentSession.sim->goTo(endTime);
+
 			getDomain()->dumpCellsInBinary();
-			//currentSession.fd->dumpWindDataInBinary();
 			startTime = endTime;
 			getDomain()->increaseNumIterationAtmoModel();
 
@@ -714,6 +710,9 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			}
 		}
 	}
+	    SimulationParameters *simParam = SimulationParameters::GetInstance();
+    simParam->setParameter("ISOdate", simParam->FormatISODate(simParam->getInt("refTime") + getDomain()->getSimulationTime(), getDomain()->getReferenceYear(), getDomain()->getReferenceDay()));
+    
 	return normal;
 }
 
@@ -834,7 +833,7 @@ int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
             std::cerr << "Error: Filename not provided in the argument." << std::endl;
         }
     } 
-
+	
     return normal;
 }
 int Command::loadSimulation(const std::string& arg, size_t& numTabs) {
@@ -867,6 +866,69 @@ int Command::setParameters(const string& arg, size_t& numTabs){
 	return normal;
 }
 
+int Command::computeModelSpeed(const std::string& cmd, size_t& numTabs) {
+    // Expected cmd format: "ModelKey;value1;value2;value3;..."
+    
+    // Step 1: Tokenize the cmd string by ";"
+    std::vector<std::string> tokens;
+    std::string delimiter = ";";
+    size_t start = 0;
+    size_t end = cmd.find(delimiter);
+    
+    while (end != std::string::npos) {
+        tokens.emplace_back(cmd.substr(start, end - start));
+        start = end + delimiter.length();
+        end = cmd.find(delimiter, start);
+    }
+    tokens.emplace_back(cmd.substr(start, end - start)); // Add the last token
+    
+    if (tokens.empty()) {
+        std::cerr << "Error: No command arguments provided." << std::endl;
+        return error;
+    }
+    
+    // Step 2: The first token is the model key
+    std::string modelKey = currentSession.params->getParameter("propagationModel");
+	
+    // Step 3: Retrieve the propagation model
+    PropagationModel* model = getDomain()->getPropagationModel(modelKey);
+    if (model == nullptr) {
+        std::cerr << "Error: Propagation model with key '" << modelKey << "' not found." << std::endl;
+        return error;
+    }
+   
+    // Step 4: Convert the remaining tokens to double values
+    std::vector<double> values;
+    values.reserve(tokens.size() );
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        try {
+            double val = std::stod(tokens[i]);
+            values.push_back(val);
+        }
+        catch (const std::invalid_argument& e) {
+            std::cerr << "Error: Invalid number format '" << tokens[i] << "'" << std::endl;
+            return error;
+        }
+        catch (const std::out_of_range& e) {
+            std::cerr << "Error: Number out of range '" << tokens[i] << "'" << std::endl;
+            return error;
+        }
+    }
+    
+    // Step 5: Prepare the double array
+    double* test_values = values.data();
+
+    // Step 6: Call the getSpeed function of the selected model
+    double speedV = model->getSpeed(test_values);
+ 
+	ostringstream oss;
+	oss<<speedV;
+    // Step 7: Output the result
+	*currentSession.outStream << oss.str() ;
+   // *currentSession.outStream<< speed << std::endl;
+    
+    return normal;
+}
 int Command::setParameter(const string& arg, size_t& numTabs){
 	// Getting all the arguments, using the 'tokenize' function
 	// Returns strings of the form 'arg=...'
@@ -897,7 +959,7 @@ int Command::getParameter(const string& arg, size_t& numTabs){
 		return error;
 	}
     
-	*currentSession.outStream << param << endl;
+	*currentSession.outStream << param ;
 	return normal;
 }
 
@@ -1010,6 +1072,8 @@ int Command::man(const string& cmd, size_t& numTabs){
 	return normal;
 }
 
+
+
 int Command::loadData(const string& arg, size_t& numTabs){
     
     if (arg.size() == 0)
@@ -1093,7 +1157,7 @@ int Command::loadData(const string& arg, size_t& numTabs){
             simParam->setInt("refDay", yday);
             simParam->setInt("refTime", secs);
             simParam->setParameter("ISOdate", args[1]);
-			cout<<"loading at time "<<args[1]<<" " <<"yday"<<endl;
+			//cout<<"loading at time "<<args[1]<<" " <<"yday"<<endl;
         }
 
 		string com = "FireDomain[sw=("+simParam->getParameter("SWx")+".,"+simParam->getParameter("SWy")+".,"+simParam->getParameter("SWz")+".);ne=(";

@@ -126,8 +126,9 @@ Rothermel::Rothermel(const int & mindex, DataBroker* db)
 	/* registering the model in the data broker */
     if (params->isValued("RothermelLoggerCSVPath")) {
         csvfile.open(params->getParameter("RothermelLoggerCSVPath"));
+		std::cout<< "logging Rothermel data in "<<params->getParameter("RothermelLoggerCSVPath")<<std::endl;
     }
-
+std::cout<< "logging Rothermel data in "<<params->getParameter("RothermelLoggerCSVPath")<<std::endl;
     
     if (csvfile.is_open()) {
      

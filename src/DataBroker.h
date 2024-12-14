@@ -316,7 +316,6 @@ public:
 	void computeActiveSurfacesFlux(const double&);
 
 	void loadMultiWindBin(double , size_t , size_t* , size_t* );
-    void dumpWindDataInBinary();
 	/*! \brief accessor to the desired set of properties for propagation models */
 	void getPropagationData(PropagationModel*, FireNode*);
 	bool* optimizedPropDataBroker;

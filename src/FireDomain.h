@@ -58,16 +58,7 @@ namespace libforefire{
  *  for the simulation.
  */
 class FireDomain: public ForeFireAtom, Visitable {
-	struct distributedDomainInfo{
-		size_t ID;
-		size_t atmoNX;
-		size_t atmoNY;
-		size_t refNX;
-		size_t refNY;
-		FFPoint* SWCorner;
-		FFPoint* NECorner;
-		double lastTime;
-	};
+
 
 	/* Internal variables of the simulation */
     /*--------------------------------------*/
@@ -154,7 +145,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	static list<FireNode*> trashNodes;
 	static list<FireFront*> trashFronts;
 
-	static list<distributedDomainInfo*> parallelDispatchDomains;
 	/* Factories of models */
     /*---------------------*/
 
@@ -200,6 +190,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 		}
 		~Frontier(){}
 	};
+
 
 	list<Frontier*> frontiers;
 	list<Frontier*> infrontiers;
@@ -335,9 +326,19 @@ class FireDomain: public ForeFireAtom, Visitable {
 public:
 
 	
-	size_t numberOfRispatchDomains;
+	size_t numberOfDispatchDomains = 0;
+	struct distributedDomainInfo{
+		size_t ID;
+		size_t atmoNX;
+		size_t atmoNY;
+		size_t refNX;
+		size_t refNY;
+		FFPoint* SWCorner;
+		FFPoint* NECorner;
+		double lastTime;
+	};
 
-
+	static std::list<distributedDomainInfo*> parallelDispatchDomains;
 
 	/* Propagation models */
 	static const size_t NUM_MAX_PROPMODELS = 50; /*!< maximum number of propagation models */
@@ -453,6 +454,7 @@ public:
 	double& SECornerX();
 	double& SECornerY();
 	void readMultiDomainMetadata();
+	void pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney);
 
 	/*! \brief cell containing a firenode */
 	FDCell* getCell(FireNode*);
@@ -566,9 +568,10 @@ public:
 
 	/*! \brief Computing the propagation speed of a given firenode */
 	double getPropagationSpeed(FireNode*);
-	vector<string> getFirstPropagationModelKeys() ;
-	
-	/*! \brief Computing the propagation speed of a given firenode */
+
+    PropagationModel* getPropagationModel(const std::string& key);
+
+    /*! \brief Computing the propagation speed of a given firenode */
 	double getModelValueAt(int&, FFPoint&, const double&, const double&, const double&);
 
 	/*! \brief recycle/create a firenode */
@@ -597,9 +600,9 @@ public:
 	void stopOutgoingNode(FireNode*, FFPoint&, double&);
 	void addToTrashFronts(FireFront*);
 	void dumpCellsInBinary();
-	void loadWindDataInBinary(double);
-	void dumpWindDataInBinary();
-	void loadCellsInBinary();
+    distributedDomainInfo *getParallelDomainInfo(size_t forID);
+    void loadWindDataInBinary(double);
+    void loadCellsInBinary();
 	/*! \brief creating new atoms in the domain */
 	FireNode* FireNodeFactory();
 	FireFront* FireFrontFactory();

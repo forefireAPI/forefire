@@ -46,6 +46,7 @@ public:
 			, size_t nj = 1, size_t nk = 1, size_t nl = 1) :
 		nx(ni), ny(nj), nz(nk), nt(nl), name(aname)	{
 		size = nx*ny*nz*nt;
+			
 		try {
 			// allocation of enough storage
 			data = new T[size];
@@ -99,6 +100,7 @@ public:
 	void copyDataFromFortran(const T*);
 	void loadBin(std::ifstream&  );
 	void loadBinAtLoc(std::ifstream&  , size_t , size_t ,size_t);
+	void setDataAtLoc(T* , size_t , size_t ,size_t , size_t ,size_t );
 	void dumpBin(std::ofstream&  );
 	// Printing functions
 	string print2D(size_t = 0, size_t = 0);
@@ -106,9 +108,9 @@ public:
 template<typename T>
 T FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l) const {
 	if ( i > nx or j > ny or k > nz or l > nt ){
-		cout<<"WARNING: Array subscript ("<<i<<","<<j<<","<<k<<","<<l
-				<<") out of bounds in read array "<<name<<" of size "
-				<<nx<<"x"<<ny<<"x"<<nz<<"x"<<nt<<endl;
+		cout<<"WARNING: Array "<<name<<"("<<i<<","<<j<<","<<k<<","<<l
+				<<") out of bounds, size "
+				<<nx<<":"<<ny<<":"<<nz<<":"<<nt<<endl;
              int im = i>nx?nx-1:i;
              int jm = j>ny?ny-1:j;
              int km = k>nz?nz-1:k;
@@ -126,9 +128,9 @@ T FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l) const {
 template<typename T>
 T& FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l){
 	if ( i >= nx or j >= ny or k >=nz or l >= nt ){
-		cout<<"WARNING: Array subscript ("<<i<<","<<j<<","<<k<<","<<l
-				<<") out of bounds in write array "<<name<<" of size "
-				<<nx<<"x"<<ny<<"x"<<nz<<"x"<<nt<<endl;
+		cout<<"WARNING: Array "<<name<<"("<<i<<","<<j<<","<<k<<","<<l
+				<<") out of bounds, size "
+				<<nx<<":"<<ny<<":"<<nz<<":"<<nt<<endl;
 	}
 
              int im = i>nx?nx-1:i;
@@ -200,6 +202,7 @@ void FFArray<T>::loadBin(std::ifstream&  FileIn){
 	
 	FileIn.read((char *)data, nx*ny*nz*nt*sizeof(T));
 }
+
 template<typename T>
 void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t startJ,size_t domFsize){
 
@@ -212,6 +215,39 @@ void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t star
 		cout << "LOADING EMPTY wind dimentions in FARRAY "<<domFsize<<" bytes"<<endl;
 		return;
 	}
+	cout<<"Should not be called loadBinAtLoc" <<endl;
+	FileIn.read((char *)&nnx, sizeof(size_t));
+	FileIn.read((char *)&nny, sizeof(size_t));
+	FileIn.read((char *)&nnz, sizeof(size_t));
+	FileIn.read((char *)&nnt, sizeof(size_t));
+	//cout <<"at "<<startI<<" - "<<startJ<< " nx:"<<nx<<" nnx"<<nnx<< " ny:"<<ny<<" nny"<<nny<<endl;
+	size_t nelems = domFsize/sizeof(T);
+	if(nnx*nny*nnz*nnt + 4 != nelems) {
+		cout << "LOADING NOT good wind dimentions in FARRAY "<<nelems<<" and read "<<nnx<<":"<<nny<<":"<<nnz<<":"<<nnt<<":"<<endl;
+		return;
+	}
+	FileIn.ignore((nny+2)*sizeof(T));
+	for (size_t i = startI+1; i < startI+nnx; i++ ){
+		FileIn.read((char *)&(data[i*ny + startJ+2]), (nny-3)*sizeof(T));
+		FileIn.ignore(3*sizeof(T));
+	}
+}
+
+
+template<typename T>
+void FFArray<T>::setDataAtLoc(T* matrix, size_t nnx, size_t nny,size_t startI, size_t startJ,size_t domFsize){
+
+	size_t mi =(nny+2);
+	//cout <<"UUUUat "<<startI<<" - "<<startJ<< " nx:"<<nx<<" nnx"<<nnx<< " ny:"<<ny<<" nny"<<nny<<endl;
+
+	for (size_t i = startI+1; i < startI+nnx; i++ ){
+		for (size_t j = 0; j < (nny-3); j++ ){
+			data[i*ny + startJ+j] = matrix[mi+j];
+		}
+		mi += nny;
+	}
+			
+/*	
 
 	FileIn.read((char *)&nnx, sizeof(size_t));
 	FileIn.read((char *)&nny, sizeof(size_t));
@@ -225,27 +261,13 @@ void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t star
 	}
 	FileIn.ignore((nny+2)*sizeof(T));
 	for (size_t i = startI+1; i < startI+nnx; i++ ){
-	//	FileIn.ignore(2*sizeof(T));
 		FileIn.read((char *)&(data[i*ny + startJ+2]), (nny-3)*sizeof(T));
 		FileIn.ignore(3*sizeof(T));
-	}
-	/*
-	size_t insize = nnx*nny*nnz*nnt;
-	T newdata[insize];
-	FileIn.read((char *)newdata, insize*sizeof(T));
-	size_t nn = nny;
-	
-	for (size_t i = startI+1; i < startI+nnx; i++ ){
-			nn+=2;
-			for (size_t j = startJ+2; j < startJ+nny-1; j++ ){
-				data[i*ny + j] = newdata[nn++];
-			}
-			nn+=1;
-		}
-		*/
-	
+	}*/
 }
 
+	
+//}
 template<typename T>
 void FFArray<T>::resize(size_t ni, size_t nj, size_t nk, size_t nl){
 	nx = ni;

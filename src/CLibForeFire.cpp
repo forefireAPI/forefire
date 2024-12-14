@@ -21,12 +21,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
 
+#ifdef MPI_COUPLING
+#include <mpi.h>
+#include <iostream>
+#include <vector>
+#include <cstdint>
+
+#endif
+
+
 using namespace std;
+
+#ifdef MPI_COUPLING
+// Dimensions des matrices
+const int SPEED_ROWS = 100;
+const int SPEED_COLS = 200;
+const int BMAP_ROWS = 200;
+const int BMAP_COLS = 400;
+
+int step =0;
+#endif
+
+
 
 namespace libforefire {
 
 Command executor;
 static Command::Session* session = &(executor.currentSession);
+    int world_rank;
+    int world_size;
 
 
 
@@ -74,10 +97,80 @@ void MNHCreateDomain(const int id
 	/* Defining the Fire Domain */
 	if (session->fd) delete session->fd;
 
+	std::cout<<"Initing Parallel MNH"<<id<< std::endl;
+	
+
 	session->fd = new FireDomain(id, year, month, day, t, lat, lon
 			, mdimx, meshx, mdimy, meshy, mdimz, dt);
 
+    #ifdef MPI_COUPLING
 
+        int world_rank;
+        int world_size;
+
+        // Obtenir le rang et la taille
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+        // Vérifier qu'il y a au moins 2 processus
+        if (world_size < 2) {
+            if (world_rank == 0) {
+                std::cerr << "Ce programme nécessite au moins 2 processus.\n";
+            }
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
+        // Collecte des données à envoyer
+        int data_int[3];
+        data_int[0] = id;
+        data_int[1] = mdimx;
+        data_int[2] = mdimy;
+
+        double data_double[4];
+        data_double[0] = meshx[0];
+        data_double[1] = meshy[0];
+        data_double[2] = meshx[mdimx-1] + (meshx[1] - meshx[0]);
+        data_double[3] = meshy[mdimy-1] + (meshy[1] - meshy[0]);
+
+        if (world_rank != 0) {
+            // Envoyer les données à rank 0
+            MPI_Send(data_int, 3, MPI_INT, 0, 0, MPI_COMM_WORLD);
+            MPI_Send(data_double, 4, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+        }
+
+        if (world_rank == 0) {
+            // Afficher les données de rank 0
+
+			session->fd->pushMultiDomainMetadataInList(id,0,mdimx,mdimy,meshx[0],meshy[0],meshx[mdimx-1] + (meshx[1] - meshx[0]),meshy[mdimy-1] + (meshy[1] - meshy[0]));
+            // Recevoir et afficher les données des autres rangs
+            for (int src = 1; src < world_size; ++src) {
+                int recv_int[3];
+                double recv_double[4];
+                MPI_Recv(recv_int, 3, MPI_INT, src, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(recv_double, 4, MPI_DOUBLE, src, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+				session->fd->pushMultiDomainMetadataInList(recv_int[0],0,recv_int[1] ,recv_int[2],recv_double[0],recv_double[1],recv_double[2],recv_double[3]);
+           
+            }
+
+            // Initialiser les matrices
+            std::vector<double> SPEED(SPEED_ROWS * SPEED_COLS, 0.0);
+            std::vector<int32_t> BMAP(BMAP_ROWS * BMAP_COLS, 0);
+
+            // Remplir SPEED et BMAP avec des valeurs initiales (par exemple, incrémentales)
+            for (int i = 0; i < SPEED_ROWS * SPEED_COLS; ++i) {
+                SPEED[i] = static_cast<double>(i);
+            }
+
+            for (int i = 0; i < BMAP_ROWS * BMAP_COLS; ++i) {
+                BMAP[i] = static_cast<int32_t>(i);
+            }
+
+            // Attendre que tous les rangs aient envoyé leurs données (si nécessaire)
+            // Ici, les messages sont déjà reçus dans la boucle précédente
+        }
+
+    #endif
 
 	//executor.setDomain(session->fd);
 
@@ -111,16 +204,19 @@ void MNHCreateDomain(const int id
 	// Reading all the information on the initialization of ForeFire
 	ostringstream initfile;
 	if ( SimulationParameters::GetInstance()->getInt("parallelInit") != 1 ) {
-		// Mono-file case: one file for all the processors
+		std::cout << "****************\n******rank "<< id <<" with "<<SimulationParameters::GetInstance()->getInt("parallelInit")<< std::endl ;
+		// It is parallel, but Mono-file case: one file for main processor rank 0
 		initfile<<SimulationParameters::GetInstance()->getParameter("caseDirectory")<<'/'
 								<<SimulationParameters::GetInstance()->getParameter("ForeFireDataDirectory")<<'/'
 								<<SimulationParameters::GetInstance()->getParameter("InitFile");
 	} else {
-		// Multi-proc initial conditions
+		// It is parallel, but multidomain file case: one file for each processor
+
 		initfile<<SimulationParameters::GetInstance()->getParameter("caseDirectory")<<'/'
 								<<SimulationParameters::GetInstance()->getParameter("ForeFireDataDirectory")<<'/'
 								<<SimulationParameters::GetInstance()->getParameter("InitFiles")
 								<<"."<<id<<"."<<SimulationParameters::GetInstance()->getParameter("InitTime");
+
 	}
 
 
@@ -174,10 +270,127 @@ void CheckLayer(const char* lname){
 }
 
 void MNHStep(double dt){
+	#ifdef MPI_COUPLING
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		//#   on a dans l ordre 
+		//#  CALL SEND_GROUND_WIND_n(XUT, XVT, IKB, IINFO_ll)
+		//#  CALL COUPLING_FOREFIRE_n(XTSTEP, ZSFTH, ZSFTQ, ZSFTS)
+		//#    qui appelle CALL MNH_TO_FF_STEP(DT)
+		//#    donc.. en gros 
+		//#    la fonction FFGetDoubleArray(  est appelée n fois avant le step, pour tous les ranks
+		//#
+	//	std::cout << "*********** stepping **********"<<std::endl;
+		if (world_rank == 0) {
+		
+			std::vector<double> SPEED(SPEED_ROWS * SPEED_COLS, 0.0);
+			std::vector<int32_t> BMAP(BMAP_ROWS * BMAP_COLS, 0);
+			for (int i = 0; i < SPEED_ROWS * SPEED_COLS; ++i) {
+				SPEED[i] = static_cast<double>(i);
+			}
+			for (int i = 0; i < BMAP_ROWS * BMAP_COLS; ++i) {
+				BMAP[i] = static_cast<int32_t>(i);
+			}
+			if(step++%25 == 0){
+				cout<<"at "<<step*dt<<endl;
+			}
+
+			
+		//	std::cout << "Rank " << world_rank <<" session "<<session->fdp->getDomainID()<< " : time " << step*dt <<" size "<<world_size<<"\n";
+            
+            std::vector<double> SPEED_right_half(SPEED_ROWS * (SPEED_COLS / 2));
+            for (int i = 0; i < SPEED_ROWS; ++i) {
+                for (int j = 0; j < SPEED_COLS / 2; ++j) {
+                    SPEED_right_half[i * (SPEED_COLS / 2) + j] = SPEED[i * SPEED_COLS + (j + SPEED_COLS / 2)];
+                }
+            }
+
+            // Extraire la portion de BMAP (200x200)
+            std::vector<int32_t> BMAP_slice(BMAP_ROWS * (BMAP_COLS / 2));
+            for (int i = 0; i < BMAP_ROWS; ++i) {
+                for (int j = 0; j < BMAP_COLS / 2; ++j) {
+                    BMAP_slice[i * (BMAP_COLS / 2) + j] = BMAP[i * BMAP_COLS + j];
+                }
+            }
+			for (int nr = 1; nr < world_size; ++nr) {
+				MPI_Send(BMAP_slice.data(), BMAP_ROWS * (BMAP_COLS / 2), MPI_INT32_T, nr, 0, MPI_COMM_WORLD);
+			}
+ 
+    }
+    else if (world_rank >= 1) {
+            std::vector<int32_t> BMAP_received(BMAP_ROWS * (BMAP_COLS / 2));
+            MPI_Recv(BMAP_received.data(), BMAP_ROWS * (BMAP_COLS / 2), MPI_INT32_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    }
+
+	#endif
 	ostringstream cmd;
 	cmd << "step[dt=" << dt <<"]";
 	string scmd = cmd.str();
 	executor.ExecuteCommand(scmd);
+}
+
+
+void FFGetDoubleArray(const char* mname, double t
+		, double* x, size_t sizein, size_t sizeout){
+	string tmpname(mname);
+	double ct = executor.refTime + t;
+	// searching for the layer to put data
+	//cout<<session->fd->getDomainID()<<" is getting "<<tmpname<<endl;
+
+	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
+	if ( myLayer ){
+		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
+		#ifdef MPI_COUPLING
+		FFArray<double>* t2;
+		myLayer->getMatrix(&t2,0);
+		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		//cout<<world_rank<<" sett "<< world_size <<" ing "<<sizein<<" bytes for "<<tmpname<<endl;
+		if ( tmpname == "windU"  or tmpname == "windV" ){
+
+			
+
+			
+			if (world_rank == 0){
+				DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(tmpname);
+				//if (params->getParameter("runmode") != "masterMNH") return;x
+				//session->fdp fait un set de la matrice reçue à la position 0
+				FFArray<double>* fullMatrix;
+				myMasterLayer->getMatrix(&fullMatrix,0);
+
+
+				FireDomain::distributedDomainInfo* DM = session->fdp->getParallelDomainInfo(1);
+				//cout<<"rank 0 "<<DM->atmoNX<<"  "<<DM->atmoNY+2<<"  "<<DM->refNX<<"  "<<DM->refNY<<endl;
+
+				fullMatrix->setDataAtLoc(t2->getData(),DM->atmoNX+2,DM->atmoNY+2,DM->refNX,DM->refNY,DM->ID);
+
+				for (int nr = 1; nr < world_size; ++nr) {
+					FireDomain::distributedDomainInfo* DR = session->fdp->getParallelDomainInfo(nr+1);
+					size_t dsize = (DR->atmoNX+2)*(DR->atmoNY+2);
+					std::vector<double> data_processed(dsize);
+					
+					MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);
+				//	fdp->loadPartialArray(data_processed,nr,t2->getSize());
+					//session->fdp fait un set de à la position des ranks
+				
+				}
+			}else{
+				// need to send the matrix here !!!
+			//	cout<<world_rank<<" "<<tmpname<<" D1M:"<< t2->getSize()<<" vs READSIN:"<< sizein<<" vs READSout:"<<endl;
+				
+				MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+			
+			}
+		
+		}
+
+		#endif 
+
+	} else {
+		cout<<"Error trying to get data for unknown layer "<<tmpname<<endl;
+	}
 }
 
 void MNHGoTo(double time){
@@ -251,20 +464,6 @@ void FFPutDoubleArray(const char* mname, double* x,
 	}
 }
 
-void FFGetDoubleArray(const char* mname, double t
-		, double* x, size_t sizein, size_t sizeout){
-	string tmpname(mname);
-	double ct = executor.refTime + t;
-	// searching for the layer to put data
-	//cout<<session->fd->getDomainID()<<" is getting "<<tmpname<<endl;
-
-	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
-	if ( myLayer ){
-		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
-	} else {
-		cout<<"Error trying to get data for unknown layer "<<tmpname<<endl;
-	}
-}
 
 void FFDumpDoubleArray(size_t nmodel, size_t nip, const char* mname, double t
 		, double* x, size_t sizein, size_t ni, size_t nj, size_t nk, size_t sizeout){

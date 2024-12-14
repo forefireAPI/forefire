@@ -83,7 +83,7 @@ class Command {
 	// Definition of the command map alias
 	typedef int (*cmd)(const string&, size_t&);
 	typedef map<string,cmd> commandMap;  /*!< map of aliases between strings and functions to be called */
-	static const int numberCommands = 20; /*!< number of possible commands */
+	static const int numberCommands = 21; /*!< number of possible commands */
 	static commandMap makeCmds(){
 		// Construction of the command translator
 		commandMap trans;
@@ -96,6 +96,7 @@ class Command {
 		trans["print"] = &printSimulation;
 		trans["save"] = &saveSimulation;
 		trans["plot"] = &plotSimulation;
+		trans["computeSpeed"] = &computeModelSpeed;
 		trans["load"] = &loadSimulation;
 		trans["setParameter"] = &setParameter;
 		trans["setParameters"] = &setParameters;
@@ -140,6 +141,7 @@ class Command {
 		cman["save"] = "save\n saves the simulation in hdf format\n";
 		cman["load"] = "loads the simulation arrival_times in netcdf format";
 		cman["plot"] = "generates a png or jpg of the simulation \n parameter=speed or arrival_time_of_front;filename=outfname.png/jpg;opt:range=(0,0.1);opt:cmap=viridis;opt:histogram=true";
+		cman["computeSpeed"] = "uses the first registered propp model to activate and get result from an array of values separated by ;";
 		cman["setParameter[param=value]"] = "setParameter\n - sets parameter 'param' to the given 'value'";
 		cman["setParameters[param1=val1;param2=val2;...;paramn=valn]"] = "setParameters\n - sets a given list of parameters to the desired values";
 		cman["getParameter[key=value]"] = "gets parameter 'key' ";
@@ -217,6 +219,8 @@ class Command {
 	static int loadSimulation(const string&, size_t&);
 	/*! \brief command to plot in png/jpg format the simulation */
 	static int plotSimulation(const string&, size_t&);
+	/*! \brief command to get speed and cout a double */
+	static int computeModelSpeed(const string&, size_t&);
 	/*! \brief command to set a given parameter */
 	static int setParameter(const string&, size_t&);
 	/*! \brief command to set a given list of parameters */
