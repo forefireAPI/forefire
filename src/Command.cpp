@@ -601,11 +601,28 @@ int Command::goTo(const string& arg, size_t& numTabs){
 
 			currentSession.params->setInt("atmoIterNumber",FireDomain::atmoIterNumber);
 			currentSession.fd->loadCellsInBinary();
-			//getDomain()->loadWindDataInBinary(endTime);
-
 			currentSession.sim->goTo(endTime);
-
 			getDomain()->dumpCellsInBinary();
+			//getDomain()->loadWindDataInBinary(endTime);
+			/*
+			if (currentSession.params->getParameter("runmode") == "masterMNH") {
+						if(FireDomain::atmoIterNumber%100 == 0){
+				
+					DataLayer<double>* myMasterLayer = getDomain()->getDataLayer("windU");
+					FFArray<double>* fullMatrix;
+					myMasterLayer->getMatrix(&fullMatrix,0);
+					string domInName(currentSession.params->getParameter("caseDirectory")+'/'+currentSession.params->getParameter("PPath")+"/windU."+to_string(int(FireDomain::atmoIterNumber/100)));
+					ofstream FileOut(domInName.c_str(), ios_base::binary);
+					fullMatrix->dumpBin(FileOut);
+					FileOut.flush();   
+					FileOut.rdbuf()->pubsync(); 
+					FileOut.close();
+				}
+			
+			}*/
+
+
+
 			startTime = endTime;
 			getDomain()->increaseNumIterationAtmoModel();
 

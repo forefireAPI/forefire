@@ -347,18 +347,16 @@ void FFGetDoubleArray(const char* mname, double t
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 		//cout<<world_rank<<" sett "<< world_size <<" ing "<<sizein<<" bytes for "<<tmpname<<endl;
-		if ( tmpname == "windU"  or tmpname == "windV" ){
+		if ( tmpname == "windU" or tmpname == "windV"  ){
 
-			
+		//if ( false ){
 
-			
 			if (world_rank == 0){
 				DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(tmpname);
 				//if (params->getParameter("runmode") != "masterMNH") return;x
 				//session->fdp fait un set de la matrice reçue à la position 0
 				FFArray<double>* fullMatrix;
 				myMasterLayer->getMatrix(&fullMatrix,0);
-
 
 				FireDomain::distributedDomainInfo* DM = session->fdp->getParallelDomainInfo(1);
 				//cout<<"rank 0 "<<DM->atmoNX<<"  "<<DM->atmoNY+2<<"  "<<DM->refNX<<"  "<<DM->refNY<<endl;
