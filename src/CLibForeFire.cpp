@@ -34,10 +34,6 @@ using namespace std;
 
 #ifdef MPI_COUPLING
 // Dimensions des matrices
-const int SPEED_ROWS = 100;
-const int SPEED_COLS = 200;
-const int BMAP_ROWS = 200;
-const int BMAP_COLS = 400;
 
 int step =0;
 #endif
@@ -153,21 +149,6 @@ void MNHCreateDomain(const int id
            
             }
 
-            // Initialiser les matrices
-            std::vector<double> SPEED(SPEED_ROWS * SPEED_COLS, 0.0);
-            std::vector<int32_t> BMAP(BMAP_ROWS * BMAP_COLS, 0);
-
-            // Remplir SPEED et BMAP avec des valeurs initiales (par exemple, incrémentales)
-            for (int i = 0; i < SPEED_ROWS * SPEED_COLS; ++i) {
-                SPEED[i] = static_cast<double>(i);
-            }
-
-            for (int i = 0; i < BMAP_ROWS * BMAP_COLS; ++i) {
-                BMAP[i] = static_cast<int32_t>(i);
-            }
-
-            // Attendre que tous les rangs aient envoyé leurs données (si nécessaire)
-            // Ici, les messages sont déjà reçus dans la boucle précédente
         }
 
     #endif
@@ -270,65 +251,128 @@ void CheckLayer(const char* lname){
 }
 
 void MNHStep(double dt){
+	
 	#ifdef MPI_COUPLING
-        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-		//#   on a dans l ordre 
-		//#  CALL SEND_GROUND_WIND_n(XUT, XVT, IKB, IINFO_ll)
-		//#  CALL COUPLING_FOREFIRE_n(XTSTEP, ZSFTH, ZSFTQ, ZSFTS)
-		//#    qui appelle CALL MNH_TO_FF_STEP(DT)
-		//#    donc.. en gros 
-		//#    la fonction FFGetDoubleArray(  est appelée n fois avant le step, pour tous les ranks
-		//#
-	//	std::cout << "*********** stepping **********"<<std::endl;
-		if (world_rank == 0) {
-		
-			std::vector<double> SPEED(SPEED_ROWS * SPEED_COLS, 0.0);
-			std::vector<int32_t> BMAP(BMAP_ROWS * BMAP_COLS, 0);
-			for (int i = 0; i < SPEED_ROWS * SPEED_COLS; ++i) {
-				SPEED[i] = static_cast<double>(i);
-			}
-			for (int i = 0; i < BMAP_ROWS * BMAP_COLS; ++i) {
-				BMAP[i] = static_cast<int32_t>(i);
-			}
-			if(step++%25 == 0){
-				cout<<"at "<<step*dt<<endl;
-			}
+	size_t sizeofcell = session->fd->getlocalBMapSize();
+	
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-			
-		//	std::cout << "Rank " << world_rank <<" session "<<session->fdp->getDomainID()<< " : time " << step*dt <<" size "<<world_size<<"\n";
-            
-            std::vector<double> SPEED_right_half(SPEED_ROWS * (SPEED_COLS / 2));
-            for (int i = 0; i < SPEED_ROWS; ++i) {
-                for (int j = 0; j < SPEED_COLS / 2; ++j) {
-                    SPEED_right_half[i * (SPEED_COLS / 2) + j] = SPEED[i * SPEED_COLS + (j + SPEED_COLS / 2)];
-                }
-            }
-
-            // Extraire la portion de BMAP (200x200)
-            std::vector<int32_t> BMAP_slice(BMAP_ROWS * (BMAP_COLS / 2));
-            for (int i = 0; i < BMAP_ROWS; ++i) {
-                for (int j = 0; j < BMAP_COLS / 2; ++j) {
-                    BMAP_slice[i * (BMAP_COLS / 2) + j] = BMAP[i * BMAP_COLS + j];
-                }
-            }
-			for (int nr = 1; nr < world_size; ++nr) {
-				MPI_Send(BMAP_slice.data(), BMAP_ROWS * (BMAP_COLS / 2), MPI_INT32_T, nr, 0, MPI_COMM_WORLD);
-			}
- 
-    }
-    else if (world_rank >= 1) {
-            std::vector<int32_t> BMAP_received(BMAP_ROWS * (BMAP_COLS / 2));
-            MPI_Recv(BMAP_received.data(), BMAP_ROWS * (BMAP_COLS / 2), MPI_INT32_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    }
-
+	if (step > 0 ){
+		if (world_rank > 0) {
+				int32_t numberOfActiveCellsInDomain = 0;
+				MPI_Recv(&numberOfActiveCellsInDomain, 1, MPI_INT32_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				
+				if (numberOfActiveCellsInDomain>0){
+				
+					size_t totalBytes = numberOfActiveCellsInDomain * (2 * sizeof(int32_t) + sizeofcell * sizeof(double));
+					std::vector<char> BMAP_DATA_received(totalBytes);
+					MPI_Recv(BMAP_DATA_received.data(), totalBytes, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					                    size_t offset = 0;
+					
+                    for(int32_t c = 0; c < numberOfActiveCellsInDomain; ++c) {
+                        int32_t localx;
+                        int32_t localy;
+                        memcpy(&localx, BMAP_DATA_received.data() + offset, sizeof(int32_t));
+                        offset += sizeof(int32_t);
+                        memcpy(&localy, BMAP_DATA_received.data() + offset, sizeof(int32_t));
+                        offset += sizeof(int32_t);
+                        std::vector<double> cellData(sizeofcell);
+                        memcpy(cellData.data(), BMAP_DATA_received.data() + offset, sizeofcell * sizeof(double));
+                        offset += sizeofcell * sizeof(double);
+					
+						session->fd->getCell(localx,localy)->setBMapValues(cellData.data());
+						// here fd->cells[localx][localy].setBMapValues(c
+                    }
+				
+				}		
+		}
+	}
 	#endif
+	step++;
+	
 	ostringstream cmd;
 	cmd << "step[dt=" << dt <<"]";
 	string scmd = cmd.str();
 	executor.ExecuteCommand(scmd);
-}
+	#ifdef MPI_COUPLING
+	
+		if (world_rank == 0) {
+			if(step%25 == 0){
+					cout<<"at "<<step*dt<<endl;
+				}
+			size_t domainID =  1;
+			FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
+			size_t anx = domainInfo->atmoNX;
+			size_t any = domainInfo->atmoNY;
+			size_t rnx = domainInfo->refNX;
+			size_t rny = domainInfo->refNY;
+			for(size_t i = rnx; i < rnx + anx; ++i){
+				for(size_t j = rny; j < rny + any; ++j){
+					if(session->fdp->getCells()[i][j].isActiveForDump()){
+		
+						FFArray<double>* SRCburningMap = session->fdp->getCells()[i][j].getBurningMap()->getMap();
+
+						session->fd->getCells()[i - rnx][j - rny].setBMapValues(SRCburningMap->getData());
+						
+						//session->fd->getCells()[i - rnx][j - rny].setVal(session->fdp->getCells()[i][j]);
+					}
+				}
+			}
+			size_t ncelld = 0;
+			size_t totalCA = 0;
+			
+			for (int nr = 1; nr < world_size; ++nr) {
+				domainID = nr + 1;
+				size_t numberOfActiveCells = session->fdp->countActiveCellsInDispatchDomain(domainID);
+				int32_t numberOfActiveCells_int32 = static_cast<int32_t>(numberOfActiveCells);
+				MPI_Send(&numberOfActiveCells_int32, 1, MPI_INT32_T, nr, 0, MPI_COMM_WORLD);
+				
+				if (numberOfActiveCells>0){
+					size_t totalBytes = numberOfActiveCells * (2 * sizeof(int32_t) + sizeofcell * sizeof(double));
+					std::vector<char> BMAP_DATA_to_send(totalBytes);
+					ncelld++;
+					totalCA += numberOfActiveCells;
+					size_t offset = 0;
+					FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
+					size_t anx = domainInfo->atmoNX;
+					size_t any = domainInfo->atmoNY;
+					size_t rnx = domainInfo->refNX;
+					size_t rny = domainInfo->refNY;
+
+					// Iterate through the cells and serialize active cell data
+						for(size_t i = rnx; i < rnx + anx; ++i){
+							for(size_t j = rny; j < rny + any; ++j){
+								if(session->fdp->getCells()[i][j].isActiveForDump()){
+									// Extract local indices
+									int32_t localx = static_cast<int32_t>(i - rnx);
+									int32_t localy = static_cast<int32_t>(j - rny);
+									// Extract cell data
+									FFArray<double>* burningMap =  session->fdp->getCells()[i][j].getBurningMap()->getMap();
+									//cout<<world_rank<<"   "<<localx<<"any"<<localy<<endl;
+					
+									// Serialize localx
+									memcpy(BMAP_DATA_to_send.data() + offset, &localx, sizeof(int32_t));
+									offset += sizeof(int32_t);
+									memcpy(BMAP_DATA_to_send.data() + offset, &localy, sizeof(int32_t));
+									offset += sizeof(int32_t);
+									memcpy(BMAP_DATA_to_send.data() + offset, burningMap->getData(), sizeofcell * sizeof(double));
+									offset += sizeofcell * sizeof(double);
+								}
+							}
+						}
+					cout<<ncelld<<"."<<totalCA<<endl;
+					// Send the serialized cell data to worker with tag 1
+					MPI_Send(BMAP_DATA_to_send.data(), totalBytes, MPI_CHAR, nr, 1, MPI_COMM_WORLD);
+				}
+							
+			}
+			
+		}
+ 		#endif
+	}
+	
+	 
 
 
 void FFGetDoubleArray(const char* mname, double t

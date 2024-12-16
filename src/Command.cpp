@@ -600,9 +600,9 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			FireDomain::atmoIterNumber = FireDomain::atmoIterNumber+1;
 
 			currentSession.params->setInt("atmoIterNumber",FireDomain::atmoIterNumber);
-			currentSession.fd->loadCellsInBinary();
+			//currentSession.fd->loadCellsInBinary();
 			currentSession.sim->goTo(endTime);
-			getDomain()->dumpCellsInBinary();
+			//getDomain()->dumpCellsInBinary();
 			//getDomain()->loadWindDataInBinary(endTime);
 			/*
 			if (currentSession.params->getParameter("runmode") == "masterMNH") {

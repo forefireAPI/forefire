@@ -1524,6 +1524,157 @@ void FireDomain::readMultiDomainMetadata(){
 		return cells;
 	}
 
+
+
+	// Implementation of loadCellsInBinary
+
+void FireDomain::loadCellsInBinary(){
+    if(getDomainID() > 0){
+        // Define header and cell sizes
+        const size_t size_of_header = 4 * sizeof(size_t); // anx, any, snx, sny
+        // Construct the input file name
+        std::string domInName = params->getParameter("caseDirectory") + '/' +
+                                 params->getParameter("PPath") + '/' +
+                                 std::to_string(FireDomain::atmoIterNumber % 2) + "/" +
+                                 std::to_string(getDomainID()) + ".bmapcells";
+        // Get the size of the file
+        size_t domFsize = fileSize(domInName);
+        // Check if the file size is sufficient to contain the header
+        if(domFsize < size_of_header){
+            // File too small to contain valid header; no active cells
+            isFireActive = false;
+            return;
+        }
+        // Open the file in binary mode
+        std::ifstream FileIn(domInName, std::ios::binary);
+        if(!FileIn.is_open()){
+            std::cerr << "Failed to open file for reading: " << domInName << std::endl;
+            isFireActive = false;
+            return;
+        }
+        // Read the header: anx, any, snx, sny
+        size_t anx, any, snx, sny;
+        FileIn.read(reinterpret_cast<char*>(&anx), sizeof(size_t));
+        FileIn.read(reinterpret_cast<char*>(&any), sizeof(size_t));
+        FileIn.read(reinterpret_cast<char*>(&snx), sizeof(size_t));
+        FileIn.read(reinterpret_cast<char*>(&sny), sizeof(size_t));
+
+        if(!FileIn){
+            std::cerr << "Failed to read header from file: " << domInName << std::endl;
+            FileIn.close();
+            isFireActive = false;
+            return;
+        }
+        size_t cntCell = 0;
+        // Vector to store all cells to be loaded
+        std::vector<CellData> activeCells;
+        // Read cells until the end of the file
+        while(FileIn.tellg() < static_cast<std::streampos>(domFsize)){
+            CellData cell;
+            // Read cell metadata: localx, localy, nx, ny, nz, nt
+            FileIn.read(reinterpret_cast<char*>(&cell.localx), sizeof(size_t));
+            FileIn.read(reinterpret_cast<char*>(&cell.localy), sizeof(size_t));
+            FileIn.read(reinterpret_cast<char*>(&cell.nx), sizeof(size_t));
+            FileIn.read(reinterpret_cast<char*>(&cell.ny), sizeof(size_t));
+            FileIn.read(reinterpret_cast<char*>(&cell.nz), sizeof(size_t));
+            FileIn.read(reinterpret_cast<char*>(&cell.nt), sizeof(size_t));
+
+            if(!FileIn){
+                std::cerr << "Failed to read cell metadata from file: " << domInName << std::endl;
+                break;
+            }
+            // Calculate the size of the data array
+            size_t data_size = cell.nx * cell.ny * cell.nz * cell.nt;
+
+            // Read the data array
+            cell.data.resize(data_size);
+            FileIn.read(reinterpret_cast<char*>(cell.data.data()), data_size * sizeof(double));
+
+            if(!FileIn){
+                std::cerr << "Failed to read cell data from file: " << domInName << std::endl;
+                break;
+            }
+            // Store the cell data for later processing
+            activeCells.push_back(std::move(cell));
+            cntCell++;
+        }
+
+        // Calculate leftover bytes (if any)
+        FileIn.seekg(0, std::ios::end);
+        size_t final_pos = FileIn.tellg();
+        size_t total_read = final_pos - size_of_header;
+        size_t expected_read = 0;
+        for(const auto& cell : activeCells){
+            expected_read += 6 * sizeof(size_t) + cell.data.size() * sizeof(double);
+        }
+        size_t leftover = total_read - expected_read;
+
+        if(leftover != 0){
+            std::cerr << "CELL READ PROBLEM DATA LEFT IN Domain ID " << getDomainID()
+                      << " bytes " << leftover << std::endl;
+            isFireActive = false;
+            FileIn.close();
+            return;
+        }
+
+        // Close the file as reading is complete
+        FileIn.close();
+
+        isFireActive = (cntCell > 0);
+        // Populate the cells with the loaded data
+        for(const auto& cell : activeCells){
+			cells[cell.localx][cell.localy].setBMapValues(cell.data.data());
+        }
+   
+    }
+}
+   /*void FireDomain::loadCellsInBinary(){
+		if(getDomainID()>0){
+			size_t size_of_header = 4*sizeof(size_t);
+			size_t size_of_cell = 6*sizeof(size_t)+(localBMapSizeX*localBMapSizeX*sizeof(double));
+			
+			string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string(FireDomain::atmoIterNumber%2)+"/"+to_string(getDomainID())+".bmapcells");
+			size_t domFsize = fileSize(domInName);
+			if(domFsize < size_of_header){
+				 return;
+				 }
+				if(domFsize >size_of_header){
+					isFireActive=true;
+					size_t	cntCell = (domFsize-size_of_header)/size_of_cell;
+					size_t	leftover = (domFsize-size_of_header)%size_of_cell; 
+					if(leftover == 0 ){
+
+				 	ifstream FileIn(domInName.c_str(), ios_base::binary);
+					size_t nni;
+					size_t nnj;
+					size_t nnx;
+					size_t nny;
+					size_t nnz;
+					size_t nnt; 
+
+					FileIn.read((char *)&nnx, sizeof(size_t));
+					FileIn.read((char *)&nny, sizeof(size_t));
+					FileIn.read((char *)&nnz, sizeof(size_t));
+					FileIn.read((char *)&nnt, sizeof(size_t));
+	
+					for ( size_t ci = 0; ci < cntCell; ci++ ) {
+							FileIn.read((char *)&nni, sizeof(size_t));
+							FileIn.read((char *)&nnj, sizeof(size_t));					
+							cells[nni][nnj].loadBin(FileIn);
+						}
+						FileIn.close();
+					}else{
+						 cout<<"CELL READ PROBLEM DATA LEFT IN "<< getDomainID()<<" bytes "<<leftover<<endl;
+					}
+				}else{
+					if(domFsize < size_of_header){
+					 cout<<"CELL READ PROBLEM IN "<< getDomainID()<<" bytes "<<domFsize<<endl;
+					}
+					isFireActive=false;
+				}
+			}
+	}
+	
 	void FireDomain::dumpCellsInBinary(){
 		if (params->getParameter("runmode") == "masterMNH"){
 			if(getDomainID()==0){
@@ -1539,8 +1690,8 @@ void FireDomain::readMultiDomainMetadata(){
 								size_t sny = (*it)->atmoNY*localBMapSizeY;
 								size_t rnx = (*it)->refNX;
 								size_t rny = (*it)->refNY;
-								size_t localx = (*it)->refNX;
-								size_t localy = (*it)->refNY;
+								size_t localx = 0;
+								size_t localy = 0;
 								ofstream FileOut;
 								size_t cntCell = 0;
 
@@ -1576,7 +1727,136 @@ void FireDomain::readMultiDomainMetadata(){
 			}
 		}
 	}
-	
+*/
+	size_t FireDomain::countActiveCellsInDispatchDomain(size_t forID) {	
+		// Early exit if not in "masterMNH" run mode or if Domain ID is 0
+		if (params->getParameter("runmode") != "masterMNH") return 0;
+		if (getDomainID() != 0) return 0;
+		// Initialize pointer to store the found domain
+		distributedDomainInfo* found = nullptr;
+		// Iterate through the list to find the domain with the specified ID
+		for (auto it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); ++it) {
+			if ((*it)->ID == forID) {
+				found = *it;
+				break; // Exit loop once the domain is found
+			}
+		}
+
+		// If the domain with the specified ID is not found, return 0 and log an error
+		if (!found) {
+			std::cerr << "Domain ID " << forID << " not found in parallelDispatchDomains." << std::endl;
+			return 0;
+		}
+		
+		// Extract domain-specific parameters
+		size_t anx = found->atmoNX;
+		size_t any = found->atmoNY;
+		size_t rnx = found->refNX;
+		size_t rny = found->refNY;
+
+		size_t ncell = 0; // Counter for active cells
+
+		// Iterate over the cells within the specified domain
+		for (size_t i = rnx; i < rnx + anx; ++i) {
+			for (size_t j = rny; j < rny + any; ++j) {
+				if (cells[i][j].isActiveForDump()) {
+					ncell++;
+				}
+			}
+		}
+		return ncell;
+	}
+
+
+
+	void FireDomain::dumpCellsInBinary(){
+		// Check if the run mode is "masterMNH" and the domain ID is 0
+		if (params->getParameter("runmode") == "masterMNH" && getDomainID() == 0){
+			// Construct the output directory pattern
+			std::string domOutPattern = params->getParameter("caseDirectory") + '/' +
+										params->getParameter("PPath") + '/' +
+										std::to_string((FireDomain::atmoIterNumber + 1) % 2) + "/";
+
+			// Iterate over all distributed domains
+			for(auto it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); ++it){
+				distributedDomainInfo* domainInfo = *it;
+				size_t anx = domainInfo->atmoNX;
+				size_t any = domainInfo->atmoNY;
+				size_t snx = anx * localBMapSizeX;
+				size_t sny = any * localBMapSizeY;
+				size_t rnx = domainInfo->refNX;
+				size_t rny = domainInfo->refNY;
+				size_t domainID = domainInfo->ID;
+
+				DistributedDomainBCellList domainBCellList;
+				domainBCellList.ID = domainID;
+
+				// Collect active cells for this domain
+				for(size_t i = rnx; i < rnx + anx; ++i){
+					size_t localx = i - rnx;
+					for(size_t j = rny; j < rny + any; ++j){
+						size_t localy = j - rny;
+						if(cells[i][j].isActiveForDump()){
+							CellData cell;
+							cell.localx = localx;
+							cell.localy = localy;
+
+							// Retrieve burning map information
+							FFArray<double>* burningMap = cells[i][j].getBurningMap()->getMap();
+							cell.nx = burningMap->getDim("x");
+							cell.ny = burningMap->getDim("y");
+							cell.nz = burningMap->getDim("z");
+							cell.nt = burningMap->getDim("t");
+
+							// Copy data from FFArray
+							size_t dataSize = burningMap->getSize();
+							
+							cell.data.resize(dataSize);
+							std::copy(burningMap->getData(), burningMap->getData() + dataSize, cell.data.begin());
+
+							// Add to the domain's cell list
+							domainBCellList.cells.push_back(cell);
+						}
+					}
+				}
+
+				// Update the number of active cells
+				domainBCellList.numActiveCells = domainBCellList.cells.size();
+
+				// Write to file if there are active cells
+				if(domainBCellList.numActiveCells > 0){
+					std::string fileName = domOutPattern + std::to_string(domainID) + ".bmapcells";
+					std::ofstream FileOut(fileName, std::ios::binary | std::ios::trunc);
+					
+					if(FileOut.is_open()){
+						// Write ID and number of active cells
+						FileOut.write(reinterpret_cast<const char*>(&anx), sizeof(size_t));
+						FileOut.write(reinterpret_cast<const char*>(&any), sizeof(size_t));
+						FileOut.write(reinterpret_cast<const char*>(&snx), sizeof(size_t));
+						FileOut.write(reinterpret_cast<const char*>(&sny), sizeof(size_t));
+
+
+						// Write each active cell
+						for(const auto& cell : domainBCellList.cells){
+							FileOut.write(reinterpret_cast<const char*>(&cell.localx), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(&cell.localy), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(&cell.nx), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(&cell.ny), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(&cell.nz), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(&cell.nt), sizeof(size_t));
+							FileOut.write(reinterpret_cast<const char*>(cell.data.data()), cell.data.size() * sizeof(double));
+						}
+
+						FileOut.close();
+					}
+					else{
+						std::cerr << "Failed to open file for writing: " << fileName << std::endl;
+					}
+				}
+			}
+		}
+	}
+
 FireDomain::distributedDomainInfo* FireDomain::getParallelDomainInfo(size_t forID) {
     if (getDomainID() != 0) return nullptr;
     if (params->getParameter("runmode") != "masterMNH") return nullptr;
@@ -1617,61 +1897,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 			dataBroker->loadMultiWindBin(refTime,numreadDom,refNXs,refNYs);
 		}
 }
-	void FireDomain::loadCellsInBinary(){
 
-		if(getDomainID()>0){
-			size_t size_of_header = 4*sizeof(size_t);
-			size_t size_of_cell = 6*sizeof(size_t)+(localBMapSizeX*localBMapSizeX*sizeof(double));
-			
-			string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string(FireDomain::atmoIterNumber%2)+"/"+to_string(getDomainID())+".bmapcells");
-			size_t domFsize = fileSize(domInName);
-			if(domFsize < size_of_header){
-				// no files yet
-				 return;
-				 }
-				if(domFsize >size_of_header){
-					isFireActive=true;
-					size_t	cntCell = (domFsize-size_of_header)/size_of_cell;
-					size_t	leftover = (domFsize-size_of_header)%size_of_cell; 
-					if(leftover == 0 ){
-					
-				 	ifstream FileIn(domInName.c_str(), ios_base::binary);
-					size_t nni;
-					size_t nnj;
-					size_t nnx;
-					size_t nny;
-					size_t nnz;
-					size_t nnt; 
-
-					FileIn.read((char *)&nnx, sizeof(size_t));
-					FileIn.read((char *)&nny, sizeof(size_t));
-					FileIn.read((char *)&nnz, sizeof(size_t));
-					FileIn.read((char *)&nnt, sizeof(size_t));
 	
-					for ( size_t ci = 0; ci < cntCell; ci++ ) {
-							FileIn.read((char *)&nni, sizeof(size_t));
-							FileIn.read((char *)&nnj, sizeof(size_t));					
-							cells[nni][nnj].loadBin(FileIn);
-						}
-					//	if(cntCell>0) cout<<cntCell<<" cells read in domain "<< getDomainID()<<" leftover "<<leftover<<endl;
-					FileIn.close();
-					}else{
-						 cout<<"CELL READ PROBLEM DATA LEFT IN "<< getDomainID()<<" bytes "<<leftover<<endl;
-					
-					}
-			
-				}else{
-					if(domFsize < size_of_header){
-					 cout<<"CELL READ PROBLEM IN "<< getDomainID()<<" bytes "<<domFsize<<endl;
-					}
-					isFireActive=false;
-				}
-
-			
-			
-			}
-					
-	}
 	// finding the cell with the the location
 	FDCell* FireDomain::getCell(FFPoint p){
 		return getCell(p.getX(), p.getY());
@@ -2684,7 +2911,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		// Mesh size
 			// read all domains and create list
 				/*
-				BMAP Parallel shit
+				BMAP Parallel 
 				*/
 				if (params->getParameter("runmode") == "masterMNH"){
 				
@@ -2694,8 +2921,6 @@ void FireDomain::loadWindDataInBinary(double refTime){
 							{
 								for ( size_t i = (*it)->refNX; i < ((*it)->refNX+(*it)->atmoNX); i++ ) {
 									for ( size_t j = (*it)->refNY; j < ((*it)->refNY+(*it)->atmoNY); j++ ) {
-										// setting the parent Fire domain
-										//cout<<"assigning "<<(*it)->ID<<" with "<<i<<":"<<j<<endl;
 										cells[i][j].toDumpDomainID =(*it)->ID;
 									}
 								}
@@ -2975,13 +3200,15 @@ void FireDomain::loadWindDataInBinary(double refTime){
 	int FireDomain::getNumFN(){
 		return domainFront->getTotalNumFN();
 	}
-
+	size_t FireDomain::getlocalBMapSize(){
+		return localBMapSizeX*localBMapSizeY;
+	}
 	int FireDomain::getNumFF(){
 		return domainFront->getNumInnerFronts();
 	}
 
 	double FireDomain::getSimulationMaxResolution(
-												  double& length, double& width, const size_t& nz){
+		double& length, double& width, const size_t& nz){
 		return 0.25*sqrt(length*width/nz);
 	}
 

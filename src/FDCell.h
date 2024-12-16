@@ -152,6 +152,7 @@ public:
 	/*! \brief managing the trash cell of the domain */
 	void makeTrash();
 	void loadBin(std::ifstream&  );
+	void setBMapValues(const double* );
 	/*! \brief string for cell information */
 	string toString();
 

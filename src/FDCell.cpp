@@ -103,6 +103,16 @@ void FDCell::loadBin(std::ifstream&  FileIn){
 				
 	arrivalTimes->loadBin(FileIn);
 }
+
+void FDCell::setBMapValues(const double* newVals){
+	if ( !allocated ){
+		arrivalTimes = new BurningMap(SWCorner, NECorner, mapSizeX, mapSizeY);
+		allocated = true;
+	}
+				
+	arrivalTimes->getMap()->setVal(newVals);
+}
+
 FireDomain* FDCell::getDomain(){
 	return domain;
 }

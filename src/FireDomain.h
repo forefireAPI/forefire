@@ -326,7 +326,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 public:
 
 	
-	size_t numberOfDispatchDomains = 0;
 	struct distributedDomainInfo{
 		size_t ID;
 		size_t atmoNX;
@@ -337,6 +336,30 @@ public:
 		FFPoint* NECorner;
 		double lastTime;
 	};
+
+
+
+	// Define the CellData structure
+	struct CellData {
+		size_t localx;
+		size_t localy;
+		size_t nx;
+		size_t ny;
+		size_t nz;
+		size_t nt;
+		std::vector<double> data; // Assuming T is double
+	};
+
+	// Define the DistributedDomainBCellList structure
+	struct DistributedDomainBCellList {
+		size_t ID;
+		size_t numActiveCells;
+		std::vector<CellData> cells;
+	};
+
+	// Alias for a list of DistributedDomainBCellList
+	using ListOfDistributedDomainBCellList = std::vector<DistributedDomainBCellList>;
+
 
 	static std::list<distributedDomainInfo*> parallelDispatchDomains;
 
@@ -600,6 +623,7 @@ public:
 	void stopOutgoingNode(FireNode*, FFPoint&, double&);
 	void addToTrashFronts(FireFront*);
 	void dumpCellsInBinary();
+	size_t countActiveCellsInDispatchDomain(size_t ) ;
     distributedDomainInfo *getParallelDomainInfo(size_t forID);
     void loadWindDataInBinary(double);
     void loadCellsInBinary();
@@ -638,6 +662,7 @@ public:
 	void visualizeBurningMatrixAroundNode(FireNode*);
 	int getNumFN();
 	int getNumFF();
+	size_t getlocalBMapSize();
 
 	double getSimulationMaxResolution(double&, double&, const size_t&);
 	double getBurningMapResolution(double&, double);

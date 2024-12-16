@@ -6,6 +6,7 @@ build
 lib
 sconsbuild
 forefire2
+tools
 
 #python
 __pycache__

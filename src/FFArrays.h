@@ -174,14 +174,13 @@ size_t FFArray<T>::getDim(string dim){
 
 template<typename T>
 void FFArray<T>::dumpBin(std::ofstream&  FileOut){
-
 	FileOut.write(reinterpret_cast<const char*>(&nx), sizeof(size_t));
 	FileOut.write(reinterpret_cast<const char*>(&ny), sizeof(size_t));
 	FileOut.write(reinterpret_cast<const char*>(&nz), sizeof(size_t));
 	FileOut.write(reinterpret_cast<const char*>(&nt), sizeof(size_t));
 	FileOut.write(reinterpret_cast<const char*>(data), nx*ny*nz*nt*sizeof(T));
-	
 }
+
 template<typename T>
 void FFArray<T>::loadBin(std::ifstream&  FileIn){
 	size_t nnx;
@@ -192,14 +191,10 @@ void FFArray<T>::loadBin(std::ifstream&  FileIn){
 	FileIn.read((char *)&nny, sizeof(size_t));
 	FileIn.read((char *)&nnz, sizeof(size_t));
 	FileIn.read((char *)&nnt, sizeof(size_t));
-
 	if((nnx != nx) ||(nny != ny)) {
-
 		cout << "LOADING  NOT good dimentions in FARRAY "<<(nx*ny)<<"::"<<(nnx*nny)<<" read "<<nnx<<":"<<nny<<":"<<nnz<<":"<<nnt<<endl;
 		return;
-	
 	}
-	
 	FileIn.read((char *)data, nx*ny*nz*nt*sizeof(T));
 }
 
@@ -234,15 +229,20 @@ void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t star
 }
 
 
+
 template<typename T>
 void FFArray<T>::setDataAtLoc(T* matrix, size_t nnx, size_t nny,size_t startI, size_t startJ,size_t domFsize){
 
 	size_t mi =(nny+2);
 	//cout <<"UUUUat "<<startI<<" - "<<startJ<< " nx:"<<nx<<" nnx"<<nnx<< " ny:"<<ny<<" nny"<<nny<<endl;
-
+	//FileIn.ignore((nny+2)*sizeof(T));
+	// for (size_t i = startI+1; i < startI+nnx; i++ ){
+	//	FileIn.read((char *)&(data[i*ny + startJ+2]), (nny-3)*sizeof(T));
+	//	FileIn.ignore(3*sizeof(T));
+	//}
 	for (size_t i = startI+1; i < startI+nnx; i++ ){
 		for (size_t j = 0; j < (nny-3); j++ ){
-			data[i*ny + startJ+j] = matrix[mi+j];
+			data[i*ny + startJ+j+2] = matrix[mi+j];
 		}
 		mi += nny;
 	}
