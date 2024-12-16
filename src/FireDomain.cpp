@@ -103,9 +103,10 @@ namespace libforefire{
 
 		if (params->getParameter("runmode") == "masterMNH"){
 
-			
-			//readMultiDomainMetadata();
-
+			 #ifdef MPI_COUPLING
+			 #else
+				readMultiDomainMetadata();
+			#endif
 			cout<<"all inited, the big now with "<<parallelDispatchDomains.size()<<" total "<<parallelDispatchDomains.size()<<endl;
 
  
@@ -279,8 +280,11 @@ namespace libforefire{
 		SWCorner = FFPoint(meshx[0], meshy[0]);
 		NECorner = FFPoint(2.*meshx[atmoNX-1]-meshx[atmoNX-2]
 						   , 2.*meshy[atmoNY-1]-meshy[atmoNY-2]);
-		bool dumpDomainInfo = false;
 
+		bool dumpDomainInfo = true;
+		#ifdef MPI_COUPLING
+			dumpDomainInfo = false;
+		#endif
 		string ffDomPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+params->getParameter("mpirank")+".domainData");
 		if (dumpDomainInfo){
 			ofstream FileOut(ffDomPattern.c_str(), ios_base::binary);
@@ -423,7 +427,7 @@ void FireDomain::readMultiDomainMetadata(){
 			FileIn.read((char *)&nnex, sizeof(double));
 			FileIn.read((char *)&nney, sizeof(double));
 		    FileIn.close();
-			//pushMultiDomainMetadataInList(numReadDom,0,anx,any,nswx,nswy,nnex,nney);
+			pushMultiDomainMetadataInList(numReadDom,0,anx,any,nswx,nswy,nnex,nney);
 
 			numReadDom--;
 		}	
@@ -1527,7 +1531,7 @@ void FireDomain::readMultiDomainMetadata(){
 
 
 	// Implementation of loadCellsInBinary
-
+  /*
 void FireDomain::loadCellsInBinary(){
     if(getDomainID() > 0){
         // Define header and cell sizes
@@ -1628,7 +1632,10 @@ void FireDomain::loadCellsInBinary(){
    
     }
 }
-   /*void FireDomain::loadCellsInBinary(){
+
+
+ */
+   void FireDomain::loadCellsInBinary(){
 		if(getDomainID()>0){
 			size_t size_of_header = 4*sizeof(size_t);
 			size_t size_of_cell = 6*sizeof(size_t)+(localBMapSizeX*localBMapSizeX*sizeof(double));
@@ -1678,6 +1685,7 @@ void FireDomain::loadCellsInBinary(){
 	void FireDomain::dumpCellsInBinary(){
 		if (params->getParameter("runmode") == "masterMNH"){
 			if(getDomainID()==0){
+			
 						string domOutPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string((FireDomain::atmoIterNumber+1)%2)+"/");	
 					
 					//	string domOutPattern(params->getParameter("caseDirectory")+'/'+params->getParameter("fireOutputDirectory")+'/'+params->getParameter("outputFiles")+".");
@@ -1727,7 +1735,7 @@ void FireDomain::loadCellsInBinary(){
 			}
 		}
 	}
-*/
+
 	size_t FireDomain::countActiveCellsInDispatchDomain(size_t forID) {	
 		// Early exit if not in "masterMNH" run mode or if Domain ID is 0
 		if (params->getParameter("runmode") != "masterMNH") return 0;
@@ -1768,7 +1776,7 @@ void FireDomain::loadCellsInBinary(){
 	}
 
 
-
+/*
 	void FireDomain::dumpCellsInBinary(){
 		// Check if the run mode is "masterMNH" and the domain ID is 0
 		if (params->getParameter("runmode") == "masterMNH" && getDomainID() == 0){
@@ -1856,7 +1864,7 @@ void FireDomain::loadCellsInBinary(){
 			}
 		}
 	}
-
+*/
 FireDomain::distributedDomainInfo* FireDomain::getParallelDomainInfo(size_t forID) {
     if (getDomainID() != 0) return nullptr;
     if (params->getParameter("runmode") != "masterMNH") return nullptr;
@@ -5016,10 +5024,10 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	void FireDomain::saveArrivalTimeNC(){
 
-	if (getDomainID() > 0){
+	/*if (getDomainID() > 0){
 		cout<<"not saving separated ATimes domain "<<getDomainID()<<endl;
 		return;
-	}
+	}*/
 
     
    try {

@@ -146,7 +146,7 @@ int Command::createDomain(const string& arg, size_t& numTabs){
 		if ( currentSession.fd != 0 ){
  
 			if(currentSession.fd->getDomainID() == 1){
-				cout<<"creating FD as 1 but one already exist" <<endl;
+				cout<<"Creating master FD coupler" <<endl;
 				currentSession.params->setParameter("runmode", "masterMNH");
 
 				currentSession.fdp = new FireDomain(t, SW, NE);
@@ -600,10 +600,17 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			FireDomain::atmoIterNumber = FireDomain::atmoIterNumber+1;
 
 			currentSession.params->setInt("atmoIterNumber",FireDomain::atmoIterNumber);
-			//currentSession.fd->loadCellsInBinary();
+			
+			//
+			#ifdef MPI_COUPLING
 			currentSession.sim->goTo(endTime);
-			//getDomain()->dumpCellsInBinary();
-			//getDomain()->loadWindDataInBinary(endTime);
+			#else
+			currentSession.fd->loadCellsInBinary();
+			currentSession.sim->goTo(endTime);
+			getDomain()->dumpCellsInBinary();
+			getDomain()->loadWindDataInBinary(endTime);
+			#endif
+			
 			/*
 			if (currentSession.params->getParameter("runmode") == "masterMNH") {
 						if(FireDomain::atmoIterNumber%100 == 0){

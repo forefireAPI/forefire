@@ -384,14 +384,17 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 			// copying data from atmospheric matrix
 			tmpMatrix->copyDataFromFortran(inMatrix);
 			copyDomainInformation(tmpMatrix, arrayt2);
+			#ifdef MPI_COUPLING
 
-		/*	size_t atmoIterNumber = params->getInt("atmoIterNumber");
-			string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string((atmoIterNumber+1)%2)+"/"+params->getParameter("mpirank")+"."+this->getKey());
-			ofstream FileOut(domInName.c_str(), ios_base::binary);
-			arrayt2->dumpBin(FileOut);
-			FileOut.flush();   
-			FileOut.rdbuf()->pubsync(); 
-			FileOut.close();*/
+			#else
+				size_t atmoIterNumber = params->getInt("atmoIterNumber");
+				string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string((atmoIterNumber+1)%2)+"/"+params->getParameter("mpirank")+"."+this->getKey());
+				ofstream FileOut(domInName.c_str(), ios_base::binary);
+				arrayt2->dumpBin(FileOut);
+				FileOut.flush();   
+				FileOut.rdbuf()->pubsync(); 
+				FileOut.close();
+			#endif
 
 		} else if ( mname == "outerWindU" or mname == "outerWindV" ){
 			/* Information concerning the outer wind velocities */

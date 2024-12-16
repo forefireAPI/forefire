@@ -210,7 +210,6 @@ void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t star
 		cout << "LOADING EMPTY wind dimentions in FARRAY "<<domFsize<<" bytes"<<endl;
 		return;
 	}
-	cout<<"Should not be called loadBinAtLoc" <<endl;
 	FileIn.read((char *)&nnx, sizeof(size_t));
 	FileIn.read((char *)&nny, sizeof(size_t));
 	FileIn.read((char *)&nnz, sizeof(size_t));
