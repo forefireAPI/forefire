@@ -5052,7 +5052,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
         atime.putVar(&matrix[0]);
         // Add domain and reference attributes
         NcDim domdim = dataFile.addDim("domdim", 1);
-        NcVar dom = dataFile.addVar("domain", ncChar, {domdim});
+        NcVar dom = dataFile.addVar("domain", ncChar, domdim);
         dom.putAtt("SWx", NC_DOUBLE, SWCorner.getX());
         dom.putAtt("SWy", NC_DOUBLE, SWCorner.getY());
         dom.putAtt("Lx", NC_DOUBLE, NECorner.getX() - SWCorner.getX());
