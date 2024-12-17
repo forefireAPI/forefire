@@ -29,7 +29,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include <cstring>
 #include <sstream>
 #include <stdexcept>
-
+// Add this helper function, preferably in a common header file
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 // Activation functions
 inline float sigmoid(float x) {
     return 1.0f / (1.0f + std::exp(-x));
@@ -156,7 +160,7 @@ struct Network {
                 std::vector<float> meanData(width), varianceData(width);
                 file.read(reinterpret_cast<char*>(meanData.data()), width * sizeof(float));
                 file.read(reinterpret_cast<char*>(varianceData.data()), width * sizeof(float));
-                layers.push_back(std::make_unique<NormalizationLayer>(meanData, varianceData));
+                layers.push_back(make_unique<NormalizationLayer>(meanData, varianceData));
             } else {
                 // Dense layer
                 float (*actFunc)(float) = getActivationFunction(std::string(activation));
