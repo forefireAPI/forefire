@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
+  Copyright (C) 2012 ForeFire Team, SPE, CNRS/Universita di Corsica.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -379,8 +379,9 @@ void FluxLayer<T>::setMatrix(string& mname, double* inMatrix
 	if ( flux->getSize() == sizein ){
 		flux->copyDataFromFortran(inMatrix);
 	} else {
-		cout<<"Error while trying to retrieve data for data layer "
-				<<this->getKey()<<", matrix mapSize not matching";
+		cout<<"Error while trying to retrieve "<<mname<<"data for data layer "
+				<<this->getKey()<<" at "<<time<<" size "<<sizeout<<endl;
+	
 	}
 }
 
@@ -398,6 +399,9 @@ template<typename T>
 void FluxLayer<T>::dumpAsBinary(string filename, const double& time
 		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
 	/* writing the matrix in a binary file */
+	if(nnx*nny==0){
+		cout<<"trying to dump empty field at "<<time<<" loc"<<SWC.getX()<<":"<<SWC.getY()<<" "<<NEC.getX()<<":"<<NEC.getY()<<endl;
+	}
 	ostringstream outputfile;
 	outputfile<<filename<<"."<<this->getKey();
 	ofstream FileOut(outputfile.str().c_str(), ios_base::binary);

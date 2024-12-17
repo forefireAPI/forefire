@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
+  Copyright (C) 2012 ForeFire Team, SPE, CNRS/Universita di Corsica.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ public:
 
 	/*! \brief norm of the point
 	 * \return norm of the point */
-	const double norm();
+	double norm();
 
 	/*! \brief distance with another point
 	 * \param[in] 'p' : other point

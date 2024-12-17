@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
+  Copyright (C) 2012 ForeFire Team, SPE, CNRS/Universita di Corsica.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -97,7 +97,7 @@ public:
 
 	/*! \brief norm of the vector
 	 * \return norm of the vector */
-	const double norm();
+	double norm();
 	/*! \brief normalization of the vector */
 	void normalize();
 	/*! \brief normalized version of the vector

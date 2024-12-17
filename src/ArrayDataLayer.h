@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2012 ForeFire Team, SPE,.
+  Copyright (C) 2012 ForeFire Team, SPE, CNRS/Universita di Corsica.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

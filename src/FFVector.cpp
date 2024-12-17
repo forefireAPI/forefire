@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2012 ForeFire Team, SPE, Université de Corse.
+  Copyright (C) 2012 ForeFire Team, SPE, CNRS/Universita di Corsica.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -125,7 +125,7 @@ void FFVector::setVec(const double& vx0, const double& vy0, const double& vz0){
 }
 
 // norm function
-const double FFVector::norm(){
+double FFVector::norm(){
 	double sqnorm = vx*vx + vy*vy + vz*vz;
 	return sqrt(sqnorm);
 }
