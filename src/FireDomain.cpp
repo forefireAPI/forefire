@@ -149,7 +149,7 @@ namespace libforefire{
 				 
 						(*it)->refNX = size_t(((*it)->SWCorner->getX()-Mswx)/readRes);
 						(*it)->refNY = size_t(((*it)->SWCorner->getY()-Mswy)/readRes);
-						cout<<(*it)->ID<<" HAVE A RESOLUTION OF "<< readRes <<" location "<<(*it)->refNX<<":"<<(*it)->refNY<<" coords:"<<(*it)->SWCorner->print() << ":"<<(*it)->NECorner->print()<<endl;
+					//	cout<<(*it)->ID<<" HAVE A RESOLUTION OF "<< readRes <<" location "<<(*it)->refNX<<":"<<(*it)->refNY<<" coords:"<<(*it)->SWCorner->print() << ":"<<(*it)->NECorner->print()<<endl;
 						
 			}
 					
@@ -379,13 +379,6 @@ inline size_t fileSize(const std::string& name) {
 }
 void FireDomain::pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney) {
     distributedDomainInfo *currentInfo = new distributedDomainInfo;
-	std::cout << "F" << id << " atmoNX: " << atmoNX 
-			<< ", atmoNY: " << atmoNY 
-			<< ", SWCorner.x: " << nswx
-			<< ", SWCorner.y: " << nswy
-			<< ", NECorner.x: " << nnex
-			<< ", NECorner.y: " << nney
-			<< std::endl;
     currentInfo->ID = id;
     currentInfo->lastTime = lastTime;
     currentInfo->atmoNX = atmoNX;
@@ -1720,6 +1713,7 @@ void FireDomain::loadCellsInBinary(){
 													FileOut.write(reinterpret_cast<const char*>(&localx), sizeof(size_t));
 													FileOut.write(reinterpret_cast<const char*>(&localy), sizeof(size_t));
 													cells[i][j].getBurningMap()->getMap()->dumpBin(FileOut);
+													cells[i][j].setIfAllDumped();
 													cntCell++;
 												}
 									}
@@ -1741,15 +1735,7 @@ void FireDomain::loadCellsInBinary(){
 		if (params->getParameter("runmode") != "masterMNH") return 0;
 		if (getDomainID() != 0) return 0;
 		// Initialize pointer to store the found domain
-		distributedDomainInfo* found = nullptr;
-		// Iterate through the list to find the domain with the specified ID
-		for (auto it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); ++it) {
-			if ((*it)->ID == forID) {
-				found = *it;
-				break; // Exit loop once the domain is found
-			}
-		}
-
+		distributedDomainInfo* found = getParallelDomainInfo(forID);
 		// If the domain with the specified ID is not found, return 0 and log an error
 		if (!found) {
 			std::cerr << "Domain ID " << forID << " not found in parallelDispatchDomains." << std::endl;

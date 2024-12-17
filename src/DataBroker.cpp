@@ -360,7 +360,7 @@ void DataBroker::setAtmosphericDomain(const FFPoint& SWCorner,
 
 void DataBroker::initializeAtmosphericLayers(const double& time,
 		const size_t& bnx, const size_t& bny) {
-			cout<<"SIZE IN "<<domain->getDomainID()<<" and "<<atmosphericNx<<":"<<atmosphericNy<<endl;
+		
 	atmosphericData->setSize(atmosphericNx, atmosphericNy);
 
 	double dx = (atmoNECorner.getX() - atmoSWCorner.getX()) / atmosphericNx;

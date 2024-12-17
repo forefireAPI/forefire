@@ -144,11 +144,17 @@ bool FDCell::isActive(){
 bool FDCell::isActiveForDump(){
 	if (!allocated) return false;
 	if (allDumped) return false;
+	return true;
+}
+void FDCell::setIfAllDumped(){
+	if (!allocated) return ;
+	if (allDumped) return ;
 	if(arrivalTimes->maxTime()<numeric_limits<double>::infinity()){
 		allDumped = true;
 	}
-	return true;
 }
+
+
 
 size_t FDCell::getJ(){
 	return globalJ;

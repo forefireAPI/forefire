@@ -652,20 +652,20 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			/* burning map outputs */
 			if ( bmapOutputUpdate > 0 ){
 				if ( (int) ((endTime-refTime)/bmapOutputUpdate) > numBmapOutputs ){
-					getDomain()->saveArrivalTimeNC();
+					if (getDomain()->getDomainID() == 0){
+							getDomain()->saveArrivalTimeNC();
+						}
 					numBmapOutputs++;
 				}
 			}
 
 			/* backing up the state for future steps */
 			/* ************************************* */
-			getDomain()->validateTopology("advance");
-			getDomain()->backupState();
+			//getDomain()->validateTopology("advance");
+			//getDomain()->backupState();
 
 			/* saving simulation if needed */
 			/* *************************** */
-			if ( getDomain()->getNumIterationAtmoModel() == numAtmoIterations )
-				getDomain()->saveArrivalTimeNC();
 
 		} catch ( TopologicalException& e ) {
 			cout<<getDomain()->getDomainID()<<": "<<e.what()<<endl;

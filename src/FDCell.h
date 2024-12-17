@@ -128,6 +128,7 @@ public:
 	bool hasFiredInHalo();
 	bool isActive();
 	bool isActiveForDump();
+	void setIfAllDumped();
 	void setFiredInHalo(bool val);
 	
 	/*! \brief computing the burning ratio of the cell */

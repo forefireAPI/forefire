@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2024 ForeFire Team, SPE, Universit� de Corse.
+Copyright (C) 2024 ForeFire Team, SPE, Universite de Corse.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
