@@ -610,25 +610,6 @@ int Command::goTo(const string& arg, size_t& numTabs){
 			getDomain()->dumpCellsInBinary();
 			getDomain()->loadWindDataInBinary(endTime);
 			#endif
-			
-			/*
-			if (currentSession.params->getParameter("runmode") == "masterMNH") {
-						if(FireDomain::atmoIterNumber%100 == 0){
-				
-					DataLayer<double>* myMasterLayer = getDomain()->getDataLayer("windU");
-					FFArray<double>* fullMatrix;
-					myMasterLayer->getMatrix(&fullMatrix,0);
-					string domInName(currentSession.params->getParameter("caseDirectory")+'/'+currentSession.params->getParameter("PPath")+"/windU."+to_string(int(FireDomain::atmoIterNumber/100)));
-					ofstream FileOut(domInName.c_str(), ios_base::binary);
-					fullMatrix->dumpBin(FileOut);
-					FileOut.flush();   
-					FileOut.rdbuf()->pubsync(); 
-					FileOut.close();
-				}
-			
-			}*/
-
-
 
 			startTime = endTime;
 			getDomain()->increaseNumIterationAtmoModel();

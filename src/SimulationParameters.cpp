@@ -222,7 +222,8 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("surfaceOutputs","0"));
 	parameters.insert(make_pair("bmapOutputUpdate","0"));
 	parameters.insert(make_pair("numAtmoIterations","1000000"));
-	parameters.insert(make_pair("max_inner_front_nodes_filter","20"));
+	parameters.insert(make_pair("numberOfAtmoStepPerParallelCom","1"));
+	parameters.insert(make_pair("max_inner_front_nodes_filter","50"));
 
 }
 

@@ -9,15 +9,18 @@ cmake_minimum_required(VERSION 3.10)
 project(forefire VERSION 1.0)
 
 # Set C++17 as the standard for the project
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
 # Compiler flags
+# DEBUG
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g  -DMPI_COUPLING")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
-# Aggressive
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wsign-compare -O3 -march=native -funroll-loops -fstrict-aliasing -ftree-vectorize -DMPI_COUPLING")
+# Optimized for MPI, 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O0 -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
+# Aggressive warning, aggresive wont work for MPI due to memory missalignement - so no MPI
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wsign-compare -O3 -march=native -funroll-loops -fstrict-aliasing -ftree-vectorize")
 
 # Output directories for binaries and libraries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)

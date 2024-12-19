@@ -830,13 +830,16 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
 
     # Variables scalaires à exclure (vect_vars et gridKey)
     exclude_vars = set(vect_vars + (gridKey,))
-
+    surface_vars = []
     # Parcourir les fichiers et déterminer les variables scalaires
     for file in files:
         # Extraire le nom de la variable du fichier
         variable = file.split(".")[-1]
         if variable not in exclude_vars:
-            scals["points"].append(variable)
+            if variable.startswith("surf"):
+                surface_vars.append(variable)
+            else:
+                scals["points"].append(variable)
 
     # Convertir en tuple (facultatif selon les besoins)
     scals["points"] = tuple(scals["points"])
@@ -887,7 +890,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     steps = []
     
     
-    gf = VtkGroup("%s/%sgroupsfields"%(outPath,fprefix))
+    gf = VtkGroup("%s/%s_all_fields"%(outPath,fprefix))
     for stepV in Allsteps[:]:
         outname = "%s/%s.full.%d.vts"%(outPath,fprefix,stepV) 
         if (cleanFile and os.path.isfile(outname)  ):
@@ -914,14 +917,13 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     gf.save()
     
     if (norecompute or cleanFile) :
-    	print("Quit because not recomputing", norecompute, cleanFile)
-    	return
+        print("Quit because not recomputing", norecompute, cleanFile)
+        return
+    
     if len(steps) < 1:
         print("nothing more to be done")
         return
         
-    
-    
     selectedSteps = steps[:]
     
     MNHSteptoLidarStep={}
@@ -978,7 +980,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     if startStep > -1 and endStep > -1:
         selectedSteps=selectedSteps[startStep:endStep]
     
-    print(len(selectedSteps), " time steps to be computed on ", len(Allsteps) , " list :", selectedSteps, " ")
+    print(scals["points"], surface_vars, " on ",len(selectedSteps), " time steps to be computed on ", len(Allsteps) , " list :", selectedSteps, " ")
     
     largCell = 0;
     
@@ -1036,16 +1038,12 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
      
     for inddom in range(0,numOfDomains):
         localZ = readBinS(inpattern,inddom+1,stepzgrid,gridKey,appendedSteps,zkey=gridKey)
-        
         shZ = np.shape(localZ)
-       
         nx =  shZ[0]-1
         ny = shZ[1]-1
         nz =  shZ[2]-1 
-           
         domainshapesInPoint[inddom] = (nx,ny,nz)
         tz = nz
-        
         if (zzd is None):
             zzd = np.zeros((tx+1, ty+1, tz+1), dtype=np.float32)
         datatop =int((domains[3][inddom] - domains[1][0])/dy -1)
@@ -1063,7 +1061,6 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
         thisdatashape = (dLocalShape[inddom][3]-dLocalShape[inddom][2], dLocalShape[inddom][1]-dLocalShape[inddom][0])
         globalshape = (0, ty+1, 0, tx+1 )
         
-    
         for k in range(nz+1):
             for j in range(dLocalShape[inddom][0],dLocalShape[inddom][0]+shZ[1]):
         	    for i in range(dLocalShape[inddom][2],dLocalShape[inddom][2]+shZ[0]):

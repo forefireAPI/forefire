@@ -33,8 +33,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 using namespace std;
 
 #ifdef MPI_COUPLING
-// Dimensions des matrices
-
 
 #endif
 
@@ -515,39 +513,35 @@ void FFGetDoubleArray(const char* mname, double t
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
 	if ( myLayer ){
 		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
-		#ifdef MPI_COUPLING
-		FFArray<double>* t2;
-		myLayer->getMatrix(&t2,0);
-		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-		if ( tmpname == "windU" or tmpname == "windV"  ){
 
-			if (world_rank == 0){
-				DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(tmpname);
-				FFArray<double>* fullMatrix;
-				myMasterLayer->getMatrix(&fullMatrix,0);
-
-				FireDomain::distributedDomainInfo* DM = session->fdp->getParallelDomainInfo(1);
-
-				fullMatrix->setDataAtLoc(t2->getData(),DM->atmoNX+2,DM->atmoNY+2,DM->refNX,DM->refNY,DM->ID);
-
-				for (int nr = 1; nr < world_size; ++nr) {
-					FireDomain::distributedDomainInfo* DR = session->fdp->getParallelDomainInfo(nr+1);
-					size_t dsize = (DR->atmoNX+2)*(DR->atmoNY+2);
-					std::vector<double> data_processed(dsize);
-					
-					MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
+			#ifdef MPI_COUPLING
+			if ( tmpname == "windU" or tmpname == "windV"  ){
+				FFArray<double>* t2;
+				myLayer->getMatrix(&t2,0);
+				MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+				MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+				if (world_rank == 0){
+					DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(tmpname);
+					FFArray<double>* fullMatrix;
+					myMasterLayer->getMatrix(&fullMatrix,0);
+					FireDomain::distributedDomainInfo* DM = session->fdp->getParallelDomainInfo(1);
+					fullMatrix->setDataAtLoc(t2->getData(),DM->atmoNX+2,DM->atmoNY+2,DM->refNX,DM->refNY,DM->ID);
+					for (int nr = 1; nr < world_size; ++nr) {
+						FireDomain::distributedDomainInfo* DR = session->fdp->getParallelDomainInfo(nr+1);
+						size_t dsize = (DR->atmoNX+2)*(DR->atmoNY+2);
+						std::vector<double> data_processed(dsize);
+						MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+						fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
+					}
+				}else{				
+					MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
 				}
-			}else{				
-				MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
 			}
-		
-		}
+			#endif 
+	
 
-		#endif 
-
-	} else {
+	} 
+	else {
 		cout<<"Error trying to get data for unknown layer "<<tmpname<<endl;
 	}
 }
