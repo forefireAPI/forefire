@@ -17,7 +17,7 @@ include_directories(${MPI_INCLUDE_PATH})
 # DEBUG
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g  -DMPI_COUPLING")
 # Optimized for MPI, 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O0 -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 # Aggressive warning, aggresive wont work for MPI due to memory missalignement - so no MPI
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wsign-compare -O3 -march=native -funroll-loops -fstrict-aliasing -ftree-vectorize")

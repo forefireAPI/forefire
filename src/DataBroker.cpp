@@ -145,7 +145,6 @@ void DataBroker::registerPropagationModel(PropagationModel* model) {
 	for (size_t prop = 0; prop < model->numProperties; prop++) {
 		try {
 			if ((model->wantedProperties)[prop].substr(0, 4) == "fuel") {
-
 				if (!fuelAsked) {
 					propDataGetters[model->index].push_back(&getFuelProperties);
 					numPropDataGetters[model->index]++;

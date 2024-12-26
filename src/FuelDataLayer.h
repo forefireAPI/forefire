@@ -181,6 +181,7 @@ size_t FuelDataLayer<T>::getValuesAt(
 		FireNode* fn, PropagationModel* model, size_t curPosition){
 	/* Getting the fuel at the given location */
 	int fuelIndex = getFuelAtLocation(fn->getLoc(), fn->getTime());
+
 	//cout << "getting indice "<< fuelIndex <<" at location "<< fn->getLoc().x <<";"<< fn->getLoc().y<<endl;
         /* writing the parameters' values in the desired array at desired location */
 	for ( size_t param = 0; param < model->numFuelProperties; param++ ){
