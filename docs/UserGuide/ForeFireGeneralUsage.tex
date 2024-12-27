@@ -1,0 +1,212 @@
+\part{General Usage}
+
+ForeFire code is an API, a library and an interpreter with a "pythonesque" syntax.
+Its purpose is to simulate the evolution of reactive fronts that can be represented with front velocity models.
+It is designed such as it can easily be run from the command line, coupled with other codes and extended with user defined propagation and emission (fluxes) models. 
+
+\chapter{Install}
+
+ForeFire has been designed and run on Unix systems, three modules can be built with the source code.
+
+\section{Main binaries}
+\begin{itemize}
+\item An interpreter (executable)
+\item A dynamic library (shared, with C/C++/Java and Fortran bindings)
+\item Pre-Post processing helping scripts.
+\end{itemize}
+
+NetCDF  Library V3 or later must be installed on the system to build Forefire
+Get it from \url{http://www.unidata.ucar.edu/software/netcdf/}
+
+Compilation requires a c++ compiler, but it has only been tested on gcc/g++ compiler.
+the SCons python tool is used to make the library and executable, get it from  \url{http://www.scons.org/}
+A sample SConstruct file is included with the distribution, edit it and insert the path to the Netcdf (and Java headers for JNI bindings).
+
+\begin{tiny}
+\begin{verbatim}
+env = Environment(CPPPATH=['/usr/include/','/usr/local/include/'
+	,'/usr/lib64/jvm/java-1.6.0-openjdk-1.6.0/include/']
+	,CCFLAGS=['-Wall','-g0','-O3','-m64','-D_JNI_IMPLEMENTATION'])
+Program('forefire', Glob('*.cpp'), LIBS=['netcdf_c++', 'netcdf'], LIBPATH=['/usr/local/lib/'])
+env.SharedLibrary('ForeFire', Glob('*.cpp'), LIBS=['netcdf_c++', 'netcdf'], LIBPATH=['/usr/local/lib/'])
+\end{verbatim}
+
+\end{tiny}
+When the file is complete, simply run "scons" in the SConstruct file directory.
+
+examples can be found in the examples directory
+to run it, type "forefire -i examplescript" from the commandline
+
+\section{Tools and scripts}
+
+Pre and post processing tools cans be found in the tools/ directory.
+These scripts require numpy, scipy, evtk, netcdf4python libraries.
+
+
+\chapter{The interpreter}
+ForeFire interpreter can be found in the build path after compilation.
+It is named "forefire" and can be linked or copied in you bin/ directory.
+
+The general operation is that interactions with the simulation is performed with commands, that may be run interactively, or scripted (with forefire -i "scriptfile"). All commands are quickly documented in the interpreter (by entering "help[]" command).
+outputs can be redirected to a file with forefire -i "scriptfile" -o "outputfile"
+
+\begin{verbatim}
+FireDomain[date, location, extension] : creates a fire domain
+FireFront[date] : creates a fire front with the following fire nodes
+FireNode[location, velocity] : adds a fire node to the given location
+step[duration] : advances the simulation for a user-defined amount of time
+goTo[date] : advances the simulation till a user-defined time
+setParameter[name=value] : sets a given parameter
+setParameters[name=value;name=value] : sets a given list of parameters
+getParameter[name] : return the parameter from a key
+loadData[Netcdf File] : load a landscape file, define a domain
+startFire[location, date] : start a triangular fire front
+include[command file] : include commands from a file
+print[output file(optional)] : prints the state of the simulation
+save[NetCDF file] : saves the simulation state in NetCDF format
+clear[] : resets the simulation
+quit : quit and terminate
+\end{verbatim}
+
+
+\section{Parametrisation}
+The first step in the definition of a simulation is to set a few parameters (otherwise setted as default), by typing, in the interpreter or script file:
+
+\begin{verbatim}
+setParameters[perimeterResolution=0.3;spatialIncrement=0.05]
+setParameters[propagationModel=Iso;Iso.speed=1]
+\end{verbatim}
+
+This sets the propagation model as the "Iso" isotropic model, with a velocity of $0.1 m.s^-1$. Parameters can be setted indifferently in one line or by calling several time the setParameters command, possibly re-setting the value of an already defined parameter.
+
+
+\section{Initialisation}
+A second step is required to define the simulation domain (extents) :
+\begin{verbatim}
+FireDomain[sw=(-1000.,-1000.,0.);ne=(1000.,1000.,0.);t=0.]
+\end{verbatim}
+This sets a domain with a south west corner at (x=-1000,y=-1000,z=0) a north east corner at (x=1000,y=1000,z=0), and at time= 0.
+
+Finally a front, with any given number of markers is created with :
+\begin{verbatim}
+    FireFront[t=0.]
+        FireNode[loc=(6.801727,99.768414,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(42.251148,90.635757,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(71.403174,70.011333,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(95.697571,29.016805,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(96.262344,-27.084334,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(70.861606,-70.559427,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(28.648564,-95.808454,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-20.024551,-97.974575,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-68.66058,-72.70299,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-96.548591,-26.045528,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-94.783809,31.875218,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-79.29024,60.934865,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-56.08024,82.794967,0.);vel=(0.,0.,0.);t=0.]
+\end{verbatim}
+
+Note the tabulation before the FireFront command, meaning is that the front is contained in the domain. The nature of the front (expanding or contracting) is given by the orientation between the markers. In the clockwise direction case the front is expanding, contracting in the counter-clockwise direction.
+
+A front with inner front will be created by shifting the front with another tabulation (so it is contained by the predefined front) :
+
+\begin{verbatim}
+    FireFront[t=0.]
+        FireNode[loc=(6.801727,99.768414,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(42.251148,90.635757,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(71.403174,70.011333,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(95.697571,29.016805,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(96.262344,-27.084334,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(70.861606,-70.559427,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(28.648564,-95.808454,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-20.024551,-97.974575,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-68.66058,-72.70299,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-96.548591,-26.045528,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-94.783809,31.875218,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-79.29024,60.934865,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(-56.08024,82.794967,0.);vel=(0.,0.,0.);t=0.]
+        FireFront[t=0.]
+            FireNode[loc=(5,6,0.);vel=(0.,0.,0.);t=0.]
+            FireNode[loc=(6,6,0.);vel=(0.,0.,0.);t=0.]
+            FireNode[loc=(6,5,0.);vel=(0.,0.,0.);t=0.]
+\end{verbatim}
+
+The direction of the front is provided by its winding, a clockwise front will expand with positive propagation speed, a counter-clockwise front will shrink with a positive propagation speed.
+
+If two fronts were to be defined, starting at two different times, they must be aligned 
+\begin{verbatim}
+    FireFront[t=0.]
+        FireNode[loc=(0,10,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(10,0,0.);vel=(0.,0.,0.);t=0.]
+        FireNode[loc=(10,10,0.);vel=(0.,0.,0.);t=0.]	
+    FireFront[t=0.]
+        Fire	Node[loc=(5,6,0.);vel=(0.,0.,0.);t=10.]
+        FireNode[loc=(6,5,0.);vel=(0.,0.,0.);t=10.]
+        FireNode[loc=(6,6,0.);vel=(0.,0.,0.);t=10.]
+\end{verbatim}
+
+
+\section{Simulation}
+
+Time is handled with events in ForeFire, so there is no such exact things as iteration number. In order to move the simulation forward in time, the step[] command will advance the simulation up to the absolute time given in parameter with:
+
+\begin{verbatim}
+goTo[t=500]
+\end{verbatim}
+
+or advance by a relative time amount with.
+
+\begin{verbatim}
+step[dt=100s]
+\end{verbatim}
+
+See examples in /examples directory for 1
+
+\section{Data input}
+
+In addition to the simple data that can be input form the interpreter, field data can be in putted as a netCDF file.
+Depending on the model used, this file may include elevation, fuel, modelmaps or any other field required for the model to be solved in the simulation.
+
+Sample input files can be found in /examples directory.
+Generation of input file may be performed by the script in tools/genForeFireCase.py.
+
+Typical fuel data is table/indices based, the table must be provided as an ascii comma separated value file (see examples/03Canyon/01forefire/fuels.ff)
+
+
+\section{Data output}
+ForeFire generate output (fronts) that is directly readable, and at the same format as the outputs.
+Fore scalar/Vector field data
+
+The sample helper script "tools/FFtoVTK.py" can be used to transform this data into python readable format and export to legacy Vtk files.
+
+
+\chapter{Library: coupled simulations}
+
+Coupled simulation has only been designed for the MESO-NH code, although it is likely that any Eulerian code that is parallelized in a domain decomposition manned should be able to be coupled with minimum effort.
+
+\section{Build}
+The legacy ForeFire shared library can be used with ISO C-Fortran bindings, it must be accessible to the MESONH executable (in the same directory or library path). The MESO-NH FOREFIRE user contains code that belongs to MesoNH and cannot be distributed freely. A version may be obtained upon request to filippi-at-univ-corse.fr.
+
+A USER version of MNH is to compiled that enables to call the ForeFire library, impose the surface wind to the fire model and inject the fluxes stemming from the fire in the MNH simulation. Sources are availlable upon request to filippi at univ-corse.fr. In order to compile MesoNH using ISO C Fortran bindings one has to change the Makefile, \textit{i.e.} adding the line iso c binding.mod at the end of the Makefile.
+
+\section{Run}
+
+In order to activate the coupling with ForeFire, user have to :
+\begin{enumerate}
+\item Put the name list NAM\_FOREFIRE in the file EXSEG1.nam with the following variables :
+\begin{itemize}
+\item LFOREFIRE : when .TRUE., activates the coupling with ForeFire.
+\item COUPLINGRES : maximum resolution (in meters) for the coupling.
+\item NFFSCALARS : number of scalars that will be coupled (calculated from ForeFire)
+\item FFSVNAMES(NFFSCALARS) : name of scalars
+\item FFOUTUPS : backup frequency outputs in seconds.
+\item PHYSOUT : output physical variables $(moist, P, T, TKE)$
+\item FLOWOUT : output flow variables $(U,V,W)$
+\item CHEMOUT : output chemical variables
+\end{itemize}
+\item Create a set of directory :
+\begin{itemize}
+\item one to save the evolution of the front ; this directory is usualy named ForeFire/ and also contains the 4 files case.NC, fuel.ff, init.ff, Param.ff (see chapter 3 for complete description),
+\item n diectories named MODELn/, where n is the number of nested domains (the name can be changed in the file Param.ff) in order to save the outputs.
+\end{itemize}
+\end{enumerate}
+

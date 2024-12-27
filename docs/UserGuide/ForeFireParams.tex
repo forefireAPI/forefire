@@ -1,0 +1,97 @@
+\part{Controlling parameters}
+
+%%%%%%%%%%%%%%%%%
+% Existing parameters %
+%%%%%%%%%%%%%%%%%
+\chapter{Controlling parameters of a ForeFire simulation}
+
+ForeFire comes with a set of pre-defined parameters listed below. The user should be aware that ForeFire parameters are CASE SENSITIVE !
+
+\begin{center}
+\begin{longtable}{|p{0.4\textwidth}|p{0.12\textwidth}|p{0.48\textwidth}|}
+\caption[Existing parameters]{Existing parameters.} \label{eparams} \\
+
+\hline \multicolumn{1}{|c|}{\textbf{Parameter}} & \multicolumn{1}{c|}{\textbf{Default value}} & \multicolumn{1}{c|}{\textbf{Description}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\
+\hline \multicolumn{1}{|c|}{\textbf{Parameter}} & \multicolumn{1}{c|}{\textbf{Default value}} & \multicolumn{1}{c|}{\textbf{Description}} \\ \hline 
+\endhead
+
+\hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+\endfoot
+
+\hline \hline
+\endlastfoot
+
+caseDirectory & ./ & directory of the simulation (usually the directory of the atmospheric simulation). \\
+ForeFireDataDirectory &./ForeFire/ & directory containing all the data needed for a ForeFire simulation. \\
+experiment & ForeFire & name of the simulation. Affects the outputs when saving the simulation. \\ \hline
+ & & \\
+NetCDFfile & data.nc & netCDF file containing the data needed by the simulation. \\
+fuelsTableFile & fuels.ff & file containing the values of the parameters of the fuels. \\
+paramsFile & Params.ff & file containing the values of the parameters controlling the simulation. \\
+parallelInit & $0$ & boolean for parallel initialization (restart from a previous atmospheric simulation). \\
+InitFile & Init.ff & file containing the location of the fire front at initialization (non-parallel init). \\
+InitFiles & output & pattern for the files containing the locations of the fronts during a parallel restart. \\
+InitTime & $0$ & time for the parallel restart. Files containing the information at that time should follow InitFiles.i.InitTime where i is the number of the processor that has saved its state in the previous simulation. \\
+BMapsFiles & undefined & pattern of the files containing pre-computed burning maps in case of restart or one-way couped simulations \\
+\begin{verbatim} SHIFT_ALL_ABSCISSA_BY \end{verbatim} & $0$ & shift in all the abscissa of the data provided by the user, when needed in nested coupled atmospheric simulations. \\
+\begin{verbatim} SHIFT_ALL_ORDINATES_BY \end{verbatim} & $0$ & shift in all the ordinates of the data provided by the user, when needed in nested coupled atmospheric simulations. \\ \hline
+ & & \\
+perimeterResolution & $10$ & maximum distance allowed between two nodes discretizing the fire front. \\
+spatialIncrement & $0.2$ & distance the nodes discretizing the fronts are advanced each time they are updated. \\
+spatialCFLmax & $0.3$ & maximum allowed value in the spatial 'CFL like' number = spatialIncrement/perimeterResolution. \\ \hline
+ & & \\
+normalScheme & medians & scheme used during the computation of the medians (medians, weightedMedians and splines are available). \\
+smoothing & $5$ & smoothing parameter in the computation of the normal \\
+relax & $0.2$ & relaxation parameter in the computation of the normal and front depth \\
+curvatureComputation & $0$ & boolean for the computation of the front local curvature, eventually needed by some propagation models. \\
+curvatureScheme & circumradius & scheme used during the computation of the front curvature  (angles, circumradius ans splines are available). \\
+frontDepthComputation & $0$ & boolean for the computation of the front depth, eventually needed by some propagation models. \\
+frontDepthScheme & normalDir & scheme used during the computation of the front depth  (normalDir is up to now the only one available). \\ \hline
+ & & \\
+propagationModel & TroisPourcent & if the propagation models to be used are not provided in the 'NetCDFfile', solely one model is used: the one provided by the 'propagationModel' parameter. \\
+burningTresholdFlux & $500$ & threshold expressed in terms of radiated flux ($W.m^{-2}$) from the fire to determine if the location is still burning (needed when computing the front depth). \\
+minimalPropagativeFrontDepth & $1$ & limiting distance (in $m$) for the propagation of the fire. If the front depth is below this limit, the fire is considered inactive. \\
+maxFrontDepth & $20$ & maximum depth (in $m$) reachable by the front. When superior to this limit, effects of front depth on the propagation are considered constants. \\
+initialFrontDepth & $1$ & depth (in $m$) of the front at initialization. \\
+initialBurningTime & $30$ & duration of the burning process (in $s$) inside the initial front. \\ \hline
+ & & \\
+atmoNX & $100$ & number of atmospheric cells in the longitudinal direction. Atmospheric cells determines the regions over which the fluxes stemming from the fire are computed. This parameter is used in a ForeFire when not coupled to an atmospheric simulation, when coupled to an atmospheric simulation it is imposed by it. \\
+atmoNY & $100$ & number of atmospheric cells in the latitude direction. \\
+atmoNZ & $20$ & number of atmospheric cells in the vertical direction. \\ \hline
+ & & \\
+refLongitude & $0$ & reference longitude of the Fore simulation (imposed by th atmospheric simulation when coupling). \\
+refLatitude & $0$ & reference latitude of the Fore simulation (imposed by th atmospheric simulation when coupling). \\
+year & $2012$ & year of the Fore simulation (imposed by th atmospheric simulation when coupling). \\
+month & $1$ & month of the Fore simulation (imposed by th atmospheric simulation when coupling). \\
+day & $1$ & day (relative to the month) of the Fore simulation (imposed by th atmospheric simulation when coupling). \\ \hline
+ & & \\
+SWCornerX & $-10$ & abscissa of the southwest corner (for uncoupled simulations). \\
+SWCornerY & $-10$ & ordinate of the southwest corner (for uncoupled simulations). \\
+NECornerX & $10$ & abscissa of the northeast corner (for uncoupled simulations). \\
+NECornerY & $10$ & ordinate of the northeast corner (for uncoupled simulations). \\ \hline
+ & & \\
+watchedProc & $-2$ & number of the MPI processor to be watched when debugging. If watchedProc = -2 no output from any processor is done. If watchedProc=-1, outputs from all processors are done. If watchedProc=$n$, only outputs from processor with mpi rank $n$ are done. \\
+CommandOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the commands. \\
+FireDomainOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the behaviour of the domain of the simulation (parallel processing, event handling, \ldots). \\
+FireFrontOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the behaviour of the fire fronts (topology, \ldots). \\
+FireNodeOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the behaviour of the lagrangian nodes (speed and normal computation, \ldots). \\
+FDCellsOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the atmospheric cells (flux computation, \ldots). \\
+HaloOutputs & $1$ & boolean for printing debug outputs (in the standard output) related to the halos (packing of parallel data, \ldots). \\ \hline
+ & & \\
+fireOutputDirectory & ./ForeFire/ & directory where the fire outputs will be made. \\
+atmoOutputDirectories & ./ForeFire/ & directories where the atmospheric outputs will be made. This parameter can be a multi-valued parameter if several atmospheric models are used (ex: './MODEL1/,./MODEL2/') \\
+outputFiles & output & pattern the names of the files containing the ForeFire outputs. ForeFire automatically adds the number of the processor responsible for the output, the name of the variable and the time. \\
+outputsUpdate & $0$ & frequency (in $s$) of the saving outputs. If outputsUpdate=$0$, no saving outputs are made. If outputsUpdate=$n$, saving outputs are made each $n$ seconds. \\
+debugFronts & $0$ & boolean to save fronts each atmospheric step (files are overwrited each time the process is done). \\
+surfaceOutputs & $0$ & boolean for saving the surface properties, \textit{i.e.} fluxes stemming from the fire. \\
+bmapOutputUpdate & $0$ & frequency (in $s$) of the saving outputs for the burning map. If bmapOutputsUpdate=$0$, no saving outputs are made. If bmapOutputsUpdate=$n$, saving outputs are made each $n$ seconds. This process is really heavy (storing data of a huge matrix...) and should be used only in dire cases. \\
+\end{longtable}
+\end{center}
+
+\chapter{Associated parameters in a MNH simulation}
+
+%%===========================================================================%%

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel", "pybind11"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyforefire"
+version = "2024.1"
+dependencies = [
+    "pybind11",
+]
+requires-python = ">=3.8"
+authors = [
+  {name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr"},
+  {name = "Quentin Duriani", email = "qduriani@gmail.com"},
+]
+maintainers = [
+    {name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr"},
+]
+description = "Python version of ForeFire library"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["ForeFire", "forefire", "pyforefire", "pybind", "pybind11"]
+
+[project.urls]
+Homepage = "https://github.com/forefireAPI/pyForeFire"
+Repository = "https://github.com/forefireAPI/pyForeFire"

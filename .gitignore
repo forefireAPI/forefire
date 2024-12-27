@@ -5,15 +5,17 @@ bin
 build
 lib
 sconsbuild
-forefire2
-tools
-
+local
+tools/cache
+tools/cmaps
+bindings/python/src/pyforefire.egg-info
 #python
 __pycache__
 
 # compilation files
 *.dblite
 *.o
+*.so
 
 # editors
 .vscode
@@ -23,4 +25,5 @@ __pycache__
 
 # jupyter notebooks checkpoints
 .ipynb_checkpoints
+
 CMakeLists.txt

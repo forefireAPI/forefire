@@ -17,7 +17,7 @@ include_directories(${MPI_INCLUDE_PATH})
 # DEBUG
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g  -DMPI_COUPLING")
 # Optimized for MPI, 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 # Aggressive warning, aggresive wont work for MPI due to memory missalignement - so no MPI
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wsign-compare -O3 -march=native -funroll-loops -fstrict-aliasing -ftree-vectorize")
@@ -29,19 +29,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
 # Link against NetCDF libraries globally (if all targets need it)
 link_libraries("-lnetcdf_c++4" ${MPI_LIBRARIES})
 
-
 # Main project executable
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 add_executable(forefire ${SRC_FILES})
-#target_link_libraries(forefire "-lnetcdf_c++4")
-
 # Shared library
 add_library(forefireL SHARED ${SRC_FILES})
-#target_link_libraries(forefireL "-lnetcdf_c++4")
-
-
 # Specific main for the test if different
-set(TEST_MAIN tests/ANNTest.cpp)
+set(TEST_MAIN tools/runANN/ANNTest.cpp)
 add_executable(ANN_test ${TEST_MAIN})
 
 
