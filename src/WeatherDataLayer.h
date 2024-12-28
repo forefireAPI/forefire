@@ -178,27 +178,7 @@ public:
 		if(nt>1){
 			interp = InterpolationBilinearT;
 		}
-		if((nt==1)&&(nz==2))
-		{
-			interp = InterpolationBilinearCoeff;
-		}		
-		if((nt==1)&&(nz==8))
-		{
-			interp = InterpolationBilinearDir;
-		}
-
-	/*	if(	interp == InterpolationBilinear){
-			cout<<"layer "<<name<<" is mode InterpolationBilinear"<<endl;
-		}
-		if(	interp == InterpolationBilinearT){
-			cout<<"layer "<<name<<" is mode InterpolationBilinear with Time"<<endl;
-		}
-		if(	interp == InterpolationBilinearCoeff){
-			cout<<"layer "<<name<<" is mode InterpolationBilinear with UV Coeff"<<endl;
-		}
-		if(	interp == InterpolationBilinearDir){
-			cout<<"layer "<<name<<" is mode InterpolationBilinear Scalar Dir (8 directions)"<<endl;
-		}*/
+		
 
 	}
 	/*! \brief destructor */

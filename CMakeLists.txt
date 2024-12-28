@@ -1,25 +1,29 @@
-
-# NetCDF library paths to set here if required
-set(netcdfHome /Users/filippi_j/soft/)
-link_directories(${netcdfHome}/lib)
-include_directories(${netcdfHome}/include)
-
-
 cmake_minimum_required(VERSION 3.10)
 project(forefire VERSION 1.0)
+# Use environment variables for paths
+set(NETCDF_HOME $ENV{HOME}/soft)
+set(ECCODES_HOME $ENV{HOME}/soft)
 
-# Set C++17 as the standard for the project
+link_directories(${NETCDF_HOME}/lib)
+include_directories(${NETCDF_HOME}/include)
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
+
+include_directories(${ECCODES_HOME}/include)
+link_directories(${ECCODES_HOME}/lib)
+
 # Compiler flags
 # DEBUG
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g  -DMPI_COUPLING")
-# Optimized for MPI, 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions  -march=native -funroll-loops  -ftree-vectorize -fno-strict-aliasing  -DMPI_COUPLING")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
-# Aggressive warning, aggresive wont work for MPI due to memory missalignement - so no MPI
+
+# Optimized for MPI
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing -DMPI_COUPLING")
+
+# Aggressive warning, aggressive won't work for MPI due to memory misalignment - so no MPI
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wsign-compare -O3 -march=native -funroll-loops -fstrict-aliasing -ftree-vectorize")
 
 # Output directories for binaries and libraries
@@ -38,7 +42,9 @@ add_library(forefireL SHARED ${SRC_FILES})
 set(TEST_MAIN tools/runANN/ANNTest.cpp)
 add_executable(ANN_test ${TEST_MAIN})
 
-
+set(DATA_COMPILE tools/grib2weatherNC/grib2ffnc.cpp)
+add_executable(grib2ffnc ${DATA_COMPILE})
+target_link_libraries(grib2ffnc "-leccodes" ${MPI_LIBRARIES})
 
 
 
