@@ -14,7 +14,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../src/stb_image_write.h"
 // A grib dumper, example to make a 1080p t2m out of AROME : grib2ffnc 20241219.00Z.12H.SP1.grib2     -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate
-
+// grib2ffnc 20241219.00Z.13H.SP1.grib2  -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate,name
 static void usage(const char* prog) {
     std::cout << "Usage: " << prog << " <input.grib> "
               << "[-latlng=\"<latitude>,<longitude>\"] "
@@ -398,5 +398,6 @@ int main(int argc, char** argv) {
     if (err && err!=GRIB_END_OF_FILE) std::cerr<<"GRIB read error: "<<codes_get_error_message(err)<<"\n";
     fclose(grib_file);
     std::cout<<"Messages total:"<<msg_count<<" processed:"<<processed<<"\n";
-    return 0;
+    if (processed>0)   return 0;
+    return 1;
 }
