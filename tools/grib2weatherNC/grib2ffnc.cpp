@@ -195,13 +195,17 @@ static bool generate_image(const std::string& filename, const std::vector<double
                 bool ok = bilinear_interpolation(clat, clng, lat_first, lat_first+(Nj-1)*dlat,
                                                  dlat, lon_first, lon_first+(Ni-1)*dlon, dlon,
                                                  Ni, Nj, values, val);
-                if (!ok || std::isnan(val) || val < min_val || val > max_val) {
+                if (!ok || std::isnan(val)) {
                     float fval = std::numeric_limits<float>::quiet_NaN();
-                    ofs.write(reinterpret_cast<const char*>(&fval), 4);
-                } else {
-                    float fval = static_cast<float>(val);
-                    ofs.write(reinterpret_cast<const char*>(&fval), 4);
-                }
+                    ofs.write(reinterpret_cast<const char*>(&fval), sizeof(float));
+                    } else {
+                        // Clamp `val` to ensure it's within [min_val, max_val]
+                        if (val < min_val) val = min_val;
+                        if (val > max_val) val = max_val;
+
+                        float fval = static_cast<float>(val);
+                        ofs.write(reinterpret_cast<const char*>(&fval), sizeof(float));
+                    }
             }
         }
         ofs.close();
@@ -314,7 +318,7 @@ int main(int argc, char** argv) {
             std::stringstream ss(params);
             std::string item;
             while(std::getline(ss,item,',')) {
-                std::cout<<"Index key: "<<item<<"\n";
+            
                 index_keys.push_back(item);
             }
         } else {
@@ -370,13 +374,10 @@ int main(int argc, char** argv) {
         codes_get_long(h,"Ni",&Ni); codes_get_long(h,"Nj",&Nj);
         bool descending=(lat1>lat2); double ddlat=fabs(linc), ddlon=binc;
         double glat1=descending?lat1:lat1, glat2=descending?lat2:lat2;
-        std::cout<<"Message "<<msg_count<<":\n"
-                 <<"  Param: "<<long_param<<"("<<short_param<<") level:"<<level<<"\n"
-                 <<"  min:"<<minv<<" max:"<<maxv<<"\n";
+
         if (do_interpolation) {
             double iv=0; bool ok=bilinear_interpolation(interp_lat,interp_lng,glat1,glat2,ddlat,lon1,lon1+(Ni-1)*ddlon,ddlon,Ni,Nj,data,iv);
-            if (ok) std::cout<<"  Interp("<<interp_lat<<","<<interp_lng<<")="<<iv<<"\n";
-            else    std::cout<<"  Interp failed\n";
+            if (!ok) std::cerr<<input_grib<<"  Interp failed \n";
         }
         if (generate_image_flag && !saveImage_pattern.empty()) {
             if (Ni>0 && Nj>0 && linc!=0 && binc!=0) {
@@ -390,14 +391,13 @@ int main(int argc, char** argv) {
                 std::cerr<<"  Invalid grid\n";
             }
         }
-        std::cout<<"---------------------------------------\n";
         processed++;
         codes_handle_delete(h);
         short_len=sizeof(short_param); long_len=sizeof(long_param);
     }
     if (err && err!=GRIB_END_OF_FILE) std::cerr<<"GRIB read error: "<<codes_get_error_message(err)<<"\n";
     fclose(grib_file);
-    std::cout<<"Messages total:"<<msg_count<<" processed:"<<processed<<"\n";
+    std::cout<<input_grib<<" total:"<<msg_count<<" processed:"<<processed<<"\n";
     if (processed>0)   return 0;
     return 1;
 }
