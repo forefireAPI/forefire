@@ -435,22 +435,14 @@ def readBinNS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=No
     return D    
 
 def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=None):
-
     fname =  "%s.%d.%s"%(inpattern,domnum,vkey)
     if (appendedDict == None):
         fname =  "%s.%d.%d.%s"%(inpattern,domnum,int(stepV),vkey)
-        
-    
     nxt = 0
     nyt= 0
     nzt = 0
     c_file = None
-    
-     
     sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
-  
-    
-    
     if (appendedDict == None):
         fsize = os.path.getsize(fname)
         c_file = open(fname,"rb")
@@ -458,7 +450,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         items = struct.unpack(formatBin,c_file.read(struct.calcsize(formatBin)))
         nxt = items[0]
         nyt= items[1]
-    
         if (nyt > 1000) :
             if(bestshape == None):
                 nyt = nxt
@@ -468,7 +459,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
                 
         nzt = ((fsize-8-8)/(nxt*nyt))/8
         sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
-       
     else:
         sizeofOfI4 = struct.calcsize("i")
         sizeofOfF8 = struct.calcsize("d")
@@ -487,8 +477,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
         sizeOfRecord = sizeOfHeader + sizeOfData
         
-    
-        
         if nzt> 1000: 
             nzt=66
             print("no good nz for ", fname)
@@ -498,28 +486,27 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         if(zkey != None) :
             recordNum = 0;
      #   print nxt,nyt,nzt, sizeOfData, " record ", recordNum  
-        
         c_file.seek(recordNum*sizeOfRecord+sizeOfHeader)
 
-   
-    
     nx =  nxt-2
     ny = nyt-2
     nz =  nzt-2 
 
-    D = np.zeros((nx + 1, ny + 1, nz + 1), dtype=np.float32)
-        
- 
-    items = struct.unpack("%dd" % (nxt*nyt*nzt) , c_file.read(sizeOfData))
- 
-    for j in range(1,nyt):
-        for i in range(1,nxt):
-            for k in range(1,nzt): 
-                indice =  (k*nyt*nxt)+(j*nxt)+i
-                D[i-1,j-1,k-1]=items[indice]
-    
+    #D = np.zeros((nx + 1, ny + 1, nz + 1), dtype=np.float32)
+    #items = struct.unpack("%dd" % (nxt*nyt*nzt) , c_file.read(sizeOfData))
+    #for j in range(1,nyt):
+    #    for i in range(1,nxt):
+    #        for k in range(1,nzt): 
+    #            indice =  (k*nyt*nxt)+(j*nxt)+i
+    #            D[i-1,j-1,k-1]=items[indice]
+    #c_file.close()
+    #return D
+
+    rawDoublesInFloats = np.frombuffer(c_file.read(sizeOfData), dtype=np.float64).astype(np.float32)
     c_file.close()
-    return D
+    data_reshaped_and_ordered = rawDoublesInFloats.reshape((nzt, nyt, nxt)).transpose(2, 1, 0)
+    return data_reshaped_and_ordered[1:nxt, 1:nyt, 1:nzt]
+
 
 
 def read2DBinS(fname, offset = 0, fatherDom = (0,0,0)):
@@ -844,8 +831,6 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     # Convertir en tuple (facultatif selon les besoins)
     scals["points"] = tuple(scals["points"])
 
-    # Affichage pour vérifier les variables détectées
-    #print("Variables scalaires détectées :", scals["points"], f"{inpattern}.1.*")
     Vects={}
     Vects["Wind"] =vect_vars
     if quitAfterCompute:
@@ -943,37 +928,58 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     numOfDomains = len(list(glob.glob(f"{inpattern}.*.{gridKey}")))
     print(f"Found {numOfDomains} domains")
     domains = np.zeros(shape=(4,numOfDomains),dtype=float)
+    pgdInfo = pgdFile
 
-    print(f"opening PGD nc file {pgdFile} for domains")
-    with nc4.Dataset(pgdFile, 'r') as nc_file:
-        
-    # Récupérer les données pour XHAT et YHAT et les convertir en tableaux NumPy
-        xhat = list(nc_file.variables['XHAT'][:])
-        yhat = list(nc_file.variables['YHAT'][:])
+    print(f"handling PGD info {pgdInfo} for domains")
+    xhat=None
+    yhat=None
     
-        dx = xhat[1]-xhat[0]
-        dy = xhat[1]-xhat[0]
-        xhat.extend([xhat[-1]+dx, xhat[-1]+2*dx, xhat[-1]+3*dx])
-        yhat.extend([yhat[-1]+dy, yhat[-1]+2*dy, yhat[-1]+3*dy])
+    if pgdInfo.endswith(".nc"):
+        with nc4.Dataset(pgdInfo, 'r') as nc_file:
+            xhat = list(nc_file.variables['XHAT'][:])
+            yhat = list(nc_file.variables['YHAT'][:])
+        
+            dx = xhat[1]-xhat[0]
+            dy = xhat[1]-xhat[0]
+            xhat.extend([xhat[-1]+dx, xhat[-1]+2*dx, xhat[-1]+3*dx])
+            yhat.extend([yhat[-1]+dy, yhat[-1]+2*dy, yhat[-1]+3*dy])
+
+    else:
+        parts = pgdInfo.split(',')
+        if len(parts) != 5:
+            raise ValueError("Expected pgdInfo with 5 comma-separated values: 'res,ni,nj,x0,y0'")
+
+        res = int(parts[0].strip())
+        ni = int(parts[1].strip())
+        nj = int(parts[2].strip())
+        x0 = float(parts[3].strip())
+        y0 = float(parts[4].strip())
+
+        x_end = x0 + res * (ni - 1)
+        y_end = y0 + res * (nj - 1)
+
+        xhat = np.linspace(x0, x_end, ni)
+        yhat = np.linspace(y0, y_end, nj)
+
     
 
-        nit = len(yhat)
-        njt = len(xhat)
-    
-        xhati=0
-        yhati=0
-        for i in range(1,numOfDomains+1):
-            nii,nji,z= readBinShape(f"{inpattern}.{i}.{gridKey}")
-       #     str0 = "FireDomain[sw=(%s,%s,0);ne=(%s,%s,0);t=50400]\n"%(xhat[xhati],yhat[yhati],xhat[xhati+nii],yhat[yhati+nji])
-        
-            domains[0][i-1] = float(xhat[xhati])
-            domains[1][i-1] = float(yhat[yhati])
-            domains[2][i-1] = float(xhat[xhati+nii])
-            domains[3][i-1] = float(yhat[yhati+nji])
-            xhati = xhati+nii-2
-            if (xhati > (njt-nii)):
-                yhati = yhati+nji-2
-                xhati=0
+    print(np.shape(xhat),xhat[0],xhat[-1])
+    print(np.shape(yhat),yhat[0],yhat[-1])
+
+    njt = len(xhat)
+
+    xhati=0
+    yhati=0
+    for i in range(1,numOfDomains+1):
+        nii,nji,z= readBinShape(f"{inpattern}.{i}.{gridKey}")  
+        domains[0][i-1] = float(xhat[xhati])
+        domains[1][i-1] = float(yhat[yhati])
+        domains[2][i-1] = float(xhat[xhati+nii])
+        domains[3][i-1] = float(yhat[yhati+nji])
+        xhati = xhati+nii-2
+        if (xhati > (njt-nii)):
+            yhati = yhati+nji-2
+            xhati=0
 
     
     
@@ -1057,9 +1063,6 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
         isdataright = dataright == (tx+1)
         
         dLocalShape[inddom] =((databottom if isdatabottom else databottom) ,(datatop if isdatatop else datatop-4), (dataleft if isdataleft else dataleft) ,(dataright if isdataright else dataright-4))
-        thisdatashape = (dLocalShape[inddom][3]-dLocalShape[inddom][2], dLocalShape[inddom][1]-dLocalShape[inddom][0])
-        thisdatashape = (dLocalShape[inddom][3]-dLocalShape[inddom][2], dLocalShape[inddom][1]-dLocalShape[inddom][0])
-        globalshape = (0, ty+1, 0, tx+1 )
         
         for k in range(nz+1):
             for j in range(dLocalShape[inddom][0],dLocalShape[inddom][0]+shZ[1]):
@@ -1087,7 +1090,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
                 if myshot.getValues()[iShot] > 0.1:
                     smokeLocList.append(getLocationAndCoeffsInGridPoints(shotLoc,(xxd[0,0,0],yyd[0,0,0]),tx,ty,tz, largCell, zzd))
         print(len(smokeLocList), "sample smoke point selected")
-
+    midUVW = True # put the flow point at mass point
    
     for stepV in selectedSteps:
         paralPiecesVtkStr = ""
@@ -1104,11 +1107,33 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
                 print("processing sub-domains %d to %d at step %d"%(indom,indom+100, stepV))
 
             nx,ny,nz =     domainshapesInPoint[indom]
+            i0 = dLocalShape[indom][2]
+            i1 = i0 + nx + 1   # +1 because you store up to index nx
+            j0 = dLocalShape[indom][0]
+            j1 = j0 + ny + 1
             
-            for keycount, vkey in enumerate(varsDataIn):
-                    fname =  "%s.%d.%d.%s"%(inpattern,indom+1,stepV,vkey)
-                    varmapAll[vkey][dLocalShape[indom][2]:dLocalShape[indom][2]+nx+1,dLocalShape[indom][0]:dLocalShape[indom][0]+ny+1,:nz+1] = readBinS(inpattern,indom+1,stepV,vkey,appendedSteps) 
-      
+            if (midUVW):
+                for vkey in varsDataIn:
+                    feed_data = readBinS(inpattern, indom+1, stepV, vkey, appendedSteps)
+                    if vkey == "U":
+                        u_mass = 0.5 * (feed_data[:-1, :, :] + feed_data[1:, :, :])
+                        varmapAll[vkey][i0:i1-1, j0:j1, :nz+1] = u_mass
+
+                    elif vkey == "V":
+                        v_mass = 0.5 * (feed_data[:, :-1, :] + feed_data[:, 1:, :])
+                        varmapAll[vkey][i0:i1, j0:j1-1, :nz+1] = v_mass
+
+                    elif vkey == "W":
+                        w_mass = 0.5 * (feed_data[:, :, :-1] + feed_data[:, :, 1:])
+                        varmapAll[vkey][i0:i1, j0:j1, :nz] = w_mass
+
+                    else:
+                        varmapAll[vkey][i0:i1, j0:j1, :nz+1] = feed_data
+            else:
+                for keycount, vkey in enumerate(varsDataIn):
+                        fname =  "%s.%d.%d.%s"%(inpattern,indom+1,stepV,vkey)
+                        varmapAll[vkey][dLocalShape[indom][2]:dLocalShape[indom][2]+nx+1,dLocalShape[indom][0]:dLocalShape[indom][0]+ny+1,:nz+1] = readBinS(inpattern,indom+1,stepV,vkey,appendedSteps) 
+        
         outname = "%s/%s.full.%d"%(outPath,fprefix,stepV) 
      
         ptsAll = {}
@@ -1160,6 +1185,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
             
         else:
             gridToVTK(outname, xxd, yyd, zzd,  cellData = None, pointData = ptsAll)  
+            
             if(xcfdName is not None):
                 gridToCdf("%s.%d"%(xcfdName,stepV) , xxd, yyd, zzd, varmapAll)  
                 
