@@ -145,7 +145,7 @@ int Command::createDomain(const string& arg, size_t& numTabs){
 		/* creating the domain */
 		if ( currentSession.fd != 0 ){
  
-			if(currentSession.fd->getDomainID() == 1){
+			if(currentSession.fd->getDomainID() == 1){//ID 1 is for the Fortran MPI rank 1
 				cout<<"Creating master FD coupler" <<endl;
 				currentSession.params->setParameter("runmode", "masterMNH");
 

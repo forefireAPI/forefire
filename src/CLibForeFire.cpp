@@ -641,9 +641,11 @@ void FFDumpDoubleArray(size_t nmodel, size_t nip, const char* mname, double t
 
 	size_t indF = 0;
 	try {
-		for ( indF = 0; indF < sizein; indF++ ) {
-                     FileOut.write(reinterpret_cast<const char*>(x+indF), sizeof(double));
-		}
+//		for ( indF = 0; indF < sizein; indF++ ) {
+//                     FileOut.write(reinterpret_cast<const char*>(x+indF), sizeof(double));
+//		}
+		FileOut.write(reinterpret_cast<const char*>(x), sizein * sizeof(double));
+
 	} catch (...) {
 		cout << "Problem in passing a Fortran array to C array "
 				<<tmpname<<endl;

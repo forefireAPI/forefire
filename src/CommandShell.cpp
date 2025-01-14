@@ -108,8 +108,10 @@ void CommandShell::FFShell(ifstream* inputStream){
 			executor.ExecuteCommand(line);
 		}
 	} else {
-		cout << "Welcome to the ForeFireShell " << ff_version << endl;
-		cout << "type 'help[]' for information" << endl;
+		cout << "Wildfire solver ForeFire Version :" << ff_version << endl;
+		cout << "Copyright (C) 2025 CNRS/Univ.Corsica "<< endl;
+		cout << "Comes with ABSOLUTELY NO WARRANTY " << endl;
+		cout << "Type 'help[]' for commands" << endl;
 		// reading all the commands (one command per line) from the terminal
 		string line;
 		//size_t numLine = 0;

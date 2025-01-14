@@ -15,6 +15,8 @@ Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
+This code is a JNI interface to the ForeFire solver. It allows to execute commands and get data from the solver.
+It has not been updated since version 1, and is not maintained. It is provided as is, and is not guaranteed to work with the latest version of ForeFire.
 
 */
 
