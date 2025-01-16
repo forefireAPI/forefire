@@ -6,7 +6,7 @@
  * and generate visual representations or raw data outputs for processing by forefire.  
  *
  *  A grib dumper, example to make a 1080p t2m out of AROME : grib2ffnc 20241219.00Z.12H.SP1.grib2     -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate
- *  grib2ffnc 20241219.00Z.13H.SP1.grib2  -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate,name
+ *  grib2ffnc 20241219.00Z.13H.SP1.grib2  -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate,name 
  *  grib2ffnc 07/01/2022/08/PRECIP_SOL_0.grib -filter{dataDate="20220818"} -WSEN="7,40.7,11.2,43.5" -saveImage="debug{dataDate}{level}.png"
  * @author Jean-Baptiste Filippi
  * @date 01/01/2025
@@ -27,6 +27,7 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../../src/stb_image_write.h"
+#include "../../src/colormap.h"
 
 /**
  * @brief Prints usage information and exits the program.
@@ -191,7 +192,9 @@ static bool generate_image(const std::string& filename, const std::vector<double
                            double dlat, double dlon, int Ni, int Nj,
                            const std::string& input_grib,
                            const std::string& index_filename,
+                           const std::string& colormapName,
                            const std::vector<std::string>& index_keys,
+                           
                            grib_handle* h) 
 {
     bool is_raw = false;
@@ -262,6 +265,10 @@ static bool generate_image(const std::string& filename, const std::vector<double
     }
     else {
         std::vector<unsigned char> image(width*height*4, 0);
+        auto it = colormapMap.find(colormapName);
+        const ColorEntry* colorMap = it != colormapMap.end() ? it->second : greyColormap;
+        int mapSize = colormapSize; // Assuming all colormaps have the same size
+
         double step_lon = (lngE - lngW) / (width - 1);
         double step_lat = (latN - latS) / (height - 1);
         for (int y = 0; y < height; ++y) {
@@ -269,19 +276,33 @@ static bool generate_image(const std::string& filename, const std::vector<double
             for (int x = 0; x < width; ++x) {
                 double clng = lngW + x * step_lon;
                 double val;
+
+
+
                 bool ok = bilinear_interpolation(clat, clng, lat_first, lat_first+(Nj-1)*dlat,
                                                  dlat, lon_first, lon_first+(Ni-1)*dlon, dlon,
                                                  Ni, Nj, values, val);
+                if (val < min_val) val = min_val;
+                if (val > max_val) val = max_val;
+
                 int idx = ((height-1 - y) * width + x) * 4;
                 if (ok && !std::isnan(val) && val >= min_val && val <= max_val) {
                     unsigned char intensity = 0;
-                    if (max_val != min_val) {
-                        intensity = (unsigned char)(255.0*(val - min_val)/(max_val - min_val));
-                    }
-                    image[idx+0] = 255 - intensity;
-                    image[idx+1] = 255 - intensity;
-                    image[idx+2] = 255 - intensity;
-                    image[idx+3] = 255;
+                    //if (max_val != min_val) {
+                    //    intensity = (unsigned char)(255.0*(val - min_val)/(max_val - min_val));
+                    //}
+                    //image[idx+0] = 255 - intensity;
+                    //image[idx+1] = 255 - intensity;
+                    //image[idx+2] = 255 - intensity;
+                    //image[idx+3] = 255;
+                    int colorIndex = static_cast<int>((val - min_val) / (max_val - min_val) * (mapSize - 1));
+                    colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+                    const auto& color = colorMap[colorIndex];
+                    image[idx] = color[0];
+                    image[idx + 1] = color[1];
+                    image[idx + 2] = color[2];
+                    image[idx + 3] = 255;//color[3]; //  last byte is alpha
+
                 } else {
                     image[idx+0] = 0;
                     image[idx+1] = 0;
@@ -290,6 +311,7 @@ static bool generate_image(const std::string& filename, const std::vector<double
                 }
             }
         }
+
         if (stbi_write_png(filename.c_str(), width, height, 4, image.data(), width*4)) {
             std::cout << "PNG image saved: " << filename << "\n";
             return true;
@@ -299,18 +321,48 @@ static bool generate_image(const std::string& filename, const std::vector<double
         }
     }
 }
+// Normalize longitude to [-180, 180]
+double normalizeLon(double lon) {
+    while (lon < -180) lon += 360;
+    while (lon > 180) lon -= 360;
+    return lon;
+}
+
+// Function to find the min and max of two longitudes considering the wrapping around the globe
+void findMinMaxLon(double lon1, double lon2, double &minLon, double &maxLon) {
+    lon1 = normalizeLon(lon1);
+    lon2 = normalizeLon(lon2);
+    
+    // If the difference is more than 180, one is on the opposite side of the globe
+    if (std::abs(lon1 - lon2) > 180) {
+        if (lon1 < lon2) {
+            minLon = lon2;
+            maxLon = lon1 + 360;
+        } else {
+            minLon = lon1;
+            maxLon = lon2 + 360;
+        }
+        
+        // Ensure maxLon does not exceed 360
+        maxLon = fmod(maxLon, 360.0);
+    } else {
+        minLon = std::min(lon1, lon2);
+        maxLon = std::max(lon1, lon2);
+    }
+}
 
 int main(int argc, char** argv) {
     if (argc < 2) usage(argv[0]);
     std::string input_grib = argv[1];
     bool do_interpolation = false;
     double interp_lat = 0, interp_lng = 0;
-    bool generate_image_flag = false;
+    bool subset_image_flag = false;
     double lngW = 0, latS = 0, lngE = 0, latN = 0;
     std::string saveImage_pattern;
-    int image_width = 110, image_height = 120;
+    int image_width = 0, image_height = 0;
     std::map<std::string,std::string> filter_params;
     std::string index_filename;
+    std::string cmap = "grey";
     std::vector<std::string> index_keys;
 
     for (int i=2; i<argc; ++i) {
@@ -320,7 +372,7 @@ int main(int argc, char** argv) {
             do_interpolation = true;
         } else if (arg.find("-WSEN") == 0) {
             if (!parse_WSEN(arg, lngW, latS, lngE, latN)) { std::cerr<<"Bad -WSEN\n"; return 1; }
-            generate_image_flag = true;
+            subset_image_flag = true;
         } else if (arg.find("-saveImage") == 0) {
             size_t eq=arg.find('=');
             if (eq==std::string::npos) { std::cerr<<"Bad -saveImage\n"; return 1; }
@@ -333,7 +385,9 @@ int main(int argc, char** argv) {
             if (image_width<=0 || image_height<=0) { std::cerr<<"imageSize must be positive\n"; return 1; }
         } else if (arg.find("-filter") == 0) {
             if (!parse_filter(arg, filter_params)) { std::cerr<<"Bad filter\n"; return 1; }
-        } else if (arg.find("-index=") == 0) {
+        } else if (arg.find("-cmap") == 0) {
+            cmap = arg.substr(arg.find('=')+1);
+        }else if (arg.find("-index=") == 0) {
 
             index_filename = arg.substr(arg.find('=')+1);
             if (!index_filename.empty() && index_filename.front()=='\"' && index_filename.back()=='\"')
@@ -375,7 +429,7 @@ int main(int argc, char** argv) {
                 break; // No need to check further if one condition fails
             }
         }
-
+        
         if (skip) {
             codes_handle_delete(h);
 
@@ -402,21 +456,51 @@ int main(int argc, char** argv) {
         codes_get_double(h, "jDirectionIncrementInDegrees", &linc);
         codes_get_double(h, "iDirectionIncrementInDegrees", &binc);
         codes_get_long(h,"Ni",&Ni); codes_get_long(h,"Nj",&Nj);
-        bool descending=(lat1>lat2); double ddlat=fabs(linc), ddlon=binc;
+
+  
+        
+        bool descending=(lat1>lat2); 
+        double ddlat=fabs(linc), ddlon=binc;
         double glat1=descending?lat1:lat1, glat2=descending?lat2:lat2;
 
+        if (subset_image_flag == false) {
+            double minLon, maxLon;
+            findMinMaxLon(lon1, lon2, minLon, maxLon);
+            
+            lngW = minLon;
+            latS = std::min(lat1, lat2); 
+            lngE = maxLon;
+            latN = std::max(lat1, lat2);
+
+            if (image_width <= 0) {
+                image_width = Nj;
+            }
+            if (image_height <= 0) {
+                image_height = Ni;
+            }
+        } else {
+            if (image_width <= 0) {
+                image_width = int((lngE - lngW) / binc);
+            }
+            if (image_height <= 0) {
+                image_height = int((latN - latS) / linc);
+            }
+        }
+
+       std::cout<<"-WSEN\""<<lngW<<","<<latS<<","<<lngE<<","<<latN<<"\" image Size w:"<<image_width<<" h:"<<image_height<<" min:"<<locmin<<" max:"<<locmax<<std::endl;
+       
         if (do_interpolation) {
             double iv=0; bool ok=bilinear_interpolation(interp_lat,interp_lng,glat1,glat2,ddlat,lon1,lon1+(Ni-1)*ddlon,ddlon,Ni,Nj,data,iv);
             if (!ok) std::cerr<<input_grib<<"  Interp failed \n";
         }
-        if (generate_image_flag && !saveImage_pattern.empty()) {
+        if (!saveImage_pattern.empty()) {
             if (Ni>0 && Nj>0 && linc!=0 && binc!=0) {
                 std::string fn = generate_filename(saveImage_pattern, h);
                 std::string fni = generate_filename(index_filename, h);
                 generate_image(fn, data, minv, maxv, lngW, latS, lngE, latN,
                                image_width, image_height, linc, binc,
                                lat1, lon1, ddlat, ddlon, Ni, Nj,
-                               input_grib, fni, index_keys, h);
+                               input_grib, fni, cmap,index_keys, h);
             } else {
                 std::cerr<<"  Invalid grid\n";
             }
