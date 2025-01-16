@@ -48,7 +48,7 @@ public:
 	/*!  \brief overloaded operator !=  */
 	friend int operator!=(const FFEvent&, const FFEvent&);
 
-	double getTime();
+	double getTime() const;
 	ForeFireAtom* getAtom();
 	FFEvent* getNext();
 	FFEvent* getPrev();

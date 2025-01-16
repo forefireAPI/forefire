@@ -639,8 +639,9 @@ void FFDumpDoubleArray(size_t nmodel, size_t nip, const char* mname, double t
 	FileOut.write(reinterpret_cast<const char*>(&nkC), sizeof(size_t));
 	FileOut.write(reinterpret_cast<const char*>(&ct), sizeof(double));
 
-	size_t indF = 0;
+
 	try {
+//	size_t indF = 0;
 //		for ( indF = 0; indF < sizein; indF++ ) {
 //                     FileOut.write(reinterpret_cast<const char*>(x+indF), sizeof(double));
 //		}

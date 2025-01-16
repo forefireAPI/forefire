@@ -7,6 +7,7 @@
  *
  *  A grib dumper, example to make a 1080p t2m out of AROME : grib2ffnc 20241219.00Z.12H.SP1.grib2     -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate
  *  grib2ffnc 20241219.00Z.13H.SP1.grib2  -WSEN="-7,40.7,12.2,51.5"  -saveImage="debug{shortName}{level}.raw"  -imageSize=1920,1080 -filter{shortName=10efg}{level=10}  -index="debug{shortName}{level}.csv" -indexParams=forecastTime,stepRange,dataDate,name
+ *  grib2ffnc 07/01/2022/08/PRECIP_SOL_0.grib -filter{dataDate="20220818"} -WSEN="7,40.7,11.2,43.5" -saveImage="debug{dataDate}{level}.png"
  * @author Jean-Baptiste Filippi
  * @date 01/01/2025
  */
@@ -115,15 +116,8 @@ static bool parse_filter(const std::string& arg, std::map<std::string,std::strin
     return !filter_params.empty();
 }
 
-static std::string generate_filename(const std::string& pattern, const std::string& shortName, long level) {
-    std::string filename = pattern;
-    size_t pos;
-    while ((pos = filename.find("{shortName}")) != std::string::npos)
-        filename.replace(pos, 11, shortName);
-    while ((pos = filename.find("{level}")) != std::string::npos)
-        filename.replace(pos, 7, std::to_string(level));
-    return filename;
-}
+
+
 
 static bool bilinear_interpolation(double tlat, double tlng, double lat1, double lat2, double dlat,
                                    double lon1, double lon2, double dlon, int Ni, int Nj,
@@ -165,7 +159,23 @@ static std::string get_codes_value_as_string(codes_handle* h, const std::string&
     long lval; double dval;
     if (codes_get_long(h, key.c_str(), &lval) == 0) return std::to_string(lval);
     if (codes_get_double(h, key.c_str(), &dval) == 0) return std::to_string(dval);
-    return "N/A";
+    return "NOTFOUND";
+}
+
+static std::string generate_filename(const std::string& pattern, codes_handle* h) {
+    std::string filename = pattern;
+    size_t pos;
+    while ((pos = filename.find('{')) != std::string::npos) {
+        size_t end_pos = filename.find('}', pos);
+        if (end_pos == std::string::npos) break; // No matching closing brace
+
+        std::string key = filename.substr(pos + 1, end_pos - pos - 1);
+        std::string replacement = get_codes_value_as_string(h, key);
+        
+        // Replace the key enclosed in {} with the actual value from the GRIB message
+        filename.replace(pos, end_pos - pos + 1, replacement);
+    }
+    return filename;
 }
 
 static bool file_exists(const std::string& fn) {
@@ -349,24 +359,26 @@ int main(int argc, char** argv) {
     if (!grib_file) { std::cerr<<"Cannot open "<<input_grib<<"\n"; return 1; }
 
     codes_handle* h=nullptr; int err=0;
-    char short_param[100]; size_t short_len=sizeof(short_param);
-    char long_param[200];  size_t long_len=sizeof(long_param);
-    long level=0; int msg_count=0, processed=0;
+
+    int msg_count=0, processed=0;
 
     while ((h = codes_handle_new_from_file(nullptr, grib_file, PRODUCT_GRIB, &err)) != nullptr) {
         msg_count++;
-        if (codes_get_string(h, "shortName", short_param, &short_len)!=0) { codes_handle_delete(h); continue; }
-        if (codes_get_string(h, "name", long_param, &long_len)!=0)        { std::strcpy(long_param,"N/A"); }
-        if (codes_get_long(h, "level", &level)!=0) { level=0; }
-        bool skip=false;
-        if (filter_params.count("shortName") && filter_params["shortName"]!=short_param) skip=true;
-        if (!skip && filter_params.count("level")) {
-            long lf=std::stol(filter_params["level"]);
-            if (level!=lf) skip=true;
+      
+        bool skip = false;
+        for (std::map<std::string, std::string>::const_iterator it = filter_params.begin(); it != filter_params.end(); ++it) {
+            std::string key = it->first;
+            std::string value = it->second;
+            std::string param_value = get_codes_value_as_string(h, key);
+            if (param_value != value) {
+                skip = true;
+                break; // No need to check further if one condition fails
+            }
         }
+
         if (skip) {
             codes_handle_delete(h);
-            short_len=sizeof(short_param); long_len=sizeof(long_param);
+
             continue;
         }
         size_t nvals=0;
@@ -399,8 +411,8 @@ int main(int argc, char** argv) {
         }
         if (generate_image_flag && !saveImage_pattern.empty()) {
             if (Ni>0 && Nj>0 && linc!=0 && binc!=0) {
-                std::string fn = generate_filename(saveImage_pattern, short_param, level);
-                std::string fni = generate_filename(index_filename, short_param, level);
+                std::string fn = generate_filename(saveImage_pattern, h);
+                std::string fni = generate_filename(index_filename, h);
                 generate_image(fn, data, minv, maxv, lngW, latS, lngE, latN,
                                image_width, image_height, linc, binc,
                                lat1, lon1, ddlat, ddlon, Ni, Nj,
@@ -411,7 +423,6 @@ int main(int argc, char** argv) {
         }
         processed++;
         codes_handle_delete(h);
-        short_len=sizeof(short_param); long_len=sizeof(long_param);
     }
     if (err && err!=GRIB_END_OF_FILE) std::cerr<<"GRIB read error: "<<codes_get_error_message(err)<<"\n";
     fclose(grib_file);

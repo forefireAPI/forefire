@@ -97,7 +97,7 @@ int operator!=(const FFEvent& left, const FFEvent& right){
 	return !(left==right);
 }
 
-double FFEvent::getTime(){
+double FFEvent::getTime() const{
 	return eventTime;
 }
 

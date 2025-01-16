@@ -1,16 +1,18 @@
 Things to do
-- use of ERA 40 to reanalyse any wildfire using FF/MNH
-- A simple python case to put weather files into a FF simulation
-- same python script by FF script
-- include all Firecaster FF models into wildfire ROS library
-- generate a fuel file with different water stress
-- a nice code generator from python to FF
-- a list of examples and coupled test cases directly in ForeFire
+- Document all code and make the doxygen/readthedocs clean
+- clean the Python bindings links and pathes, retest
 - numerical unit test for FF in 2D : circles, area round, ellipses, mass conservation for heat fluxes
-- numerical tests for fuel models in 2D.. slopes, wind. Best would be 1 model 10 slopes for same wind.
+- numerical tests for fuel models in 2D.. slopes, wind. Best would be 1 model 10 slopes for same wind. Simple ones.
+- include all Firecaster FF models into wildfire ROS library
+- make a special CMAKE with/for MesoNH that will symlink the library so it will work directly if profile_mesonh is set
+- use of ERA 40 to reanalyse any wildfire using FF/MNH
+- A simple python case to put weather files into a FF simulation and same script by FF script
+- a vector of fireDomains in session to perform ensembles.
+- generate a fuel file with different water stress
+- a list of examples and coupled test cases directly in ForeFire
 - stuff to make ff from shapefiles
 - stuff to make ATmap from fffiles
 - stuf to get stats from ATmap
-- get the FWI from mars
+- compute FWI in C++ from mars/arome
 - perform a reanalysis on several wildfires in europe, calibrate adjustment speeds with it
 - MesoNH Sandbox
