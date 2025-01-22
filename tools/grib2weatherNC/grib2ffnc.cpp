@@ -240,7 +240,7 @@ static bool generate_image(const std::string& filename, const std::vector<double
             }
         }
         ofs.close();
-
+        
         if (!index_filename.empty()) {
             bool idx_exists = file_exists(index_filename);
             std::ofstream iofs(index_filename, std::ios::app);
@@ -253,9 +253,15 @@ static bool generate_image(const std::string& filename, const std::vector<double
                 for (auto &k: index_keys) iofs << "," << k;
                 iofs << "\n";
             }
-            iofs << bytestart << "," <<filename<<","<< input_grib << "," << width << "," << height<<","<<
-                 lngW<<","<<latS<<","<<lngE<<","<<latN<< ",float32," << min_val << "," << max_val;
+            
+            iofs    << bytestart << "," << filename << "," << input_grib << "," << width << "," << height << ","
+                    << lngW << "," << latS << "," << lngE << "," << latN << ",float32," 
+                    << std::setprecision(std::numeric_limits<double>::max_digits10) 
+                    << min_val << ","
+                    << std::setprecision(std::numeric_limits<double>::max_digits10) 
+                    << max_val;
             for (auto &k: index_keys) iofs << "," << get_codes_value_as_string(h, k); 
+            
             // We'll need actual handle to retrieve keys; 
             // to keep it simple here, pass them as N/A or do nothing.
             // One can expand the interface to pass codes_handle*, or store them earlier.
@@ -287,14 +293,7 @@ static bool generate_image(const std::string& filename, const std::vector<double
 
                 int idx = ((height-1 - y) * width + x) * 4;
                 if (ok && !std::isnan(val) && val >= min_val && val <= max_val) {
-                    unsigned char intensity = 0;
-                    //if (max_val != min_val) {
-                    //    intensity = (unsigned char)(255.0*(val - min_val)/(max_val - min_val));
-                    //}
-                    //image[idx+0] = 255 - intensity;
-                    //image[idx+1] = 255 - intensity;
-                    //image[idx+2] = 255 - intensity;
-                    //image[idx+3] = 255;
+                    
                     int colorIndex = static_cast<int>((val - min_val) / (max_val - min_val) * (mapSize - 1));
                     colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
                     const auto& color = colorMap[colorIndex];
