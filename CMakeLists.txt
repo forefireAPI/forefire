@@ -7,53 +7,11 @@ project(forefire VERSION 1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ----------------------------------
-# NetCDF Paths (via environment variables)
-# ----------------------------------
-# You can also switch to find_package(NetCDF) if preferred
-if(NOT DEFINED ENV{NETCDF_HOME})
-    message(STATUS "NETCDF_HOME not set. Attempting default path or system library paths.")
-    # Fallback logic could go here if needed
-else()
-    set(NETCDF_HOME $ENV{NETCDF_HOME})
-    include_directories(${NETCDF_HOME}/include)
-    link_directories(${NETCDF_HOME}/lib)
-endif()
 
 # ----------------------------------
-# ECCodes detection
-# ----------------------------------
-# Use an option so users can toggle ECCodes build
-option(ENABLE_ECCODES "Enable ECCodes support" ON)
-
-set(ECCODES_FOUND FALSE)
-if(ENABLE_ECCODES)
-    if(NOT DEFINED ENV{ECCODES_HOME})
-        message(STATUS "ECCODES_HOME not set. Will look in system library paths.")
-    else()
-        set(ECCODES_HOME $ENV{ECCODES_HOME})
-        include_directories(${ECCODES_HOME}/include)
-        link_directories(${ECCODES_HOME}/lib)
-        link_directories(${ECCODES_HOME}/lib64)  # Some systems use lib64
-    endif()
-
-    # Simple check for the library:
-    find_library(ECCODES_LIB
-        NAMES eccodes
-        HINTS ${ECCODES_HOME}/lib ${ECCODES_HOME}/lib64
-    )
-    if(ECCODES_LIB)
-        set(ECCODES_FOUND TRUE)
-        message(STATUS "ECCodes found: ${ECCODES_LIB}")
-    else()
-        message(WARNING "ECCodes not found. grib2ffnc will not be built.")
-    endif()
-endif()
-
-# ----------------------------------
-# MPI detection
-# ----------------------------------
-# If user specifically passes MPI compilers, try to use them
+    # MPI detection
+    # ----------------------------------
+    # If user specifically passes MPI compilers, try to use them
 if(MPI_C_COMPILER AND MPI_CXX_COMPILER)
     message(STATUS "Using manually specified MPI compilers:")
     message(STATUS "  MPI_C_COMPILER: ${MPI_C_COMPILER}")
@@ -84,6 +42,93 @@ else()
     endif()
 endif()
 
+
+# ----------------------------------
+# Check for MESONH and XYZ Environment Variables
+# ----------------------------------
+# These variables override the standard NETCDF_HOME if set
+if(DEFINED ENV{MESONH} AND DEFINED ENV{XYZ})
+    message(STATUS "MESONH and XYZ environment variables are set. Configuring static NetCDF.")
+    
+    # Set MESONH and XYZ from environment variables
+    set(MESONH $ENV{MESONH})
+    set(XYZ $ENV{XYZ})
+    
+    # Automatically detect NETCDF_HOME by finding the NETCDF-* directory
+    file(GLOB NETCDF_DIR "${MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
+    if(NETCDF_DIR)
+        list(GET NETCDF_DIR 0 NETCDF_HOME)
+        message(STATUS "Detected NETCDF_HOME: ${NETCDF_HOME}")
+    else()
+        message(FATAL_ERROR "No NETCDF-* directory found under ${MESONH}/src/dir_obj${XYZ}/MASTER/")
+    endif()
+    
+    # Include directories
+    include_directories(${NETCDF_HOME}/include)
+    
+    # Find ZLIB
+    find_package(ZLIB REQUIRED)
+    if(ZLIB_FOUND)
+        message(STATUS "ZLIB found: ${ZLIB_LIBRARIES}")
+    else()
+        message(FATAL_ERROR "ZLIB not found")
+    endif()
+    
+    # Specify static libraries
+    set(NETCDF_LIB "${NETCDF_HOME}/lib64/libnetcdf.a")
+    set(NETCDF_CXX_LIB "${NETCDF_HOME}/lib64/libnetcdf_c++4.a")
+    set(HDF5_LIB "${NETCDF_HOME}/lib64/libhdf5.a")
+    set(HDF5_HL_LIB "${NETCDF_HOME}/lib64/libhdf5_hl.a")
+    set(SZIP_LIB "${NETCDF_HOME}/lib64/libsz.a")
+    set(AEC_LIB "${NETCDF_HOME}/lib64/libaec.a")  # Added libaec.a
+    
+    # Check if all required static libraries exist
+    foreach(lib IN LISTS NETCDF_LIB NETCDF_CXX_LIB HDF5_LIB HDF5_HL_LIB SZIP_LIB AEC_LIB)
+        if(NOT EXISTS ${lib})
+            message(FATAL_ERROR "Required static library not found: ${lib}")
+        endif()
+    endforeach()
+    
+    # Create a variable with all libraries needed for static linking
+    set(NETCDF_STATIC_LIBS
+        ${NETCDF_LIB}
+        ${NETCDF_CXX_LIB}
+        ${HDF5_LIB}
+        ${HDF5_HL_LIB}
+        ${SZIP_LIB}
+        ${AEC_LIB}               # Included libaec.a
+        ${ZLIB_LIBRARIES}       # from find_package(ZLIB)
+    )
+    
+    # Ensure static linking by specifying the full path to the static libraries
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    
+    # Optionally, prevent CMake from searching for shared libraries
+    set(BUILD_SHARED_LIBS OFF)
+    
+else()
+    # ----------------------------------
+    # NetCDF Paths (via environment variables)
+    # ----------------------------------
+    if(DEFINED ENV{NETCDF_HOME})
+        set(NETCDF_HOME $ENV{NETCDF_HOME})
+        include_directories(${NETCDF_HOME}/include)
+        link_directories(${NETCDF_HOME}/lib)
+        message(STATUS "NETCDF_HOME set to ${NETCDF_HOME}")
+    else()
+        message(STATUS "NETCDF_HOME not set. Attempting default path or system library paths.")
+        # Fallback logic could go here if needed
+    endif()
+       
+
+    if(MPI_FOUND)
+        link_libraries(netcdf netcdf_c++4 ${MPI_LIBRARIES})
+    else()
+        link_libraries(netcdf netcdf_c++4)
+    endif()
+    
+endif()  # End of MESONH and XYZ check
+    
 # ----------------------------------
 # Compiler Flags
 # Adjust or add as needed
@@ -102,21 +147,13 @@ endif()
 # ----------------------------------
 # Output Directories
 # ----------------------------------
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
 
-# ----------------------------------
-# Global Linking (NetCDF, MPI)
-# ----------------------------------
-# NetCDF typically needs -lnetcdf and possibly -lnetcdf_c++4
-# You can adapt this if your NetCDF library uses different names
-if(MPI_FOUND)
-    # If find_package(MPI) was used, you typically link to MPI::MPI_CXX or ${MPI_LIBRARIES}.
-    # For simplicity here, assume ${MPI_LIBRARIES}.
-    link_libraries(netcdf netcdf_c++4 ${MPI_LIBRARIES})
-else()
-    link_libraries(netcdf netcdf_c++4)
-endif()
+message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "CMAKE_LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 # ----------------------------------
 # Main Project Executable
@@ -124,39 +161,57 @@ endif()
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 # Build only if MPI is found or you do not strictly require MPI
 add_executable(forefire ${SRC_FILES})
-if(MPI_FOUND)
-    target_link_libraries(forefire ${MPI_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+if(DEFINED NETCDF_STATIC_LIBS)
+    if(MPI_FOUND)
+        target_link_libraries(forefire PRIVATE ${NETCDF_STATIC_LIBS} ${MPI_LIBRARIES})
+    else()
+        target_link_libraries(forefire PRIVATE ${NETCDF_STATIC_LIBS})
+    endif()
+else()
+    # Non-static linking case
+    if(MPI_FOUND)
+        target_link_libraries(forefire PRIVATE ${MPI_LIBRARIES})
+    else()
+        target_link_libraries(forefire PRIVATE netcdf netcdf_c++4)
+    endif()
 endif()
 
 # ----------------------------------
-# Shared library
+# Shared Library
 # ----------------------------------
 add_library(forefireL SHARED ${SRC_FILES})
-if(MPI_FOUND)
-    target_link_libraries(forefireL ${MPI_LIBRARIES} ${MPI_CXX_LIBRARIES})
+if(DEFINED NETCDF_STATIC_LIBS)
+    if(MPI_FOUND)
+        target_link_libraries(forefireL PRIVATE ${NETCDF_STATIC_LIBS} ${MPI_LIBRARIES})
+    else()
+        target_link_libraries(forefireL PRIVATE ${NETCDF_STATIC_LIBS})
+    endif()
+else()
+    # Non-static linking case
+    if(MPI_FOUND)
+        target_link_libraries(forefireL PRIVATE ${MPI_LIBRARIES})
+    else()
+        target_link_libraries(forefireL PRIVATE netcdf netcdf_c++4)
+    endif()
 endif()
 
 # ----------------------------------
-# Test executable
+# Test Executable
 # ----------------------------------
 set(TEST_MAIN tools/runANN/ANNTest.cpp)
 add_executable(ANN_test ${TEST_MAIN})
-if(MPI_FOUND)
-    target_link_libraries(ANN_test ${MPI_LIBRARIES} ${MPI_CXX_LIBRARIES})
-endif()
-
-# ----------------------------------
-# grib2ffnc (build only if ECCodes found)
-# ----------------------------------
-set(DATA_COMPILE tools/grib2weatherNC/grib2ffnc.cpp)
-if(ECCODES_FOUND)
-    add_executable(grib2ffnc ${DATA_COMPILE})
-    # For ECCodes we link with -leccodes
+if(DEFINED NETCDF_STATIC_LIBS)
     if(MPI_FOUND)
-        target_link_libraries(grib2ffnc ${ECCODES_LIB} ${MPI_LIBRARIES})
+        target_link_libraries(ANN_test PRIVATE ${NETCDF_STATIC_LIBS} ${MPI_LIBRARIES})
     else()
-        target_link_libraries(grib2ffnc ${ECCODES_LIB})
+        target_link_libraries(ANN_test PRIVATE ${NETCDF_STATIC_LIBS})
     endif()
 else()
-    message(WARNING "ECCodes not found; skipping grib2ffnc target.")
+    # Non-static linking case
+    if(MPI_FOUND)
+        target_link_libraries(ANN_test PRIVATE ${MPI_LIBRARIES})
+    else()
+        target_link_libraries(ANN_test PRIVATE netcdf netcdf_c++4)
+    endif()
 endif()
