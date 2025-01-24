@@ -93,8 +93,8 @@ if(DEFINED ENV{MESONH} AND DEFINED ENV{XYZ})
     set(NETCDF_STATIC_LIBS
         ${NETCDF_LIB}
         ${NETCDF_CXX_LIB}
-        ${HDF5_LIB}
         ${HDF5_HL_LIB}
+        ${HDF5_LIB}
         ${SZIP_LIB}
         ${AEC_LIB}               # Included libaec.a
         ${ZLIB_LIBRARIES}       # from find_package(ZLIB)
