@@ -180,12 +180,32 @@ endif()
 # ----------------------------------
 # Shared Library
 # ----------------------------------
+# ----------------------------------
+# Shared Library
+# ----------------------------------
 add_library(forefireL SHARED ${SRC_FILES})
+
 if(DEFINED NETCDF_STATIC_LIBS)
     if(MPI_FOUND)
-        target_link_libraries(forefireL PRIVATE ${NETCDF_STATIC_LIBS} ${MPI_LIBRARIES})
+        # Link static NetCDF and HDF5 libraries, then dynamic MPI libraries
+        target_link_libraries(forefireL PRIVATE
+            # Start static linking
+            -Wl,-Bstatic
+            ${NETCDF_STATIC_LIBS}
+            # End static linking
+            -Wl,-Bdynamic
+            ${MPI_LIBRARIES}
+            # Link against the dynamic system libraries if needed
+            dl  # For dynamic loading
+        )
     else()
-        target_link_libraries(forefireL PRIVATE ${NETCDF_STATIC_LIBS})
+        # Only static NetCDF and HDF5 without MPI
+        target_link_libraries(forefireL PRIVATE
+            -Wl,-Bstatic
+            ${NETCDF_STATIC_LIBS}
+            -Wl,-Bdynamic
+            dl
+        )
     endif()
 else()
     # Non-static linking case
@@ -195,7 +215,6 @@ else()
         target_link_libraries(forefireL PRIVATE netcdf netcdf_c++4)
     endif()
 endif()
-
 # ----------------------------------
 # Test Executable
 # ----------------------------------
