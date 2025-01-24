@@ -136,11 +136,11 @@ endif()  # End of MESONH and XYZ check
 # Example release flags for MPI
 if(MPI_FOUND)
     set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -Wall -Wno-missing-field-initializers -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing -DMPI_COUPLING"
+        "${CMAKE_CXX_FLAGS} -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing -DMPI_COUPLING"
     )
 else()
     set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -Wall -O3 -Wno-missing-field-initializers -Wno-unused-parameter -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing"
+        "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing"
     )
 endif()
 
