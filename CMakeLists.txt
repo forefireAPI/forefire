@@ -60,7 +60,7 @@ if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ})
         list(GET NETCDF_DIR 0 NETCDF_HOME)
         message(STATUS "Detected NETCDF_HOME: ${NETCDF_HOME}")
     else()
-        message(FATAL_ERROR "No NETCDF-* directory found under ${SRC_MESONH}/src/dir_obj${XYZ}/MASTER/")
+        message(FATAL_ERROR "No NETCDF-* directory found under ${MESONH}/src/dir_obj${XYZ}/MASTER/")
     endif()
     
     # Include directories
