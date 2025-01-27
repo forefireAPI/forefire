@@ -47,20 +47,20 @@ endif()
 # Check for MESONH and XYZ Environment Variables
 # ----------------------------------
 # These variables override the standard NETCDF_HOME if set
-if(DEFINED ENV{MESONH} AND DEFINED ENV{XYZ})
+if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ})
     message(STATUS "MESONH and XYZ environment variables are set. Configuring static NetCDF.")
     
     # Set MESONH and XYZ from environment variables
-    set(MESONH $ENV{MESONH})
+    set(MESONH $ENV{SRC_MESONH})
     set(XYZ $ENV{XYZ})
     
     # Automatically detect NETCDF_HOME by finding the NETCDF-* directory
-    file(GLOB NETCDF_DIR "${MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
+    file(GLOB NETCDF_DIR "${SRC_MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
     if(NETCDF_DIR)
         list(GET NETCDF_DIR 0 NETCDF_HOME)
         message(STATUS "Detected NETCDF_HOME: ${NETCDF_HOME}")
     else()
-        message(FATAL_ERROR "No NETCDF-* directory found under ${MESONH}/src/dir_obj${XYZ}/MASTER/")
+        message(FATAL_ERROR "No NETCDF-* directory found under ${SRC_MESONH}/src/dir_obj${XYZ}/MASTER/")
     endif()
     
     # Include directories
