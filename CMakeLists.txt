@@ -55,7 +55,7 @@ if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ})
     set(XYZ $ENV{XYZ})
     
     # Automatically detect NETCDF_HOME by finding the NETCDF-* directory
-    file(GLOB NETCDF_DIR "${SRC_MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
+    file(GLOB NETCDF_DIR "${MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
     if(NETCDF_DIR)
         list(GET NETCDF_DIR 0 NETCDF_HOME)
         message(STATUS "Detected NETCDF_HOME: ${NETCDF_HOME}")
