@@ -135,7 +135,7 @@ double BurningMap::getDy(){
 }
 
 FFPoint BurningMap::getCenter(const size_t& i, const size_t& j){
-	return FFPoint(SWCorner.getX()+(i+0.5)*dx, SWCorner.getY()+(j+0.5)*dy);
+	return FFPoint(SWCorner.getX()+(i+0.5)*dx, SWCorner.getY()+(j+0.5)*dy,0);
 }
 
 string BurningMap::toString(const double& time){

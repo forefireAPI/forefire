@@ -367,14 +367,14 @@ void DataBroker::initializeAtmosphericLayers(const double& time,
 
 	// Loading the atmospheric layers
 	FFPoint windUOrigin = FFPoint(atmoSWCorner.getX() - dx,
-			atmoSWCorner.getY() - 0.5 * dy);
+			atmoSWCorner.getY() - 0.5 * dy,0);
 	TwoTimeArrayLayer<double>* wul = new TwoTimeArrayLayer<double>("windU",
 			atmosphericData->windU, time, atmosphericData->oldWindU, time,
 			windUOrigin, dx, dy);
 	registerLayer("windU", wul);
 	registerLayer("outerWindU", wul);
 	FFPoint windVOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-			atmoSWCorner.getY() - dy);
+			atmoSWCorner.getY() - dy,0);
 	TwoTimeArrayLayer<double>* wvl = new TwoTimeArrayLayer<double>("windV",
 			atmosphericData->windV, time, atmosphericData->oldWindV, time,
 			windVOrigin, dx, dy);
@@ -695,6 +695,15 @@ DataLayer<double>* DataBroker::getLayer(const string& property) {
 	return 0;
 }
 
+bool DataBroker::hasLayer(const string& property) {
+	// Scanning the scalar layers
+
+	ilayer = layersMap.find(property);
+	if (ilayer != layersMap.end())
+		return true; 
+	return false;
+}
+
 FluxLayer<double>* DataBroker::getFluxLayer(const string& property) {
 	// Scanning the scalar layers
 
@@ -925,7 +934,6 @@ void DataBroker::loadFromNCFile(string filename) {
 							}
 
 				string varName = it->first;
-
 				 
 
 				if (varName == "wind") {
@@ -1058,10 +1066,8 @@ FFPoint DataBroker::getNetCDFSWCorner(NcVar* var) {
   		 att.getValues(&Zorigin);
 	} 
  
-	FFPoint relSWC = FFPoint(Xorigin, Yorigin, Zorigin);
-	FFPoint shiftPos = FFPoint(params->getDouble("SHIFT_ALL_DATA_ABSCISSA_BY"),
-			params->getDouble("SHIFT_ALL_DATA_ORDINATES_BY"));
-	return shiftPos + relSWC;
+
+	return FFPoint(Xorigin, Yorigin, Zorigin);
 }
 double DataBroker::getNetCDFTimeOrigin(NcVar* var) {
 	double Lt =0;
@@ -1126,7 +1132,6 @@ XYZTDataLayer<double>* DataBroker::constructXYZTLayerFromFile(	NcFile* NcdataFil
 
 		 if (dimTSelected>-1){
 			 	 nt = 1;
-
 		    }
 	
 	double* data = readAndTransposeFortranProjectedField(&values, nt, nz, ny, nx,true,dimTSelected);

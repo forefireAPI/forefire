@@ -34,11 +34,7 @@ FFPoint::FFPoint(){
 	y = 0.;
 	z = 0.;
 }
-FFPoint::FFPoint(const double x0, const double y0){
-	x = x0;
-	y = y0;
-	z = 0.;
-}
+
 FFPoint::FFPoint(const double x0,const  double y0,const  double z0){
 	x = x0;
 	y = y0;

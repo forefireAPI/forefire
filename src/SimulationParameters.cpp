@@ -151,15 +151,11 @@ SimulationParameters::SimulationParameters(){
 
 	parameters.insert(make_pair("LookAheadDistanceForeTimeGradientDataLayer", "40"));
 	parameters.insert(make_pair("BMapsFiles", "1234567890"));
-	parameters.insert(make_pair("SHIFT_ALL_POINT_ABSCISSA_BY", "0"));
-	parameters.insert(make_pair("SHIFT_ALL_POINT_ORDINATES_BY", "0"));
-	parameters.insert(make_pair("SHIFT_ALL_DATA_ABSCISSA_BY", "0"));
-	parameters.insert(make_pair("SHIFT_ALL_DATA_ORDINATES_BY", "0"));
 
     parameters.insert(make_pair("ISOdate", "2012-01-01T00:00:00Z"));
-    parameters.insert(make_pair("count", "0"));                     // used to count 
-    parameters.insert(make_pair("dumpMode", "ff"));                 // ff | json
-    parameters.insert(make_pair("projection", "EPSG:27573"));
+    parameters.insert(make_pair("count", "0"));                      
+    parameters.insert(make_pair("dumpMode", "ff")); 
+
 	parameters.insert(make_pair("propagationModel", "Iso"));
 	parameters.insert(make_pair("frontScanDistance", "1000"));
 	parameters.insert(make_pair("burningTresholdFlux", "2000"));
@@ -189,18 +185,14 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("year", "2012"));
 	parameters.insert(make_pair("month", "1"));
 	parameters.insert(make_pair("day", "1"));
-
-	parameters.insert(make_pair("SWCornerX", "-10"));
-	parameters.insert(make_pair("SWCornerY", "-10"));
-	parameters.insert(make_pair("NECornerX", "10"));
-	parameters.insert(make_pair("NECornerY", "10"));
+	
+	parameters.insert(make_pair("DefaultSWLngLat","8.6192,41.765"));
 
 	parameters.insert(make_pair("perimeterResolution", "40"));
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
-
 
 	parameters.insert(make_pair("watchedProc", "-2"));
 	parameters.insert(make_pair("CommandOutputs", "0"));

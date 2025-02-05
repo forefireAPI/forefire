@@ -38,7 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "DataLayer.h"
 #include "FluxLayer.h"
 #include "FFArrays.h"
-#include "Halo.h"
 #include "FireNodeData.h"
 #include "FireFrontData.h"
 #include "ParallelException.h"
@@ -79,6 +78,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 	FFPoint NWCorner; /*!< NorthWest Corner of the mesh */
 	FFPoint NECorner; /*!< NorthEast Corner of the mesh */
 	FFPoint SECorner; /*!< SouthEast Corner of the mesh */
+
 
 	/* reference properties */
     /*----------------------*/
@@ -166,10 +166,10 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/* VARIABLES AND ALGORITHMS FOR PARALLEL SIMULATIONS */
 	/*---------------------------------------------------*/
 
-	/*! lists of halos */
+	/*! lists of halos
 	list<Halo*> outerHalos;
 	list<Halo*> innerHalos;
-	list<FDCell*> outerHaloCells, innerHaloCells;
+	list<FDCell*> outerHaloCells, innerHaloCells; */
 
 	/*! \brief markers for communication in parallel simulations */
 	static const double endChain; /*!< Marker for the end of the chain */
@@ -190,7 +190,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 		}
 		~Frontier(){}
 	};
-
 
 	list<Frontier*> frontiers;
 	list<Frontier*> infrontiers;
@@ -218,11 +217,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	void addChainToList(list<FireNodeData*>&
 			, list<FireNodeData*>&);
 
-	/*! \brief controlling all the chains */
-	void correctChains(list<FireNodeData*>&);
-
-	/*! \brief controlling (and adjusting if necessary) a chain */
-	bool correctChain(list<FireNodeData*>&, list<FireNodeData*>&);
 
 	/*! \brief obtaining the chain following number of appearance */
 	void getChainAt(const list<FireNodeData*>&, const int&
@@ -231,12 +225,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/*! \brief removes and returns the chain following number of appearance */
 	list<FireNodeData*>* popChainAt(list<FireNodeData*>&, const int&);
 
-	/*! \brief determining the position of the chain
-	 * related to another chain in a given list */
-	int getPositionOfRelatedChain(const list<FireNodeData*>&
-			, const list<FireNodeData*>&);
-	int getPositionOfRelatedChain(const list<FireNodeData*>&
-			, const double&);
 
 	/*! \brief append chain to a given list */
 	void appendChain(list<FireNodeData*>&
@@ -247,45 +235,28 @@ class FireDomain: public ForeFireAtom, Visitable {
 			, list<FireNodeData*>&);
 	void pushBackInChain(list<FireNodeData*>*, FireNodeData*);
 	void pushFrontInChain(list<FireNodeData*>*, FireNodeData*);
-	bool haloDataInListForward(double&, list<FireNodeData*>&
-			, list<FireNodeData*>::iterator&);
-	bool haloDataInListBackward(double&, list<FireNodeData*>&
-			, list<FireNodeData*>::iterator&);
 
 	/* Functions for parallel handling */
 	bool idInChain(const double&, const list<FireNodeData*>&);
 	bool isPrevLinkDataInList(const double&, const list<FireNodeData*>&);
 	bool isNextLinkDataInList(const double&, const list<FireNodeData*>&);
-	FireNode* searchForPreviousLinkInFrontier(const int&, list<FireNode*>, FFPoint);
+	
 	FireNode* findRelatedPreviousLink(list<FireNode*>, FFPoint);
 	double distanceAlongFrontier(FFPoint&, FFPoint&);
 	double distanceOnFrontier(int&, FFPoint, FFPoint);
 	double distanceOnBoundingBox(int&, FFPoint, FFPoint);
 
-	/*! \brief searching for excess firenodes */
-	void findExcessFirenodes(const list<FireNodeData*>&, list<FireNode*>&);
-
-	/*! \brief deleting excess firenodes */
-	void deleteExcessFirenodes(list<FireNode*>&, list<FireNode*>&);
 
 	/*! \brief deleting link nodes */
 	void deleteLinkNodes(list<FireNode*>&);
 
-	/*! \brief creating the unknown incoming firenodes */
-	void formIncomingStructures(list<FireNodeData*>&
-			, list<FireNode*>&, list<FireNode*>&
-			, list<FireNode*>&, list<FireFront*>&);
-
-	/*! \brief specific burning scan routine for parallel changes */
-	void parallelBurningScan(list<FireFront*>&, const double&);
-
+	
 	/*! \brief table for the possible corner nodes */
 	FFPoint& getStartCornerFromIndex(const int&);
 	FFPoint getBoundingBoxCornerFromIndex(const int&, FFPoint&, FFPoint&);
 	/*! \brief finding the frontier for a given point */
 	int getFrontierIndex(FFPoint loc);
-	/*! \brief looking to see if an incoming firenode already exists */
-	FireNode* alreadyPresentInOuterHalo(FireNodeData*);
+	
 
 	/*! \brief finding closest node from a location within a given set of nodes */
 	FireNode* findClosestNodeInList(FFPoint&, const list<FireNode*>&);
@@ -299,9 +270,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	FireNode* findSuitableRelatedNodeBackward(FireNode*);
 	FireNode* findSuitableRelatedNodeForward(FireNode*);
 	FireNode* findExistingNodeNear(FireNodeData*);
-
-	/*! \brief finding the closest point lying on the frontiers */
-	FFPoint closestPointOnOuterHaloFrontiers(FFPoint&);
 
 	/*-----------------*/
 	/* OTHER FUNCTIONS */
@@ -337,8 +305,6 @@ public:
 		double lastTime;
 	};
 
-
-
 	// Define the CellData structure
 	struct CellData {
 		size_t localx;
@@ -369,12 +335,15 @@ public:
 	static int registerPropagationModelInstantiator(string, PropagationModelInstantiator);
 	void updateFuelTable( string , double );
 	PropagationModel* propModelInstanciation(const int&, string);
-	vector<string> getPropagationModelKeys(string modelname);
 
 	void registerPropagationModel(const int&, PropagationModel*);
 	bool addPropagativeLayer(string);
 	size_t getFreePropModelIndex();
 
+	/* Mesh properties */
+    /*-----------------*/
+	FFPoint SWLngLat; /*!< SouthWest Corner of the mesh */
+	FFPoint NELngLat; /*!< NorthEast Corner of the mesh */
 	/* Flux models */
 	static const size_t NUM_MAX_FLUXMODELS = 500; /*!< maximum number of flux models */
 	static FluxModel* fluxModelsTable[NUM_MAX_FLUXMODELS];
@@ -396,7 +365,7 @@ public:
 	static bool recycleFronts; //to recycle fronts in memory
 	static size_t atmoIterNumber;
 
-	/*! \brief halos */
+	/*! \brief halos
 	Halo* southOuterHalo;
 	Halo* westOuterHalo;
 	Halo* northOuterHalo;
@@ -404,7 +373,7 @@ public:
 	Halo* southInnerHalo;
 	Halo* westInnerHalo;
 	Halo* northInnerHalo;
-	Halo* eastInnerHalo;
+	Halo* eastInnerHalo; */
 
 	bool atmosphericCoupling; /*! boolean for coupled simulations */
 	bool parallel; /*! boolean for parallel simulations */
@@ -423,13 +392,6 @@ public:
 			, const int&, const double&);
 	/*! \brief Destructor */
 	virtual ~FireDomain();
-
-	/*! \brief packing the information about the firenodes in the halo cells */
-	void createFirenodesMatrices();
-	void createFirenodesMatrices(list<FireNode*>&);
-
-	/*! \brief creation of the firenodes in the halo cells */
-	void manageHaloFirenodes(const double&);
 
 	/*! \brief present time of the simulation */
 	double getSimulationTime();
@@ -530,9 +492,7 @@ public:
 	FireNode* getFireNodeByID(const double);
 	FireNode* getFireNodeByIDNeighborCells(const double, FDCell*, int = 1);
 
-	/*! \brief searching a firenode by ID in the halo cells */
-	FireNode* getFirenodeInInnerHalo(const double&);
-	FireNode* getFirenodeInOuterHalo(const double&);
+ 
 
 	/*! \brief visitor function */
 	void accept(Visitor*);
@@ -554,11 +514,6 @@ public:
 	bool isInOuterHalo(FireNode*);
 	bool isInOuterHalo(FFPoint&);
 	bool isInOuterHalo(const double&, const double&);
-	bool isInActiveOuterHalo(FireNode*);
-	bool isInActiveOuterHalo(FireNodeData*);
-	bool isInActiveOuterHalo(FFPoint&);
-	bool isInActiveOuterHalo(const double&, const double&);
-
 	/*! \brief Test to see if a firenode pertains to a list */
 	bool firenodeInList(FireNode*, const list<FireNode*>&);
 

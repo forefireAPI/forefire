@@ -237,6 +237,8 @@ class Command {
 	static int man(const string&, size_t&);
 	/*! \brief command to load a NC data file */
 	static int loadData(const string&, size_t&);
+	/*! \brief command to save a NC landscape data file */
+	static int saveData(const string&, size_t&);
 	/*! \brief command to clear the simulation */
 	static int systemExec(const string&, size_t&);
 	/*! \brief command to run a system trough pipe */

@@ -87,7 +87,7 @@ void FireNode::initialize(FireNodeData* node, FireDomain* fd
 	setID(lid);
 	setTime(node->time);
 	setUpdateTime(node->time);
-	FFPoint loc = FFPoint(node->posX, node->posY);
+	FFPoint loc = FFPoint(node->posX, node->posY,0.);
 	setLoc(loc);
 	domain->addFireNodeInCell(this);
 	velocity.setVx(node->velX);
@@ -453,7 +453,7 @@ void FireNode::haloUpdate(FireNodeData* fnd, FireDomain* fd){
 	domain->addNewAtomToSimulation(this);
 	// handling the location
 	domain->removeFireNodeInCell(this);
-	FFPoint loc = FFPoint(fnd->posX, fnd->posY);
+	FFPoint loc = FFPoint(fnd->posX, fnd->posY,0.);
 	setLoc(loc);
 	nextloc = location;
 	domain->addFireNodeInCell(this);

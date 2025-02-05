@@ -440,7 +440,7 @@ T Array2DdataLayer<T>::getNearestData(FFPoint loc){
 template<typename T>
 FFPoint Array2DdataLayer<T>::posToIndices(FFPoint loc){
 	return FFPoint((loc.getX()-originX)/dx
-			, (loc.getY()-originY)/dy);
+			, (loc.getY()-originY)/dy,0);
 }
 
 template<typename T>

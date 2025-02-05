@@ -49,7 +49,7 @@ namespace libforefire{
 
 	const string FireDomain::altitude = "altitude";
 	const FFPoint FireDomain::outPoint
-	= FFPoint(numeric_limits<double>::infinity(), numeric_limits<double>::infinity());
+	= FFPoint(numeric_limits<double>::infinity(), numeric_limits<double>::infinity(),0);
 
 	bool FireDomain::outputs = false;
 	bool FireDomain::commandOutputs = false;
@@ -215,7 +215,7 @@ namespace libforefire{
 
 				// Loading the atmospheric layers
 				FFPoint windUOrigin = FFPoint(SWCorner.getX() - dx,
-						SWCorner.getY() - 0.5 * dy);
+						SWCorner.getY() - 0.5 * dy,0);
 				FFArray<double>* GwindU = new FFArray<double>("WindU", 0., atmoNX+2, atmoNY+2);
 				FFArray<double>* GoldWindU = new FFArray<double>("oldWindU", 0., atmoNX+2, atmoNY+2);
 				FFArray<double>* GwindV = new FFArray<double>("WindV", 0., atmoNX+2, atmoNY+2);
@@ -229,7 +229,7 @@ namespace libforefire{
 
 				cout<<"creating big wind data atmo resolution is "<<readRes<<" size "<< atmoNX+2<<":"<< atmoNY+2 <<endl;
 				FFPoint windVOrigin = FFPoint(SWCorner.getX() - 0.5 * dx,
-						SWCorner.getY() - dy);
+						SWCorner.getY() - dy,0.);
 				TwoTimeArrayLayer<double>* wvl = new TwoTimeArrayLayer<double>("windV",
 						GwindV, getTime(), GoldWindV, getTime(),
 						windVOrigin, dx, dy);
@@ -255,7 +255,7 @@ namespace libforefire{
 
 		// Maximum time-step for Firenodes is constrained by the atmospheric model
 		dtMax = dt;
-
+	
 		/* simulation is run with mnh */
 		params->setParameter("runmode", "coupled");
 		params->setInt("parallel", 1);
@@ -277,9 +277,9 @@ namespace libforefire{
 	
 
 		// computing the position of the physical and numerical corners
-		SWCorner = FFPoint(meshx[0], meshy[0]);
+		SWCorner = FFPoint(meshx[0], meshy[0],0);
 		NECorner = FFPoint(2.*meshx[atmoNX-1]-meshx[atmoNX-2]
-						   , 2.*meshy[atmoNY-1]-meshy[atmoNY-2]);
+						   , 2.*meshy[atmoNY-1]-meshy[atmoNY-2],0);
 
 		bool dumpDomainInfo = true;
 		#ifdef MPI_COUPLING
@@ -349,14 +349,14 @@ namespace libforefire{
 			infrontiers.pop_back();
 		}
 		// Deleting halos
-		while( !innerHalos.empty() ){
+	/*	while( !innerHalos.empty() ){
 			delete innerHalos.back();
 			innerHalos.pop_back();
 		}
 		while( !outerHalos.empty() ){
 			delete outerHalos.back();
 			outerHalos.pop_back();
-		}
+		}*/
 		// Deleting data broker related objects
 		delete dataBroker;
 		delete propagativeLayer;
@@ -383,8 +383,8 @@ void FireDomain::pushMultiDomainMetadataInList(size_t id, double lastTime, size_
     currentInfo->lastTime = lastTime;
     currentInfo->atmoNX = atmoNX;
     currentInfo->atmoNY = atmoNY;
-    currentInfo->SWCorner = new FFPoint(nswx, nswy);
-    currentInfo->NECorner = new FFPoint(nnex, nney);
+    currentInfo->SWCorner = new FFPoint(nswx, nswy, 0.);
+    currentInfo->NECorner = new FFPoint(nnex, nney, 0.);
 	
     parallelDispatchDomains.push_back(currentInfo);
 }
@@ -636,27 +636,7 @@ void FireDomain::readMultiDomainMetadata(){
 		return 0;
 	}
 
-	FireNode* FireDomain::getFirenodeInInnerHalo(const double& sid){
-		list<FDCell*>::iterator cell;
-		FireNode* tmpfn = 0;
-		for ( cell = innerHaloCells.begin();
-			 cell != innerHaloCells.end(); ++cell ){
-			tmpfn = (*cell)->getFirenodeByID(sid);
-			if ( tmpfn ) return tmpfn;
-		}
-		return 0;
-	}
-
-	FireNode* FireDomain::getFirenodeInOuterHalo(const double& sid){
-		list<FDCell*>::iterator cell;
-		FireNode* tmpfn = 0;
-		for ( cell = outerHaloCells.begin();
-			 cell != outerHaloCells.end(); ++cell ){
-			tmpfn = (*cell)->getFirenodeByID(sid);
-			if ( tmpfn ) return tmpfn;
-		}
-		return 0;
-	}
+	 
 
 	int FireDomain::registerPropagationModelInstantiator(string modelname
 														 , PropagationModelInstantiator func){
@@ -797,8 +777,8 @@ void FireDomain::readMultiDomainMetadata(){
 	}
 
 	bool FireDomain::addScalarLayer(string type, string name, double &x0, double &y0, double& t0, double& width, double& height, double& timespan, size_t& nnx,	size_t& nny, size_t& nnz, size_t& nnk, double* values){
-		FFPoint origin = FFPoint(x0, y0);
-		FFPoint span = FFPoint(width, height);
+		FFPoint origin = FFPoint(x0, y0,0);
+		FFPoint span = FFPoint(width, height,0);
 
 		XYZTDataLayer<double>* newLayer = new XYZTDataLayer<double>(name, origin,t0, span, timespan, nnx, nny, nnz, nnk, values);
 		dataBroker->registerLayer(name, newLayer);
@@ -818,8 +798,8 @@ void FireDomain::readMultiDomainMetadata(){
 		return true;
 	}
 	bool FireDomain::addIndexLayer(string type, string name, double &x0, double &y0, double& t0, double& width, double& height, double& timespan, size_t& nnx,	size_t& nny, size_t& nnz, size_t& nnk, int* values){
-			FFPoint origin = FFPoint(x0, y0);
-			FFPoint span = FFPoint(width, height);
+			FFPoint origin = FFPoint(x0, y0,0);
+			FFPoint span = FFPoint(width, height,0);
 
 
 			if ( type == "flux" ){
@@ -1995,8 +1975,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		FFPoint center = 0.5*(curCell->getSWCorner() + curCell->getNECorner());
 		double dx = curCell->getNECorner().getX() - curCell->getSWCorner().getX();
 		double dy = curCell->getNECorner().getY() - curCell->getSWCorner().getY();
-		FFPoint vdx = FFPoint(dx, 0.);
-		FFPoint vdy = FFPoint(0., dy);
+		FFPoint vdx = FFPoint(dx, 0.,0);
+		FFPoint vdy = FFPoint(0., dy,0);
 		FDCell* searchedCell;
 		int numCellsX, numCellsY;
 		numCellsX = (int) dist/dx + 1;
@@ -2039,8 +2019,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		list<FireNode*> cnodes;
 		FDCell* curCell = getCell(loc);
 		FFPoint center = 0.5*(curCell->getSWCorner() + curCell->getNECorner());
-		FFPoint dx = FFPoint(curCell->getNECorner().getX() - curCell->getSWCorner().getX(),0.);
-		FFPoint dy = FFPoint(0.,curCell->getNECorner().getY() - curCell->getSWCorner().getY());
+		FFPoint dx = FFPoint(curCell->getNECorner().getX() - curCell->getSWCorner().getX(),0.,0.);
+		FFPoint dy = FFPoint(0.,curCell->getNECorner().getY() - curCell->getSWCorner().getY(),0.);
 		FDCell* searchedCell;
 		int numCellsX, numCellsY;
 		numCellsX = ((int) dist/(curCell->getNECorner().getX()-curCell->getSWCorner().getX())) + 1;
@@ -2067,7 +2047,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	list<FireNode*> FireDomain::getPhysicalDomainNodesWithin(FireNodeData* fnd
 															 , const double& dist, bool stateDep){
-		FFPoint loc(fnd->posX, fnd->posY);
+		FFPoint loc(fnd->posX, fnd->posY,0.);
 		return getPhysicalDomainNodesWithin(loc, dist, stateDep);
 	}
 
@@ -2313,8 +2293,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	FFPoint FireDomain::findIntersectionWithFrontiers(
 													  FireNodeData* fnda, FireNodeData* fndb){
-		FFPoint pointA(fnda->posX, fnda->posY);
-		FFPoint pointB(fndb->posX, fndb->posY);
+		FFPoint pointA(fnda->posX, fnda->posY,0.);
+		FFPoint pointB(fndb->posX, fndb->posY,0.);
 		return findIntersectionWithFrontiers(pointA, pointB);
 	}
 
@@ -2333,16 +2313,16 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	FFPoint FireDomain::findIntersectionWithInnerFrontiers(
 														   FireNodeData* fnda, FireNodeData* fndb){
-		FFPoint pointA(fnda->posX, fnda->posY);
-		FFPoint pointB(fndb->posX, fndb->posY);
+		FFPoint pointA(fnda->posX, fnda->posY,0.);
+		FFPoint pointB(fndb->posX, fndb->posY,0.);
 		return findIntersectionWithInnerFrontiers(pointA, pointB);
 	}
 
 	FFPoint FireDomain::findIntersectionWithBoundingBox(
 														FFPoint& pointA, FFPoint& pointB
 														, FFPoint& swc, FFPoint& nec, int& seg){
-		FFPoint nwc = FFPoint(swc.getX(), nec.getY());
-		FFPoint sec = FFPoint(nec.getX(), swc.getY());
+		FFPoint nwc = FFPoint(swc.getX(), nec.getY(),0.);
+		FFPoint sec = FFPoint(nec.getX(), swc.getY(),0.);
 		FFPoint inter = findIntersection(pointA, pointB, swc, nwc);
 		seg = 0;
 		if ( inter == outPoint ){
@@ -2407,7 +2387,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		   | (Sy<Cy-eps && Sy<Dy-eps)|(Sy>Cy+eps && Sy>Dy+eps)){
 			return outPoint;
 		} else {
-			return FFPoint(Sx,Sy);
+			return FFPoint(Sx,Sy,0.);
 		}
 	}
 
@@ -2479,231 +2459,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		return 0;
 	}
 
-	void FireDomain::createFirenodesMatrices(){
-		createFirenodesMatrices(recentlyIDChangedNodes);
-	}
 
-
-	// creating the matrices containing the information about the firenodes before sending to ATMO
-	void FireDomain::createFirenodesMatrices(list<FireNode*>& changedIDNodes){
-
-		/*----------------------------------*/
-		/* checking the id of the firenodes */
-		/*----------------------------------*/
-
-		changedIDNodes.clear();
-		list<FDCell*>::iterator cell;
-		list<FireNode*>::iterator ifn;
-		for ( cell = innerHaloCells.begin();
-			 cell != innerHaloCells.end(); ++ cell){
-			for ( ifn = (*cell)->fireNodes.begin();
-				 ifn != (*cell)->fireNodes.end(); ++ifn ) {
-				debugOutput<<getDomainID()<<": "<<'\t'
-					<<"checking "<<(*ifn)->toShort()<<endl;
-				if ( (*ifn)->getDomainID() != getDomainID() ){
-					/* the node comes from an other processor
-					 * and needs to be reaffected with a new ID */
-					(*ifn)->getNewID(getDomainID());
-					debugOutput<<getDomainID()<<": "<<'\t'<<'\t'
-						<<"changed its ID to "<<(*ifn)->getDomainID()
-						<<", "<<(*ifn)->getShortID()<<endl;
-					changedIDNodes.push_back(*ifn);
-				}
-			}
-		}
-
-		/*------------------------------------------*/
-		/* FILLING THE MATRICES WITH THE DATA LISTS */
-		/*------------------------------------------*/
-
-		list<Halo*>::iterator halo;
-		for ( halo = innerHalos.begin();
-			 halo != innerHalos.end(); ++halo ){
-			if ((*halo)->isActive) (*halo)->writeHaloNodeList(endChain, endCom);
-		}
-
-	}
-
-	/* managing the firenodes in the halo */
-	void FireDomain::manageHaloFirenodes(const double& t){
-		outputs=false;
-		//cout<< debugOutput.str();
-		debugOutput.clear();
-
-		try {
-
-			/* Populating the list of firenodes in the halo
-			 * from the information given by other processors */
-
-			createHaloFirenodesList(haloFirenodesData);
-
-			debugOutput<<getDomainID()<<": before controlling the chains: "<<endl
-					<<"------------------------------------"<<endl;
-			list<FireNodeData*>::iterator data;
-			for ( data = haloFirenodesData.begin(); data != haloFirenodesData.end(); ++data ){
-				debugOutput<<getDomainID()<<":"<<'\t'<<(*data)->toString()<<endl;
-			}
-
-			//correctChains(haloFirenodesData);
-
-		//	debugOutput<<getDomainID()<<": final list of incoming data is: "<<endl
-		//			<<"------------------------------------"<<endl;
-			        
-		/*
-		
-
-				FFVector vel1 = FFVector(0, 1);
-				FFVector vel2 = FFVector(1, -1);
-				FFVector vel3 = FFVector(-1, -1);
-				FFVector diffP1 = perimRes*vel1;
-				FFVector diffP2 = perimRes*vel2;
-				FFVector diffP3 = perimRes*vel3;
-
-				FFPoint pos1 = pos+diffP1.toPoint();
-				FFPoint pos2 = pos+diffP2.toPoint();
-				FFPoint pos3 = pos+diffP3.toPoint();
-				
-				vel1 *= 0.1;
-				vel2 *= 0.1;
-				vel3 *= 0.1;
-
-			
-				
-				FireNode* lastnode =  addFireNode(pos1, vel1, t, fdepth, kappa, currentSession.ff, 0);
-				lastnode =  addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
-			    addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
-				completeFront(currentSession.ff);
-			*/
-			if ( haloFirenodesData.size() > 0 ){
- 
-				cout<< "TIME " <<getTime()<<" dom:"<<getDomainID()<< " there is " <<haloFirenodesData.size()<<" incoming nodes, adding a front "<<endl;
-				data = haloFirenodesData.begin();
-				
-				FireFront* newFront = addFireFront((*data)->time,domainFront);
-		 
-			 
-				FireNode* curfn = addFireNode(*data, newFront);
-				curfn->setDomain(this);
-				FireNode* prev;
-				++data;
-				//cout<<getDomainID()<<"  is first "<<'\t'<<(*data)->toString()<<endl;
-				while ( data != haloFirenodesData.end() ){
-					if ((*data)->id > 0){
-			 
-						prev = curfn;
-						curfn = addFireNode(*data, newFront, prev);
-						curfn->setDomain(this);
-						//cout<<getDomainID()<<":"<<'\t'<<curfn->toString()<<endl;
-					}
-					++data;
-				}
-			}
-
-
-			/* Looking for excessive nodes */
-			//findExcessFirenodes(haloFirenodesData, excessHaloFirenodes);
-
-			if ( haloFirenodesData.size() > 0 ){
-
-				/* deleting the previous link nodes */
-				//deleteLinkNodes(linkNodes);
-
-				/* clearing the list of matched ids during formIncomingStructures */
-				matchedIds.clear();
-
-				/* Forming the incoming structures of markers */
-				//formIncomingStructures(haloFirenodesData  , excessHaloFirenodes, recentlyIDChangedNodes , endsExcessFirenodes, impactedFronts);
-
-			}
-
-			/* Deleting remaining excessive nodes */
-			//deleteExcessFirenodes(excessHaloFirenodes, endsExcessFirenodes);
-
-			/* Validating the topology in all the cells */
-			//validateTopology("parallel");
-
-			debugOutput<<getDomainID()<<": END HALO"<<endl;
-
-			if ( outputs ) cout<<debugOutput.str();
-
-		} catch ( const ParallelException& e ) {
-			cout<<getDomainID()<<": error in halo "<< endl;
-			cout<<getDomainID()<<": "<<e.what();
-			restoreValidState();
-		}
-		
-		debugOutput.str("");
-		debugOutput.clear();
-
-	}
-
-	/* Compiling data from other processors in a list of firenode data */
-	void FireDomain::createHaloFirenodesList(list<FireNodeData*>& haloList){
-
-		/* clearing the preceding list and memory space */
-		while ( !haloList.empty() ){
-			delete haloList.back();
-			haloList.pop_back();
-		}
-
-		/* Filling the list of incoming data with coms from other procs */
-		/* constructing the lists in each outer halo */
-		list<Halo*>::iterator halo;
-		list<FireNodeData*>* currentChain = new list<FireNodeData*>;
 	 
-		for ( halo = outerHalos.begin(); halo != outerHalos.end(); ++halo ){
-			if ((*halo)->isActive) (*halo)->readHaloNodeList(endCom, noCom);
-			
-			currentChain = popChainAt((*halo)->nodeDataList, 0);
-			while ( currentChain != 0 ){
-				addChainToList(haloList, *currentChain);
-				return;
-				currentChain = popChainAt((*halo)->nodeDataList, 0);
-			}
-		}
-
-	}
-
-	void FireDomain::addChainToList(list<FireNodeData*>& hlist
-									, list<FireNodeData*>& chain){
-
-		int posOfChain = getPositionOfRelatedChain(hlist, chain);
-		
-		/* if chain has only new data, appending it to the list */
-		if ( posOfChain == -1 ){
-			appendChain(hlist, chain);
-			return;
-		}
-		
-		/* else merging with the chains containing same data */
-		//list<FireNodeData*>* oldChain;
-		//list<FireNodeData*>* newChain;
-		//oldChain = popChainAt(hlist, posOfChain);
-		//newChain = mergeChains(chain, *oldChain);
-
-		/* recursive call for other possible merges */
-		//addChainToList(hlist, *newChain);
-
-	}
-
-	void FireDomain::correctChains(list<FireNodeData*>& haloList){
-		/* controlling all the chains one by one */
-		list<FireNodeData*> controledList;
-		int numChain = 0;
-		list<FireNodeData*>* currentChain = new list<FireNodeData*>;
-		getChainAt(haloList, numChain, currentChain);
-		while ( currentChain->size() > 0 ){
-			if (correctChain(*currentChain, haloList)) appendChain(controledList, *currentChain);
-			numChain++;
-			getChainAt(haloList, numChain, currentChain);
-		}
-		/* copying the result to haloList */
-		haloList.clear();
-		list<FireNodeData*>::iterator data;
-		for ( data = controledList.begin(); data != controledList.end(); ++data ){
-			haloList.push_back(*data);
-		}
-	}
 
 	void FireDomain::commonInitialization(double* cellsMeshX, double* cellsMeshY
 										  , const int& year, const int& yday){
@@ -2720,13 +2477,35 @@ void FireDomain::loadWindDataInBinary(double refTime){
 			if ( params->getInt("FireFrontOutputs") != 0 ) FireFront::outputs = true;
 			if ( params->getInt("FireNodeOutputs") != 0 ) FireNode::outputs = true;
 			if ( params->getInt("FDCellOutputs") != 0 ) FDCell::outputs = true;
-			if ( params->getInt("HaloOutputs") != 0 ) Halo::outputs = true;
 		}
 
 		/*-----------------*/
 		/* Related objects */
 		/*-----------------*/
+		/* i would need to feed the domain with the right parameters for FFPoint SWLngLat and 	FFPoint NELngLat */	
+		vector<double> wsenlbrt = params->getDoubleArray("WSENLBRT");
+		for ( size_t i=0; i<wsenlbrt.size(); i++ ){
+			cout<<wsenlbrt[i]<<endl;
+		}
+	/*	I have a situation where :
+			cout<<"STARTUP   time "<<getTime()<<"Initing Parallel MNH"<<getID()<< " at latitude "<< refLatitude<<" and longitude "<<refLongitude<< " meshx "<<cellsMeshX[0]<<" meshy "<<cellsMeshY[0]<<endl;
+			latitude and longiture will be 0.... i'm in a load-data / run mode	
+			if there is something that means id whould load a datasubset
+	*/	
+		cout<< "Creating domain "<<params->getParameter("WSENLBRT") <<endl;
+		// first i try to see if there is a params->getDoubleArray("SWLngLat")
+		//if there is not i try to see "BBoxWSEN"
+		//	i put vars params->getDoubleArray("SWLngLat"), params->getDoubleArray("NELngLat")
+		//if there is not i try to see "WSENLBRT"
+		//	i put vars params->getDoubleArray("SWLngLat"), params->getDoubleArray("NELngLat")
+		//if there is not i use "DefaultSWLngLat"
+		//	i put vars params->getDoubleArray("SWLngLat")
+		//	i guess my NECorner from earth radius and approximation given swx and domain size in meter
+		//	i set params->getDoubleArray("NELngLat")
+		//eventually : 
+		/* i feed the domain with the right parameters for FFPoint SWLngLat and 	FFPoint NELngLat */	
 
+		
 		/* domain front */
 		domainFront = FireFrontFactory();
 		mainFrontBackup = 0;
@@ -2988,147 +2767,6 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		infrontiers.push_back(new Frontier(cells[atmoNX-1][1].getSWCorner()
 										   , cells[1][1].getSWCorner()));
 
-		if ( parallel ){
-			/*---------------------------------*/
-			/* Constructing the lists of halos */
-			/*---------------------------------*/
-			size_t i, j;
-			list<FDCell*> innerCells, outerCells;
-			size_t iinc, jinc;
-			size_t istartin, jstartin, iendin, jendin;
-			size_t istartout, jstartout, iendout, jendout;
-
-			/* West halos */
-			for ( j = 0; j < atmoNY; j++ ) {
-				i = 0;
-				innerCells.push_back(&(cells[i+1][j]));
-				outerCells.push_back(&(cells[i][j]));
-			}
-			iinc = 0;
-			jinc = 1;
-			istartin = 1;
-			jstartin = 2;
-			iendin = 1;
-			jendin = atmoNY-3;
-			istartout = 0;
-			jstartout = 2;
-			iendout = 0;
-			jendout = atmoNY-3;
-			westInnerHalo = new Halo("inner west", this, innerCells
-									 , istartin, jstartin, iendin, jendin, iinc, jinc);
-			innerHalos.push_back(westInnerHalo);
-			westOuterHalo = new Halo("outer west", this, outerCells
-									 , istartout, jstartout, iendout, jendout, iinc, jinc);
-			outerHalos.push_back(westOuterHalo);
-
-			/* East halo */
-			innerCells.clear();
-			outerCells.clear();
-			for ( j = 0; j < atmoNY; j++ ) {
-				i = atmoNX-1;
-				innerCells.push_back(&(cells[i-1][j]));
-				outerCells.push_back(&(cells[i][j]));
-			}
-			iinc = 0;
-			jinc = 1;
-			istartin = atmoNX-2;
-			jstartin = 2;
-			iendin = atmoNX-2;
-			jendin = atmoNY-3;
-			istartout = atmoNX-1;
-			jstartout = 2;
-			iendout = atmoNX-1;
-			jendout = atmoNY-3;
-			eastInnerHalo = new Halo("inner east", this, innerCells
-									 , istartin, jstartin, iendin, jendin, iinc, jinc);
-			innerHalos.push_back(eastInnerHalo);
-			eastOuterHalo = new Halo("outer east", this, outerCells
-									 , istartout, jstartout, iendout, jendout, iinc, jinc);
-			outerHalos.push_back(eastOuterHalo);
-
-			/* North halos */
-			innerCells.clear();
-			outerCells.clear();
-			for ( i = 0; i < atmoNX; i++ ) {
-				j = atmoNY-1;
-				innerCells.push_back(&(cells[i][j-1]));
-				outerCells.push_back(&(cells[i][j]));
-			}
-			iinc = 1;
-			jinc = 0;
-			istartin = 2;
-			jstartin = atmoNY-2;
-			iendin = atmoNX-3;
-			jendin = atmoNY-2;
-			istartout = 2;
-			jstartout = atmoNY-1;
-			iendout = atmoNX-3;
-			jendout = atmoNY-1;
-			northInnerHalo = new Halo("inner north", this, innerCells
-									  , istartin, jstartin, iendin, jendin, iinc, jinc);
-			innerHalos.push_back(northInnerHalo);
-			northOuterHalo = new Halo("outer north", this, outerCells
-									  , istartout, jstartout, iendout, jendout, iinc, jinc);
-			outerHalos.push_back(northOuterHalo);
-
-			/* South halos */
-			innerCells.clear();
-			outerCells.clear();
-			for ( i = 0; i < atmoNX; i++ ) {
-				j = 0;
-				innerCells.push_back(&(cells[i][j+1]));
-				outerCells.push_back(&(cells[i][j]));
-			}
-			iinc = 1;
-			jinc = 0;
-			istartin = 2;
-			jstartin = 1;
-			iendin = atmoNX-3;
-			jendin = 1;
-			istartout = 2;
-			jstartout = 0;
-			iendout = atmoNX-3;
-			jendout = 0;
-			southInnerHalo = new Halo("inner south", this, innerCells
-									  , istartin, jstartin, iendin, jendin, iinc, jinc);
-			innerHalos.push_back(southInnerHalo);
-			southOuterHalo = new Halo("outer south", this, outerCells
-									  , istartout, jstartout, iendout, jendout, iinc, jinc);
-			outerHalos.push_back(southOuterHalo);
-
-			for ( i = 0; i < atmoNX; i++ ) {
-				// south halo cells
-				j = 0;
-				outerHaloCells.push_back(&(cells[i][j]));
-				// north halo cells
-				j = atmoNY-1;
-				outerHaloCells.push_back(&(cells[i][j]));
-			}
-			for ( j = 1; j < atmoNY-1; j++ ) {
-				// west halo cells
-				i = 0;
-				outerHaloCells.push_back(&(cells[i][j]));
-				// east halo cells
-				i = atmoNX-1;
-				outerHaloCells.push_back(&(cells[i][j]));
-			}
-			for ( i = 1; i < atmoNX-1; i++ ) {
-				// south halo cells
-				j = 1;
-				innerHaloCells.push_back(&(cells[i][j]));
-				// north halo cells
-				j = atmoNY-2;
-				innerHaloCells.push_back(&(cells[i][j]));
-			}
-			for ( j = 2; j < atmoNY-2; j++ ) {
-				// west halo cells
-				i = 1;
-				innerHaloCells.push_back(&(cells[i][j]));
-				// east halo cells
-				i = atmoNX-2;
-				innerHaloCells.push_back(&(cells[i][j]));
-			}
-		}
 
 		/*-------------------------------------*/
 		/* Building the models and data broker */
@@ -3226,90 +2864,6 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		return dataBroker->getFluxLayer(name);
 	}
 
-	bool FireDomain::correctChain(list<FireNodeData*>& chain
-								  , list<FireNodeData*>& haloList){
-		/* controls (modifies if necessary) a chain. Both ends of the chain
-		 * should be outside all active outer halos. If not, creating new
-		 * data to insure this point */
-
-		debugOutput<<getDomainID()<<": controlling chain"<<endl;
-		list<FireNodeData*>::iterator data;
-		for ( data = chain.begin(); data != chain.end(); ++data ){
-			debugOutput<<getDomainID()<<":"<<'\t'<<(*data)->toString()<<endl;
-		}
-
-		/* front of the chain */
-		/*--------------------*/
-		if ( isInActiveOuterHalo(chain.front()) ){
-			debugOutput<<getDomainID()<<": WARNING for the start of the chain"<<endl;
-
-			/* looking for possible twin information in other chains' backs */
-			int numChain = 0;
-			list<FireNodeData*>* haloChain = new list<FireNodeData*>;
-			getChainAt(haloList, numChain, haloChain);
-			while ( haloChain->size() > 0 ){
-				debugOutput<<getDomainID()<<":"<<'\t'<<"looking distance with "
-					<<haloChain->back()->toString()
-					<<": "<<haloChain->back()->distance(chain.front())
-					<<", "<<perimeterResolution+2.*spatialIncrement<<endl;
-				if ( haloChain->back()->distance(chain.front()) < perimeterResolution+2.*spatialIncrement
-					and !isInActiveOuterHalo(haloChain->back()) ){
-					// found a relevant data to replace the failing one
-					debugOutput<<getDomainID()<<":"<<'\t'<<"replaced the data by "
-						<<haloChain->back()->toString()<<endl;
-					chain.pop_front();
-					chain.push_front(haloChain->back());
-					break;
-				}
-				numChain++;
-				getChainAt(haloList, numChain, haloChain);
-			}
-
-			if ( haloChain->size() == 0 ){
-				debugOutput<<getDomainID()<<": PROBLEM, no relevant data found"
-					<<" for the start of the chain, skipping it"<<endl;
-				return false;
-			}
-		}
-
-		/* back of the chain */
-		/*-------------------*/
-		if ( isInActiveOuterHalo(chain.back()) ){
-			debugOutput<<getDomainID()<<": WARNING for the end of the chain"<<endl;
-
-			/* looking for possible twin information in other chains' fronts */
-			int numChain = 0;
-			list<FireNodeData*>* haloChain = new list<FireNodeData*>;
-			getChainAt(haloList, numChain, haloChain);
-			while ( haloChain->size() > 0 ){
-				debugOutput<<getDomainID()<<":"<<'\t'<<"looking distance with "
-					<<haloChain->front()->toString()
-					<<": "<<chain.back()->distance(haloChain->front())
-					<<", "<<perimeterResolution+2.*spatialIncrement<<endl;
-				if ( chain.back()->distance(haloChain->front()) < perimeterResolution+2.*spatialIncrement
-					and !isInActiveOuterHalo(haloChain->front()) ){
-					// found a relevant data to replace the failing one
-					debugOutput<<getDomainID()<<":"<<'\t'<<"replaced the data by "
-						<<haloChain->front()->toString()<<endl;
-					chain.pop_back();
-					chain.push_back(haloChain->front());
-					break;
-				}
-				numChain++;
-				getChainAt(haloList, numChain, haloChain);
-			}
-
-			if ( haloChain->size() == 0 ){
-				debugOutput<<getDomainID()<<": PROBLEM, no relevant data found"
-					<<" for the end of the chain, skipping it"<<endl;
-				return false;
-			}
-
-		}
-
-		return true;
-	}
-
 	void FireDomain::getChainAt(
 								const list<FireNodeData*>& hlist, const int& pos
 								, list<FireNodeData*>* chain){
@@ -3362,102 +2916,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		return extractedList;
 	}
 
-	int FireDomain::getPositionOfRelatedChain(const list<FireNodeData*>& hlist
-											  , const list<FireNodeData*>& chain){
-
-		if ( hlist.size() < 1 ) return -1;
-
-		int numChain;
-
-		list<FireNodeData*>::const_iterator dataChain;
-		list<FireNodeData*>::const_iterator firstOfChain = chain.begin();
-		list<FireNodeData*>::const_iterator lastOfChain = chain.end();
-		--lastOfChain;
-
-		list<FireNodeData*>::const_iterator dataList;
-		list<FireNodeData*>::iterator currentFirst;
-		list<FireNodeData*>::iterator currentLast;
-		list<FireNodeData*>* currentChain =  new list<FireNodeData*>;
-
-		/* First searching by ID */
-		for ( dataChain = chain.begin(); dataChain != chain.end(); ++dataChain ){
-			numChain = 0;
-			getChainAt(hlist, numChain, currentChain);
-			while ( currentChain->size() > 0 ){
-				currentFirst = currentChain->begin();
-				currentLast = currentChain->end();
-				--currentLast;
-				dataList = currentChain->begin();
-				while ( dataList != currentChain->end() ){
-					if ( !( ( dataChain == firstOfChain or dataChain == lastOfChain ) and
-						   ( dataList == currentFirst or dataList == currentLast ) ) ){
-						if ( (*dataList)->id == (*dataChain)->id ) return numChain;
-					}
-					++dataList;
-				}
-				numChain++;
-				getChainAt(hlist, numChain, currentChain);
-			}
-		}
-
-		/* Then by position */
-		for ( dataChain = chain.begin(); dataChain != chain.end(); ++dataChain ){
-			numChain = 0;
-			getChainAt(hlist, numChain, currentChain);
-			while ( currentChain->size() > 0 ){
-				currentFirst = currentChain->begin();
-				currentLast = currentChain->end();
-				--currentLast;
-				dataList = currentChain->begin();
-				while ( dataList != currentChain->end() ){
-					if ( !( ( dataChain == firstOfChain or dataChain == lastOfChain ) and
-						   ( dataList == currentFirst or dataList == currentLast ) ) ){
-						FFPoint pointA = FFPoint((*dataList)->posX, (*dataList)->posY);
-						if ( pointA.distance2D((*dataChain)->posX, (*dataChain)->posY) < spatialIncrement )
-							return numChain;
-					}
-					++dataList;
-				}
-				numChain++;
-				getChainAt(hlist, numChain, currentChain);
-			}
-		}
-
-		return -1;
-	}
-
-	int FireDomain::getPositionOfRelatedChain(const list<FireNodeData*>& hlist
-											  , const double& sid){
-
-		if ( sid == 0 ) return -1;
-
-		int numChain;
-
-		list<FireNodeData*>::const_iterator dataList;
-		list<FireNodeData*>::iterator currentFirst;
-		list<FireNodeData*>::iterator currentLast;
-		list<FireNodeData*>* currentChain =  new list<FireNodeData*>;
-
-		/* First searching by ID */
-		numChain = 0;
-		getChainAt(hlist, numChain, currentChain);
-		while ( currentChain->size() > 0 ){
-			currentFirst = currentChain->begin();
-			currentLast = currentChain->end();
-			--currentLast;
-			dataList = currentChain->begin();
-			while ( dataList != currentChain->end() ){
-				if ( (*dataList)->id == sid
-					and isInActiveOuterHalo(*dataList) ) return numChain;
-				++dataList;
-			}
-			numChain++;
-			getChainAt(hlist, numChain, currentChain);
-		}
-
-		return -1;
-	}
-
+	
 	void FireDomain::appendChain(list<FireNodeData*>& hlist
 								 , const list<FireNodeData*>& chain){
 
@@ -3478,297 +2937,6 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		return;
 	}
 
-	list<FireNodeData*>* FireDomain::mergeChains(list<FireNodeData*>& chainA
-												 , list<FireNodeData*>& chainB){
-
-		list<FireNodeData*>* mergedChain = new list<FireNodeData*>;
-		list<FireNodeData*>::iterator dataA, dataB;
-		list<FireNodeData*>::iterator seedA, seedB;
-		size_t numLeftA, numLeftB, numRightA, numRightB;
-		bool AfrontOut, BfrontOut, AbackOut, BbackOut;
-
-		/* Determining if the chains are well-defined */
-		AfrontOut = !isInActiveOuterHalo(chainA.front());
-		BfrontOut = !isInActiveOuterHalo(chainB.front());
-		AbackOut = !isInActiveOuterHalo(chainA.back());
-		BbackOut = !isInActiveOuterHalo(chainB.back());
-
-		/* determining the first data in common, the number of data
-		 * from that position forward and backward in each chain */
-
-		// First searching by ID
-		bool commonID = false;
-		dataA = chainA.begin();
-		numLeftA = 0;
-		numLeftB = 0;
-		while ( dataA != chainA.end() ){
-			dataB = chainB.begin();
-			numLeftB = 0;
-			if ( (*dataA)->id != 0 ){
-				while ( dataB != chainB.end() ){
-					if ( (*dataA)->id == (*dataB)->id ) {
-						commonID = true;
-						seedA = dataA;
-						seedB = dataB;
-						dataA = chainA.end();
-						dataB = chainB.end();
-					} else {
-						numLeftB++;
-						++dataB;
-					}
-				}
-			}
-			if ( dataA != chainA.end() ){
-				numLeftA++;
-				++dataA;
-			}
-		}
-
-		// If no common id found, searching by position
-		if ( !commonID ){
-			dataA = chainA.begin();
-			numLeftA = 0;
-			numLeftB = 0;
-			while ( dataA != chainA.end() ){
-				dataB = chainB.begin();
-				numLeftB = 0;
-				if ( (*dataA)->id != 0 ){
-					while ( dataB != chainB.end() ){
-						if ( (*dataA)->distance(*dataB) < spatialIncrement ) {
-							seedA = dataA;
-							seedB = dataB;
-							dataA = chainA.end();
-							dataB = chainB.end();
-						} else {
-							numLeftB++;
-							++dataB;
-						}
-					}
-				}
-				if ( dataA != chainA.end() ){
-					numLeftA++;
-					++dataA;
-				}
-			}
-		}
-
-		numRightA = chainA.size() - numLeftA;
-		numRightB = chainB.size() - numLeftB;
-
-		/* constructing the merged chain */
-		// seed
-		if ( *seedA == chainA.front() and *seedB == chainB.front() ){
-			if ( !isInActiveOuterHalo(*seedB) ){
-				pushBackInChain(mergedChain, *seedB);
-			} else {
-				pushBackInChain(mergedChain, *seedA);
-			}
-		} else {
-			if ( isInActiveOuterHalo(*seedB) ){
-				pushBackInChain(mergedChain, *seedB);
-			} else {
-				pushBackInChain(mergedChain, *seedA);
-			}
-		}
-		// variables
-		bool AinB, BinA;
-
-		/*---------------------------------------*/
-		/* Pushing the data in forward direction */
-		/*---------------------------------------*/
-		dataA = seedA;
-		dataB = seedB;
-		++dataA;
-		++dataB;
-		try {
-			//forward
-			while ( dataA != chainA.end() and dataB != chainB.end() ){
-				if ( (*dataA)->id == (*dataB)->id ){
-					// choosing the right information
-					if ( *dataA == chainA.back() and *dataB == chainB.back() ){
-						// if both the last, taking the data outside the halo
-						if ( !isInActiveOuterHalo(*dataB) ){
-							pushBackInChain(mergedChain, *dataB);
-						} else {
-							pushBackInChain(mergedChain, *dataA);
-						}
-					} else {
-						// if inside the chain, taking the data inside the halo
-						if ( isInActiveOuterHalo(*dataB) ){
-							pushBackInChain(mergedChain, *dataB);
-						} else {
-							pushBackInChain(mergedChain, *dataA);
-						}
-					}
-					++dataA;
-					numRightA--;
-					++dataB;
-					numRightB--;
-				} else {
-					AinB = haloDataInListForward((*dataA)->id, chainB, dataB);
-					BinA = haloDataInListForward((*dataB)->id, chainA, dataA);
-					if ( !AinB and !BinA ){
-						if ( (!AbackOut and !BbackOut) or (AbackOut and BbackOut) ){
-							/* if neither or both of the chains are correctly defined */
-							if ( numRightA >= numRightB ){
-								pushBackInChain(mergedChain, *dataA);
-								++dataA;
-								numRightA--;
-								++dataB;
-								numRightB--;
-							} else {
-								pushBackInChain(mergedChain, *dataB);
-								++dataA;
-								numRightA--;
-								++dataB;
-								numRightB--;
-							}
-						} else if ( AbackOut ) {
-							pushBackInChain(mergedChain, *dataA);
-							++dataA;
-							numRightA--;
-							++dataB;
-							numRightB--;
-						} else {
-							pushBackInChain(mergedChain, *dataB);
-							++dataA;
-							numRightA--;
-							++dataB;
-							numRightB--;
-						}
-
-					} else if ( AinB and BinA ){
-						throw logic_error( "Problem in mergedChains " );
-					} else if ( AinB ) {
-						pushBackInChain(mergedChain, *dataB);
-						++dataB;
-						numRightB--;
-					} else {
-						pushBackInChain(mergedChain, *dataA);
-						++dataA;
-						numRightA--;
-					}
-				}
-			}
-			while ( dataA != chainA.end() ) {
-				pushBackInChain(mergedChain, *dataA);
-				++dataA;
-			}
-			while ( dataB != chainB.end() ) {
-				pushBackInChain(mergedChain, *dataB);
-				++dataB;
-			}
-
-			/*----------------------------------------*/
-			/* Pushing the data in backward direction */
-			/*----------------------------------------*/
-			dataA = seedA;
-			dataB = seedB;
-			--dataA;
-			--dataB;
-
-			while ( numLeftA > 0 and numLeftB > 0 ){
-				if ( (*dataA)->id == (*dataB)->id ){
-					// choosing the right information
-					if ( numLeftA == 1 and numLeftB == 1  ){
-						// if both the first, taking the data outside the halo
-						if ( !isInActiveOuterHalo(*dataB) ){
-							pushFrontInChain(mergedChain, *dataB);
-						} else {
-							pushFrontInChain(mergedChain, *dataA);
-						}
-					} else {
-						// if inside the chain, taking the data inside the halo
-						if ( isInActiveOuterHalo(*dataB) ){
-							pushFrontInChain(mergedChain, *dataB);
-						} else {
-							pushFrontInChain(mergedChain, *dataA);
-						}
-					}
-					--dataA;
-					numLeftA--;
-					--dataB;
-					numLeftB--;
-				} else {
-					AinB = haloDataInListBackward((*dataA)->id, chainB, dataB);
-					BinA = haloDataInListBackward((*dataB)->id, chainA, dataA);
-					if ( !AinB and !BinA ){
-						if ( (!AfrontOut and !BfrontOut) or (AfrontOut and BfrontOut) ){
-							/* if neither or both of the chains are correctly defined */
-							if ( numLeftA >= numLeftB ){
-								pushFrontInChain(mergedChain, *dataA);
-								--dataA;
-								numLeftA--;
-								--dataB;
-								numLeftB--;
-							} else {
-								pushFrontInChain(mergedChain, *dataB);
-								--dataA;
-								numLeftA--;
-								--dataB;
-								numLeftB--;
-							}
-						} else if ( AfrontOut ) {
-							pushFrontInChain(mergedChain, *dataA);
-							--dataA;
-							numLeftA--;
-							--dataB;
-							numLeftB--;
-						} else {
-							pushFrontInChain(mergedChain, *dataB);
-							--dataA;
-							numLeftA--;
-							--dataB;
-							numLeftB--;
-
-						}
-
-					} else if ( AinB and BinA ){
-						throw logic_error( "Problem in mergedChains " );
-					} else if ( AinB ) {
-						pushFrontInChain(mergedChain, *dataB);
-						--dataB;
-						numLeftB--;
-					} else {
-						pushFrontInChain(mergedChain, *dataA);
-						--dataA;
-						numLeftA--;
-					}
-				}
-
-			}
-
-			while ( numLeftA > 0 ) {
-				pushFrontInChain(mergedChain, *dataA);
-				--dataA;
-				numLeftA--;
-			}
-			while ( numLeftB > 0 ) {
-				pushFrontInChain(mergedChain, *dataB);
-				--dataB;
-				numLeftB--;
-			}
-		} catch ( const logic_error & e ) {
-			debugOutput<<getDomainID()<<": could not merge chains"<<endl;
-			ostringstream where;
-			where<<"FireDomain::mergeChains for processor "<<getDomainID();
-			throw ParallelException(debugOutput.str(), where.str());
-		}
-
-		/* deleting the data contained in the two chains */
-		while ( !chainA.empty() ){
-			delete chainA.back();
-			chainA.pop_back();
-		}
-		while ( !chainB.empty() ){
-			delete chainB.back();
-			chainB.pop_back();
-		}
-
-		return mergedChain;
-
-	}
-
 	void FireDomain::pushBackInChain(list<FireNodeData*>* chain, FireNodeData* data){
 		FireNodeData* newdata = new FireNodeData(*data);
 		chain->push_back(newdata);
@@ -3779,153 +2947,10 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		chain->push_front(newdata);
 	}
 
-	bool FireDomain::haloDataInListForward(double& id, list<FireNodeData*>& chain
-										   , list<FireNodeData*>::iterator& seed){
-		list<FireNodeData*>::iterator data = seed;
-		while ( data != chain.end() ){
-			if ( (*data)->id == id ) return true;
-			++data;
-		}
-		return false;
-	}
+ 
 
-	bool FireDomain::haloDataInListBackward(double& id, list<FireNodeData*>& chain
-											, list<FireNodeData*>::iterator& seed){
-		list<FireNodeData*>::iterator data = seed;
-		while ( data != chain.begin() ){
-			if ( (*data)->id == id ) return true;
-			--data;
-		}
-		return false;
-	}
+ 
 
-	void FireDomain::findExcessFirenodes(
-										 const list<FireNodeData*>& haloList
-										 , list<FireNode*>& excessFirenodes){
-		/* Determining firenodes in excess in the outer halo */
-		debugOutput<<getDomainID()<<": checking for excess firenodes"
-			<<endl<<"--------------------------"<<endl;
-
-		/* clearing the list */
-		excessFirenodes.clear();
-
-		/* searching for node in excess */
-		list<FDCell*>::iterator cell;
-		list<FireNode*>::iterator fn;
-		for ( cell = outerHaloCells.begin();
-			 cell != outerHaloCells.end(); ++cell){
-			for ( fn = (*cell)->fireNodes.begin();
-				 fn != (*cell)->fireNodes.end(); ++fn ) {
-				if ( getPositionOfRelatedChain(haloList, (*fn)->getIDtoDouble()) < 0 ){
-					if ( isInActiveOuterHalo(*fn) ){
-						debugOutput<<getDomainID()<<": "<<'\t'<<(*fn)->toShort()
-							<<" is in excess in halo"<<endl;
-						excessFirenodes.push_back(*fn);
-					} else {
-						debugOutput<<getDomainID()<<": "<<'\t'<<(*fn)->toShort()
-							<<" is considered in excess in halo but is in non-active halo"<<endl;
-					}
-				}
-			}
-		}
-	}
-
-	bool FireDomain::isInActiveOuterHalo(FireNode* fn){
-		return isInActiveOuterHalo(fn->getLoc().getX(), fn->getLoc().getY());
-	}
-
-	bool FireDomain::isInActiveOuterHalo(FireNodeData* fn){
-		return isInActiveOuterHalo(fn->posX, fn->posY);
-	}
-
-	bool FireDomain::isInActiveOuterHalo(FFPoint& loc){
-		return isInActiveOuterHalo(loc.getX(), loc.getY());
-	}
-
-	bool FireDomain::isInActiveOuterHalo(const double& px, const double& py){
-		if ( !isInOuterHalo(px, py) ) return false;
-		if ( !parallel ) return true;
-		/* finding the corresponding outer halo, if any */
-		FDCell* cell = getCell(px, py);
-		if ( cell->getI() == 0 and !westOuterHalo->isActive ) return false;
-		if ( cell->getJ() == atmoNY-1 and !northOuterHalo->isActive ) return false;
-		if ( cell->getI() == atmoNX-1 and !eastOuterHalo->isActive ) return false;
-		if ( cell->getJ() == 0 and !southOuterHalo->isActive ) return false;
-		return true;
-	}
-
-	void FireDomain::deleteExcessFirenodes(list<FireNode*>& excessNodes, list<FireNode*>& endsNodes){
-
-		/* Checking all the excess firenodes */
-		list<FireNode*>::iterator enode;
-		list<FireNode*>::iterator endnode;
-		list<FireNode*> toBeTrashed, toBeRemoved;
-		FireNode* fn;
-		FireNode* pfn;
-		/* Removing the nodes pertaining to endsNodes */
-		for ( enode = excessNodes.begin(); enode != excessNodes.end(); ++enode ){
-			endnode = find(endsNodes.begin(), endsNodes.end(), *enode);
-			if ( endnode != endsNodes.end() ){
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<(*enode)->toShort()<<" pertains to used ends one"<<endl;
-				toBeRemoved.push_back(*enode);
-			}
-		}
-		for ( enode = toBeRemoved.begin(); enode != toBeRemoved.end(); ++enode ){
-			excessNodes.remove(*enode);
-		}
-
-		/* Checking the remaining nodes to see if they are relevant or not */
-		for ( enode = excessNodes.begin(); enode != excessNodes.end(); ++enode ){
-			debugOutput<<getDomainID()
-				<<": looking at firenode "<<(*enode)->toShort()<<endl;
-			/* checking if the node is not in final state */
-			if ( (*enode)->getState() == FireNode::final or (*enode)->getNext()->getState() == FireNode::final
-				or (*enode)->getPrev()->getState() == FireNode::final ){
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"node in state final or related"
-					<<" to node in final state, trashing it"<<endl;
-				(*enode)->setState(FireNode::final);
-				toBeTrashed.push_back(*enode);
-				continue;
-			}
-			/* testing if still in the topology (backward direction) */
-			// 1/ search for the beginning of the topologically related chain
-			fn = *enode;
-			pfn = (*enode)->getPrev();
-			while ( pfn != 0 and pfn->isInList(excessNodes)
-				   and pfn->getNext() == fn and fn->getNext() != *enode ){
-				fn = pfn;
-				pfn = fn->getPrev();
-			}
-			// 2/ check if this related node is connected to a rightful node
-			if ( pfn != 0 and !pfn->isInList(excessNodes)
-				and pfn->getNext() == fn and fn->getNext() != *enode ){
-				// the node is effectively related to a rightful front, no trashing it
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<": excess node is related to a rightful topology"<<endl
-					<<'\t'<<'\t'<<"prev is "<<pfn->toShort()<<endl
-					<<'\t'<<'\t'<<"next of prev is "<<pfn->getNext()->toShort()<<endl;
-			} else {
-				// the node isn't connected to a rightful front
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<": excess node not related to a rightful topology, trashing it"<<endl;
-				toBeTrashed.push_back(*enode);
-			}
-		}
-
-		/* Trashing the firenodes that are definitely in excess */
-		while ( !toBeTrashed.empty() ){
-			toBeTrashed.back()->setFront(0);
-			debugOutput<<getDomainID()<<": FireDomain::deleteExcessFirenodes -> ";
-			addToTrashNodes(toBeTrashed.back());
-			toBeTrashed.pop_back();
-		}
-
-		/* Clearing the lists */
-		excessNodes.clear();
-		endsNodes.clear();
-	}
 
 	void FireDomain::deleteLinkNodes(list<FireNode*>& lnodes){
 		/* Deleting all the link nodes */
@@ -3935,481 +2960,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 			lnodes.pop_back();
 		}
 	}
-
-	void FireDomain::formIncomingStructures(list<FireNodeData*>& incomingNodes
-											, list<FireNode*>& excessNodes, list<FireNode*>& changedIDNodes
-											, list<FireNode*>& endsNodes, list<FireFront*>& haloFronts){
-		/* Creating the unknown incoming structures of firenodes */
-
-		list<FireNodeData*> currentChain;
-		list<FireNodeData*>::iterator ifnd;
-		FireNodeData* tmpdata;
-		FireFront* chainFront;
-
-		FireNode* curfn;
-		list<FireNode*> nodeChain;
-		list<FireNode*>::iterator ifn;
-
-		FireNodeData* prevOfChain = 0;
-		FireNodeData* nextOfChain = 0;
-
-		list<FireNode*> prevLinkNodes, nextLinkNodes;
-		list<FireNode*> newNodes;
-
-		while ( !incomingNodes.empty() ){
-
-			/*-----------------------------*/
-			/* CREATING THE DATA STRUCTURE */
-			/*-----------------------------*/
-
-			/* deleting the marker of the end of the chain */
-			while ( !currentChain.empty() ){
-				delete currentChain.back();
-				currentChain.pop_back();
-			}
-			/* choosing a seed for the chain */
-			FireNodeData* seed = incomingNodes.front();
-			debugOutput<<getDomainID()<<": creating new structure"<<endl
-				<<getDomainID()<<":"<<"***********************"<<endl;
-			tmpdata = seed;
-			currentChain.push_back(tmpdata);
-			incomingNodes.pop_front();
-			/* Populating the list with next
-			 * nodes within incoming ones */
-			tmpdata = incomingNodes.front();
-			while ( tmpdata->time > endChain + EPSILONT ){
-				currentChain.push_back(tmpdata);
-				incomingNodes.pop_front();
-				tmpdata = incomingNodes.front();
-			}
-			incomingNodes.pop_front();
-
-			if ( currentChain.size() < 3 ){
-				debugOutput<<getDomainID()<<": PROBLEM with the number of nodes in a chain"<<endl;
-			} else {
-				/* storing and eliminating the link nodes */
-				prevOfChain = currentChain.front();
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"previous node of the chain is "<<prevOfChain->toString()<<endl;
-				currentChain.pop_front();
-				nextOfChain = currentChain.back();
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"next node of the chain is "<<nextOfChain->toString()<<endl;
-				currentChain.pop_back();
-			}
-
-			/* checking that these data hasn't been already treated */
-
-			/*-------------------------------------------------------------------*/
-			/* CREATING/UPDATING THE FIRENODE IN THE STRUCTURE ACCORDING TO DATA */
-			/*-------------------------------------------------------------------*/
-
-			FireNode* stopSearchNode = 0;
-
-			nodeChain.clear();
-			for ( ifnd = currentChain.begin(); ifnd != currentChain.end(); ++ifnd ){
-				/* first, checking if the node isn't already present */
-				curfn = alreadyPresentInOuterHalo(*ifnd);
-				if ( !curfn ){
-					/* If not, checking if an excess node might be matched */
-					double searchingDistance = 2.*spatialIncrement;
-					curfn = findClosestWithinNodeInList(*ifnd, searchingDistance, excessNodes);
-					if ( curfn ){
-						debugOutput<<getDomainID()<<": matched "
-							<<curfn->getShortID()<<", "<<curfn->getDomainID();
-						curfn->haloUpdate(*ifnd, this);
-						matchedIds.insert(make_pair(curfn->getIDtoDouble(),(*ifnd)->id));
-						long lsid = getIDfromDouble((*ifnd)->id);
-						curfn->setID(lsid);
-						debugOutput<<" to "<<curfn->toShort()
-							<<" (inserting it in matchedIds map)"<<endl;
-						excessNodes.remove(curfn);
-					} else {
-						/* checking if the data has a counterpart in a node that
-						 * have recently passed the frontier between the procs. */
-						searchingDistance = 2.*spatialIncrement;
-						curfn = findClosestWithinNodeInList(*ifnd, searchingDistance, changedIDNodes);
-						if ( curfn ){
-							/* the node has just passed the frontier but not its counterpart in the other proc.
-							 * As the other proc is right, updating the node according to data */
-							debugOutput<<getDomainID()<<": matched ID changed "
-								<<curfn->getShortID()<<", "<<curfn->getDomainID();
-							curfn->haloUpdate(*ifnd, this);
-							matchedIds.insert(make_pair(curfn->getIDtoDouble(),(*ifnd)->id));
-							long lsid = getIDfromDouble((*ifnd)->id);
-							curfn->setID(lsid);
-							debugOutput<<" to "<<curfn->toShort()
-								<<" (inserting it in matchedIds map)"<<endl;
-						} else {
-							/* checking if the data has a counterpart in a node that
-							 * is the physical domain. */
-							list<FireNode*> cnodes = getPhysicalDomainNodesWithin(*ifnd, searchingDistance);
-							curfn = findClosestNodeInList(*ifnd, cnodes);
-							if ( curfn ){
-								/* this particular data is not right as it arrives from
-								 * a node that shoudn't have passed the frontier between
-								 * the two processors in the preceding step. */
-								debugOutput<<getDomainID()
-									<<": found a node in physical domain that holds truth: "
-									<<curfn->toShort()<<endl;
-								stopSearchNode = curfn;
-							} else {
-								/* The node has to created */
-								debugOutput<<getDomainID()
-									<<": need to add "<<(*ifnd)->toString()<<endl;
-								curfn = addFireNode(*ifnd);
-								long lid = getIDfromDouble((*ifnd)->id);
-								curfn->setID(lid);
-								newNodes.push_back(curfn);
-							}
-						}
-					}
-				} else {
-					/* updating position, velocity and time of the firenode */
-					curfn->haloUpdate(*ifnd, this);
-					debugOutput<<getDomainID()<<": updated "<<curfn->toShort()<<endl;
-				}
-
-				nodeChain.push_back(curfn);
-
-			}
-
-			/*---------------------------*/
-			/* POSITIONING THE STRUCTURE */
-			/*---------------------------*/
-
-			debugOutput<<getDomainID()<<": positioning the structure"<<endl;
-
-			/* Taking care of the previous of the chain */
-			/*------------------------------------------*/
-
-			FireNode* prevInSim = 0;
-			FireNode* prevLinkNode = 0;
-
-			debugOutput<<getDomainID()<<": looking for previous of chain at "
-				<<prevOfChain->toString()<<endl;
-
-			if ( striclyWithinDomain(prevOfChain) ){
-
-				/* searching for related node at start */
-				// looking in the matched ids for a more relevant id
-				double sid = prevOfChain->id;
-				map<double, double>::iterator key = matchedIds.find(prevOfChain->id);
-				if ( key != matchedIds.end() ) sid = key->second;
-				// looking for the firenode
-				prevInSim = getFireNodeByIDNeighborCells(sid, getCell(prevOfChain->posX, prevOfChain->posY));
-
-				if ( !prevInSim ){
-					/* searching for a prev in prevs of the current chain */
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"did not find prevInSim from data of other procs"<<endl;
-					FireNode* candidatePrev = 0;
-					/* looping over the node constituting the chain */
-					for ( ifn = nodeChain.begin(); ifn != nodeChain.end(); ++ifn ){
-						if ( !candidatePrev and
-							find(newNodes.begin(), newNodes.end(), *ifn) == newNodes.end() ){
-							debugOutput<<getDomainID()<<":"<<'\t'
-								<<"looking for suitable related node backward from "
-								<<(*ifn)->toShort()<<endl;
-							candidatePrev = findSuitableRelatedNodeBackward(*ifn);
-							if ( candidatePrev ) {
-								debugOutput<<getDomainID()<<":"<<'\t'<<'\t'
-									<<"-> found candidatePrev "<<candidatePrev->toShort()<<endl;
-							}
-						}
-					}
-					prevInSim = candidatePrev;
-					if ( !prevInSim ){
-						/* Search a nearby rightful node that could fit */
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"looking for a suitable related node backward"
-							<<" within two perimeter resolution"<<endl;
-						prevInSim = findExistingNodeNear(prevOfChain);
-						if ( prevInSim ) debugOutput<<getDomainID()<<":"<<'\t'
-							<<"--> found close rightful node "
-							<<prevInSim->toShort()<<endl;
-					}
-					if ( !prevInSim ) {
-						/* prevOfChain from other procs is already a link node within the domain */
-						FFPoint lpoint(prevOfChain->posX, prevOfChain->posY);
-						prevLinkNode = addLinkNode(lpoint);
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"--> no candidatePrev found, created prevLinkNode "
-							<<prevLinkNode->toShort()<<endl;
-						prevLinkNodes.push_back(prevLinkNode);
-						prevInSim = prevLinkNode;
-					}
-				} else {
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"found prevInSim"<<endl;
-					list<FireNode*>::iterator prevInExcess =
-					find(excessNodes.begin(), excessNodes.end(), prevInSim);
-					if ( prevInExcess != excessNodes.end() ){
-						/* prevInSim was found as an excess firenode, which means that
-						 * the counterpart firenode in the other proc has changed
-						 * halo while this one hasn't. Simply removing it from excess nodes. */
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"found prevInSim as an excess firenode"<<endl;
-						endsNodes.push_back(prevInSim);
-					} else {
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"found prevInSim "<<prevInSim->toShort()
-							<<", looking for closer non-halo nodes"<<endl;
-						/* searching for possible interposed non-halo nodes */
-						FireNode* candidatePrev = prevInSim;
-						int numPrev = 0;
-						while ( candidatePrev->getNext() and
-							   !isInOuterHalo(candidatePrev->getNext()) and
-							   candidatePrev->getNext() != stopSearchNode and numPrev < 100 ){
-							candidatePrev = candidatePrev->getNext();
-							numPrev++;
-							debugOutput<<getDomainID()<<":"<<'\t'<<'\t'
-								<<"candidatePrev is now "<<prevInSim->toShort()<<endl;
-						}
-						if ( numPrev != 100 ){
-							prevInSim = candidatePrev;
-						}
-					}
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"--> final prevInSim is "<<prevInSim->toShort()<<endl;
-				}
-
-			} else {
-
-				/* relating the current chain to a frontier link node */
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"prevOfChain "<<prevOfChain->toString()<<" is not within the domain"<<endl;
-				FFPoint pointA(currentChain.front()->posX, currentChain.front()->posY);
-				FFPoint pointB(prevOfChain->posX, prevOfChain->posY);
-				FFPoint linkPoint = findIntersectionWithFrontiers(pointA, pointB);
-				if ( linkPoint.getX() == numeric_limits<double>::infinity()
-					and looselyWithinDomain(prevOfChain) ){
-					linkPoint = FFPoint(prevOfChain->posX, prevOfChain->posY);
-				}
-				if ( linkPoint.getX() == numeric_limits<double>::infinity() )
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"PROBLEM as no intersection was found with frontiers"<<endl;
-				prevLinkNode = addLinkNode(linkPoint);
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"--> created prev link node "<<prevLinkNode->toShort()<<endl;
-				prevLinkNodes.push_back(prevLinkNode);
-				prevInSim = prevLinkNode;
-
-			}
-
-			if ( prevInSim ) {
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"setting "<<prevInSim->getShortID()<<", "<<prevInSim->getDomainID()
-					<<" as prev to "<<nodeChain.front()->getShortID()
-					<<", "<<nodeChain.front()->getDomainID();
-				nodeChain.front()->setPrev(prevInSim);
-				debugOutput<<", and vice versa"<<endl;
-				prevInSim->setNext(nodeChain.front());
-			}
-
-			/* Taking care of the next of the chain */
-			/*--------------------------------------*/
-
-			FireNode* nextInSim = 0;
-			FireNode* nextLinkNode = 0;
-
-			debugOutput<<getDomainID()<<": looking for next of chain at "
-				<<nextOfChain->toString()<<" with id "
-				<<getShortID(nextOfChain->id)<<", "<<getDomainID(nextOfChain->id)<<endl;
-
-			if ( striclyWithinDomain(nextOfChain) ){
-
-				/* searching for related node at end */
-				// looking in the matched ids for a more relevant id
-				double sid = nextOfChain->id;
-				map<double, double>::iterator key = matchedIds.find(nextOfChain->id);
-				if ( key != matchedIds.end() ) sid = key->second;
-				// searching for the firenode
-				nextInSim = getFireNodeByIDNeighborCells(sid, getCell(nextOfChain->posX, nextOfChain->posY));
-
-				if ( !nextInSim ){
-					/* searching for a next in nexts of the current chain */
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"did not find nextInSim from data of other procs"<<endl;
-					FireNode* candidateNext = 0;
-					/* looping over the node constituting the chain in reverse order */
-					list<FireNode*>::reverse_iterator rifn;
-					for ( rifn = nodeChain.rbegin(); rifn != nodeChain.rend(); ++rifn ){
-						if ( !candidateNext and
-							find(newNodes.begin(), newNodes.end(), *rifn) == newNodes.end() ){
-							debugOutput<<getDomainID()<<":"<<'\t'
-								<<"looking for suitable related node forward from "
-								<<(*rifn)->toShort()<<endl;
-							candidateNext = findSuitableRelatedNodeForward(*rifn);
-							if ( candidateNext ){
-								debugOutput<<getDomainID()<<":"<<'\t'
-									<<"found candidateNext "<<candidateNext->toShort()<<endl;
-							}
-						}
-					}
-					nextInSim = candidateNext;
-					if ( !nextInSim ){
-						/* Search a nearby node that could fit */
-						nextInSim = findExistingNodeNear(nextOfChain);
-						if ( nextInSim ) debugOutput<<getDomainID()<<":"<<'\t'
-							<<"--> found close rightful node "
-							<<nextInSim->toShort()<<endl;
-					}
-					if ( !nextInSim ) {
-						/* nextOfChain from other procs is already a link node within the domain */
-						FFPoint lpoint(nextOfChain->posX, nextOfChain->posY);
-						nextLinkNode = addLinkNode(lpoint);
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"--> no candidateNext found, created nextLinkNode "
-							<<nextLinkNode->toShort()<<endl;
-						nextLinkNodes.push_back(nextLinkNode);
-						nextInSim = nextLinkNode;
-					}
-				} else {
-					list<FireNode*>::iterator nextInExcess =
-					find(excessNodes.begin(), excessNodes.end(), nextInSim);
-					if ( nextInExcess != excessNodes.end() ){
-						/* nextInSim was found as an excess firenode, which means that
-						 * the counterpart firenode in the other proc has changed
-						 * halo while this one hasn't. Simply removing it from excess nodes. */
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"found nextInSim as an excess firenode"<<endl;
-						endsNodes.push_back(nextInSim);
-					} else {
-						debugOutput<<getDomainID()<<":"<<'\t'
-							<<"found nextInSim "<<nextInSim->toShort()
-							<<", looking for closer non-halo nodes"<<endl;
-						/* searching for possible interposed non-halo nodes */
-						int numNext = 0;
-						FireNode* candidateNext = nextInSim;
-						while ( candidateNext->getPrev() and
-							   !isInOuterHalo(candidateNext->getPrev()) and
-							   candidateNext->getPrev() != stopSearchNode and numNext < 100 ){
-							candidateNext = candidateNext->getPrev();
-							numNext++;
-							debugOutput<<getDomainID()<<":"<<'\t'<<'\t'
-								<<"candidateNext is now "<<nextInSim->toShort()<<endl;
-						}
-						if ( numNext != 100 ){
-							nextInSim = candidateNext;
-						}
-					}
-					debugOutput<<getDomainID()<<":"<<'\t'
-						<<"--> final nextInSim is "<<nextInSim->toShort()<<endl;
-				}
-
-			} else {
-
-				/* relating the current chain to a frontier link node */
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"nextOfChain "<<nextOfChain->toString()<<" is not within the domain"<<endl;
-				FFPoint linkPoint = findIntersectionWithFrontiers(currentChain.back(), nextOfChain);
-				if ( linkPoint.norm() == 0. and looselyWithinDomain(nextOfChain) ){
-					linkPoint = FFPoint(nextOfChain->posX, nextOfChain->posY);
-				}
-				if ( linkPoint.norm() == 0. ) debugOutput<<getDomainID()<<":"<<'\t'
-					<<"PROBLEM as no intersection was found with frontiers"<<endl;
-				nextLinkNode = addLinkNode(linkPoint);
-				debugOutput<<getDomainID()<<":"<<'\t'
-					<<"--> created next link node "<<nextLinkNode->toShort()<<endl;
-				nextLinkNodes.push_back(nextLinkNode);
-				nextInSim = nextLinkNode;
-
-			}
-
-			if ( nextInSim ){
-				debugOutput<<getDomainID()<<'\t'
-					<<"setting "<<nextInSim->getShortID()<<", "<<nextInSim->getDomainID()
-					<<" as next to "<<nodeChain.back()->getShortID()
-					<<", "<<nodeChain.back()->getDomainID();
-				nodeChain.back()->setNext(nextInSim);
-				debugOutput<<", and vice versa"<<endl;
-				nextInSim->setPrev(nodeChain.back());
-			}
-
-			/*----------------------------------------------*/
-			/* RECREATING THE TOPOLOGY INSIDE THE STRUCTURE */
-			/*----------------------------------------------*/
-
-			FireNode* prevNode = 0;
-
-			for ( ifn = nodeChain.begin(); ifn != nodeChain.end(); ++ifn ){
-				/* imposing topology for the current and previous node */
-				if ( prevNode ){
-					prevNode->setNext(*ifn);
-					(*ifn)->setPrev(prevNode);
-				}
-				prevNode = *ifn;
-			}
-
-			/*-------------------------*/
-			/* FINDING A RELATED FRONT */
-			/*-------------------------*/
-
-			if ( prevInSim and prevInSim->getFront() ){
-				chainFront = prevInSim->getFront();
-			} else if ( nextInSim and nextInSim->getFront() ){
-				chainFront = nextInSim->getFront();
-			} else if ( nodeChain.front()->getFront() ){
-				chainFront = nodeChain.front()->getFront();
-			} else if ( nodeChain.back()->getFront() ){
-				chainFront = nodeChain.back()->getFront();
-			} else {
-				debugOutput<<getDomainID()
-					<<": creating a new front for the structure"<<endl;
-				chainFront = new FireFront(seed->time, this);
-				nodeChain.front()->setFront(chainFront);
-			}
-			chainFront->setHead(nodeChain.front());
-
-			list<FireFront*>::iterator existingFront
-			= find(haloFronts.begin(), haloFronts.end(), chainFront);
-			if ( existingFront == haloFronts.end() )
-				haloFronts.push_back(chainFront);
-
-		}
-
-		/*-------------------------------*/
-		/* TAKING CARE OF THE LINK NODES */
-		/*-------------------------------*/
-
-		if ( prevLinkNodes.size() != nextLinkNodes.size() ){
-			debugOutput<<getDomainID()
-					<<": irrelevant number of link nodes: "
-					<<prevLinkNodes.size()<<" prev link nodes, "
-					<<nextLinkNodes.size()<<" next link nodes"<<endl;
-			ostringstream where;
-			where<<"FireDomain::formIncomingStructures() for processor "<<getDomainID();
-			throw ParallelException(debugOutput.str(), where.str());
-		}
-
-		while ( !nextLinkNodes.empty() ){
-
-			/* choosing a prevLinkNode as seed */
-			FireNode* currentNextLink = nextLinkNodes.front();
-			debugOutput<<getDomainID()<<": considering nextLinkNode "
-				<<currentNextLink->toShort()<<endl;
-			nextLinkNodes.pop_front();
-
-			/* looping over the frontiers to find the associated prev link node */
-			FireNode* currentPrevLink = findRelatedPreviousLink(
-						prevLinkNodes, currentNextLink->getLoc());
-
-			/* relating the two link nodes with possible inter link nodes */
-			relateLinkNodes(currentNextLink, currentPrevLink);
-
-		}
-
-		/*----------------------*/
-		/* EXTENDING THE FRONTS */
-		/*----------------------*/
-
-		while ( !haloFronts.empty() ){
-			haloFronts.back()->extend();
-			haloFronts.pop_back();
-		}
-
-	}
+ 
 
 	int FireDomain::getFrontierIndex(FFPoint loc){
 		if ( abs(loc.getX()-SWCornerX()) < EPSILONX ) return 0;
@@ -4509,17 +3060,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 				cells[i][j].validateTopology(call);
 			}
 		}
-		/*
-		 list<FDCell*>::iterator cell;
-		 for ( cell = outerHaloCells.begin();
-		 cell != outerHaloCells.end(); ++cell){
-		 (*cell)->validateTopology();
-		 }
-		 for ( cell = innerHaloCells.begin();
-		 cell != innerHaloCells.end(); ++cell){
-		 (*cell)->validateTopology();
-		 }
-		 */
+ 
 	}
 
 	double FireDomain::distanceOnFrontier(int& frt, FFPoint locA, FFPoint locB){
@@ -4573,127 +3114,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		return distance;
 	}
 
-	FFPoint FireDomain::closestPointOnOuterHaloFrontiers(FFPoint& p){
-		// outer frontiers
-		double distToOW = abs(p.getX()-SWCornerX());
-		double distToON = abs(p.getY()-NECornerY());
-		double distToOE = abs(p.getX()-NECornerX());
-		double distToOS = abs(p.getY()-SWCornerY());
-		// inner frontiers
-		double innerW = SWCornerX() + (NECornerX()-SWCornerX())/atmoNX;
-		double innerN = NECornerY() - (NECornerY()-SWCornerY())/atmoNY;
-		double innerE = NECornerX() - (NECornerX()-SWCornerX())/atmoNX;
-		double innerS = SWCornerY() + (NECornerY()-SWCornerY())/atmoNY;
-		FFPoint innerSW = FFPoint(innerW, innerS);
-		FFPoint innerNW = FFPoint(innerW, innerN);
-		FFPoint innerSE = FFPoint(innerE, innerS);
-		FFPoint innerNE = FFPoint(innerE, innerN);
-		double distToIW;
-		if ( p.getY() < innerS ){
-			distToIW = p.distance2D(innerSW);
-		} else if ( p.getY() > innerN ){
-			distToIW = p.distance2D(innerNW);
-		} else {
-			distToIW = abs(p.getX()-innerW);
-		}
-		double distToIN;
-		if ( p.getX() < innerW ){
-			distToIN = p.distance2D(innerNW);
-		} else if ( p.getX() > innerE ){
-			distToIN = p.distance2D(innerNE);
-		} else {
-			distToIN = abs(p.getY()-innerN);
-		}
-		double distToIE;
-		if ( p.getY() < innerS ){
-			distToIE = p.distance2D(innerSE);
-		} else if ( p.getY() > innerN ){
-			distToIE = p.distance2D(innerNE);
-		} else {
-			distToIE = abs(p.getX()-innerE);
-		}
-		double distToIS;
-		if ( p.getX() < innerW ){
-			distToIS = p.distance2D(innerSW);
-		} else if ( p.getX() > innerE ){
-			distToIS = p.distance2D(innerSE);
-		} else {
-			distToIS = abs(p.getY()-innerS);
-		}
 
-		// finding the minimum
-		int frontier = 0;
-		double dist = distToOW;
-		if ( distToON < dist ){
-			frontier = 1;
-			dist = distToON;
-		}
-		if ( distToOE < dist ){
-			frontier = 2;
-			dist = distToOE;
-		}
-		if ( distToOS < dist ){
-			frontier = 3;
-			dist = distToOS;
-		}
-		if ( distToIW < dist ){
-			frontier = 4;
-			dist = distToIW;
-		}
-		if ( distToIN < dist ){
-			frontier = 5;
-			dist = distToIN;
-		}
-		if ( distToIE < dist ){
-			frontier = 6;
-			dist = distToIE;
-		}
-		if ( distToIS < dist ){
-			frontier = 7;
-		}
-
-		// treating the case
-		if ( frontier == 1 ) return FFPoint(p.getX(),NECornerY());
-		if ( frontier == 2 ) return FFPoint(NECornerX(),p.getY());
-		if ( frontier == 3 ) return FFPoint(p.getX(),SWCornerY());
-		if ( frontier == 4 ){
-			if ( p.getY() < innerS ){
-				return innerSW;
-			} else if ( p.getY() > innerN ){
-				return innerNW;
-			} else {
-				return FFPoint(innerW,p.getY());
-			}
-		}
-		if ( frontier == 5 ){
-			if ( p.getX() < innerW ){
-				return innerNW;
-			} else if ( p.getX() > innerE ){
-				return innerNE;
-			} else {
-				return FFPoint(p.getX(), innerN);
-			}
-		}
-		if ( frontier == 6 ){
-			if ( p.getY() < innerS ){
-				return innerSE;
-			} else if ( p.getY() > innerN ){
-				return innerNE;
-			} else {
-				return FFPoint(innerE,p.getY());
-			}
-		}
-		if ( frontier == 7 ){
-			if ( p.getX() < innerW ){
-				return innerSW;
-			} else if ( p.getX() > innerE ){
-				return innerSE;
-			} else {
-				return FFPoint(p.getX(), innerS);
-			}
-		}
-		return FFPoint(SWCornerX(),p.getY());
-	}
 
 	FFPoint& FireDomain::getStartCornerFromIndex(const int& num){
 		int frontier = num%4;
@@ -4707,19 +3128,12 @@ void FireDomain::loadWindDataInBinary(double refTime){
 													  , FFPoint& swc, FFPoint& nec){
 		int frontier = num%4;
 		if ( frontier == 0 ) return swc;
-		if ( frontier == 1 ) return FFPoint(swc.getX(), nec.getY());
+		if ( frontier == 1 ) return FFPoint(swc.getX(), nec.getY(),0.);
 		if ( frontier == 2 ) return nec;
-		return FFPoint(nec.getX(), swc.getY());
+		return FFPoint(nec.getX(), swc.getY(),0.);
 	}
 
-	FireNode* FireDomain::alreadyPresentInOuterHalo(FireNodeData* fn){
-		map<double, double>::iterator key = matchedIds.find(fn->id);
-		if ( key == matchedIds.end() ){
-			return getFirenodeInOuterHalo(fn->id);
-		} else {
-			return getFirenodeInOuterHalo(key->second);
-		}
-	}
+ 
 
 	FireNode* FireDomain::findExistingNodeNear(FireNodeData* fn){
 		/* Searching for an existing firenode near an incoming parallel data */
@@ -4732,8 +3146,8 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		// Determining which cells are to be scanned
 		FDCell* curCell = getCell(fn);
 		FFPoint center = 0.5*(curCell->getSWCorner() + curCell->getNECorner());
-		FFPoint dx = FFPoint(curCell->getNECorner().getX() - curCell->getSWCorner().getX(),0.);
-		FFPoint dy = FFPoint(0.,curCell->getNECorner().getY() - curCell->getSWCorner().getY());
+		FFPoint dx = FFPoint(curCell->getNECorner().getX() - curCell->getSWCorner().getX(),0.,0.);
+		FFPoint dy = FFPoint(0.,curCell->getNECorner().getY() - curCell->getSWCorner().getY(),0.);
 		FDCell* searchedCell;
 		int numCellsX, numCellsY;
 		numCellsX = ((int) dist/(curCell->getNECorner().getX()-curCell->getSWCorner().getX())) + 1;
@@ -4785,7 +3199,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	FireNode* FireDomain::findClosestNodeInList(FireNodeData* fnd
 												, const list<FireNode*>& nodeList){
-		FFPoint loc(fnd->posX, fnd->posY);
+		FFPoint loc(fnd->posX, fnd->posY,0.);
 		return findClosestNodeInList(loc, nodeList);
 	}
 
@@ -4809,50 +3223,10 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 	FireNode* FireDomain::findClosestWithinNodeInList(FireNodeData* fnd
 													  , const double& searchRange, const list<FireNode*>& nodeList){
-		FFPoint loc(fnd->posX, fnd->posY);
+		FFPoint loc(fnd->posX, fnd->posY,0.);
 		return findClosestWithinNodeInList(loc, searchRange, nodeList);
 	}
 
-	FireNode* FireDomain::findSuitableRelatedNodeBackward(FireNode* fn){
-		if ( fn == 0 ) cout<<"Asked to find related node for no node !!"<<endl;
-		if ( fn->getPrev() == 0 ) return 0;
-		FireNode* directPrev = fn->getPrev();
-		if ( !isInActiveOuterHalo(directPrev) ) return directPrev;
-		FireNode* curfn = directPrev->getPrev();
-		if ( curfn == 0 ) return 0;
-		while ( isInActiveOuterHalo(curfn) and curfn != directPrev ){
-			if ( curfn->getPrev() != curfn and curfn->getPrev() != 0 ){
-				curfn = curfn->getPrev();
-			} else {
-				curfn = 0;
-				break;
-			}
-		}
-		if ( curfn and curfn != directPrev ){
-			return curfn;
-		}
-		return 0;
-	}
-
-	FireNode* FireDomain::findSuitableRelatedNodeForward(FireNode* fn){
-		if ( !fn->getNext() ) return 0;
-		FireNode* directNext = fn->getNext();
-		if ( !isInOuterHalo(directNext) ) return directNext;
-		FireNode* curfn = directNext->getNext();
-		if ( curfn == 0 ) return 0;
-		while ( isInActiveOuterHalo(curfn) and curfn != directNext ){
-			if ( curfn->getNext() != curfn and curfn->getNext() != 0 ){
-				curfn = curfn->getNext();
-			} else {
-				curfn = 0;
-				break;
-			}
-		}
-		if ( curfn and curfn != directNext ){
-			return curfn;
-		}
-		return 0;
-	}
 
 	// Visitor function
 	void FireDomain::accept(Visitor* v) {
@@ -4960,10 +3334,10 @@ void FireDomain::loadWindDataInBinary(double refTime){
 								dom.getAtt("SWy").getValues(&Yorigin);
 								double Xlen = 0;
 								dom.getAtt("Lx").getValues(&Xlen);
-								Xlen = Xlen+params->getDouble("SHIFT_ALL_DATA_ABSCISSA_BY");
+								Xlen = Xlen;
 								double Ylen = 0;
 								dom.getAtt("Ly").getValues(&Ylen);
-								Ylen=Ylen+params->getDouble("SHIFT_ALL_DATA_ORDINATES_BY");
+								Ylen=Ylen;
 								int pyear = 0;
 								dom.getAtt("refYear").getValues(&pyear);
 								int pday = 0;

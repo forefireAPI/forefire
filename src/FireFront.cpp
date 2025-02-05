@@ -574,7 +574,7 @@ void FireFront::split(FireNode* fna, const double& t){
 		if ( abs(meanRadius) > 0.5*dist ){
 			FFPoint tt = fnb->locAtTime(t) - fna->getLoc();
 			double a = 1./sqrt(tt.getX()*tt.getX()+tt.getY()*tt.getY());
-			FFPoint n = FFPoint(-a*tt.getY(), a*tt.getX());
+			FFPoint n = FFPoint(-a*tt.getY(), a*tt.getX(),0.);
 			double dx = abs(meanRadius) - sqrt(meanRadius*meanRadius-0.25*dist*dist);
 			if ( meanRadius > 0. ){
 				splitLoc = splitLoc + dx*n;
@@ -607,8 +607,8 @@ void FireFront::merge(FireNode* fna, FireNode* fnb){
 		double maxX = max(fna->getX(),fnb->getX()) + 2.*domain->getPerimeterResolution();
 		double minY = min(fna->getY(),fnb->getY()) - 2.*domain->getPerimeterResolution();
 		double maxY = max(fna->getY(),fnb->getY()) + 2.*domain->getPerimeterResolution();
-		FFPoint swc = FFPoint(minX, minY);
-		FFPoint nec = FFPoint(maxX, maxY);
+		FFPoint swc = FFPoint(minX, minY,0.);
+		FFPoint nec = FFPoint(maxX, maxY,0.);
 		double t = fna->getTime();
 
 		
@@ -901,8 +901,8 @@ void FireFront::mergeInnerFronts(FireNode* fna, FireNode* fnb){
 		double maxX = max(fna->getX(),fnb->getX()) + 2.*domain->getPerimeterResolution();
 		double minY = min(fna->getY(),fnb->getY()) - 2.*domain->getPerimeterResolution();
 		double maxY = max(fna->getY(),fnb->getY()) + 2.*domain->getPerimeterResolution();
-		FFPoint swc = FFPoint(minX, minY);
-		FFPoint nec = FFPoint(maxX, maxY);
+		FFPoint swc = FFPoint(minX, minY,0.);
+		FFPoint nec = FFPoint(maxX, maxY,0.);
 		double t = fna->getTime();
 
 		FireFront* frontb = fnb->getFront();

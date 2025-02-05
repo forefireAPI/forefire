@@ -277,7 +277,7 @@ bool TwoTimeArrayLayer<T>::inBound(const size_t& ii, const size_t& jj){
 template<typename T>
 FFPoint TwoTimeArrayLayer<T>::posToIndices(FFPoint loc){
 	return FFPoint((loc.getX()-origin.getX())/dx
-			, (loc.getY()-origin.getY())/dy);
+			, (loc.getY()-origin.getY())/dy,0);
 }
 
 template<typename T>
@@ -409,9 +409,9 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 			size_t nnx = nx-2;
 			size_t nny = ny-2;
 			FFPoint plotSW = FFPoint(params->getDouble("massOriginX")
-					, params->getDouble("massOriginY"));
+					, params->getDouble("massOriginY"),0);
 			FFPoint plotNE = FFPoint(params->getDouble("massOriginX")+(nnx-1)*dx
-					, params->getDouble("massOriginY")+(nny-1)*dy);
+					, params->getDouble("massOriginY")+(nny-1)*dy,0);
 			dumpAsBinary(params->getParameter("ffOutputsPattern"), time2
 					, plotSW, plotNE, nnx, nny);
 		}

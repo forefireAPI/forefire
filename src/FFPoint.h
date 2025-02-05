@@ -45,8 +45,6 @@ public:
 
 	/*! \brief Default constructor */
 	FFPoint();
-	/*! \brief 2d Constructor ('z=0.') */
-	FFPoint(double, double);
 	/*! \brief 3d Constructor */
 	FFPoint(double, double, double);
 	/*! \brief Destructor */

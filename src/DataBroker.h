@@ -308,6 +308,9 @@ public:
 
 	/*! \brief accessor to the desired data layer */
 	DataLayer<double>* getLayer(const string&);
+	
+	bool hasLayer(const string& ) ;
+
  	XYZTDataLayer<double>* getwindULayer(); 
 	/*! \brief accessor to the desired flux layer */
 	FluxLayer<double>* getFluxLayer(const string&);

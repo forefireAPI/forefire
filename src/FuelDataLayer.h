@@ -39,6 +39,7 @@ template<typename T> class FuelDataLayer : public DataLayer<T> {
 
 	/* Defining the map of fuels */
 	int* fuelMap;
+	FFArray<int>* myFuelMap; /*!< pointer to the FFArray containing the data */
 
 	double SWCornerX; /*!< origin in the X direction */
 	double SWCornerY; /*!< origin in the Y direction */
@@ -138,6 +139,8 @@ public:
 	/*! \brief stores data from a given array (should not be used) */
 	void setMatrix(string&, double*, const size_t&, size_t&, const double&);
 
+	int* getFuelMap(){return fuelMap;}
+	size_t getDim(string = "total");
 	/*! \brief print the related data (should not be used) */
 	string print();
 	string print2D(size_t, size_t);
@@ -214,6 +217,14 @@ int FuelDataLayer<T>::getFuelAtLocation(FFPoint loc, double time){
 template<typename T>
 void FuelDataLayer<T>::setValueAt(FFPoint loc,  double timeV, T value){
 	fuelMap[getPos(loc, timeV)] = (int)value;
+}
+template<typename T>
+size_t FuelDataLayer<T>::getDim(string dim){
+	if ( dim == "x" ) return nx;
+	if ( dim == "y" ) return ny;
+	if ( dim == "z" ) return nz;
+	if ( dim == "t" ) return nt;
+	return size;
 }
 
 template<typename T>
