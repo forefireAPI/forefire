@@ -179,7 +179,7 @@ void MNHCreateDomain(const int id
 	if ( SimulationParameters::GetInstance()->getInt("outputsUpdate") != 0 ){
 		session->tt->insert(new FFEvent(session->outStrRep));
 	}
-    // TODO	createNcFile(params->getParameter("ForeFireDataDirectory"), mdimx, mdimy, mdimz, meshx, meshy, zgrid);
+  
 	// Reading all the information on the initialization of ForeFire
 	ostringstream initfile;
 	if ( SimulationParameters::GetInstance()->getInt("parallelInit") != 1 ) {
@@ -511,12 +511,7 @@ void FFDumpDoubleArray(size_t nmodel, size_t nip, const char* mname, double t
 }
 
 
-void saveNcRecord(int rec){cout << "CLibforefire:: saveNcRecord " << " newCDF Not Implemented" << endl;}
-void createNcFile(string filename
-		, const int& consted_ni, const int& consted_nj, const int& consted_nk
-		, const double* meshx, const double* meshy, const double* zgrid){
-			cout << "CLibforefire:: createNcFile " << " newCDF Not Implemented" << endl;
-		}
+
 
 
 }

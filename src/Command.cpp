@@ -1448,6 +1448,7 @@ int Command::loadData(const string& arg, size_t& numTabs){
 		ExecuteCommand(com);
     }
 	if (args.size() == 1){
+		// this is the case to load layers but the domain is already loaded and time set
 			if ( currentSession.fd != 0 ){
 				currentSession.fd->getDataBroker()->loadFromNCFile(path.c_str());
 			}

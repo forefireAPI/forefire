@@ -992,7 +992,7 @@ void DataBroker::loadFromNCFile(string filename) {
 					registerLayer(varName, newlayer);
 				}
 			} else if (layerType.find("parameter") != string::npos) {
-				
+				 std::cout << "LOADING PARAMETERS LAYERS IN NCFILE.... WHY ??? " << varName;
 				  map<string,NcVarAtt> attributeList = it->second.getAtts();
 				  map<string,NcVarAtt>::iterator myIter; 
 					for(myIter=attributeList.begin();myIter !=attributeList.end();++myIter)
@@ -1002,20 +1002,23 @@ void DataBroker::loadFromNCFile(string filename) {
 					string attsVal;
 					int attiVal;
 					float attfVal;
+					double attdVal;
 					switch ((int)attValType.getTypeClass()) {
 							case NC_CHAR:
 								att.getValues(attsVal); 
 								params->setParameter(myIter->first, attsVal);
 								break;
 							case NC_INT:
-								
 								att.getValues(&attiVal); 
 								params->setParameter(myIter->first, std::to_string(attiVal));
 								break;
 							case NC_FLOAT:
-								 
 								att.getValues(&attfVal); 
 								params->setParameter(myIter->first, std::to_string(attfVal));
+								break;
+							case NC_DOUBLE:
+								att.getValues(&attdVal); 
+								params->setParameter(myIter->first, std::to_string(attdVal));
 								break;
 							default:
 								std::cout << myIter->first << " attribute of unhandled type " <<attValType.getName() << endl;
@@ -1026,14 +1029,77 @@ void DataBroker::loadFromNCFile(string filename) {
 		}
 
 	 
-		fuelLayer = constructFuelLayerFromFile(&dataFile);
+
+		NcVar domvar = dataFile.getVar("domain");
+		FFPoint SWCorner = getNetCDFSWCorner(&domvar); 
+		FFPoint spatialExtent = getNetCDFSpatialSpan(&domvar); 
+		double timeOrigin = getNetCDFTimeOrigin(&domvar); 
+		double Lt = getNetCDFTimeSpan(&domvar); 
+		double version = getNetCDFFileVersion(&domvar);  
+		NcVar values = dataFile.getVar("fuel");
+
+		if (values.getDimCount() > 4) {
+			cout << "Variable fuel doesn't have the right dimension ("
+					<< values.getDimCount() << " instead of 4 maximum)" << endl;
+		}
+
+		size_t nx = 0;
+		size_t ny = 0;
+		size_t nz = 0;
+		size_t nt = 0;
+
+		if (values.getDimCount() == 2) {
+			ny = (size_t) values.getDim(0).getSize();
+			nx = (size_t) values.getDim(1).getSize();
+		}
+		if (values.getDimCount() == 3) {
+			nz = (size_t) values.getDim(0).getSize();
+			ny = (size_t) values.getDim(1).getSize();
+			nx = (size_t) values.getDim(2).getSize();
+
+		}
+		if (values.getDimCount() == 4) {
+			nt = (size_t) values.getDim(0).getSize();
+			nz = (size_t) values.getDim(1).getSize();
+			ny = (size_t) values.getDim(2).getSize();
+			nx = (size_t) values.getDim(3).getSize();
+		}
+			
+		/* Getting the data */
+		/*------------------*/
+		int* fuelMap = readAndTransposeIntFortranProjectedField(&values, nt, nz, ny,	nx, version>0,-1);
+
+		if (isRelevantData(SWCorner, spatialExtent)) {
+			FuelDataLayer<double>* newlayer = new FuelDataLayer<double>("fuel",SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt,fuelMap);
+			delete[] fuelMap;
+			fuelLayer =  newlayer;
+		} else {
+			cout << "WARNING, spatial domain of validity for fuel table: "
+					<< SWCorner.print() << " -> ("
+					<< SWCorner.getX() + spatialExtent.getX() << ","
+					<< SWCorner.getY() + spatialExtent.getY() << ","
+					<< SWCorner.getZ() + spatialExtent.getZ()
+					<< ") has no intersection with the fire domain: ("
+					<< domain->SWCornerX() << "," << domain->SWCornerY() << ") -> ("
+					<< domain->NECornerX() << "," << domain->NECornerY() << ")"
+					<< endl << "...resizing to the fire domain..." << endl;
+
+			FFPoint SWC = FFPoint(domain->SWCornerX(), domain->SWCornerY(), 0.);
+			FFPoint ext = FFPoint(domain->NECornerX() - domain->SWCornerX(),
+					domain->NECornerY() - domain->SWCornerY(), 10000.);
+			double t0 = 0;
+			double Dt = 10000000.;
+			FuelDataLayer<double>* newlayer = new FuelDataLayer<double>("fuel", SWC,t0, ext, Dt, nx, ny, nz, nt, fuelMap);
+			delete[] fuelMap;
+			fuelLayer =  newlayer;
+		}
+
 		registerLayer("fuel", fuelLayer);
 	 
 	}
 	}catch(NcException& e)
 		{
 		e.what();
-		//cout<<"cannot read landscape file"<<endl;
 	
 		}
 
@@ -1168,72 +1234,7 @@ XYZTDataLayer<double>* DataBroker::constructXYZTLayerFromFile(	NcFile* NcdataFil
 
 	}
 	}
-FuelDataLayer<double>* DataBroker::constructFuelLayerFromFile(	NcFile* NcdataFile) {
-	NcVar domvar = NcdataFile->getVar("domain");
-	FFPoint SWCorner = getNetCDFSWCorner(&domvar); 
-	FFPoint spatialExtent = getNetCDFSpatialSpan(&domvar); 
-	double timeOrigin = getNetCDFTimeOrigin(&domvar); 
-	double Lt = getNetCDFTimeSpan(&domvar); 
-	double version = getNetCDFFileVersion(&domvar);  
-	NcVar values = NcdataFile->getVar("fuel");
 
-	if (values.getDimCount() > 4) {
-		cout << "Variable fuel doesn't have the right dimension ("
-				<< values.getDimCount() << " instead of 4 maximum)" << endl;
-	}
-
-	size_t nx = 0;
-	size_t ny = 0;
-	size_t nz = 0;
-	size_t nt = 0;
-
-	if (values.getDimCount() == 2) {
-		ny = (size_t) values.getDim(0).getSize();
-		nx = (size_t) values.getDim(1).getSize();
-	}
-	if (values.getDimCount() == 3) {
-		nz = (size_t) values.getDim(0).getSize();
-		ny = (size_t) values.getDim(1).getSize();
-		nx = (size_t) values.getDim(2).getSize();
-
-	}
-	if (values.getDimCount() == 4) {
-		nt = (size_t) values.getDim(0).getSize();
-		nz = (size_t) values.getDim(1).getSize();
-		ny = (size_t) values.getDim(2).getSize();
-		nx = (size_t) values.getDim(3).getSize();
-	}
-		
-	/* Getting the data */
-	/*------------------*/
-	int* fuelMap = readAndTransposeIntFortranProjectedField(&values, nt, nz, ny,	nx, version>0,-1);
-
-	if (isRelevantData(SWCorner, spatialExtent)) {
-		FuelDataLayer<double>* newlayer = new FuelDataLayer<double>("fuel",SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt,fuelMap);
-		delete[] fuelMap;
-		return newlayer;
-	} else {
-		cout << "WARNING, spatial domain of validity for fuel table: "
-				<< SWCorner.print() << " -> ("
-				<< SWCorner.getX() + spatialExtent.getX() << ","
-				<< SWCorner.getY() + spatialExtent.getY() << ","
-				<< SWCorner.getZ() + spatialExtent.getZ()
-				<< ") has no intersection with the fire domain: ("
-				<< domain->SWCornerX() << "," << domain->SWCornerY() << ") -> ("
-				<< domain->NECornerX() << "," << domain->NECornerY() << ")"
-				<< endl << "...resizing to the fire domain..." << endl;
-
-		FFPoint SWC = FFPoint(domain->SWCornerX(), domain->SWCornerY(), 0.);
-		FFPoint ext = FFPoint(domain->NECornerX() - domain->SWCornerX(),
-				domain->NECornerY() - domain->SWCornerY(), 10000.);
-		double t0 = 0;
-		double Dt = 10000000.;
-		FuelDataLayer<double>* newlayer = new FuelDataLayer<double>("fuel", SWC,t0, ext, Dt, nx, ny, nz, nt, fuelMap);
-		delete[] fuelMap;
-		return newlayer;
-	}
-	return 0;
-	}
 int* DataBroker::readAndTransposeIntFortranProjectedField(NcVar* val,const size_t &nt, const size_t &nz, const size_t &ny, const size_t &nx,bool transpose = true, int selectedT =-1) {
 		size_t nnt = nt;
 		size_t SelectedTdim = selectedT<0?0:selectedT;

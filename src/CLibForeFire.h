@@ -72,10 +72,6 @@ void FFDumpDoubleArray(size_t, size_t
 		, size_t ,size_t ,size_t ,size_t , size_t );
 
 
-void saveNcRecord(int rec);
-
-void createNcFile(string, const int&, const int&, const int&
-		, const double*, const double*, const double*);
 
 Command* getLauncher();
 

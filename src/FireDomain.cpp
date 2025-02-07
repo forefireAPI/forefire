@@ -2669,39 +2669,20 @@ void FireDomain::loadWindDataInBinary(double refTime){
 					cells[i][j].setGlobalCoordinates(i,j);
 				}
 			}
-
-
-     	//now i can compute total geometry
-		// for the cells - I assign to each cell the right dumpDomainID and dumpIndice..
-		//  at dump time : loop trough all and make lists to dump and a table with count to dump
-		//  i go trough the count to dump 
-		// at read time I see if a file exist and I read/create it
-		///for the wind, need to knwo where I read data...first read/write all then see if only read/write it if I have a bmap
-		// where to read it is from that domain reference
-
-
-			
-		// Mesh size
-			// read all domains and create list
-				/*
-				BMAP Parallel 
-				*/
-				if (params->getParameter("runmode") == "masterMNH"){
-				
-					if(getDomainID()==0){
-					list<distributedDomainInfo*>::iterator it;
-						for (it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); it++)
-							{
-								for ( size_t i = (*it)->refNX; i < ((*it)->refNX+(*it)->atmoNX); i++ ) {
-									for ( size_t j = (*it)->refNY; j < ((*it)->refNY+(*it)->atmoNY); j++ ) {
-										cells[i][j].toDumpDomainID =(*it)->ID;
-									}
+			if (params->getParameter("runmode") == "masterMNH"){
+				if(getDomainID()==0){
+				list<distributedDomainInfo*>::iterator it;
+					for (it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); it++)
+						{
+							for ( size_t i = (*it)->refNX; i < ((*it)->refNX+(*it)->atmoNX); i++ ) {
+								for ( size_t j = (*it)->refNY; j < ((*it)->refNY+(*it)->atmoNY); j++ ) {
+									cells[i][j].toDumpDomainID =(*it)->ID;
 								}
-						}
+							}
 					}
-					cout <<"Domain "<<getDomainID()<<"    size:"<<atmoNX<<":"<<atmoNY<<":"<<atmoNZ<<" coord:"<<(NECornerX()-SWCornerX())<<":"<<(NECornerY()-SWCornerY())<<" my bmap is "<<globalBMapSizeX<<":"<<globalBMapSizeY<< " res " <<burningMatrixResX<<":"<< burningMatrixResY<< endl;
 				}
-
+				cout <<"Domain "<<getDomainID()<<"    size:"<<atmoNX<<":"<<atmoNY<<":"<<atmoNZ<<" coord:"<<(NECornerX()-SWCornerX())<<":"<<(NECornerY()-SWCornerY())<<" my bmap is "<<globalBMapSizeX<<":"<<globalBMapSizeY<< " bmap " <<burningMatrixResX<<":"<< burningMatrixResY<< endl;
+			}
 		} catch ( const bad_alloc & ) {
 			// deleting what has been allocated
 			for ( size_t i = 0; i < allocated_dim; ++i ) {
@@ -2724,10 +2705,6 @@ void FireDomain::loadWindDataInBinary(double refTime){
 
 		if ( params->isValued("BMapFiles") ){
 			
-			/*size_t i = 0;
-			size_t j = 0;
-			size_t ii = 0;
-			size_t jj = 0;*/
 			ostringstream oss;
 			if ( params->getInt("parallelInit") != 0 ){
 				
@@ -2782,27 +2759,19 @@ void FireDomain::loadWindDataInBinary(double refTime){
 		propagativeLayer = 0;
 		for ( size_t i = 0; i < NUM_MAX_PROPMODELS; i++ ) propModelsTable[i] = 0;
 		ostringstream infile;
-        /*
-		infile<<params->getParameter("caseDirectory")<<'/'
-		<<params->getParameter("ForeFireDataDirectory")<<'/'
-		<<params->getParameter("NetCDFfile");
-        */
         infile << params->GetPath(params->getParameter("NetCDFfile"));
 	
-       	dataBroker->initializePropagativeLayer(infile.str());
-
-		/* initializations for the flux models */
+       /* initializations for the flux models */
 		for ( size_t i = 0; i < NUM_MAX_FLUXMODELS; i++ ) fluxModelsTable[i] = NULL;
-	
-		dataBroker->initializeFluxLayers(infile.str());
+
 
 		/* loading the layers for atmospheric variables and coupling variables */
 		if ( atmosphericCoupling ) {
-			 
 			dataBroker->initializeAtmosphericLayers(getTime()
 													, globalBMapSizeX, globalBMapSizeY);
 		}
-
+		dataBroker->initializePropagativeLayer(infile.str());
+		dataBroker->initializeFluxLayers(infile.str());
 		
 		/* loading the data from a netCDF file */
 		dataBroker->loadFromNCFile(infile.str());
@@ -3382,13 +3351,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
 			 
 		}
 
-	void FireDomain::saveArrivalTimeNC(){
-
-	/*if (getDomainID() > 0){
-		cout<<"not saving separated ATimes domain "<<getDomainID()<<endl;
-		return;
-	}*/
-
+  void FireDomain::saveArrivalTimeNC(){
     
    try {
         // Setup file paths and identifiers
@@ -3405,14 +3368,10 @@ void FireDomain::loadWindDataInBinary(double refTime){
         NcVar atime = dataFile.addVar("arrival_time_of_front", ncDouble, dims);
         atime.setCompression(true, true, 6);
  
-
- 
 		double* matrix = new double[globalBMapSizeY * globalBMapSizeX];
-	 
 
 		for (size_t i = 0; i < globalBMapSizeX; i++) {
 			for (size_t j = 0; j < globalBMapSizeY; j++) {
-				 
 				double tmpval = this->getArrivalTime(i , j );
 				if (std::isinf(tmpval)) { 
 					matrix[j * globalBMapSizeX + i] =  -9999 ;
@@ -3437,9 +3396,7 @@ void FireDomain::loadWindDataInBinary(double refTime){
         // Close the file
         dataFile.close();
 
-	/*	for (size_t i = 0; i < globalBMapSizeY; i++) {
-			delete[] matrix[i];
-		}*/
+
 		delete[] matrix;
 
     } 
