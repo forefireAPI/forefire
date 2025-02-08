@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "EventCommand.h"
 #include <vector>
 #include <algorithm>
+#include "HttpCommandServer.hpp"
 
 #ifndef COMMAND_DEBUG
 #define COMMAND_DEBUG 1<<8
@@ -83,7 +84,7 @@ class Command {
 	// Definition of the command map alias
 	typedef int (*cmd)(const string&, size_t&);
 	typedef map<string,cmd> commandMap;  /*!< map of aliases between strings and functions to be called */
-	static const int numberCommands = 21; /*!< number of possible commands */
+	static const int numberCommands = 22; /*!< number of possible commands */
 	static commandMap makeCmds(){
 		// Construction of the command translator
 		commandMap trans;
@@ -107,6 +108,7 @@ class Command {
 		trans["man"] = &man;
 		trans["loadData"] = &loadData;
 		trans["systemExec"] = &systemExec;
+		trans["listenHTTP"] = &listenHTTP;
 		trans["clear"] = &clear;
 		trans["quit"] = &quit;
 
@@ -145,11 +147,13 @@ class Command {
 		cman["setParameter[param=value]"] = "setParameter\n - sets parameter 'param' to the given 'value'";
 		cman["setParameters[param1=val1;param2=val2;...;paramn=valn]"] = "setParameters\n - sets a given list of parameters to the desired values";
 		cman["getParameter[key=value]"] = "gets parameter 'key' ";
+		cman["trigger[]"] = "triggers runtime a change in simulation 'fuelIndice;loc=(x,y,z);fuelType=int or wind;loc=(x,y,z);vel=(vx,vy,vz);t=f ";
 		cman["include[input]"] = "include\n - executes the commands in the file 'input'";
 		cman["help"] = "help\n displays messages about the usage of commands\n";
 		cman["loadData"] = "loadData\n load a NC data file\n";
 		cman["clear"] = "clear\n clear all the simulation data\n";
 		cman["systemExec"] = "systemExec\n run a system command\n";
+		cman["listenHTTP"] = "listenHTTP\n launches an HTTP server to listen for commands\n";
 		cman["quit"] = "quit\n terminates the simulation\n";
 		return cman;
 	}
@@ -245,7 +249,11 @@ class Command {
 	static int clear(const string&, size_t&);
 	/*! \brief command to quit the ForeFire shell */
 	static int quit(const string&, size_t&);
+    /*! \brief command to quit the ForeFire shell */
+    static int listenHTTP(const string&, size_t &) ;
 
+	static string executeCommandAndCaptureOutput(const std::string &cmd);
+    
 	/*! \brief splits the command into the desired options */
 	static void tokenize(const string&, vector<string>&, const string&);
 	/*! \brief reads the value of the desired string */
@@ -299,6 +307,7 @@ public:
 		TimeTable* tt;
 		Simulator* sim;
 		ostream* outStream;
+		http_command::HttpCommandServer* server;
 		int debugMode;
 	};
 

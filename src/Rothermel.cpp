@@ -167,6 +167,7 @@ double Rothermel::getSpeed(double* valueOf){
 	double lMd  = valueOf[Md];
 	double lsd  = valueOf[sd] / 3.2808399; // conversion 1/m -> 1/ft
 	double le   = valueOf[e] * 3.2808399; // conversion m -> ft
+	
 	if (le==0) return 0;
 	double lSigmad = valueOf[Sigmad] * 0.2048; // conversion kg/m^2 -> lb/ft^2
 	double lDeltaH = valueOf[DeltaH] / 2326.0;// conversion J/kg -> BTU/lb

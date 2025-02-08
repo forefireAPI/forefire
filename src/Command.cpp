@@ -19,6 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 */
 #include "Command.h"
 #include "colormap.h"
+#include <sstream>
+#include <dirent.h> 
+
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -67,6 +70,8 @@ Command::Session Command::currentSession =
 		TimeTable* tt;
 		Simulator* sim;
 		ostream* outStream;
+
+		ostream* outStream;
 		int debugMode;
 	};*/
 
@@ -79,6 +84,7 @@ Command::Session Command::currentSession =
 		0,
 		0,
 		&cout,
+		0,
 		0,
 };
  
@@ -104,6 +110,7 @@ Command::CmdDictEntry Command::cmdDict[] =	{
 		,CmdDictEntry("man[command]","displays the man page of the desired 'command'")
 		,CmdDictEntry("loadData[...]","load a NC landscape data file")
 		,CmdDictEntry("systemExec[...]","runs a system command")
+		,CmdDictEntry("listenHTTP[host:port]","launches an HTTP server to listen for commands")
 		,CmdDictEntry("clear[]","clears the simulation")
 		,CmdDictEntry("quit","terminates the simulation")
 };
@@ -483,6 +490,8 @@ int Command::addFireNode(const string& arg, size_t& numTabs){
 	}
 }
 
+
+
 void Command::completeFront(FireFront* ff){
 	if ( ff->getHead() == 0 ) return;
 	FireNode* firstNode = ff->getHead();
@@ -730,7 +739,7 @@ int Command::printSimulation(const string& arg, size_t& numTabs){
         simParam->setInt("count", simParam->getInt("count") + 1);
 		outputfile<<currentSession.outStrRep->dumpStringRepresentation();
 	} else {
-		*currentSession.outStream<<currentSession.outStrRep->dumpStringRepresentation();
+		*currentSession.outStream<<currentSession.outStrRepp->dumpStringRepresentation();
 	}
 	return normal;
 }
@@ -1738,6 +1747,155 @@ void Command::ExecuteCommand(string& line){
 		}
 	command.clear();
 }
+
+std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
+    // Normalize the request URI. Remove a leading '/' if present.
+    std::string path = cmd;
+    if (!path.empty() && path[0] == '/') {
+        path = path.substr(1);
+    }
+    
+    std::string body;
+    std::string contentType;
+    
+    // CASE 1: Index request.
+    if (path.empty() || path == "index.html") {
+        std::ifstream file("index.html", std::ios::in | std::ios::binary);
+        if (file.good()) {
+            std::ostringstream contents;
+            contents << file.rdbuf();
+            body = contents.str();
+            contentType = "text/html; charset=UTF-8";
+        } else {
+            // Build an HTML directory listing.
+            DIR *dir = opendir(".");
+            if (!dir) {
+                body = "<html><head><title>ForeFire Directory Listing</title></head>"
+                       "<body><h1>ForeFire Directory Listing</h1><p>Error opening directory.</p></body></html>";
+            } else {
+                std::ostringstream listing;
+                listing << "<!DOCTYPE html>\n<html>\n<head>\n"
+                        << "<meta charset=\"utf-8\">\n"
+                        << "<title>ForeFire Directory Listing</title>\n"
+                        << "<style>\n"
+                        << "body { font-family: sans-serif; background-color: #f0f0f0; padding: 20px; }\n"
+                        << "h1 { color: #d9534f; }\n"
+                        << "table { width: 100%; border-collapse: collapse; }\n"
+                        << "th, td { padding: 8px; border-bottom: 1px solid #ccc; text-align: left; }\n"
+                        << "a { text-decoration: none; color: #337ab7; }\n"
+                        << "a:hover { text-decoration: underline; }\n"
+                        << "</style>\n"
+                        << "</head>\n<body>\n"
+                        << "<h1>ForeFire Directory Listing</h1>\n"
+                        << "<table>\n"
+                        << "<tr><th>Filename</th></tr>\n";
+                struct dirent *entry;
+                while ((entry = readdir(dir)) != NULL) {
+                    std::string name(entry->d_name);
+                    if (name == "." || name == "..")
+                        continue;
+                    listing << "<tr><td><a href=\"/" << name << "\">" << name << "</a></td></tr>\n";
+                }
+                listing << "</table>\n</body>\n</html>\n";
+                closedir(dir);
+                body = listing.str();
+            }
+            contentType = "text/html; charset=UTF-8";
+        }
+    }
+    // CASE 2: ForeFire command.
+    else if (path.compare(0, 3, "ff:") == 0) {
+        std::string fireCommand = path.substr(3);
+        std::streambuf* oldbuf = std::cout.rdbuf();
+        std::ostringstream captured;
+        std::cout.rdbuf(captured.rdbuf());
+        Command::ExecuteCommand(fireCommand);
+        std::cout.rdbuf(oldbuf);
+        body = captured.str();
+        contentType = "text/plain; charset=UTF-8";
+    }
+    // CASE 3: File request.
+    else {
+        std::ifstream file(path, std::ios::in | std::ios::binary);
+        if (!file.good()) {
+            body = "File not found: " + path;
+            contentType = "text/plain; charset=UTF-8";
+        } else {
+            std::ostringstream contents;
+            contents << file.rdbuf();
+            body = contents.str();
+            size_t dotPos = path.find_last_of('.');
+            if (dotPos != std::string::npos) {
+                std::string ext = path.substr(dotPos);
+                if (ext == ".html" || ext == ".htm")
+                    contentType = "text/html; charset=UTF-8";
+                else if (ext == ".png" || ext == ".PNG")
+                    contentType = "image/png";
+                else if (ext == ".jpg" || ext == ".jpeg" || ext == ".JPG" || ext == ".JPEG")
+                    contentType = "image/jpeg";
+                else
+                    contentType = "text/plain; charset=UTF-8";
+            } else {
+                contentType = "text/plain; charset=UTF-8";
+            }
+        }
+    }
+    
+    // Build Date header in RFC1123 format.
+    std::time_t now = std::time(nullptr);
+    char dateBuf[100];
+    std::tm *gmt = std::gmtime(&now);
+    std::strftime(dateBuf, sizeof(dateBuf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+    
+    // Assemble complete HTTP response using HTTP/1.0.
+    std::ostringstream responseStream;
+    responseStream << "HTTP/1.0 200 OK\r\n"
+                   << "Host: localhost\r\n"
+                   << "Date: " << dateBuf << "\r\n"
+                   << "Connection: close\r\n"
+                   << "Content-Type: " << contentType << "\r\n"
+                   << "Content-Length: " << body.size() << "\r\n"
+                   << "\r\n"
+                   << body;
+    
+    return responseStream.str();
+}
+
+
+int Command::listenHTTP(const std::string &arg, size_t &numTabs) {
+
+	//ID 1 is for the Fortran MPI rank 1
+
+	cout<<"HTTP trying on >>>"<<getDomain()->getDomainID()<<"<<"<<endl;
+		if(currentSession.fd != 0) {
+			if(getDomain()->getDomainID() != 0){
+				
+				return normal;
+			}else{
+				cout<<"HTTPMPI rank >>>>"<<getDomain()->getDomainID()<<"<<"<<endl;
+			}
+			
+		}
+
+    // Allocate a new HTTP server if none exists.
+    if (currentSession.server == 0) {
+        currentSession.server = new http_command::HttpCommandServer();
+    }
+    currentSession.server->setCallback(executeCommandAndCaptureOutput);
+
+	std::string address = arg.empty() ? "localhost:8000" : arg;
+
+	if (!currentSession.server->listenOn(address)) {
+		std::cerr << "Failed to start HTTP command server on " << address << std::endl;
+		return error;
+	} else {
+		std::cout << "Server started on address: " << address << std::endl;
+	}
+    // The server now runs in a background thread.
+    return normal;
+}
+
+
 
 FireDomain* Command::getDomain(){
 	if (currentSession.fdp != 0) {

@@ -992,7 +992,7 @@ void DataBroker::loadFromNCFile(string filename) {
 					registerLayer(varName, newlayer);
 				}
 			} else if (layerType.find("parameter") != string::npos) {
-				 std::cout << "LOADING PARAMETERS LAYERS IN NCFILE.... WHY ??? " << varName;
+			//	 std::cout << "LOADING PARAMETERS LAYERS IN NCFILE.... WHY ??? " << varName;
 				  map<string,NcVarAtt> attributeList = it->second.getAtts();
 				  map<string,NcVarAtt>::iterator myIter; 
 					for(myIter=attributeList.begin();myIter !=attributeList.end();++myIter)
