@@ -739,7 +739,12 @@ int Command::printSimulation(const string& arg, size_t& numTabs){
         simParam->setInt("count", simParam->getInt("count") + 1);
 		outputfile<<currentSession.outStrRep->dumpStringRepresentation();
 	} else {
-		*currentSession.outStream<<currentSession.outStrRepp->dumpStringRepresentation();
+		if( currentSession.fdp != 0){
+			*currentSession.outStream<<currentSession.outStrRepp->dumpStringRepresentation();
+		}
+		else{
+				*currentSession.outStream<<currentSession.outStrRep->dumpStringRepresentation();
+		}
 	}
 	return normal;
 }
@@ -1865,33 +1870,53 @@ std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
 int Command::listenHTTP(const std::string &arg, size_t &numTabs) {
 
 	//ID 1 is for the Fortran MPI rank 1
-
-	cout<<"HTTP trying on >>>"<<getDomain()->getDomainID()<<"<<"<<endl;
-		if(currentSession.fd != 0) {
-			if(getDomain()->getDomainID() != 0){
-				
-				return normal;
-			}else{
-				cout<<"HTTPMPI rank >>>>"<<getDomain()->getDomainID()<<"<<"<<endl;
+	int MPIMODE=1;
+	int STANDALONEMODE=0;
+	int listenMode=STANDALONEMODE;
+	size_t defaultport = 8000;
+	size_t port = defaultport;
+	std::string defaultHostname = "localhost";
+	
+	if(currentSession.fd != 0) {
+		if(getDomain()->getDomainID() != 0){
+			return normal;
+		}else{
+			if(currentSession.fdp != 0) {
+				listenMode=MPIMODE;
+				cout<<"HTTP MPI rank >>>>"<<getDomain()->getDomainID()<<"<<"<<endl;
 			}
-			
 		}
+	}
+
+	char hostname[256];
+	if (gethostname(hostname, sizeof(hostname)) != 0) {
+		cout<<"Cannot get hostname info "<<endl;
+		return error;
+	}
+
+	std::string address = arg.empty() ? std::string(hostname) + ":"+std::to_string(port) : arg;
 
     // Allocate a new HTTP server if none exists.
     if (currentSession.server == 0) {
         currentSession.server = new http_command::HttpCommandServer();
     }
+
     currentSession.server->setCallback(executeCommandAndCaptureOutput);
 
-	std::string address = arg.empty() ? "localhost:8000" : arg;
 
 	if (!currentSession.server->listenOn(address)) {
 		std::cerr << "Failed to start HTTP command server on " << address << std::endl;
 		return error;
 	} else {
-		std::cout << "Server started on address: " << address << std::endl;
+		std::ofstream infoFile("httpConnectInfo.txt");
+		if (infoFile) {
+			infoFile << hostname << ":" << port << std::endl;
+			infoFile.close();
+		} else {
+			std::cerr << "Unable to open file for writing server info." << std::endl;
+		}
 	}
-    // The server now runs in a background thread.
+	
     return normal;
 }
 
