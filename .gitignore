@@ -26,6 +26,10 @@ __pycache__
 # jupyter notebooks checkpoints
 .ipynb_checkpoints
 
+# test output files
+examples/**/*.json
+
+
 CMakeLists.txt
 build.sh
 
