@@ -1,4 +1,4 @@
-FROM osgeo/gdal:ubuntu-small-3.3.1
+FROM ubuntu:22.04
 
 # install requirements first to cache it
 RUN apt-get update
