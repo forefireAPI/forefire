@@ -42,3 +42,6 @@ jobs:
         run: |
           # Run the container and check the version output
           docker run --rm forefire:latest forefire -v
+
+      - name: Run test inside Docker container
+        run: docker run --rm forefire:latest sh ./test-forefire.sh

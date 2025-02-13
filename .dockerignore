@@ -5,7 +5,6 @@
 # ignore build folders
 bin
 build
-sconsbuild
 
 # ignore test files
 *.json
