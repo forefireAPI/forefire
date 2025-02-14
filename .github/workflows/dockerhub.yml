@@ -2,8 +2,8 @@ name: Docker Build and Push
 
 on:
   push:
-    branches:
-      - ci-dockerhub  # change later with tags generated
+    tags:
+      - 'v*'
 
 jobs:
   docker:
