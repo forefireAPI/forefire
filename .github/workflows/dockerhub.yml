@@ -16,7 +16,7 @@ jobs:
         run: |
           echo $DOCKER_PASSWORD | docker login -u "antonioleblanc" --password-stdin
         env:
-          DOCKER_PASSWORD: "dckr_pat_zg-lvSZETPvHbIHCPVr22T8OK8Q"
+          DOCKER_PASSWORD: "dckr_pat_puVQc24FIKKQsk-WMCCl_p62r_A"
 
       - name: Build Docker image
         run: docker build -t antonioleblanc/forefire:ci-test .
