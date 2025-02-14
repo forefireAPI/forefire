@@ -1,0 +1,25 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches:
+      - ci-dockerhub  # change later with tags generated
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub # hardcoded token with short expiration we can change later
+        run: |
+          echo $DOCKER_PASSWORD | docker login -u "antonioleblanc" --password-stdin
+        env:
+          DOCKER_PASSWORD: "dckr_pat_zg-lvSZETPvHbIHCPVr22T8OK8Q"
+
+      - name: Build Docker image
+        run: docker build -t antonioleblanc/forefire:ci-test .
+
+      - name: Push Docker image
+        run: docker push antonioleblanc/forefire:ci-test
