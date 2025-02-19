@@ -1,3 +1,0 @@
-/Users/filippi_j/soft/firefront/cmakebuild/CMakeFiles/forefirecmake.dir
-/Users/filippi_j/soft/firefront/cmakebuild/CMakeFiles/edit_cache.dir
-/Users/filippi_j/soft/firefront/cmakebuild/CMakeFiles/rebuild_cache.dir

@@ -53,7 +53,13 @@ public:
 
 	/* Visitors of the elements */
 	void visit(FireDomain*);
+	void postVisitInner(FireDomain*);
+	void postVisitAll(FireDomain*);
+	
 	void visit(FireFront*);
+	void postVisitInner(FireFront*);
+	void postVisitAll(FireFront*);
+	
 	void visit(FireNode*);
 
 
