@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h> 
+#include <regex>
 
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -60,21 +61,6 @@ vector<string> Command::outputDirs;
 
 Command::Session Command::currentSession =
 {
-	/*struct Session{
-		SimulationParameters* params;
-		FireDomain* fd;
-		FireDomain* fdp;
-		FireFront* ff;
-		StringRepresentation* outStrRep;
-		StringRepresentation* outStrRepp;
-		TimeTable* tt;
-		Simulator* sim;
-		ostream* outStream;
-
-		ostream* outStream;
-		int debugMode;
-	};*/
-
 		SimulationParameters::GetInstance(),
 		0,
 		0,
@@ -225,13 +211,16 @@ int Command::startFire(const string& arg, size_t& numTabs){
 	  
     SimulationParameters *simParam = SimulationParameters::GetInstance();
     
-    FFPoint pos = getPoint("loc", arg);
+    FFPoint pos = getPoint("lonlat", arg);
+	if (pos == pointError){
+		pos = getPoint("loc", arg);
+	}	
+
     if ((refDomain->striclyWithinDomain(pos)))
     {
         if (currentSession.ff != 0) {
             completeFront(currentSession.ff);
         }
-
 		
         double t = getFloat("t", arg);
         
@@ -240,7 +229,7 @@ int Command::startFire(const string& arg, size_t& numTabs){
             string date = getString("date", arg);
             
             if (date == stringError) {
-                return normal;
+                return error;
             }
             
             int year, yday;
@@ -290,6 +279,124 @@ int Command::startFire(const string& arg, size_t& numTabs){
     
 	return normal;
 }
+
+
+std::vector<FFPoint> Command::getPoly(const std::string &opt, const std::string &arg) {
+    std::vector<FFPoint> points;
+    
+    if (opt == "geojson") {
+        // Example input: [[8.81116, 41.96981, 0], [8.81137, 41.96976, 0], ...]
+        // Use a regex to extract all numbers.
+        std::regex number_regex("[-+]?[0-9]*\\.?[0-9]+");
+        auto numbers_begin = std::sregex_iterator(arg.begin(), arg.end(), number_regex);
+        auto numbers_end   = std::sregex_iterator();
+        std::vector<double> coords;
+        for (auto it = numbers_begin; it != numbers_end; ++it) {
+            coords.push_back(std::stod(it->str()));
+        }
+        if (coords.size() % 3 != 0)
+            return points; // Malformed input.
+        
+        double refLon    = getDomain()->getRefLongitude();
+        double refLat    = getDomain()->getRefLatitude();
+        double mPerDegLon = getDomain()->getMetersPerDegreesLon();
+        double mPerDegLat = getDomain()->getMetersPerDegreeLat();
+        
+        for (size_t i = 0; i < coords.size(); i += 3) {
+            double lon = coords[i];
+            double lat = coords[i + 1];
+            double alt = coords[i + 2];
+            double x = (lon - refLon) * mPerDegLon;
+            double y = (lat - refLat) * mPerDegLat;
+            points.push_back(FFPoint(x, y, alt));
+        }
+    }
+    else if (opt == "kml") {
+        // Example input: 
+        // "8.810264,41.968841,0.14 8.810117,41.968757,0.03 8.810017,41.968692,0.01"
+        std::istringstream iss(arg);
+        double refLon    = getDomain()->getRefLongitude();
+        double refLat    = getDomain()->getRefLatitude();
+        double mPerDegLon = getDomain()->getMetersPerDegreesLon();
+        double mPerDegLat = getDomain()->getMetersPerDegreeLat();
+        std::string token;
+        while (iss >> token) {
+            // Replace commas with spaces.
+            std::replace(token.begin(), token.end(), ',', ' ');
+            std::istringstream ptStream(token);
+            double lon, lat, alt;
+            if (!(ptStream >> lon >> lat >> alt))
+                continue;
+            double x = (lon - refLon) * mPerDegLon;
+            double y = (lat - refLat) * mPerDegLat;
+            points.push_back(FFPoint(x, y, alt));
+        }
+    }
+    else if (opt == "polyencoded") {
+        // Polyline encoded string. Standard algorithm decodes lat and lon.
+        // Altitude is not provided (set to 0).
+        double refLon    = getDomain()->getRefLongitude();
+        double refLat    = getDomain()->getRefLatitude();
+        double mPerDegLon = getDomain()->getMetersPerDegreesLon();
+        double mPerDegLat = getDomain()->getMetersPerDegreeLat();
+        
+        int index = 0, len = static_cast<int>(arg.size());
+        int lat = 0, lng = 0;
+        while (index < len) {
+            int b, shift = 0, resultInt = 0;
+            do {
+                b = arg[index++] - 63;
+                resultInt |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20 && index < len);
+            int dlat = (resultInt & 1) ? ~(resultInt >> 1) : (resultInt >> 1);
+            lat += dlat;
+            
+            shift = 0;
+            resultInt = 0;
+            do {
+                b = arg[index++] - 63;
+                resultInt |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20 && index < len);
+            int dlng = (resultInt & 1) ? ~(resultInt >> 1) : (resultInt >> 1);
+            lng += dlng;
+            
+            double latd = lat * 1e-5;
+            double lngd = lng * 1e-5;
+            double x = (lngd - refLon) * mPerDegLon;
+            double y = (latd - refLat) * mPerDegLat;
+            points.push_back(FFPoint(x, y, 0));
+        }
+    }
+    else if (opt == "points") {
+        // Example input: (x,y,z),(x,y,z),...
+        // Coordinates are assumed to be already in Cartesian space.
+        size_t pos = 0;
+        while (true) {
+            pos = arg.find('(', pos);
+            if (pos == std::string::npos)
+                break;
+            size_t end = arg.find(')', pos);
+            if (end == std::string::npos)
+                break;
+            std::string pointStr = arg.substr(pos + 1, end - pos - 1);
+            std::replace(pointStr.begin(), pointStr.end(), ',', ' ');
+            std::istringstream issPoint(pointStr);
+            double x, y, z;
+            if (!(issPoint >> x >> y >> z)) {
+                pos = end + 1;
+                continue;
+            }
+            points.push_back(FFPoint(x, y, z));
+            pos = end + 1;
+        }
+    }
+    
+    return points;
+}
+
+
 int Command::createFireFront(const string& arg, size_t& numTabs){
 
 	size_t n = argCount(arg);
@@ -748,29 +855,38 @@ int Command::printSimulation(const string& arg, size_t& numTabs){
 	}
 	return normal;
 }
-int Command::systemExec(const string& arg, size_t& numTabs){
-
-
+int Command::systemExec(const string& arg, size_t& numTabs) {
     SimulationParameters *simParam = SimulationParameters::GetInstance();
-    string finalStr = "";
+    string finalStr;
 
-    if (arg.size() > 0)
-    {
+    if (!arg.empty()) {
         vector<string> parts;
         tokenize(arg, parts, "*");
 
         unsigned int partToEval = (arg.at(0) == '*') ? 0 : 1;
 
-        for (auto i = 0u; i < parts.size(); i++) {
+        for (size_t i = 0; i < parts.size(); i++) {
             finalStr += (i % 2 == partToEval) ? simParam->getParameter(parts[i]) : parts[i];
         }
     }
-	
 
     replace(finalStr.begin(), finalStr.end(), ':', '-');
 
+    // Use popen to execute the command and capture its output.
+    FILE *pipe = popen(finalStr.c_str(), "r");
+    if (!pipe) {
+        *currentSession.outStream << "popen() failed!" << endl;
+        return -1;
+    }
 
-	return std::system(finalStr.c_str());;
+	char buffer[128];
+	while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+		string line(buffer);
+		// Optionally process line if needed
+		*currentSession.outStream << line;
+	}
+    int status = pclose(pipe);
+    return status;
 }
 
 int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
@@ -807,9 +923,14 @@ int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
 
         // Extracted values
         std::string filename = argMap["filename"];
-		std::string landscapeFile = argMap["landscapeFile"];
         std::string parameter = argMap["parameter"];
         std::string colormap = argMap["cmap"];
+
+/*		std::string area = argMap["area"];
+		std::string colormap = argMap["cmap"];
+		std::string colormap = argMap["cmap"];
+		std::string colormap = argMap["cmap"];*/
+
         double minVal = std::numeric_limits<double>::infinity();
         double maxVal = -std::numeric_limits<double>::infinity();
 
@@ -827,23 +948,23 @@ int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
             auto matrix = getDomain()->getDataMatrix(parameter); // Retrieve data matrix
             if (!matrix.empty()) {
                 writeImage(filename.c_str(), matrix, minVal, maxVal, colormap); // Write the matrix to an image file
-				if (argMap.find("histogram") != argMap.end()) {
-        		   writeHistogram(filename.c_str(), matrix,21,minVal, maxVal,colormap); // Write the matrix to an image file
+				if (argMap.find("histbins") != argMap.end()) {
+				   int numbins = 21;
+				   numbins = std::stoi(argMap["histbins"]);
+        		   writeHistogram(filename.c_str(), matrix,numbins,minVal, maxVal,colormap); // Write the matrix to an image file
        			 }
             } else {
                 std::cerr << "Error: No data available for the parameter '" << parameter << "'." << std::endl;
             }
         } else {
-			if (!landscapeFile.empty()) {
-
-			}else{
             	std::cerr << "Error: Filename not provided in the argument." << std::endl;
 			}
         }
+		return normal;
     } 
 	
-    return normal;
-}
+
+
 int Command::loadSimulation(const std::string& arg, size_t& numTabs) {
 	if (getDomain() == nullptr) return normal;
 	string ncfilePath = getString("arrival_time_of_front",arg);
@@ -947,7 +1068,21 @@ int Command::setParameter(const string& arg, size_t& numTabs){
 		cout<<"problem in the number of arguments when setting "<<arg<<endl;
 		return error;
 	}
-	currentSession.params->setParameter(tmpArgs[0], tmpArgs[1], true);
+
+    // Check if the parameter value begins with '!'
+    if (!tmpArgs[1].empty() && tmpArgs[1][0] == '!') {
+        // Remove the leading '!' to get the actual value.
+        std::string value = tmpArgs[1].substr(1);
+        // Set the parameter with a protection flag (true).
+        currentSession.params->setParameter(tmpArgs[0], value, true);
+        std::cout << "Parameter " << tmpArgs[0]
+                  << " set to fixed protected value " << value << std::endl;
+    } else {
+        // Set the parameter normally (without protection).
+        currentSession.params->setParameter(tmpArgs[0], tmpArgs[1], false);
+    }
+
+	currentSession.params->setParameter(tmpArgs[0], tmpArgs[1]);
 	return normal;
 }
 
@@ -983,7 +1118,7 @@ int Command::triggerValue(const string& arg, size_t& numTabs){
 
 	if(tmpArgs[0]== "wind"){
 				FFVector a = getVector("vel", arg);
-				FFPoint b = getPoint("loc", arg);
+				FFPoint b = pointError;//("loc", arg);
 
 				if(getDomain() != 0){
 					if(getDomain()->getDataBroker() != 0){
@@ -1578,35 +1713,51 @@ double Command::getFloat(string opt, string arg){
 	}
 }
 
-FFPoint Command::getPoint(string opt, string arg){
-	/* The 'getPoint()' method casts the results of the
-	 * search for the option 'opt' given by 'getString()';
-	 * as this result is in the form "(...,...,...)"
-	 * this string has to be tokenized */
-
-	string tmpstr = getString(opt, arg);
-	if ( tmpstr == stringError ) {
-		return pointError;
-	}
-	// droping the parenthesis
-	string point = tmpstr.substr(1,getString(opt,arg).size()-2);
-
-	vector<string> p;
-	// Getting all the arguments, using the 'tokenize' function
-	string delimiter = ",";
-	tokenize(point, p, delimiter);
-	// Passing the 'strings' into 'istringstream' for cast into 'double'
-	double px, py, pz;
-	istringstream psx(p[0]);
-	istringstream psy(p[1]);
-	istringstream psz(p[2]);
-	if ( (psx>>px) && (psy>>py) && (psz>>pz) ) {
-
-		FFPoint pos = FFPoint(px,py,pz);
-		return pos;
-	} else {
-		return pointError;
-	}
+FFPoint Command::getPoint(string opt, string arg) {
+    // Get the point string in the form "(...,...,...)"
+    string tmpstr = getString(opt, arg);
+    if (tmpstr == stringError) {
+        return pointError;
+    }
+    
+    // Remove the surrounding parentheses.
+    if (tmpstr.size() < 2) {
+        return pointError;
+    }
+    string point = tmpstr.substr(1, tmpstr.size() - 2);
+    
+    // Tokenize the string using a comma delimiter.
+    vector<string> tokens;
+    tokenize(point, tokens, ",");
+    if (tokens.size() != 3) {
+        return pointError;
+    }
+    
+    // Convert tokens to double.
+    double v1, v2, v3;
+    istringstream iss1(tokens[0]);
+    istringstream iss2(tokens[1]);
+    istringstream iss3(tokens[2]);
+    if (!(iss1 >> v1 && iss2 >> v2 && iss3 >> v3)) {
+        return pointError;
+    }
+    
+    // Check the option to determine how to interpret the values.
+    if (opt == "lonLat") {
+        // For "lonLat", interpret v1 as longitude, v2 as latitude, and v3 as altitude.
+        double refLon    = getDomain()->getRefLongitude();
+        double refLat    = getDomain()->getRefLatitude();
+        double mPerDegLon = getDomain()->getMetersPerDegreesLon();
+        double mPerDegLat = getDomain()->getMetersPerDegreeLat();
+        
+        // Convert spherical (lon, lat) to Cartesian coordinates (x, y).
+        double x = (v1 - refLon) * mPerDegLon;
+        double y = (v2 - refLat) * mPerDegLat;
+        return FFPoint(x, y, v3);
+    } else {
+        // Otherwise assume the provided values are already Cartesian.
+        return FFPoint(v1, v2, v3);
+    }
 }
 
 FFVector Command::getVector(string opt, string arg){
@@ -1753,13 +1904,28 @@ void Command::ExecuteCommand(string& line){
 	command.clear();
 }
 
+
+
+std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
+    // 'cmd' is assumed to be the command text after the "ff:" prefix.
+    std::streambuf* oldbuf = std::cout.rdbuf();
+    std::ostringstream captured;
+    std::cout.rdbuf(captured.rdbuf());
+    std::string fireCommand = cmd;
+    // Execute the command. (Assuming ExecuteCommand is defined elsewhere.)
+    ExecuteCommand(fireCommand);
+    
+    std::cout.rdbuf(oldbuf);
+    return captured.str();
+}
+/*
 std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
     // Normalize the request URI. Remove a leading '/' if present.
     std::string path = cmd;
     if (!path.empty() && path[0] == '/') {
         path = path.substr(1);
     }
-    
+    std::cout<<">"<<cmd<<"<     >"<<path<<std::endl;
     std::string body;
     std::string contentType;
     
@@ -1865,7 +2031,7 @@ std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
     
     return responseStream.str();
 }
-
+*/
 
 int Command::listenHTTP(const std::string &arg, size_t &numTabs) {
 

@@ -156,9 +156,13 @@ SimulationParameters::SimulationParameters(){
     parameters.insert(make_pair("count", "0"));                      
     parameters.insert(make_pair("dumpMode", "ff")); 
 
+	parameters.insert(make_pair("runmode", "standalone")); 
+	parameters.insert(make_pair("MNHalt", "0")); 
+
+
 	parameters.insert(make_pair("propagationModel", "Iso"));
 	parameters.insert(make_pair("frontScanDistance", "1000"));
-	parameters.insert(make_pair("burningTresholdFlux", "2000"));
+	parameters.insert(make_pair("burningTresholdFlux", "10"));
 	parameters.insert(make_pair("normalScheme","medians"));
 	parameters.insert(make_pair("curvatureComputation", "1"));
 	parameters.insert(make_pair("curvatureScheme","circumradius"));
@@ -185,24 +189,19 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("year", "2012"));
 	parameters.insert(make_pair("month", "1"));
 	parameters.insert(make_pair("day", "1"));
-	
 	parameters.insert(make_pair("DefaultSWLngLat","8.6192,41.765"));
-
 	parameters.insert(make_pair("perimeterResolution", "40"));
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
-
 	parameters.insert(make_pair("watchedProc", "-2"));
 	parameters.insert(make_pair("CommandOutputs", "0"));
 	parameters.insert(make_pair("FireDomainOutputs", "0"));
 	parameters.insert(make_pair("FireFrontOutputs", "1"));
 	parameters.insert(make_pair("FireNodeOutputs", "1"));
-
 	parameters.insert(make_pair("FDCellsOutputs", "1"));
 	parameters.insert(make_pair("HaloOutputs", "1"));
-
 	parameters.insert(make_pair("propagationSpeedAdjustmentFactor", "1"));
 	parameters.insert(make_pair("fireOutputDirectory", "."));
 	parameters.insert(make_pair("atmoOutputDirectories", "."));
@@ -214,7 +213,6 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("numAtmoIterations","1000000"));
 	parameters.insert(make_pair("numberOfAtmoStepPerParallelCom","1"));
 	parameters.insert(make_pair("max_inner_front_nodes_filter","50"));
-
 }
 
 SimulationParameters::~SimulationParameters() {

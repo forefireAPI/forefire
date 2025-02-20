@@ -28,12 +28,10 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
     static std::unordered_map<std::string, std::string> cmdMan = []() -> std::unordered_map<std::string, std::string> {
         std::unordered_map<std::string, std::string> m;
         m["FireDomain"] =
-            "FireDomain[Psw;Pne;t;bmapdx;bmapdy]\n"
-            " - 'Psw' and 'Pne' are the southwest and northwest points of the boundaries\n"
-            "   and should be affected as in 'Psw=(0.,0.,0.)';\n"
-            " - 't' is the time associated with fire domain ('t=0.');\n"
-            " - 'bmapdx' and 'bmapdy' are the resolution of the burning map in each direction\n"
-            "   and should be affected as in 'bmapdx=0.1';";
+            "FireDomain[sw=(x,y,z);ne=(x,y,z);t=(s)|date=YYYY-MM-DDTHH:MM:SSZ;opt:BBoxWSEN=(lonWest,latSouth,lonEast,latNorth)]\n"
+            " - 'sw' and 'ne' are the southwest and northwest points of the boundaries in meters\n"
+            " - 't' is the time associated with fire domain in seconds, can be also set as an absolute date as ISO GMT date\n"
+            " - 'BBoxWSEN' is the optional WGS coordinates of the north oriented bounding box used for projection : lon West,lat South,lon East,lat North";
         m["FireNode"] =
             "FireNode[loc;vel;t]\n"
             " - 'loc' is the spatial point where the firenode is created ('loc=(0.,0.,0.)');\n"
@@ -47,7 +45,7 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
             "step[dt]\n - 'dt' is the duration for which the simulation will run ('dt=5.')";
         m["trigger"] =
             "trigger\n triggers changes runtime in simulation data, fuel of dynamic wind \n"
-            "- fuelIndice;loc=(x,y,z);fuelType=int or wind;loc=(x,y,z);vel=(vx,vy,vz);t=f"; 
+            "- fuelIndice;loc=(x,y,z);fuelType=int or wind;vel=(vx,vy,vz);t=f"; 
         m["goTo"] =
             "goTo[t]\n - 't' is the desired time till which the simulation will run ('t=56.2')";
         m["print"] =
@@ -59,7 +57,7 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
         m["plot"] =
             "plot\n generates a png or jpg of the simulation\n parameter=speed or arrival_time_of_front;filename=outfname.png/jpg;opt:range=(0,0.1);opt:cmap=viridis;opt:histogram=true";
         m["computeSpeed"] =
-            "computeSpeed\n uses the first registered propp model to activate and get result from an array of values separated by ;";
+            "computeSpeed\n uses the first registered prop model to activate and get result from an array of values separated by ;";
         m["setParameter"] =
             "setParameter[param=value]\n - sets parameter 'param' to the given 'value'";
         m["setParameters"] =
@@ -199,12 +197,12 @@ std::string LineEditor::getLine(const std::string &prompt) {
                 const auto &cmdMan = LineEditor::getCommandMan();
                 auto it = cmdMan.find(key);
                 if (it != cmdMan.end()) {
-                    std::cout << "\n\033[36m[" << it->second << "]\033[0m" << std::endl;
+                    std::cout << "\n\033[36m" << it->second << "]\033[0m" << std::endl;
                     std::cout << "\033[38;5;208m" << prompt << "\033[0m" << applySyntaxColoring(line);
                     // After printing help, reposition the cursor.
                     int moveLeft = static_cast<int>(line.size()) - cursorPos;
                     if (moveLeft > 0) {
-                        std::cout << "\033[" << moveLeft << "D";
+                        std::cout << "\033" << moveLeft << "D";
                     }
                     std::cout.flush();
                 }

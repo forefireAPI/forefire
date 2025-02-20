@@ -285,10 +285,10 @@ public:
 	void initializeAtmosphericLayers(const double&, const size_t&, const size_t&);
 
 	/*! \brief initializing the propagative layer */
-	void initializePropagativeLayer(string);
+	//void initializePropagativeLayer(string);
 
 	/*! \brief initializing the flux layers */
-	void initializeFluxLayers(string);
+	//void initializeFluxLayers(string);
 
 	/*! \brief initializing the parallel properties */
 	void initializeParallelProperties(const size_t&, const size_t&

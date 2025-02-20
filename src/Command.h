@@ -265,6 +265,9 @@ class Command {
 	/*! \brief reads the value of the desired FFPoint */
 	static FFPoint getPoint(string, string);
 	/*! \brief reads the value of the desired FFVector */
+	
+	static std::vector<FFPoint> getPoly(const std::string &, const std::string &);
+
 	static FFVector getVector(string, string);
 	/*! \brief counts the arguments in the commands */
 	static size_t argCount(string);
