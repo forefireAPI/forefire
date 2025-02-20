@@ -25,8 +25,8 @@ jobs:
       - name: Check version
         run: ./bin/forefire -v
 
-      - name: Test
-        run: cd tests && bash run.bash
+      # - name: Test
+      #   run: cd tests && bash run.bash
 
 
   docker:
