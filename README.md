@@ -1,6 +1,6 @@
 # ForeFire
 
-![logo](./doc/images/forefire.jpg)
+![logo](./docs/images/forefire.jpg)
 
 _Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._
 
@@ -8,7 +8,7 @@ ForeFire is an [open-source code for wildland fire spread models](https://www.re
 
 Access the [demo simulator here](http://forefire.univ-corse.fr/sim/dev/).
 
-![demo](./doc/images/sim-forefire.jpg)
+![demo](./docs/images/sim-forefire.jpg)
 
 
 It has been designed and runs on Unix systems. Three modules can be built with the source code.
@@ -75,7 +75,7 @@ export PATH="/mnt/c/gitrepos/forefire/bin:$PATH"
 
 
 ### 2.2 Scons and Other build systems
-More information on other build systems are available [here](./doc/buildSystems/readme.MD)
+More information on other build systems are available [here](./docs/buildSystems/readme.MD)
 
 ## 3. Running an example
 
