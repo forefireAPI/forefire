@@ -1,0 +1,6 @@
+include[params.ff]
+loadData[data.nc;2025-02-10T17:35:54Z]
+include[to_reload.ff]
+step[dt=1200]
+setParameter[dumpMode=kml]
+print[real_case.kml]

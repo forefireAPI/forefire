@@ -50,8 +50,14 @@ public:
 
 	/*! \brief Visit function for the 'FireDomain' objects */
 	virtual void visit(FireDomain*)=0;
+	virtual void postVisitInner(FireDomain*)=0;
+	virtual void postVisitAll(FireDomain*)=0;
+	
 	/*! \brief Visit function for the 'FireFront' objects */
 	virtual void visit(FireFront*)=0;
+	virtual void postVisitInner(FireFront*)=0;
+	virtual void postVisitAll(FireFront*)=0;
+	
 	/*! \brief Visit function for the 'FireNode' objects */
 	virtual void visit(FireNode*)=0;
 
