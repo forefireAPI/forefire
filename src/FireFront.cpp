@@ -1015,11 +1015,17 @@ void FireFront::accept(Visitor* v) {
 			fntmp->accept(v);
 		}
 	}
+	if ( this != domain->getDomainFront() ) {
+		v->postVisitInner(this);
+	}
 	for ( innerFront = innerFronts.begin();
 			innerFront != innerFronts.end(); ++innerFront ) {
 		(*innerFront)->accept(v);
 	}
-	if ( this != domain->getDomainFront() ) v->decreaseLevel();
+	if ( this != domain->getDomainFront() ) {
+		v->postVisitAll(this);
+		v->decreaseLevel();
+	}
 }
 
 void FireFront::computeBoundingBox(FFPoint& swc, FFPoint& nec){

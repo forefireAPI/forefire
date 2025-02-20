@@ -85,6 +85,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 	int refYear; /*!< reference year */
 	int refDay; /*!< reference day (since 1st January; 01/01 == 1) */
 	double refLatitude, refLongitude; /*!< reference latitude and longitude */
+	double metersPerDegreeLat, metersPerDegreesLon; /*!< reference latitude to meter ratio and longitude to meter ratio*/
 
 	int numIterationAtmoModel; /*! current number of the iteration if coupled to MNH */
 
@@ -166,10 +167,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/* VARIABLES AND ALGORITHMS FOR PARALLEL SIMULATIONS */
 	/*---------------------------------------------------*/
 
-	/*! lists of halos
-	list<Halo*> outerHalos;
-	list<Halo*> innerHalos;
-	list<FDCell*> outerHaloCells, innerHaloCells; */
 
 	/*! \brief markers for communication in parallel simulations */
 	static const double endChain; /*!< Marker for the end of the chain */
@@ -193,14 +190,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 
 	list<Frontier*> frontiers;
 	list<Frontier*> infrontiers;
-
-	/*! \brief list of data concerning halo firenodes (communicated by other processors) */
-	list<FireNodeData*> haloFirenodesData;
-
-	/*! \brief list of firenodes potentially in excess in the halo */
-	list<FireNode*> excessHaloFirenodes;
-	list<FireNode*> endsExcessFirenodes;
-
 	/*! \brief list of firenodes that has just changed id */
 	list<FireNode*> recentlyIDChangedNodes;
 
@@ -210,12 +199,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/*! \brief string flux for debugging purpose */
 	ostringstream debugOutput;
 
-	/*! \brief creating the list containing the data of incoming firenodes */
-	void createHaloFirenodesList(list<FireNodeData*>&);
-
-	/*! \brief adding a chain into a list */
-	void addChainToList(list<FireNodeData*>&
-			, list<FireNodeData*>&);
+ 
 
 
 	/*! \brief obtaining the chain following number of appearance */
@@ -357,7 +341,17 @@ public:
 
 	size_t getFreeFluxModelIndex();
 
+    // Getter for the reference latitude.
+    double getRefLatitude()  ;
 
+    // Getter for the reference longitude.
+    double getRefLongitude()  ;
+
+    // Getter for the latitude conversion factor.
+    double getMetersPerDegreeLat() ;
+
+    // Getter for the longitude conversion factor.
+    double getMetersPerDegreesLon() ;
 
 	static bool commandOutputs; /*! boolean for command outputs */
 	static bool outputs; /*! boolean for outputs */

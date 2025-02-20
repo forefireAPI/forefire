@@ -28,8 +28,6 @@ const double FFPoint::Pi = 3.141592653589793;
 
 // constructors and destructor
 FFPoint::FFPoint(){
-
-
 	x = 0.;
 	y = 0.;
 	z = 0.;
@@ -211,6 +209,17 @@ bool FFPoint::pointInPolygon(size_t& nvert, double* vertx, double* verty){
 		j=i;
 	}
 	return oddNodes;
+}
+
+
+double FFPoint::projectLat(double refLatitude, double metersPerDegreesLat) {
+    // Compute the latitude offset (in degrees) from the northward displacement.
+    return refLatitude + (y / metersPerDegreesLat);
+}
+
+double FFPoint::projectLon(double refLongitude, double metersPerDegreesLon) {
+    // Compute the longitude offset (in degrees) from the eastward displacement.
+    return refLongitude + (x / metersPerDegreesLon);
 }
 
 // print function

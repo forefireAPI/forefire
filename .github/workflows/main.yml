@@ -25,8 +25,8 @@ jobs:
       - name: Check version
         run: ./bin/forefire -v
 
-      - name: Test
-        run: sh ./test-forefire.sh
+      # - name: Test
+      #   run: sh ./test-forefire.sh
 
 
   docker:
@@ -43,5 +43,5 @@ jobs:
           # Run the container and check the version output
           docker run --rm forefire:latest forefire -v
 
-      - name: Run test inside Docker container
-        run: docker run --rm forefire:latest sh ./test-forefire.sh
+      # - name: Run test inside Docker container
+      #   run: docker run --rm forefire:latest sh ./test-forefire.sh

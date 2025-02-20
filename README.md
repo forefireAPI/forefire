@@ -15,7 +15,7 @@ It has been designed and runs on Unix systems. Three modules can be built with t
 
 The main binaries are  
   - An interpreter (executable)
-  - A shared library (with C/C++/Java and Fortran bindings)
+  - A shared library (with C/C++/Java Python and Fortran bindings)
 
 ## 1. Requirements
 
