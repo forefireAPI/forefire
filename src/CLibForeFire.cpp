@@ -42,8 +42,9 @@ namespace libforefire {
 
 Command executor;
 static Command::Session* session = &(executor.currentSession);
-    int world_rank;
-    int world_size;
+int world_rank;
+int world_size;
+size_t mnhPause;
 
 
 
@@ -60,6 +61,8 @@ void MNHInit(const double t){
 	paramsfile<<SimulationParameters::GetInstance()->getParameter("caseDirectory")<<'/'
 			<<SimulationParameters::GetInstance()->getParameter("ForeFireDataDirectory")<<'/'
 			<<SimulationParameters::GetInstance()->getParameter("paramsFile");
+
+	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 	ifstream inputParams(paramsfile.str().c_str());
 	if ( inputParams ) {
 		string line;
@@ -255,6 +258,7 @@ void MNHStep(double dt){
 
 		if (world_rank == 0) {
 
+
 			FDCell** mycells = session->fdp->getCells();
 			size_t domainID =  1;
 			FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
@@ -318,7 +322,7 @@ void MNHStep(double dt){
 					MPI_Send(BMAP_DATA_to_send.data(), totalBytes, MPI_CHAR, nr, 1, MPI_COMM_WORLD);
 				}	
 			}
-		
+
 		}else {
 			int32_t numberOfActiveCellsInDomain = 0;
 			MPI_Recv(&numberOfActiveCellsInDomain, 1, MPI_INT32_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -350,6 +354,15 @@ void MNHStep(double dt){
 	cmd << "step[dt=" << dt <<"]";
 	string scmd = cmd.str();
 	executor.ExecuteCommand(scmd);
+	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
+
+	while (mnhPause>0) {
+		sleep(1);
+		mnhPause = mnhPause-1;
+		mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
+		std::cout<<"restarting in "<<mnhPause<<std::endl;
+	}
+	SimulationParameters::GetInstance()->setInt("MNHalt",0);
 
 
 	}

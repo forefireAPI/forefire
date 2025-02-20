@@ -1,1 +1,2 @@
 *.ipynb linguist-detectable=false
+*.ref filter=lfs diff=lfs merge=lfs -text

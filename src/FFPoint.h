@@ -121,6 +121,11 @@ public:
 	/*! \brief distance between a point and a segment */
 	double distanceToSegment(double&, double&, double&, double&);
 
+	/*! \brief projetct a latitude value given a ref latitude (the one a 0.0) and a meters per lat */
+	double projectLat(double, double);
+	/*! \brief projetct a latitude value given a ref latitude (the one a 0.0) and a meters per lon */
+	double projectLon(double, double);
+
 	/*! \brief Point in polygon algorithm */
 	bool pointInPolygon(size_t&, double*, double*);
 

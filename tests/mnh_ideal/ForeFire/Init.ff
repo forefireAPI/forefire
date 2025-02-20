@@ -1,0 +1,6 @@
+FireDomain[sw=(-80,-80,0);ne=(2480,1680,0);t=0]
+startFire[loc=(400.,340,0.);t=10]
+startFire[loc=(1200.,340,0.);t=20]
+startFire[loc=(2000.,340,0.);t=30]
+startFire[loc=(400.,1360,0.);t=40]
+startFire[loc=(1200.,1360,0.);t=50]
