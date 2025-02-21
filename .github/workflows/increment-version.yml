@@ -1,0 +1,27 @@
+name: Increment Version on Dev
+
+on:
+  push:
+    branches: [ increment-version-script ]
+  workflow_dispatch:
+
+jobs:
+  version_increment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Git configuration
+        run: |
+          git config user.name "CI BOT"
+          git config user.email "ci-bot@example.com"
+
+      - name: Run version increment script
+        run: bash ./tools/increment-version.sh
+
+      - name: Commit updated version file
+        run: |
+          git add ./src/include/Version.h
+          git commit -m "ci: increment version [skip ci]" || echo "No changes to commit"
+          git push
