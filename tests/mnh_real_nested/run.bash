@@ -1,4 +1,4 @@
-export MPIRUN="mpirun -np 4"
+export MPIRUN="mpirun -np 8"
 mkdir ForeFire/Outputs
 mkdir MODEL1
 mkdir MODEL2
