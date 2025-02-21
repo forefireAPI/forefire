@@ -2,7 +2,7 @@ name: Increment Version on Dev
 
 on:
   push:
-    branches: [ increment-version-script ]
+    branches: [ dev ]
   workflow_dispatch:
 
 jobs:
