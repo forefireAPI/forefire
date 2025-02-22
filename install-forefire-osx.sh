@@ -27,9 +27,8 @@ echo "==========================="
 mkdir -p build
 cd build
 
-# Pass NETCDF_HOME and also set CMAKE_INCLUDE_PATH and CMAKE_LIBRARY_PATH.
+# Pass the include flag explicitly.
 cmake -D NETCDF_HOME=$NETCDF_HOME \
-      -DCMAKE_INCLUDE_PATH=$NETCDF_HOME/include \
-      -DCMAKE_LIBRARY_PATH=$NETCDF_HOME/lib \
+      -DCMAKE_CXX_FLAGS="-I$NETCDF_HOME/include" \
       ../
 make
