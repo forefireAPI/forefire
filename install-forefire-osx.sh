@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "====== MAC OS REQUIREMENTS ========"
 
-# Update Homebrew
+# Update Homebrew.
 brew update
 
 # Ensure Xcode Command Line Tools are installed.
@@ -12,10 +12,11 @@ fi
 
 # Install dependencies via Homebrew.
 brew install cmake
+brew install netcdf
 brew install netcdf-cxx
 
-# Set NETCDF_HOME to the Homebrew prefix for netcdf-cxx.
-export NETCDF_HOME=$(brew --prefix netcdf-cxx)
+# Set NETCDF_HOME to the prefix for the NetCDF C library.
+export NETCDF_HOME=$(brew --prefix netcdf)
 echo "NETCDF_HOME set to $NETCDF_HOME"
 
 echo "==========================="
@@ -25,5 +26,10 @@ echo "==========================="
 # Create build directory, configure, and compile ForeFire.
 mkdir -p build
 cd build
-cmake -D NETCDF_HOME=$NETCDF_HOME ../
+
+# Pass NETCDF_HOME and also set CMAKE_INCLUDE_PATH and CMAKE_LIBRARY_PATH.
+cmake -D NETCDF_HOME=$NETCDF_HOME \
+      -DCMAKE_INCLUDE_PATH=$NETCDF_HOME/include \
+      -DCMAKE_LIBRARY_PATH=$NETCDF_HOME/lib \
+      ../
 make
