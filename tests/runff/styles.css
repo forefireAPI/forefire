@@ -1,0 +1,86 @@
+/* Global Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: monospace;
+  background-color: #111;
+  color: #eee;
+}
+/* Container: uses flex to stack sections vertically */
+#container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+/* Header: big orange date */
+#dateHeader {
+  background: #111;
+  text-align: center;
+  font-size: 2em;
+  color: orange;
+  padding: 10px;
+}
+/* Response Console: shows only the responses from commands */
+#responseConsole {
+  background: #222;
+  padding: 10px;
+  height: 200px;
+  overflow-y: auto;
+}
+/* Input Area: contains the command input, send button, and refresh button.
+   Height is set to half of responseConsole's height (i.e. 100px) */
+#inputArea {
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+#inputArea input {
+  flex: 1;
+  padding: 5px;
+  font-size: 1em;
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #444;
+}
+#inputArea button {
+  padding: 5px 10px;
+  background-color: #444;
+  color: #eee;
+  border: none;
+  cursor: pointer;
+}
+/* Command Buttons: predefined command buttons */
+#commandButtons {
+  margin: 5px;
+}
+#commandButtons button {
+  padding: 5px 10px;
+  margin: 2px;
+  background-color: #444;
+  color: #eee;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+#commandButtons button:hover {
+  background-color: #555;
+}
+/* Map container */
+#map {
+  flex: 1;
+  margin: 5px;
+}
+/* Command History: shows the sent commands (in green) */
+#commandHistory {
+  background: #222;
+  padding: 10px;
+  height: 100px;
+  overflow-y: auto;
+  margin: 5px;
+  color: lightgreen;
+}
+/* Sent command styling */
+.commandText {
+  margin: 2px 0;
+}

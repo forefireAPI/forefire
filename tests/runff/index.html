@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ForeFire Super Console</title>
+  <!-- CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="container">
+    
+    <div id="dateHeader">Date: N/A</div>
+
+    <div id="responseConsole"></div>
+
+    <div id="commandHistory"></div>
+
+    <div id="inputArea">
+      <input type="text" id="commandInput" placeholder="Enter command">
+      <button id="sendCommand">Send</button>
+      <button id="refreshMap">Refresh Map</button>
+    </div>
+
+    <div id="commandButtons"></div>
+
+    <div id="map"></div>
+
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <!-- togeojson for KML conversion -->
+  <script src="https://unpkg.com/togeojson@0.16.0/togeojson.js"></script>
+  <!-- Our Js -->
+  <script src="./main.js"></script>
+</body>
+</html>
