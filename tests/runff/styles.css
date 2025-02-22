@@ -31,8 +31,6 @@ main {
   display: flex;
   flex-direction: row;
   flex: 1;        /* fill the remaining vertical space */
-  margin: 0;
-  padding: 0;
 }
 
 /* Left Panel with console, command input, etc. */
@@ -47,15 +45,15 @@ main {
 #responseConsole {
   background: #222;
   padding: 10px;
-  height: 200px;      /* or flex-based if you want it to expand/shrink */
-  overflow-y: auto;   /* let the console scroll if it overflows */
+  height: 250px;
+  overflow-y: auto;
 }
 
 /* The command history area */
 #commandHistory {
   background: #222;
   padding: 10px;
-  height: 100px;      /* or again, flex-based for dynamic sizing */
+  height: 150px;      /* or again, flex-based for dynamic sizing */
   overflow-y: auto;
   margin: 5px;
   color: lightgreen;
