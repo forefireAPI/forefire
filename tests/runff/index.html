@@ -8,25 +8,32 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div id="container">
+  <main>
     
     <div id="dateHeader">Date: N/A</div>
 
-    <div id="responseConsole"></div>
+    <div id="container">
 
-    <div id="commandHistory"></div>
+      <div id="leftPanel">
 
-    <div id="inputArea">
-      <input type="text" id="commandInput" placeholder="Enter command">
-      <button id="sendCommand">Send</button>
-      <button id="refreshMap">Refresh Map</button>
+        <div id="responseConsole"></div>
+
+        <div id="commandHistory"></div>
+
+        <div id="inputArea">
+          <input type="text" id="commandInput" placeholder="Enter command">
+          <button id="sendCommand">Send</button>
+          <button id="refreshMap">Refresh Map</button>
+        </div>
+
+        <div id="commandButtons"></div>
+      </div>
+
+      <div id="map"></div>
+      
     </div>
 
-    <div id="commandButtons"></div>
-
-    <div id="map"></div>
-
-  </div>
+  </main>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
