@@ -19,6 +19,14 @@ brew install netcdf-cxx
 export NETCDF_HOME=$(brew --prefix netcdf)
 echo "NETCDF_HOME set to $NETCDF_HOME"
 
+# Create a symbolic link in the include directory so that "netcdf" points to "netcdf.h"
+cd "$NETCDF_HOME/include"
+if [ ! -e netcdf ]; then
+    echo "Creating symlink for netcdf -> netcdf.h"
+    ln -s netcdf.h netcdf
+fi
+cd - > /dev/null
+
 echo "==========================="
 echo "========= FOREFIRE ========"
 echo "==========================="
