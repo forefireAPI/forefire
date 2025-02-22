@@ -7,46 +7,61 @@ html, body {
   background-color: #111;
   color: #eee;
 }
-/* Container: uses flex to stack sections vertically */
+
+/* 'main' takes full viewport height, using flex column to stack header + container */
 main {
   display: flex;
   flex-direction: column;
   height: 100vh;
-}
-
-#container {
-  display: flex;
-  flex-direction: row; /* horizontal layout */
-  height: 100vh;
   width: 100vw;
-  margin: 0;
-  padding: 0;
 }
 
-#leftPanel {
-  display: flex;
-  flex-direction: column;
-  width: 400px; /* or 30%, or any fixed size you like */
-  background-color: #111; /* same dark background */
-  overflow: hidden; /* ensures anything that overflows is hidden, or you can do scroll */
-}
-/* Header: big orange date */
+/* The date/time header at the top */
 #dateHeader {
   background: #111;
   text-align: center;
   font-size: 2em;
   color: orange;
   padding: 10px;
+  flex: 0 0 auto; /* or just auto-height */
 }
-/* Response Console: shows only the responses from commands */
+
+/* #container fills the rest of the space below the header, side-by-side */
+#container {
+  display: flex;
+  flex-direction: row;
+  flex: 1;        /* fill the remaining vertical space */
+  margin: 0;
+  padding: 0;
+}
+
+/* Left Panel with console, command input, etc. */
+#leftPanel {
+  display: flex;
+  flex-direction: column;
+  width: 400px; /* fixed width or a percentage, e.g., 30% */
+  overflow: hidden; /* if you want a fixed panel with sub-sections scrollable */
+}
+
+/* The console that shows responses */
 #responseConsole {
   background: #222;
   padding: 10px;
-  height: 200px;
-  overflow-y: auto;
+  height: 200px;      /* or flex-based if you want it to expand/shrink */
+  overflow-y: auto;   /* let the console scroll if it overflows */
 }
-/* Input Area: contains the command input, send button, and refresh button.
-   Height is set to half of responseConsole's height (i.e. 100px) */
+
+/* The command history area */
+#commandHistory {
+  background: #222;
+  padding: 10px;
+  height: 100px;      /* or again, flex-based for dynamic sizing */
+  overflow-y: auto;
+  margin: 5px;
+  color: lightgreen;
+}
+
+/* The input area (text + 2 buttons) */
 #inputArea {
   display: flex;
   align-items: center;
@@ -67,7 +82,8 @@ main {
   border: none;
   cursor: pointer;
 }
-/* Command Buttons: predefined command buttons */
+
+/* Command buttons row */
 #commandButtons {
   margin: 5px;
 }
@@ -83,20 +99,13 @@ main {
 #commandButtons button:hover {
   background-color: #555;
 }
-/* Map container */
+
+/* Map on the right side, taking the rest of the horizontal space */
 #map {
   flex: 1;
-  margin: 5px;
+  margin: 5px; /* optional margin around the map */
 }
-/* Command History: shows the sent commands (in green) */
-#commandHistory {
-  background: #222;
-  padding: 10px;
-  height: 100px;
-  overflow-y: auto;
-  margin: 5px;
-  color: lightgreen;
-}
+
 /* Sent command styling */
 .commandText {
   margin: 2px 0;
