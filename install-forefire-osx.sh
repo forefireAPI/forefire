@@ -19,7 +19,7 @@ brew install netcdf-cxx
 export NETCDF_HOME=$(brew --prefix netcdf)
 echo "NETCDF_HOME set to $NETCDF_HOME"
 
-# Also get the prefix for netcdf-cxx.
+# Set NETCDF_CXX_HOME to the prefix for the NetCDF C++ library.
 export NETCDF_CXX_HOME=$(brew --prefix netcdf-cxx)
 echo "NETCDF_CXX_HOME set to $NETCDF_CXX_HOME"
 
@@ -39,8 +39,9 @@ echo "==========================="
 mkdir -p build
 cd build
 
-# Pass include flags for both netcdf and netcdf-cxx.
+# **Critical change:** Pass the include flag for netcdf-cxx first,
+# so that the netCDF namespace and types are picked up from there.
 cmake -D NETCDF_HOME=$NETCDF_HOME \
-      -DCMAKE_CXX_FLAGS="-I$NETCDF_HOME/include -I$NETCDF_CXX_HOME/include" \
+      -DCMAKE_CXX_FLAGS="-I$NETCDF_CXX_HOME/include -I$NETCDF_HOME/include" \
       ../
 make
