@@ -24,7 +24,7 @@ echo "NETCDF_HOME set to $NETCDF_HOME"
 export NETCDF_CXX_HOME=$(brew --prefix netcdf-cxx)
 echo "NETCDF_CXX_HOME set to $NETCDF_CXX_HOME"
 
-# Debug: List the contents of the netcdf include directory.
+# Debug: list headers in NETCDF_HOME/include
 echo "Contents of $NETCDF_HOME/include:"
 ls -l "$NETCDF_HOME/include"
 
@@ -38,11 +38,12 @@ else
 fi
 cd - > /dev/null
 
-# Now, create a symlink in the netcdf-cxx lib directory for the linker.
+# Debug: list the contents of NETCDF_CXX_HOME/lib
 cd "$NETCDF_CXX_HOME/lib"
 echo "Contents of $NETCDF_CXX_HOME/lib:"
 ls -l
 
+# Determine target library name.
 target=""
 if [ -e libnetcdf-cxx4.dylib ]; then
     target="libnetcdf-cxx4.dylib"
@@ -64,6 +65,10 @@ echo "Contents after symlink creation:"
 ls -l
 cd - > /dev/null
 
+# Set LIBRARY_PATH for the linker.
+export LIBRARY_PATH=$NETCDF_CXX_HOME/lib:$LIBRARY_PATH
+echo "LIBRARY_PATH set to: $LIBRARY_PATH"
+
 echo "==========================="
 echo "========= FOREFIRE ========"
 echo "==========================="
@@ -72,8 +77,10 @@ echo "==========================="
 mkdir -p build
 cd build
 
-# Pass include flags for both netcdf-cxx and netcdf.
+# Pass include flags for both netcdf-cxx and netcdf,
+# and add the netcdf-cxx lib directory to the shared linker flags.
 cmake -D NETCDF_HOME=$NETCDF_HOME \
       -DCMAKE_CXX_FLAGS="-I$NETCDF_CXX_HOME/include -I$NETCDF_HOME/include" \
+      -DCMAKE_SHARED_LINKER_FLAGS="-L$NETCDF_CXX_HOME/lib" \
       ../
 make
