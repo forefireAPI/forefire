@@ -175,6 +175,10 @@ namespace http_command {
                     return "image/jpeg";
                 else if (ext == ".json")
                     return "application/json";
+                else if (ext == ".css")
+                    return "text/css; charset=UTF-8";
+                else if (ext == ".js")
+                    return "application/javascript; charset=UTF-8";
             }
             return "application/octet-stream";
         }
@@ -249,7 +253,7 @@ namespace http_command {
                 if (fileExists("index.html"))
                     path = "index.html";
                 else if (const char* ffHome = std::getenv("FOREFIREHOME")) {
-                    std::string altIndex = std::string(ffHome) + "/tools/index.html";
+                    std::string altIndex = std::string(ffHome) + "/tools/htdocs/index.html";
                     if (fileExists(altIndex))
                         path = altIndex;
                 }
