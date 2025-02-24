@@ -74,9 +74,6 @@ export PATH="/mnt/c/gitrepos/forefire/bin:$PATH"
 ```
 
 
-### 2.2 Scons and Other build systems
-More information on other build systems are available [here](./docs/buildSystems/readme.MD)
-
 ## 3. Running an example
 
 An example for the region of aullene in south France is provided. The example contains 3 files
