@@ -31,6 +31,21 @@ if [ ! -e netcdf ]; then
 fi
 cd - > /dev/null
 
+# Create a symlink in NETCDF_CXX_HOME/lib so that -lnetcdf_c++4 can be resolved.
+cd "$NETCDF_CXX_HOME/lib"
+# Check if the expected library exists under the Homebrew name.
+if [ -e libnetcdf-cxx.dylib ]; then
+    if [ ! -e libnetcdf_c++4.dylib ]; then
+        echo "Creating symlink: libnetcdf_c++4.dylib -> libnetcdf-cxx.dylib"
+        ln -s libnetcdf-cxx.dylib libnetcdf_c++4.dylib
+    else
+        echo "Symlink for netcdf_c++4 already exists."
+    fi
+else
+    echo "Error: Expected libnetcdf-cxx.dylib not found in $NETCDF_CXX_HOME/lib"
+fi
+cd - > /dev/null
+
 echo "==========================="
 echo "========= FOREFIRE ========"
 echo "==========================="
@@ -39,8 +54,7 @@ echo "==========================="
 mkdir -p build
 cd build
 
-# **Critical change:** Pass the include flag for netcdf-cxx first,
-# so that the netCDF namespace and types are picked up from there.
+# Pass include flags for both netcdf-cxx and netcdf.
 cmake -D NETCDF_HOME=$NETCDF_HOME \
       -DCMAKE_CXX_FLAGS="-I$NETCDF_CXX_HOME/include -I$NETCDF_HOME/include" \
       ../
