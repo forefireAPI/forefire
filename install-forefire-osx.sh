@@ -31,18 +31,18 @@ if [ ! -e netcdf ]; then
 fi
 cd - > /dev/null
 
-# Create a symlink in NETCDF_CXX_HOME/lib so that -lnetcdf_c++4 can be resolved.
+# Now, create a symlink in the netcdf-cxx lib directory.
 cd "$NETCDF_CXX_HOME/lib"
-# Check if the expected library exists under the Homebrew name.
-if [ -e libnetcdf-cxx.dylib ]; then
+# Expect the Homebrew formula to install the library as "libnetcdf-cxx4.dylib"
+if [ -e libnetcdf-cxx4.dylib ]; then
     if [ ! -e libnetcdf_c++4.dylib ]; then
-        echo "Creating symlink: libnetcdf_c++4.dylib -> libnetcdf-cxx.dylib"
-        ln -s libnetcdf-cxx.dylib libnetcdf_c++4.dylib
+        echo "Creating symlink: libnetcdf_c++4.dylib -> libnetcdf-cxx4.dylib"
+        ln -s libnetcdf-cxx4.dylib libnetcdf_c++4.dylib
     else
         echo "Symlink for netcdf_c++4 already exists."
     fi
 else
-    echo "Error: Expected libnetcdf-cxx.dylib not found in $NETCDF_CXX_HOME/lib"
+    echo "Error: Expected libnetcdf-cxx4.dylib not found in $NETCDF_CXX_HOME/lib"
 fi
 cd - > /dev/null
 
