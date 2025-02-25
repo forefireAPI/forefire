@@ -31,8 +31,7 @@ else
   CONFIG_FILE="$HOME/.bashrc"
 fi
 
-# The line we'll add if the user wants to update their PATH.
-PATH_LINE="export PATH=\"$BIN_PATH:\$PATH\"  # Add ForeFire to PATH"
+PATH_LINE="export PATH=\"$BIN_PATH:\$PATH\""
 
 # Check if we've already updated the PATH in this file.
 if grep -qF "$BIN_PATH" "$CONFIG_FILE"; then
