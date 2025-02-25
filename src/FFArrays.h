@@ -105,6 +105,7 @@ public:
 	// Printing functions
 	string print2D(size_t = 0, size_t = 0);
 };
+
 template<typename T>
 T FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l) const {
 	if ( i > nx or j > ny or k > nz or l > nt ){

@@ -215,26 +215,18 @@ class DataBroker {
 
 
 
-	/*! \brief retrieving the south-west point in an NcFile */
-	FFPoint getNetCDFSWCorner(NcVar*);
-	/*! \brief retrieving the time origin in an NcFile */
-	double getNetCDFTimeOrigin(NcVar*);
-	/*! \brief retrieving the south-west point in an NcFile */
-	FFPoint getNetCDFSpatialSpan(NcVar*);
-	/*! \brief retrieving the time origin in an NcFile */
-	double getNetCDFTimeSpan(NcVar*);
-	/*! \brief loading a NCXYZTDataLayer from an NcFile */
-	XYZTDataLayer<double>* constructXYZTLayerFromFile(NcFile*, string,int);
-	/*! \brief loading a FuelDataLayer from an NcFile */
-	FuelDataLayer<double>* constructFuelLayerFromFile(NcFile*);
-	/*! \brief loading a PropagativeLayer from an NcFile */
-	PropagativeLayer<double>* constructPropagativeLayerFromFile(NcFile*, string);
-	/*! \brief loading a FluxLayer from an NcFile */
-	FluxLayer<double>* constructFluxLayerFromFile(NcFile*, string);
-
 	/*! \brief testing inclusion of a variable domain inside the fire domain */
 	bool isRelevantData(FFPoint&, FFPoint&);
-	double getNetCDFFileVersion(NcVar* var);
+
+
+	/*! \brief loading a NCXYZTDataLayer from an NcFile */
+	XYZTDataLayer<double>* constructXYZTLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a FuelDataLayer from an NcFile */
+	FuelDataLayer<double>* constructFuelLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a PropagativeLayer from an NcFile */
+	PropagativeLayer<double>* constructPropagativeLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a FluxLayer from an NcFile */
+	FluxLayer<double>* constructFluxLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \transpose data from fortran netcdf*/
 	double* readAndTransposeFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t& ,bool  ,  int );
 	int*    readAndTransposeIntFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t&, bool ,  int );

@@ -61,3 +61,4 @@ else
     echo "All tests passed."
     exit 0
 fi
+./clean.bash
