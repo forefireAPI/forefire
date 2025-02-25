@@ -19,8 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Forefirebuild
-        run: sudo sh ./install-forefire.sh
+      - name: ForeFire build
+        run: sudo bash ./install-forefire.sh
 
       - name: Check version
         run: ./bin/forefire -v
