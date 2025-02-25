@@ -4,18 +4,18 @@
 
 <!-- _Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._ -->
 
-ForeFire is an [open-source code for wildland fire spread models](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models), developed and maintained by Université de Corse Pascal Paoli.
-
-Access the [demo simulator here](http://forefire.univ-corse.fr/sim).
+ForeFire is an open-source code for wildland fire spread models, developed and maintained by Université de Corse Pascal Paoli.
+- [Website](https://forefire.univ-corse.fr/)
+- [Demo simulator](http://forefire.univ-corse.fr/sim)
+- [Publication](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models)
 
 ![demo](./docs_legacy/images/sim-forefire.jpg)
 
 
-It has been designed and runs on Unix systems. Three modules can be built with the source code.
-
-The main binaries are  
-  - An interpreter (executable)
-  - A shared library (with C/C++/Java Python and Fortran bindings)
+It has been designed and runs on Unix systems.
+The main binaries that can be built from source are :
+- An interpreter (executable)
+- A shared library (with C/C++/Java Python and Fortran bindings)
 
 ## 1. Building from source
 
@@ -25,7 +25,6 @@ ForeFire can be built from source by running `install-forefire.sh`
 cd forefire
 
 sudo sh install-forefire.sh
-
 ```
 
 You can inspect this file to understand the necessary linux dependencies and commands
