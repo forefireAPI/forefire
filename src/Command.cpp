@@ -75,34 +75,8 @@ Command::Session Command::currentSession =
 };
  
 
-// Construction of the dictionary
-Command::CmdDictEntry Command::cmdDict[] =	{
-		CmdDictEntry("FireDomain[...]","creates a fire domain")
-		,CmdDictEntry("FireFront[...]","creates a fire front with the following fire nodes")
-		,CmdDictEntry("FireNode[...]","adds a fire node to the given location")
-		,CmdDictEntry("step[...]","advances the simulation for a user-defined amount of time")
-		,CmdDictEntry("goTo[...]","advances the simulation till a user-defined time")
-		,CmdDictEntry("setParameter[...]","sets a given parameter")
-		,CmdDictEntry("setParameters[...]","sets a given list of parameters")
-		,CmdDictEntry("getParameter[...]","return the parameter from a key")
-		,CmdDictEntry("trigger[...]","set a value at a certain date to change model ")
-		,CmdDictEntry("include[...]","includes commands from a file")
-		,CmdDictEntry("print[...]","prints the state of the simulation")
-		,CmdDictEntry("save[]","saves the simulation arrival_times in netcdf format")
-		,CmdDictEntry("load[...]","loads the simulation arrival_times in netcdf format")
-		,CmdDictEntry("plot[...]","generates a png or jpg of the simulation")
-		,CmdDictEntry("computeSpeed[...]","main prop model activation with vector")
-		,CmdDictEntry("help","displays messages about the usage of commands")
-		,CmdDictEntry("man[command]","displays the man page of the desired 'command'")
-		,CmdDictEntry("loadData[...]","load a NC landscape data file")
-		,CmdDictEntry("systemExec[...]","runs a system command")
-		,CmdDictEntry("listenHTTP[host:port]","launches an HTTP server to listen for commands")
-		,CmdDictEntry("clear[]","clears the simulation")
-		,CmdDictEntry("quit","terminates the simulation")
-};
 
 const Command::commandMap Command::translator = Command::makeCmds();
-const Command::commandMan Command::manpages = Command::makeMan();
 
  
 // Defaults constructor and destructor for the 'Command' abstract class
@@ -768,9 +742,6 @@ int Command::goTo(const string& arg, size_t& numTabs){
 				getDomain()->setSafeTopologyMode(false);
 				startTime = endTime;
 				getDomain()->increaseNumIterationAtmoModel();
-
-		 
-
 				if ( getDomain()->commandOutputs ){
 					cout<<getDomain()->getDomainID()<<": "
 							<< "End of the step in domain "
@@ -926,8 +897,9 @@ int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
         std::string parameter = argMap["parameter"];
         std::string colormap = argMap["cmap"];
 
-/*		std::string area = argMap["area"];
-		std::string colormap = argMap["cmap"];
+		std::string area = argMap["area"];
+        cout<<"AREA PLOT "<<area<<endl;
+		/*std::string colormap = argMap["cmap"];
 		std::string colormap = argMap["cmap"];
 		std::string colormap = argMap["cmap"];*/
 
@@ -945,9 +917,10 @@ int Command::plotSimulation(const std::string& arg, size_t& numTabs) {
         }
 		
         if (!filename.empty()) {
-            auto matrix = getDomain()->getDataMatrix(parameter); // Retrieve data matrix
+            auto matrix = getDomain()->getDataMatrix(parameter, arg); // Retrieve data matrix
+
             if (!matrix.empty()) {
-                writeImage(filename.c_str(), matrix, minVal, maxVal, colormap); // Write the matrix to an image file
+				writeImage(filename.c_str(), matrix, minVal, maxVal, colormap); // Write the matrix to an image file
 				if (argMap.find("histbins") != argMap.end()) {
 				   int numbins = 21;
 				   numbins = std::stoi(argMap["histbins"]);
@@ -1154,7 +1127,6 @@ int Command::triggerValue(const string& arg, size_t& numTabs){
 
 	}
 	if(tmpArgs[0]== "fuelIndice"){
-
 			if(getDomain()->getDataBroker() != 0){
 				FFPoint loc = getPoint("loc", arg);
 				int fvalue = getInt("fuelType",arg);
@@ -1184,25 +1156,6 @@ int Command::include(const string& arg, size_t& numTabs){
 		}
 	} else {
 		cout << "wrong input file, check your settings..." << endl;
-	}
-	return normal;
-}
-
-int Command::help(const string& arg, size_t& numTabs){
-	for(int i = 0; i < numberCommands ; i++) {
-		cout << cmdDict[i].inlineCmd << " : " << cmdDict[i].usage << endl;
-	}
-	return normal;
-}
-
-int Command::man(const string& cmd, size_t& numTabs){
-	commandMan::const_iterator cmdman = manpages.find( cmd );
-	if ( cmdman == manpages.end() ) {
-		if(cmd.at(0) != '!')
-			cout << "unknown command, try 'help'." << endl;
-	} else {
-		// calling the right function
-		cout << cmdman->second;
 	}
 	return normal;
 }
@@ -1261,7 +1214,7 @@ int Command::saveData(const std::string& arg, size_t& numTabs)
             }
         }
     }
-    else {
+    else { 
         fieldsToSave = {"altitude", "fuel"};
     }
 
@@ -1810,23 +1763,42 @@ double Command::getTime(){
 }
 
 size_t Command::tabsCount(string cmdLine){
-	size_t k = 0;
-	while ( cmdLine[k] == '\t' ) {
-		k++;
-	}
-	if ( firstCommand ){
-		refTabs = k;
-		firstCommand = false;
-	}
-	return k-refTabs;
+    size_t count = 0;
+    size_t pos = 0;
+    while ( pos < cmdLine.size() ) {
+        if ( cmdLine[pos] == '\t' ) {
+            count++;
+            pos++;
+        }
+        else if ( pos + 3 < cmdLine.size() && cmdLine.substr(pos, 4) == "    " ) {
+            count++;
+            pos += 4;
+        }
+        else {
+            break;
+        }
+    }
+    if ( firstCommand ){
+        refTabs = count;
+        firstCommand = false;
+    }
+    return count - refTabs;
 }
 
 string Command::removeTabs(string arg){
-	size_t k = 0;
-	while ( arg[k] == '\t' ){
-		arg.erase(k,1);
-	}
-	return arg;
+    size_t pos = 0;
+    while ( pos < arg.size() ) {
+        if ( arg[pos] == '\t' ) {
+            arg.erase(pos, 1);
+        }
+        else if ( pos + 3 < arg.size() && arg.substr(pos, 4) == "    " ) {
+            arg.erase(pos, 4);
+        }
+        else {
+            break;
+        }
+    }
+    return arg;
 }
 
 void Command::ExecuteCommand(string& line){
@@ -2143,6 +2115,7 @@ void Command::writeImage(const char* filename, const std::vector<std::vector<dou
             }
         }
     }
+	//cout<<"image minVal "<<minVal<<" maxVal "<<maxVal<<endl;
 	// Use the predefined colormaps or default to grayscale
      // Retrieve colormap from map
     auto it = colormapMap.find(colormapName);
@@ -2160,6 +2133,9 @@ void Command::writeImage(const char* filename, const std::vector<std::vector<dou
             } else {
                 int colorIndex = static_cast<int>((val - minVal) / (maxVal - minVal) * (mapSize - 1));
                 colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+              /*  if ((x % 1000 == 0) && (y % 1000 == 0)) {
+                    std::cout << val << " : " << colorIndex << std::endl;
+                }*/
                 const auto& color = colorMap[colorIndex];
                 image[index] = color[0];
                 image[index + 1] = color[1];

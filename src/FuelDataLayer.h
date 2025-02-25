@@ -166,14 +166,13 @@ int FuelDataLayer<T>::getFuel(size_t i, size_t j, size_t k, size_t t){
 
 template<typename T>
 T FuelDataLayer<T>::getValueAt(FireNode* fn){
-	cout<<"WARNING: getValueAt shouldn't be called for layer "<<this->getKey()<<endl;
-	T zero = (T) 0;
-	return zero;
+	FFPoint loc = fn->getLoc();
+	T retval = (T) fuelMap[getPos(loc, fn->getTime())];
+   return retval;
 }
 
 template<typename T>
 T FuelDataLayer<T>::getValueAt(FFPoint loc, const double& time){
-	cout<<"WARNING: getValueAt shouldn't be called for layer fuel, returning indice"<<this->getKey()<<endl;
 	double mytime = time;
 	T retval = (T) fuelMap[getPos(loc, mytime)];
    return retval;
@@ -246,45 +245,31 @@ size_t FuelDataLayer<T>::getPos(FFPoint& loc, double& t){
 template<typename T>
 void FuelDataLayer<T>::getMatrix(
 		FFArray<T>** lmatrix, const double& time){
-
-		double res = 500;
-
-
-		double ddx = res;
-		int nnx = (NECornerX-SWCornerX)/res;
-		double ddy = res;
-		int nny = (NECornerY-SWCornerY)/res;
-
-
-
-		if(nny*nnx < 100*100 ){
-
-			nnx = nx;
-			nny = ny;
-			ddx = (NECornerX-SWCornerX)/nnx;
-			ddy = (NECornerY-SWCornerY)/nny;
-		}
-
-		int nnz = 1;
-		int nnt = 1;
-
-
-		double vals[nnx*nny];
-
-		FFPoint loc;
-		loc.setX(SWCornerX+0.5*ddx);
-
-		for ( int i = 0; i < nnx; i++ ) {
-			loc.setY(SWCornerY+0.5*ddy);
-			for ( int j = 0; j < nny; j++ ) {
-				vals[i*nny+j] = (double) getFuelAtLocation(loc, startTime);
-				loc.setY(loc.getY()+ddy);
+			double res = 10;
+			double ddx = res;
+			int nnx = (NECornerX - SWCornerX) / res;
+			double ddy = res;
+			int nny = (NECornerY - SWCornerY) / res;
+			int nnz = 1;
+			int nnt = 1;
+		
+			// Use a std::vector to allocate the array dynamically on the heap.
+			std::vector<double> vals(nnx * nny);
+		
+			FFPoint loc;
+			loc.setX(SWCornerX + 0.5 * ddx);
+		
+			for (int i = 0; i < nnx; i++) {
+				loc.setY(SWCornerY + 0.5 * ddy);
+				for (int j = 0; j < nny; j++) {
+					vals[i * nny + j] = static_cast<double>(getFuelAtLocation(loc, startTime));
+					loc.setY(loc.getY() + ddy);
+				}
+				loc.setX(loc.getX() + ddx);
 			}
-			loc.setX(loc.getX()+ddx);
-		}
-		*lmatrix = new FFArray<double>("fuel", 1, nnx, nny, nnz, nnt);
-		(*lmatrix)->setVal(&vals[0]);
-
+			
+			*lmatrix = new FFArray<double>("fuel", 1, nnx, nny, nnz, nnt);
+			(*lmatrix)->setVal(vals.data());
 
 
 	// TODO extracting the data at the given time

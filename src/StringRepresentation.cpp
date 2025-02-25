@@ -127,7 +127,7 @@ void StringRepresentation::visit(FireDomain* fd) {
 void StringRepresentation::visit(FireFront* ff) {
     if (dumpMode == FF_MODE) {
         for (size_t k = 0; k < currentLevel; k++)
-            outputstr << '\t';
+            outputstr << "    ";
         outputstr << ff->toString() << endl;
         return;
     }
@@ -199,7 +199,7 @@ void StringRepresentation::visit(FireNode* fn) {
     
     if (dumpMode == FF_MODE) {
         for (size_t k = 0; k < currentLevel; k++)
-            outputstr << '\t';
+            outputstr << "    ";
         outputstr << fn->toString() << endl;
         return;
     }
