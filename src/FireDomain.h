@@ -641,7 +641,7 @@ public:
 	void areaBurningScan(FFPoint&, FFPoint&, double);
 
     /*! \brief retrun a diag matrix */
-	std::vector<std::vector<double>> getDataMatrix(const std::string& ) ;
+	std::vector<std::vector<double>> getDataMatrix(const std::string& ,const std::string& ) ;
 	
 	/*! \brief checking the burning status of a given location */
 	bool checkForBurningStatus(FFPoint&);

@@ -84,7 +84,7 @@ class Command {
 	// Definition of the command map alias
 	typedef int (*cmd)(const string&, size_t&);
 	typedef map<string,cmd> commandMap;  /*!< map of aliases between strings and functions to be called */
-	static const int numberCommands = 22; /*!< number of possible commands */
+	static const int numberCommands = 21; /*!< number of possible commands */
 	static commandMap makeCmds(){
 		// Construction of the command translator
 		commandMap trans;
@@ -104,8 +104,6 @@ class Command {
 		trans["getParameter"] = &getParameter;
 		trans["trigger"] = &triggerValue;
 		trans["include"] = &include;
-		trans["help"] = &help;
-		trans["man"] = &man;
 		trans["loadData"] = &loadData;
 		trans["systemExec"] = &systemExec;
 		trans["listenHTTP"] = &listenHTTP;
@@ -117,64 +115,6 @@ class Command {
 	/* A map of the commands to their effective functions */
 	static const commandMap translator;  /*!< map of aliases between strings and functions to be called */
 
-	// Definition of the command man alias
-	typedef map<string,string> commandMan;
-	static commandMan makeMan(){
-		// Construction of the man pages
-		commandMan cman;
-		ostringstream mantmp;
-		mantmp << "FireDomain[Psw;Pne;t;bmapdx;bmapdy]" << endl;
-		mantmp << " - 'Psw' and 'Pne' are the southwest and northwest points of the boundaries" << endl;
-		mantmp << "    and should be affected as in 'Psw=(0.,0.,0.)';" << endl;
-		mantmp << " - 't' is the time associated with fire domain ('t=0.');" << endl;
-		mantmp << " - 'bmapdx' and 'bmapdy' are the resolution of the burning map in each" << endl;
-		mantmp << "    direction and should be affected as in 'bmpadx=0.1';" << endl;
-		cman["FireDomain"] = mantmp.str();
-		mantmp << "FireNode[loc;vel;t]" << endl;
-		mantmp << " - 'loc' is the spatial point where the firenode is created ('loc=(0.,0.,0.)');" << endl;
-		mantmp << " - 'vel' is the initial velocity of the firenode ('vel=(0.,0.,0.)');" << endl;
-		mantmp << " - 't' is the time associated with fire node ('t=0.');" << endl;
-		cman["FireNode"] = mantmp.str();
-		cman["FireFront"] = "FireFront[]\n create a fire front with the following fire nodes\n";
-		cman["startFire"] = "startFire[loc=(0.,0.,0.),t=0.]\n create a triangular fire front with 3 nodes around the location at time t\n";
-		cman["step"] = "step[dt]\n - 'dt' is the duration for which the simulation will run ('dt=5.')\n";
-		cman["goTo"] = "goTo[t]\n - 't' is the desired time till which the simulation will run ('t=56.2')\n";
-		cman["print[output]"] = "print\n prints a representation of the simulation in the file 'output'\n";
-		cman["save"] = "save\n saves the simulation in hdf format\n";
-		cman["load"] = "loads the simulation arrival_times in netcdf format";
-		cman["plot"] = "generates a png or jpg of the simulation \n parameter=speed or arrival_time_of_front;filename=outfname.png/jpg;opt:range=(0,0.1);opt:cmap=viridis;opt:histogram=true";
-		cman["computeSpeed"] = "uses the first registered propp model to activate and get result from an array of values separated by ;";
-		cman["setParameter[param=value]"] = "setParameter\n - sets parameter 'param' to the given 'value'";
-		cman["setParameters[param1=val1;param2=val2;...;paramn=valn]"] = "setParameters\n - sets a given list of parameters to the desired values";
-		cman["getParameter[key=value]"] = "gets parameter 'key' ";
-		cman["trigger[]"] = "triggers runtime a change in simulation 'fuelIndice;loc=(x,y,z);fuelType=int or wind;loc=(x,y,z);vel=(vx,vy,vz);t=f ";
-		cman["include[input]"] = "include\n - executes the commands in the file 'input'";
-		cman["help"] = "help\n displays messages about the usage of commands\n";
-		cman["loadData"] = "loadData\n load a NC data file\n";
-		cman["clear"] = "clear\n clear all the simulation data\n";
-		cman["systemExec"] = "systemExec\n run a system command\n";
-		cman["listenHTTP"] = "listenHTTP\n launches an HTTP server to listen for commands\n";
-		cman["quit"] = "quit\n terminates the simulation\n";
-		return cman;
-	}
-	/* A map of the commands to their man page */
-	static const commandMan manpages; /*!< manual pages for the commands */
-
-	// Definition of the dictionary structure
-	struct CmdDictEntry{
-		string inlineCmd;
-		string usage;
-		CmdDictEntry(){}
-		CmdDictEntry(string s1, string s2){
-			this->inlineCmd = s1;
-			this->usage = s2;
-		}
-		CmdDictEntry(const CmdDictEntry& cdt) : \
-				inlineCmd(cdt.inlineCmd)\
-				, usage(cdt.usage) {}
-	};
-	// Construction of the dictionary of commands
-	static CmdDictEntry cmdDict[numberCommands];
 
 	// Boolean for parallel simulation
 	static bool parallel;
@@ -235,10 +175,6 @@ class Command {
 	static int triggerValue(const string&, size_t&);
 	/*! \brief command to trigger values that will modifie runtime model parameterisation */
 	static int include(const string&, size_t&);
-	/*! \brief help */
-	static int help(const string&, size_t&);
-	/*! \brief invoking the manual pages */
-	static int man(const string&, size_t&);
 	/*! \brief command to load a NC data file */
 	static int loadData(const string&, size_t&);
 	/*! \brief command to save a NC landscape data file */

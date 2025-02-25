@@ -215,7 +215,7 @@ py::array_t<double> PLibForeFire::getDoubleArray(char* name, double t){
                  {nnt, nnz, nny, nnx}, // shape as requested
                  reshaped_data.data() // Now directly use reshaped data
              );
-             free(srcD);
+             //free(srcD);
              return arr;
 		}
 

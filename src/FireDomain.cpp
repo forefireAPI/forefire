@@ -3315,32 +3315,100 @@
 		 return domainFront->print();
 	 }
  
-	 std::vector<std::vector<double>> FireDomain::getDataMatrix(const std::string& name) {
-		 // Initialize the matrix with default size and values
-		 std::vector<std::vector<double>> matrix(globalBMapSizeX, std::vector<double>(globalBMapSizeY, -9999)); // -9999 could signify uninitialized or no data
-		 
-		 if (name == "speed") {
-			 for (size_t i = 0; i < globalBMapSizeX; i++) {
-				 for (size_t j = 0; j < globalBMapSizeY; j++) {
-					 matrix[i][j] = getMaxSpeed(i, j); // Assuming getMaxSpeed(i, j) is defined to return speed values
-				 }
-			 }
-			 return matrix;
-		 } 
-		 if (name == "arrival_time") {
-			 for (size_t i = 0; i < globalBMapSizeX; i++) {
-				 for (size_t j = 0; j < globalBMapSizeY; j++) {
-					 matrix[i][j] = getArrivalTime(i, j); // Assuming getMaxSpeed(i, j) is defined to return speed values
-				 }
-			 }
-			 return matrix;
-		 }  
+	 // Function: getDataMatrix
+// Description: Returns a 2D matrix of doubles corresponding to the provided data name.
+	std::vector<std::vector<double>> FireDomain::getDataMatrix(const std::string& name, const std::string& arg) {
 
-		 std::cerr << "Error: Data name '" << name << "' not recognized." << std::endl;
-		 // Optionally return an empty matrix to signify error
-		 matrix.clear(); // Uncomment this if you want to return an empty matrix
-		 return matrix;
-	 }
+		
+		// Case 1: "speed" data
+		if (name == "speed") {
+			// Create a matrix with dimensions (globalBMapSizeX x globalBMapSizeY), initialized to -9999
+			std::vector<std::vector<double>> matrix(globalBMapSizeX, std::vector<double>(globalBMapSizeY, -9999));
+			for (size_t i = 0; i < globalBMapSizeX; i++) {
+				for (size_t j = 0; j < globalBMapSizeY; j++) {
+					matrix[i][j] = getMaxSpeed(i, j);  // Assumes getMaxSpeed returns the speed value at (i, j)
+				}
+			}
+			return matrix;
+		}
+
+		// Case 2: "arrival_time" data
+		if (name == "arrival_time") {
+			// Create a matrix with dimensions (globalBMapSizeX x globalBMapSizeY), initialized to -9999
+			std::vector<std::vector<double>> matrix(globalBMapSizeX, std::vector<double>(globalBMapSizeY, -9999));
+			for (size_t i = 0; i < globalBMapSizeX; i++) {
+				for (size_t j = 0; j < globalBMapSizeY; j++) {
+					matrix[i][j] = getArrivalTime(i, j);  // Assumes getArrivalTime returns the arrival time at (i, j)
+				}
+			}
+			return matrix;
+		}
+		double lTime = getSimulationTime();
+		// Case 3: Data available from a FluxLayer
+		FluxLayer<double>* fluxLayer = getFluxLayer(name);
+		if (fluxLayer != nullptr) {
+			//std::cout << "DataLayer " << name << " found" << std::endl;
+
+			// Retrieve the multidimensional array from the flux layer (t is assumed to be defined in context)
+			FFArray<double>* srcD = nullptr;
+			fluxLayer->getMatrix(&srcD, lTime);
+			double* data = srcD->getData();
+			int nnx = srcD->getDim("x");
+			int nny = srcD->getDim("y");
+			int nnz = srcD->getDim("z");
+			int nnt = srcD->getDim("t");
+
+			// Proceed only if the data is effectively 2D (i.e. z == 1 and t == 1)
+			if (nnz == 1 && nnt == 1) {
+				size_t total_size = static_cast<size_t>(nnx) * nny;
+				// Temporary vector for reshaping data (if necessary for index order conversion)
+				std::vector<double> reshaped_data(total_size);
+
+				if (nnz == 1 && nnt == 1) {
+					// Build the final 2D matrix
+					std::vector<std::vector<double>> matrix(nnx, std::vector<double>(nny, -9999));
+					for (int x = 0; x < nnx; ++x) {
+						for (int y = 0; y < nny; ++y) {
+							matrix[x][y] = data[y + nny * x];
+						}
+					}
+					return matrix;
+				}
+
+			}
+		}
+
+		// Case 4: Data available from a DataLayer
+		DataLayer<double>* dataLayer = getDataLayer(name);
+		if (dataLayer != nullptr) {
+			//std::cout << "DataLayer " << name << " found" << std::endl;
+
+			// Retrieve the multidimensional array from the data layer
+			FFArray<double>* srcD = nullptr;
+			dataLayer->getMatrix(&srcD, lTime);
+			double* data = srcD->getData();
+			int nnx = srcD->getDim("x");
+			int nny = srcD->getDim("y");
+			int nnz = srcD->getDim("z");
+			int nnt = srcD->getDim("t");
+			// Proceed only if the data is effectively 2D (i.e. z == 1 and t == 1)
+			if (nnz == 1 && nnt == 1) {
+				// Build the final 2D matrix
+				std::vector<std::vector<double>> matrix(nnx, std::vector<double>(nny, -9999));
+				for (int x = 0; x < nnx; ++x) {
+					for (int y = 0; y < nny; ++y) {
+						matrix[x][y] = data[y + nny * x];
+					}
+				}
+				return matrix;
+			}
+		}
+
+		// Error case: Unrecognized data name
+		std::cerr << "Error: Data name '" << name << "' not recognized." << std::endl;
+		// Return a default 1x1 matrix with a placeholder value
+		return std::vector<std::vector<double>>(1, std::vector<double>(1, -9999));
+	}
  
  
 	 void FireDomain::dumpBurningMatrixAsBinary(){

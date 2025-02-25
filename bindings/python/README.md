@@ -1,4 +1,3 @@
-```markdown
 # PyForeFire
 
 PyForeFire provides Python bindings for the ForeFire library, enabling users to access ForeFire’s functionality directly from Python. The bindings link against the precompiled ForeFire library and include support for NetCDF and other dependencies.
@@ -118,4 +117,3 @@ This project is licensed under the terms specified in the `LICENSE` file.
 
 - **Homepage:** [https://github.com/forefireAPI/firefront](https://github.com/forefireAPI/firefront)
 - **Repository:** [https://github.com/forefireAPI/firefront](https://github.com/forefireAPI/firefront)
-```
