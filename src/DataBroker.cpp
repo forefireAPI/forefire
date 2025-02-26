@@ -278,8 +278,6 @@ void DataBroker::registerLayer(string name, DataLayer<double>* layer) {
 
 
 	/* inserting the layer into the map of layers */
-
-	 
 	ilayer = layersMap.find(name);
 	if (ilayer != layersMap.end()) {
 
@@ -291,6 +289,7 @@ void DataBroker::registerLayer(string name, DataLayer<double>* layer) {
 			delete oldlayer;
 		}
 	}
+
 
 	layersMap.insert(make_pair(name, layer));
 	layers.push_back(layer);
@@ -318,7 +317,6 @@ void DataBroker::registerLayer(string name, DataLayer<double>* layer) {
 		temperatureLayer = layer;
 	}
 	if (name.find("windU") != string::npos){
-
 			windULayer = layer;
 	}
 	if (name.find("windV") != string::npos){
@@ -1070,7 +1068,7 @@ FFPoint DataBroker::getNetCDFSWCorner(NcVar* var) {
 			params->getDouble("SHIFT_ALL_DATA_ORDINATES_BY"));
 	return shiftPos + relSWC;
 }
-double DataBroker::getNetCDFTimeOrigin(NcVar* var) {
+double DataBroker::getNetCDFTimeSpan(NcVar* var) {
 	double Lt =0;
  	NcVarAtt att = var->getAtt("Lt");
 	if(!att.isNull()) att.getValues(&Lt);
@@ -1088,7 +1086,7 @@ FFPoint DataBroker::getNetCDFSpatialSpan(NcVar* var) {
 	if(!att.isNull()) att.getValues(&Lz);
 	return FFPoint(Lx, Ly, Lz);
 }
-double DataBroker::getNetCDFTimeSpan(NcVar* var) {
+double DataBroker::getNetCDFTimeOrigin(NcVar* var) {
 	double timeOrigin =0;
  	NcVarAtt att = var->getAtt("t0");
 	if(!att.isNull()) att.getValues(&timeOrigin);
@@ -1140,9 +1138,9 @@ XYZTDataLayer<double>* DataBroker::constructXYZTLayerFromFile(	NcFile* NcdataFil
  
 	if (isRelevantData(SWCorner, spatialExtent)) {
 //
-		//cout << "Variable " << property <<" " <<data[0]<< " have "<<timeOrigin<<" "<< values.getDimCount()<< " " << Lt<< " " << nx<< " " << ny<< " " << nz<< " " << nt<< " " << " SW" <<SWCorner.print()<< " ext:"<<spatialExtent.print()<< endl;
+		cout << "Variable " << property <<" " <<data[0]<< " have "<<values.getDimCount()<<" "<< timeOrigin<< " " << Lt<< " " << nx<< " " << ny<< " " << nz<< " " << nt<< " " << " SW" <<SWCorner.print()<< " ext:"<<spatialExtent.print()<< endl;
 
-		XYZTDataLayer<double>* newlayer = new XYZTDataLayer<double>(property,	SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt, data);
+		XYZTDataLayer<double>* newlayer = new XYZTDataLayer<double>(property, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt, data);
 		
 		delete[] data;
 		return newlayer;
