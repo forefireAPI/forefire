@@ -217,7 +217,13 @@ SimulationParameters::SimulationParameters(){
 
 SimulationParameters::~SimulationParameters() {
 }
-
+vector<string> SimulationParameters::getAllKeys() {
+    vector<string> keys;
+    for (map<string, string>::iterator it = parameters.begin(); it != parameters.end(); ++it) {
+        keys.push_back(it->first);
+    }
+    return keys;
+}
 void SimulationParameters::setParameter(string key, string value, bool protect){
 	//cout<<"setting "<<key<<" to "<<value<<endl;
 	list<string>::iterator protection

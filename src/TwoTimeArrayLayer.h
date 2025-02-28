@@ -131,6 +131,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return origin.getX() ; };
+	double getOriginY(){ return origin.getY(); };
+	double getOriginZ(){ return origin.getZ(); };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return 0 ; };
 
 };
 

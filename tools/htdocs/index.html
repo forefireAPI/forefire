@@ -15,11 +15,49 @@
       background-color: #111;
       color: #eee;
     }
-    /* Container: uses flex to stack sections vertically */
+    /* Main container becomes a flex row: sidebar + main area */
     #container {
       display: flex;
-      flex-direction: column;
       height: 100vh;
+    }
+    /* Sidebar: left bar with layers list */
+    #sidebar {
+      width: 200px;
+      background-color: #222;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    #layerList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    #layerList li {
+      margin: 5px 0;
+      padding: 5px;
+      cursor: pointer;
+      background-color: #333;
+    }
+    #layerList li:hover {
+      background-color: #444;
+    }
+    #updateLayers {
+      background-color: #444;
+      border: none;
+      color: #eee;
+      padding: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    /* Right side: remaining UI */
+    #mainArea {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
     }
     /* Header: big orange date */
     #dateHeader {
@@ -36,12 +74,13 @@
       height: 200px;
       overflow-y: auto;
     }
-    /* Input Area: contains the command input, send button, and refresh button.
-       Height is set to half of responseConsole's height (i.e. 100px) */
+    /* Input Area: contains the command input, send button, and refresh button */
     #inputArea {
       display: flex;
       align-items: center;
       height: 40px;
+      padding: 5px;
+      background-color: #111;
     }
     #inputArea input {
       flex: 1;
@@ -57,6 +96,7 @@
       color: #eee;
       border: none;
       cursor: pointer;
+      margin-left: 5px;
     }
     /* Command Buttons: predefined command buttons */
     #commandButtons {
@@ -96,27 +136,36 @@
 </head>
 <body>
   <div id="container">
-    <!-- Header: Big, orange date -->
-    <div id="dateHeader">Date: N/A</div>
-
-    <!-- Response Console: Only server responses (dark background) -->
-    <div id="responseConsole"></div>
-
-    <!-- Command History: Shows the commands that were sent (in green) -->
-    <div id="commandHistory"></div>
-    <!-- Input Area: Input box, Send button, Refresh Map button -->
-    <div id="inputArea">
-      <input type="text" id="commandInput" placeholder="Enter command">
-      <button id="sendCommand">Send</button>
-      <button id="refreshMap">Refresh Map</button>
+    <!-- Sidebar with layer list -->
+    <div id="sidebar">
+      <ul id="layerList"></ul>
+      <button id="updateLayers">Update Layers</button>
     </div>
 
-    <!-- Predefined Command Buttons -->
-    <div id="commandButtons"></div>
+    <!-- Main area -->
+    <div id="mainArea">
+      <!-- Header: Big, orange date -->
+      <div id="dateHeader">Date: N/A</div>
 
-    <!-- Map Container -->
-    <div id="map"></div>
+      <!-- Response Console: Only server responses (dark background) -->
+      <div id="responseConsole"></div>
 
+      <!-- Command History: Shows the commands that were sent (in green) -->
+      <div id="commandHistory"></div>
+
+      <!-- Input Area: Input box, Send button, Refresh Map button -->
+      <div id="inputArea">
+        <input type="text" id="commandInput" placeholder="Enter command">
+        <button id="sendCommand">Send</button>
+        <button id="refreshMap">Refresh Map</button>
+      </div>
+
+      <!-- Predefined Command Buttons -->
+      <div id="commandButtons"></div>
+
+      <!-- Map Container -->
+      <div id="map"></div>
+    </div>
   </div>
 
   <!-- Leaflet JS -->
@@ -168,6 +217,8 @@
     }).addTo(map);
 
     let mapLayer = null;
+    let imageOverlay = null; // To store layer overlays
+
     // Update map with KML overlay.
     function updateMapWithKML(kmlText) {
       if (mapLayer) {
@@ -191,13 +242,25 @@
         map.fitBounds(mapLayer.getBounds());
       }
     }
+    // Add image overlay on top of the map.
+    function addImageOverlay(imageUrl, bounds) {
+      // Remove existing overlay if present.
+      if (imageOverlay) {
+        map.removeLayer(imageOverlay);
+      }
+      const leafletBounds = [[bounds.SWlat, bounds.SWlon], [bounds.NElat, bounds.NElon]];
+      imageOverlay = L.imageOverlay(imageUrl, leafletBounds, {opacity: 0.7});
+      imageOverlay.addTo(map);
+      // Ensure overlay is beneath vector layers.
+      imageOverlay.setZIndex(0);
+    }
 
     // Send command function: auto-prefix with "ff:" if needed.
     async function sendCommand(command) {
-            // Append the sent command (in green) to the Command History.
+      // Append the sent command (in green) to the Command History.
       const responseDiv = document.getElementById('responseConsole');
       const historyDiv = document.getElementById('commandHistory');
-      historyDiv.innerHTML += "<div class='commandText'> " + command + "</div>";
+      historyDiv.innerHTML += "<div class='commandText'>" + command + "</div>";
       historyDiv.scrollTop = historyDiv.scrollHeight;
       responseDiv.innerHTML += "<div class='commandText'>forefire >" + command + "</div>";
       responseDiv.scrollTop = responseDiv.scrollHeight;
@@ -205,7 +268,6 @@
       if (!command.startsWith("ff:")) {
         command = "ff:" + command;
       }
-
 
       try {
         const response = await fetch('/', {
@@ -215,8 +277,6 @@
         });
         const text = await response.text();
         // Append the response to the Response Console.
-        
-     
         responseDiv.innerHTML += "<div><pre>" + text + "</pre></div>";
         responseDiv.scrollTop = responseDiv.scrollHeight;
 
@@ -288,8 +348,57 @@
     map.on('dblclick', function(e) {
       const lat = e.latlng.lat.toFixed(6);
       const lon = e.latlng.lng.toFixed(6);
-      document.getElementById('commandInput').value = "lonLng(" + lon + ", " + lat + ",0)";
+      document.getElementById('commandInput').value += "lonLng(" + lon + ", " + lat + ",0)";
     });
+
+    // --- New functions for the layers sidebar ---
+
+    // Function to update the layers list.
+    async function updateLayerList() {
+      const layersResponse = await sendCommand("getParameter[layerNames]");
+      if (layersResponse) {
+        // Assuming the response is a comma-separated list.
+        const layers = layersResponse.trim().split(/\s*,\s*/);
+        const layerListEl = document.getElementById('layerList');
+        layerListEl.innerHTML = ""; // Clear existing list
+        layers.forEach(layer => {
+          const li = document.createElement('li');
+          li.textContent = layer;
+          li.addEventListener('click', () => {
+            // Build the appropriate ff:plot command for the selected layer.
+            let cmd;
+            if (layer === "fuel") {
+              cmd = "plot[parameter=fuel;filename=fuel.png;range=(0,255);cmap=fuel;projectionOut=json]";
+            } 
+            /*else if (layer === "windU" || layer === "windV") {
+              // For wind layers, additional processing might be required.
+              // This example sends the command for the selected wind parameter.
+              cmd = `plot[parameter=${layer};filename=${layer}.asc;projectionOut=json]`;
+            }*/ else {
+              // General case: use layer name and a temporary filename based on the layer.
+              cmd = `plot[parameter=${layer};filename=${layer}.png;cmap=turbo;projectionOut=json]`;
+            }
+            sendCommand(cmd).then(responseText => {
+              try {
+                const bounds = JSON.parse(responseText);
+                // Construct the image URL (assumed to be in the same path).
+                const imageUrl = cmd.match(/filename=([^;]+)/)[1];
+                addImageOverlay(imageUrl, bounds);
+              } catch (err) {
+                console.error("Error parsing overlay bounds:", err);
+              }
+            });
+          });
+          layerListEl.appendChild(li);
+        });
+      }
+    }
+
+    // Attach event to the Update Layers button.
+    document.getElementById('updateLayers').addEventListener('click', updateLayerList);
+
+    // Optionally, update layers on page load.
+    updateLayerList();
   </script>
 </body>
 </html>

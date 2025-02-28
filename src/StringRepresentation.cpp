@@ -237,7 +237,7 @@ void StringRepresentation::visit(FireNode* fn) {
 // For GEOJSON mode, reverse the current ring to mimic the Python [::-1] behavior.
 void StringRepresentation::postVisitInner(FireFront* ff) {
     if (dumpMode == JSON_MODE) {
-        outputstr << "\"" << endl << "\t}";
+       // outputstr << "\"" << endl << "\t}";
     }
     else if (dumpMode == GEOJSON_MODE) {
         if (!geojson_current_feature.empty() && !geojson_current_feature.back().empty()) {

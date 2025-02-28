@@ -96,7 +96,8 @@ endif()
 # Compiler Flags
 # ----------------------------------
 if(MPI_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -DMPI_COUPLING")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -DMPI_COUPLING")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing")
 endif()

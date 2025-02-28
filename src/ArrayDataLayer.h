@@ -92,6 +92,17 @@ public:
 		delete array;
 	}
 
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return originX; };
+	double getOriginY(){ return originY; };
+	double getOriginZ(){ return originZ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
+
+
 	/*! \brief interpolation method enum type */
 	enum InterpolationMethod {
 		nearestData = 0,
@@ -127,6 +138,9 @@ public:
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
 
+
+
+
 };
 
 template<typename T>
@@ -151,6 +165,12 @@ T Array3DdataLayer<T>::getValueAt(FFPoint loc, const double& time){
 			<<"Array3DdataLayer<T>::getValueAt(FFPoint, const double&)"<<endl;
 	return (T) 0;
 }
+
+
+double getDx();
+double getDy();
+FFPoint& getOriginPoint();
+FFPoint& getSpan();
 
 template<typename T>
 size_t Array3DdataLayer<T>::getValuesAt(FireNode* fn
@@ -301,6 +321,10 @@ template<typename T> class Array2DdataLayer : public DataLayer<T> {
 	double originX; /*!< abscissa of the SouthWest Corner */
 	double originY; /*!< coordinate of the SouthWest Corner */
 
+	FFPoint origin;
+	FFPoint span;
+	
+
 	size_t nx; /*!< size of the array in the X direction */
 	size_t ny; /*!< size of the array in the Y direction */
 	size_t size; /*!< size of the array */
@@ -377,6 +401,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return 0; }; 
+	double getOriginX(	){ return originX; };
+	double getOriginY(){ return originY; };
+	double getOriginZ(){ return 0; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return 0; };
 
 };
 

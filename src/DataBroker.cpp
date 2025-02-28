@@ -63,8 +63,7 @@ namespace libforefire
 		// Deleting atmospheric and parallel data
 		if (atmosphericData)
 			delete atmosphericData;
-		if (parallelData)
-			delete parallelData;
+
 		// Deleting optimized data brokers
 		delete[] optimizedPropDataBroker;
 		delete[] optimizedFluxDataBroker;
@@ -75,7 +74,7 @@ namespace libforefire
 		/* atmospheric data */
 		atmosphericData = new AtmosphericData();
 		/* parallel data */
-		parallelData = new ParallelData();
+	
 		/* data brokers for propagation models */
 		propDataGetters.resize(FireDomain::NUM_MAX_PROPMODELS);
 		numPropDataGetters.resize(FireDomain::NUM_MAX_PROPMODELS);
@@ -305,7 +304,7 @@ namespace libforefire
 	{
 
 		/* inserting the layer into the map of layers */
-
+		 
 		ilayer = layersMap.find(name);
 		if (ilayer != layersMap.end())
 		{
@@ -441,31 +440,7 @@ namespace libforefire
 		}
 	}
 
-	void DataBroker::initializeParallelProperties(const size_t &nx,
-												  const size_t &ny, const size_t &nz, const double &initval)
-	{
-
-		parallelData->setSize(nx, ny, nz, initval);
-		// Loading the parallel layers
-		Array3DdataLayer<double> *newlayer = new Array3DdataLayer<double>("posX",
-																		  parallelData->FireNodesInCellPosX, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesPosX", newlayer);
-		newlayer = new Array3DdataLayer<double>("posY",
-												parallelData->FireNodesInCellPosY, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesPosY", newlayer);
-		newlayer = new Array3DdataLayer<double>("velX",
-												parallelData->FireNodesInCellVelX, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesVelX", newlayer);
-		newlayer = new Array3DdataLayer<double>("velY",
-												parallelData->FireNodesInCellVelY, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesVelY", newlayer);
-		newlayer = new Array3DdataLayer<double>("time",
-												parallelData->FireNodesInCellTime, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesTime", newlayer);
-		newlayer = new Array3DdataLayer<double>("id",
-												parallelData->FireNodesInCellId, atmoSWCorner, atmoNECorner);
-		registerLayer("FireNodesId", newlayer);
-	}
+	
 
 	void DataBroker::addConstantLayer(string name, const double &val)
 	{
@@ -772,6 +747,22 @@ namespace libforefire
 		return getLayer(property)->getValueAt(fn);
 	}
 
+	vector<string> DataBroker::getAllLayerNames() {
+		vector<string> names;
+		
+		// Iterate over regular layers and add their names.
+		for (const auto &entry : layersMap) {
+			names.push_back(entry.first);
+		}
+		
+		// Iterate over flux layers and add their names.
+		for (const auto &entry : fluxLayersMap) {
+			names.push_back(entry.first);
+		}
+		
+		return names;
+	}
+
 	DataLayer<double> *DataBroker::getLayer(const string &property)
 	{
 		// Scanning the scalar layers
@@ -779,6 +770,8 @@ namespace libforefire
 		ilayer = layersMap.find(property);
 		if (ilayer != layersMap.end())
 			return ilayer->second;
+
+		
 		return 0;
 	}
 

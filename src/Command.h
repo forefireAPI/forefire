@@ -179,6 +179,8 @@ class Command {
 	static int loadData(const string&, size_t&);
 	/*! \brief command to save a NC landscape data file */
 	static int saveData(const string&, size_t&);
+
+
 	/*! \brief command to clear the simulation */
 	static int systemExec(const string&, size_t&);
 	/*! \brief command to run a system trough pipe */
@@ -225,6 +227,11 @@ class Command {
 							const std::string& colormap = "grayscale") ;
 
     static void parseColorMap(const std::string& , std::vector<std::array<unsigned char, 4>>& ) ;
+
+	static void writeASCII(const char *, const std::vector<std::vector<double>>& , double , double , double , double );
+    static void writeNetCDF(const char *, const string& , const std::vector<std::vector<double>>& , const vector<double> &, const vector<double> &);
+	
+
 
 	static const string stringError;
 	static const FFPoint pointError;
@@ -292,8 +299,7 @@ public:
 
 	/*! \brief backup of the simulation */
 	static string dumpString();
-	
-	
+
 
 };
 
