@@ -357,10 +357,9 @@ void MNHStep(double dt){
 	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 
 	while (mnhPause>0) {
-		sleep(1);
-		mnhPause = mnhPause-1;
+		sleep(static_cast<unsigned int>(mnhPause));
 		mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
-		std::cout<<"restarting in "<<mnhPause<<std::endl;
+		std::cout<<"setParameter[MNHalt=0] to restart, waiting for "<<mnhPause<<std::endl;
 	}
 	SimulationParameters::GetInstance()->setInt("MNHalt",0);
 

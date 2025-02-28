@@ -267,19 +267,29 @@ namespace http_command {
                 }
                 std::string body = buildDirectoryListing(path);
                 return buildResponse("200 OK", "text/html; charset=UTF-8", body);
-            } else if (fileExists(path)) {
-                std::ifstream file(path, std::ios::in | std::ios::binary);
-                if (!file) {
-                    return buildSimpleResponse("404 Not Found", "Unable to open file: " + path);
+            } else {
+                if (!fileExists(path)) {
+                    if (const char* ffHome = std::getenv("FOREFIREHOME")) {
+                        
+                        std::string altPath = std::string(ffHome) +"/tools/htdocs/"+ path;
+                        if (fileExists(altPath))
+                            path = altPath;
+                    }
                 }
-                std::ostringstream contents;
-                contents << file.rdbuf();
-                std::string body = contents.str();
-                std::string contentType = determineContentType(path);
-                return buildResponse("200 OK", contentType, body);
+                if (fileExists(path)) {
+                    std::ifstream file(path, std::ios::in | std::ios::binary);
+                    if (!file) {
+                        return buildSimpleResponse("404 Not Found", "Unable to open file: " + path);
+                    }
+                    std::ostringstream contents;
+                    contents << file.rdbuf();
+                    std::string body = contents.str();
+                    std::string contentType = determineContentType(path);
+                    return buildResponse("200 OK", contentType, body);
+                }
+                return buildSimpleResponse("404 Not Found", "File not found: " + path);
+                }
             }
-            return buildSimpleResponse("404 Not Found", "File not found: " + path);
-        }
 
         int server_fd;
         std::atomic<bool> running;

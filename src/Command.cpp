@@ -118,7 +118,7 @@ namespace libforefire
 
                     currentSession.fdp = new FireDomain(t, SW, NE);
                     currentSession.fdp->setTimeTable(currentSession.tt);
-                    // currentSession.ff = currentSession.fdp->getDomainFront();
+                    currentSession.ff = currentSession.fdp->getDomainFront();
 
                     ostringstream ffOutputsFNAME;
                     ffOutputsFNAME << currentSession.params->getParameter("caseDirectory") << '/'
@@ -190,6 +190,7 @@ namespace libforefire
         SimulationParameters *simParam = SimulationParameters::GetInstance();
 
         FFPoint pos = getPoint("lonlat", arg);
+        
         if (pos == pointError)
         {
             pos = getPoint("loc", arg);
@@ -856,6 +857,9 @@ namespace libforefire
         return normal;
     }
 
+
+
+
     int Command::printSimulation(const string &arg, size_t &numTabs)
     {
         if (getDomain() == 0)
@@ -883,7 +887,14 @@ namespace libforefire
         if (outputfile)
         {
             simParam->setInt("count", simParam->getInt("count") + 1);
-            outputfile << currentSession.outStrRep->dumpStringRepresentation();
+            if (currentSession.fdp != 0)
+            {
+                *currentSession.outStream << currentSession.outStrRepp->dumpStringRepresentation();
+            }
+            else
+            {
+                *currentSession.outStream << currentSession.outStrRep->dumpStringRepresentation();
+            }
         }
         else
         {
@@ -937,11 +948,66 @@ namespace libforefire
         return status;
     }
 
+    std::vector<double> getMinMax(const std::vector<std::vector<double>> &matrix) {
+        // Initialize min and max with extreme values.
+        double minVal = std::numeric_limits<double>::max();
+        double maxVal = std::numeric_limits<double>::lowest();
+    
+        // Iterate over each row and each value in the row.
+        for (const auto &row : matrix) {
+            for (double value : row) {
+                if (value < minVal) {
+                    minVal = value;
+                }
+                if (value > maxVal) {
+                    maxVal = value;
+                }
+            }
+        }
+        
+        return std::vector<double>{minVal, maxVal};
+    }
+    std::vector<double> getMinMaxFromUV(const std::vector<std::vector<double>> &matrixU,
+                                        const std::vector<std::vector<double>> &matrixV) {
+        // Ensure matrices have the same dimensions
+        size_t numRows = matrixU.size();
+        if (numRows != matrixV.size()) {
+            // Handle the error as needed, here we simply return an empty vector.
+            return std::vector<double>{};
+        }
+
+        double minVal = std::numeric_limits<double>::max();
+        double maxVal = std::numeric_limits<double>::lowest();
+
+        for (size_t i = 0; i < numRows; ++i) {
+            size_t numCols = matrixU[i].size();
+            if (matrixV[i].size() != numCols) {
+                // Handle dimension mismatch, here we simply return an empty vector.
+                return std::vector<double>{};
+            }
+            for (size_t j = 0; j < numCols; ++j) {
+                double u = matrixU[i][j];
+                double v = matrixV[i][j];
+                double magnitude = std::sqrt(u * u + v * v);
+
+                if (magnitude < minVal) {
+                    minVal = magnitude;
+                }
+                if (magnitude > maxVal) {
+                    maxVal = magnitude;
+                }
+            }
+        }
+        
+        return std::vector<double>{minVal, maxVal};
+    }
     int Command::plotSimulation(const std::string &arg, size_t &numTabs)
     {
         if (getDomain() == nullptr)
             return normal;
+    
         SimulationParameters *simParam = SimulationParameters::GetInstance();
+    
         if (!arg.empty())
         {
             std::map<std::string, std::string> argMap;
@@ -950,8 +1016,8 @@ namespace libforefire
             std::string token;
             const char delim = ';';
             const char assign = '=';
-
-            // Parse the argument string.
+    
+            // Parse the argument string into a key-value map.
             while ((pos = temp.find(delim)) != std::string::npos)
             {
                 token = temp.substr(0, pos);
@@ -960,7 +1026,7 @@ namespace libforefire
                 {
                     std::string key = token.substr(0, eq_pos);
                     std::string value = token.substr(eq_pos + 1);
-                    argMap[key] = value; // Store without removing quotes.
+                    argMap[key] = value;
                 }
                 temp.erase(0, pos + 1);
             }
@@ -972,12 +1038,12 @@ namespace libforefire
                 std::string value = temp.substr(eq_pos + 1);
                 argMap[key] = value;
             }
-
-            // Extracted values.
+    
+            // Extract arguments of interest.
             std::string filename = argMap["filename"];
             std::string parameter = argMap["parameter"];
             std::string colormap = argMap["cmap"];
-
+    
             // Parse optional matrix size.
             size_t eni = 0, enj = 0;
             if (argMap.find("size") != argMap.end())
@@ -990,32 +1056,29 @@ namespace libforefire
                     enj = std::stoul(matrixShape.substr(comma + 1));
                 }
             }
-
-            // Variables for the Cartesian bounding box.
+    
+            // Determine bounding box from arguments (BBoxWSEN or BBoxLBRT) or use domain corners.
             double SWX, SWY, NEX, NEY;
-
-            // Check if an area was provided using either BBoxWSEN or BBoxLBRT.
             if (argMap.find("BBoxWSEN") != argMap.end())
             {
                 // BBoxWSEN: WestLongitude, SouthLatitude, EastLongitude, NorthLatitude.
                 std::string areaStr = argMap.at("BBoxWSEN");
                 if (!areaStr.empty() && areaStr.front() == '(' && areaStr.back() == ')')
                 {
-                    areaStr = areaStr.substr(1, areaStr.size() - 2);
+                    areaStr = areaStr.substr(1, areaStr.size() - 2); // remove parentheses
                 }
                 std::istringstream iss(areaStr);
-                std::string token;
                 double v[4] = {0.0, 0.0, 0.0, 0.0};
                 int idx = 0;
                 while (std::getline(iss, token, ',') && idx < 4)
                 {
                     v[idx++] = std::stod(token);
                 }
-                // Convert geographic coordinates to Cartesian.
-                SWX = getDomain()->getXFromLon(v[0]); // West longitude.
-                SWY = getDomain()->getYFromLat(v[1]); // South latitude.
-                NEX = getDomain()->getXFromLon(v[2]); // East longitude.
-                NEY = getDomain()->getYFromLat(v[3]); // North latitude.
+                // Convert geographic -> cartesian
+                SWX = getDomain()->getXFromLon(v[0]); // west
+                SWY = getDomain()->getYFromLat(v[1]); // south
+                NEX = getDomain()->getXFromLon(v[2]); // east
+                NEY = getDomain()->getYFromLat(v[3]); // north
             }
             else if (argMap.find("BBoxLBRT") != argMap.end())
             {
@@ -1024,178 +1087,339 @@ namespace libforefire
                 double v[4] = {0.0, 0.0, 0.0, 0.0};
                 if (areaStr == "active")
                 {
-                    // Retrieve the active bounding box from the domain.
+                    // Domain's active bounding box
                     std::vector<double> activeBBox = getDomain()->getActiveBBoxLBRT();
                     if (activeBBox.size() == 4)
                     {
-                        v[0] = activeBBox[0]; // Left X.
-                        v[1] = activeBBox[1]; // Bottom Y.
-                        v[2] = activeBBox[2]; // Right X.
-                        v[3] = activeBBox[3]; // Top Y.
+                        v[0] = activeBBox[0];
+                        v[1] = activeBBox[1];
+                        v[2] = activeBBox[2];
+                        v[3] = activeBBox[3];
                     }
                 }
                 else if (!areaStr.empty() && areaStr.front() == '(' && areaStr.back() == ')')
                 {
-                    // Remove enclosing parentheses.
                     areaStr = areaStr.substr(1, areaStr.size() - 2);
                     std::istringstream iss(areaStr);
-                    std::string token;
                     int idx = 0;
                     while (std::getline(iss, token, ',') && idx < 4)
                     {
                         v[idx++] = std::stod(token);
                     }
                 }
-                // Use the provided Cartesian values directly.
-                SWX = v[0]; // Left X.
-                SWY = v[1]; // Bottom Y.
-                NEX = v[2]; // Right X.
-                NEY = v[3]; // Top Y.
+                SWX = v[0];
+                SWY = v[1];
+                NEX = v[2];
+                NEY = v[3];
             }
             else
             {
-                // No area provided: use the default domain corners.
+                // Default corners
                 SWX = getDomain()->SWCornerX();
                 SWY = getDomain()->SWCornerY();
                 NEX = getDomain()->NECornerX();
                 NEY = getDomain()->NECornerY();
             }
-
-           // std::cout << "AREA PLOT: SW(" << SWX << ", " << SWY
-            //          << "), NE(" << NEX << ", " << NEY << ")" << std::endl;
-
-            // Create FFPoint objects for the southwest and northeast bounds.
+    
+            // Create corner points
             FFPoint SWB(SWX, SWY, 0);
             FFPoint NEB(NEX, NEY, 0);
-
+    
+            // Default range
             double minVal = std::numeric_limits<double>::infinity();
             double maxVal = -std::numeric_limits<double>::infinity();
-
-            // Range parsing if provided.
+    
+            // If range is specified, parse it
             if (argMap.find("range") != argMap.end())
             {
                 std::string range = argMap["range"];
                 size_t mid = range.find(',');
                 if (mid != std::string::npos)
                 {
+                    // e.g. "(0,100)" => min=0, max=100
                     minVal = std::stod(range.substr(1, mid - 1));
                     maxVal = std::stod(range.substr(mid + 1, range.length() - mid - 2));
                 }
             }
-
+    
+            // Check if filename is provided
             if (!filename.empty())
             {
-                auto matrix = getDomain()->getDataMatrix(parameter, SWB, NEB, eni, enj);
-                if (!matrix.empty())
+                // --------------------------------------------------------------
+                // NEW BLOCK: handle "wind" with JSON output
+                // --------------------------------------------------------------
+                std::string lowerFilename = filename;
+                std::transform(lowerFilename.begin(), lowerFilename.end(),
+                               lowerFilename.begin(), ::tolower);
+    
+                if (parameter == "wind" &&
+                    lowerFilename.size() >= 5 &&
+                    lowerFilename.substr(lowerFilename.size() - 5) == ".json")
                 {
-                    // Determine file extension.
-                    std::string lowerFilename = filename;
-                   
-                   
-                    if (lowerFilename.size() >= 4 &&
-                        (lowerFilename.substr(lowerFilename.size() - 4) == ".png" ||
-                         lowerFilename.substr(lowerFilename.size() - 4) == ".jpg"))
-                    {
-                        // Write image.
-                        writeImage(filename.c_str(), matrix, minVal, maxVal, colormap);
-                        if (argMap.find("histbins") != argMap.end())
-                        {
-                            int numbins = std::stoi(argMap["histbins"]);
-                            writeHistogram(filename.c_str(), matrix, numbins, minVal, maxVal, colormap);
-                        }
-                    }
-                    else if (lowerFilename.size() >= 3 && lowerFilename.substr(lowerFilename.size() - 3) == ".nc")
-                    {
-                        // Write netCDF file.
-                        // Assume writeNetCDF is implemented to accept the filename,
-                        // the data matrix, and arrays for latitude and longitude.
-                        // Here we generate latitude and longitude vectors, equally distributed.
-                       
-                        std::vector<double> latitudes, longitudes;
-                        // For example, use the domain's SW and NE corners (convert back to geo coordinates).
-                        double westLon = getDomain()->getLonFromX(SWX);
-                        double eastLon = getDomain()->getLonFromX(NEX);
-                        double southLat = getDomain()->getLatFromY(SWY);
-                        double northLat = getDomain()->getLatFromY(NEY);
-                        size_t nlat = (enj > 0) ? enj : 100; // default resolution if not provided.
-                        size_t nlon = (eni > 0) ? eni : 100;
-                        double dLat = (northLat - southLat) / (nlat - 1);
-                        double dLon = (eastLon - westLon) / (nlon - 1);
-                        for (size_t j = 0; j < nlat; j++)
-                        {
-                            latitudes.push_back(southLat + j * dLat);
-                        }
-                        for (size_t i = 0; i < nlon; i++)
-                        {
-                            longitudes.push_back(westLon + i * dLon);
-                        }
-                        writeNetCDF(filename.c_str(), parameter, matrix, latitudes, longitudes);
-                    }
-                    else if (lowerFilename.size() >= 4 && lowerFilename.substr(lowerFilename.size() - 4) == ".asc")
-                    {
-                        // Write ASCII file for GIS.
-                        writeASCII(filename.c_str(), matrix, SWX, SWY, NEX, NEY);
-                    }
-                    else
-                    {
-                        std::cerr << "Unsupported file extension: " << filename << std::endl;
-                    }
+                        // We want two data matrices: "windU" and "windV".
+                        // Suppose these are each std::vector<std::vector<double>>.
+                        auto matrixU = getDomain()->getDataMatrix("windU", SWB, NEB, eni, enj);
+             
+                        auto matrixV = getDomain()->getDataMatrix("windV", SWB, NEB, eni, enj);
+                        auto minMax = getMinMaxFromUV(matrixU, matrixV);
 
-                    // Handle optional projection output.
+                        if (matrixU.empty() || matrixV.empty())
+                        {
+                            std::cerr << "Error: No data available for 'windU' or 'windV'." << std::endl;
+                        }
+                        else
+                        {
+                            // Convert bounding box corners back to lat/lon, etc.
+                            double westLon = getDomain()->getLonFromX(SWX);
+                            double eastLon = getDomain()->getLonFromX(NEX);
+                            double southLat = getDomain()->getLatFromY(SWY);
+                            double northLat = getDomain()->getLatFromY(NEY);
+
+                            // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
+                            size_t nrows = matrixU.size();
+                            size_t ncols = (nrows > 0) ? matrixU[0].size() : 0;
+
+                            double dx = (ncols > 1) ? (eastLon - westLon) / (ncols - 1) : 0.0;
+                            double dy = (nrows > 1) ? (northLat - southLat) / (nrows - 1) : 0.0;
+
+                            std::string referenceTime = simParam->FormatISODate(
+                                simParam->getDouble("refTime"),
+                                simParam->getInt("refYear"),
+                                simParam->getInt("refDay"));
+
+                            // Open JSON file
+                            std::ofstream outFile(filename);
+                            if (!outFile.is_open())
+                            {
+                                std::cerr << "Error: Cannot open output file " << filename << std::endl;
+                            }
+                            else
+                            {
+                                // Write JSON array with two objects
+                                outFile << "[";
+
+                                // ------------------
+                                // 1) Eastward wind (windU)
+                                // ------------------
+                                outFile << R"({"header": {)"
+                                        << R"("parameterUnit": "m.s-1",)"
+                                        << R"("parameterNumber": 2,)"
+                                        << R"("dx": )" << dx << ","
+                                        << R"("dy": )" << dy << ","
+                                        << R"("parameterNumberName": "eastward_wind",)"
+                                        << R"("la1": )" << northLat << ","
+                                        << R"("la2": )" << southLat << ","
+                                        << R"("parameterCategory": 2,)"
+                                        << R"("lo2": )" << eastLon << ","
+                                        << R"("nx": )" << ncols << ","
+                                        << R"("ny": )" << nrows << ","
+                                        << R"("refTime": ")" << referenceTime << R"(",)"
+                                        << R"("lo1": )" << westLon
+                                        << R"(},"data":[)";
+
+                                {
+                                    // Flatten matrixU to a 1D comma-separated list
+                                    bool firstVal = true;
+                                    for (size_t r = 0; r < nrows; r++)
+                                    {
+                                        for (size_t c = 0; c < ncols; c++)
+                                        {
+                                            if (!firstVal)
+                                                outFile << ",";
+                                            double val = matrixU[r][c];
+                                            if (std::isnan(val))
+                                                outFile << 0.0;
+                                            else
+                                                outFile << val;
+                                        
+                                            firstVal = false;
+                                        }
+                                    }
+                                }
+
+                                outFile << "]},"; // close first object
+
+                                // ------------------
+                                // 2) Northward wind (windV)
+                                // ------------------
+                                outFile << R"({"header": {)"
+                                        << R"("parameterUnit": "m.s-1",)"
+                                        << R"("parameterNumber": 3,)"
+                                        << R"("dx": )" << dx << ","
+                                        << R"("dy": )" << dy << ","
+                                        << R"("parameterNumberName": "northward_wind",)"
+                                        << R"("la1": )" << northLat << ","
+                                        << R"("la2": )" << southLat << ","
+                                        << R"("parameterCategory": 2,)"
+                                        << R"("lo2": )" << eastLon << ","
+                                        << R"("nx": )" << ncols << ","
+                                        << R"("ny": )" << nrows << ","
+                                        << R"("refTime": ")" << referenceTime << R"(",)"
+                                        << R"("lo1": )" << westLon
+                                        << R"(},"data":[)";
+
+                                {
+                                    // Flatten matrixV to a 1D comma-separated list
+                                    bool firstVal = true;
+                                    for (size_t r = 0; r < nrows; r++)
+                                    {
+                                        for (size_t c = 0; c < ncols; c++)
+                                        {
+                                            if (!firstVal)
+                                                outFile << ",";
+                                            outFile << matrixV[r][c];
+                                            firstVal = false;
+                                        }
+                                    }
+                                }
+
+                                outFile << "]}]"; // close second object + JSON array
+                                outFile.close();
+                            }
+                    }
+    
+                    // Still handle optional projectionOut if present
                     if (argMap.find("projectionOut") != argMap.end())
                     {
                         double westLon = getDomain()->getLonFromX(SWX);
                         double eastLon = getDomain()->getLonFromX(NEX);
                         double southLat = getDomain()->getLatFromY(SWY);
                         double northLat = getDomain()->getLatFromY(NEY);
-                        
+    
                         std::string projectionPath = argMap["projectionOut"];
                         if (projectionPath == "json")
                         {
-                            // Output JSON formatted projection string.
-                            // Assuming currentSession.outStream is a valid stream pointer.
+                            double minVal = minMax[0] ;
+                            double maxVal = minMax[1];
                             *currentSession.outStream << "{\"SWlon\":" << westLon
                                                       << ",\"SWlat\":" << southLat
                                                       << ",\"NElon\":" << eastLon
-                                                      << ",\"NElat\":" << northLat << "}"<<std::endl;
+                                                      << ",\"NElat\":" << northLat 
+                                                      << ",\"minVal\":" << minVal
+                                                      << ",\"maxVal\":" << maxVal
+                                                      << "}" << std::endl;
                         }
-                        else if (projectionPath.size() >= 4 &&
-                                 projectionPath.substr(projectionPath.size() - 4) == ".kml")
+
+                    }
+                }
+                // --------------------------------------------------------------
+                // ELSE: original logic for other parameters / file extensions
+                // --------------------------------------------------------------
+                else
+                {
+                    // Standard approach: fetch single matrix for the requested "parameter"
+                    auto matrix = getDomain()->getDataMatrix(parameter, SWB, NEB, eni, enj);
+                    auto minMax = getMinMax(matrix);
+                    if (!matrix.empty())
+                    {
+                        std::string lowerFilename = filename;
+                        std::transform(lowerFilename.begin(), lowerFilename.end(),
+                                       lowerFilename.begin(), ::tolower);
+    
+                        // e.g. PNG/JPG
+                        if (lowerFilename.size() >= 4 &&
+                           (lowerFilename.substr(lowerFilename.size() - 4) == ".png" ||
+                            lowerFilename.substr(lowerFilename.size() - 4) == ".jpg"))
                         {
-                            // Write KML file.
-                            std::ofstream kmlFile(projectionPath);
-                            if (kmlFile.is_open())
+                            writeImage(filename.c_str(), matrix, minVal, maxVal, colormap);
+                            if (argMap.find("histbins") != argMap.end())
                             {
-                                // For KML, convert Cartesian coordinates back to geographic (lon, lat).
-            
-                                kmlFile << "<Document>\n"
-                                        << "  <TimeStamp><when>" << simParam->FormatISODate(simParam->getDouble("refTime"), simParam->getInt("refYear"), simParam->getInt("refDay")) << "</when></TimeStamp>\n"
-                                        << "  <GroundOverlay>\n"
-                                        << "    <name>" << parameter << "</name>\n"
-                                        << "    <Icon>\n"
-                                        << "      <href>" << filename << "</href>\n"
-                                        << "      <viewBoundScale>1</viewBoundScale>\n"
-                                        << "    </Icon>\n"
-                                        << "    <LatLonBox>\n"
-                                        << "      <north>" << northLat << "</north>\n"
-                                        << "      <south>" << southLat << "</south>\n"
-                                        << "      <east>" << eastLon << "</east>\n"
-                                        << "      <west>" << westLon << "</west>\n"
-                                        << "    </LatLonBox>\n"
-                                        << "  </GroundOverlay>\n"
-                                        << "</Document>\n";
-                                kmlFile.close();
+                                int numbins = std::stoi(argMap["histbins"]);
+                                writeHistogram(filename.c_str(), matrix, numbins, minVal, maxVal, colormap);
                             }
-                            else
+                        }
+                        // e.g. NetCDF
+                        else if (lowerFilename.size() >= 3 &&
+                                 lowerFilename.substr(lowerFilename.size() - 3) == ".nc")
+                        {
+                            std::vector<double> latitudes, longitudes;
+                            double westLon = getDomain()->getLonFromX(SWX);
+                            double eastLon = getDomain()->getLonFromX(NEX);
+                            double southLat = getDomain()->getLatFromY(SWY);
+                            double northLat = getDomain()->getLatFromY(NEY);
+                            size_t nlat = (enj > 0) ? enj : 100;
+                            size_t nlon = (eni > 0) ? eni : 100;
+                            double dLat = (northLat - southLat) / (nlat - 1);
+                            double dLon = (eastLon - westLon) / (nlon - 1);
+    
+                            for (size_t j = 0; j < nlat; j++)
+                                latitudes.push_back(southLat + j * dLat);
+                            for (size_t i = 0; i < nlon; i++)
+                                longitudes.push_back(westLon + i * dLon);
+    
+                            writeNetCDF(filename.c_str(), parameter, matrix, latitudes, longitudes);
+                        }
+                        // e.g. ASCII
+                        else if (lowerFilename.size() >= 4 &&
+                                 lowerFilename.substr(lowerFilename.size() - 4) == ".asc")
+                        {
+                            writeASCII(filename.c_str(), matrix, SWX, SWY, NEX, NEY);
+                        }
+                        else
+                        {
+                            std::cerr << "Unsupported file extension: " << filename << std::endl;
+                        }
+    
+                        // Optional projectionOut
+                        if (argMap.find("projectionOut") != argMap.end())
+                        {
+                            double westLon = getDomain()->getLonFromX(SWX);
+                            double eastLon = getDomain()->getLonFromX(NEX);
+                            double southLat = getDomain()->getLatFromY(SWY);
+                            double northLat = getDomain()->getLatFromY(NEY);
+    
+                            std::string projectionPath = argMap["projectionOut"];
+                            if (projectionPath == "json")
                             {
-                                std::cerr << "Error writing KML file to " << projectionPath << std::endl;
+                                double minVal = minMax[0];
+                                double maxVal = minMax[1];
+                                *currentSession.outStream << "{\"SWlon\":" << westLon
+                                                          << ",\"SWlat\":" << southLat
+                                                          << ",\"NElon\":" << eastLon
+                                                          << ",\"NElat\":" << northLat 
+                                                          << ",\"minVal\":" << minVal
+                                                          << ",\"maxVal\":" << maxVal
+                                                          << "}" << std::endl;
+                            }
+                            else if (projectionPath.size() >= 4 &&
+                                     projectionPath.substr(projectionPath.size() - 4) == ".kml")
+                            {
+                                std::ofstream kmlFile(projectionPath);
+                                if (kmlFile.is_open())
+                                {
+                                    kmlFile << "<Document>\n"
+                                            << "  <TimeStamp><when>"
+                                            << simParam->FormatISODate(simParam->getDouble("refTime"),
+                                                                       simParam->getInt("refYear"),
+                                                                       simParam->getInt("refDay"))
+                                            << "</when></TimeStamp>\n"
+                                            << "  <GroundOverlay>\n"
+                                            << "    <name>" << parameter << "</name>\n"
+                                            << "    <Icon>\n"
+                                            << "      <href>" << filename << "</href>\n"
+                                            << "      <viewBoundScale>1</viewBoundScale>\n"
+                                            << "    </Icon>\n"
+                                            << "    <LatLonBox>\n"
+                                            << "      <north>" << northLat << "</north>\n"
+                                            << "      <south>" << southLat << "</south>\n"
+                                            << "      <east>" << eastLon << "</east>\n"
+                                            << "      <west>" << westLon << "</west>\n"
+                                            << "    </LatLonBox>\n"
+                                            << "  </GroundOverlay>\n"
+                                            << "</Document>\n";
+                                    kmlFile.close();
+                                }
+                                else
+                                {
+                                    std::cerr << "Error writing KML file to " << projectionPath << std::endl;
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    std::cerr << "Error: No data available for parameter '" << parameter << "'." << std::endl;
+                    else
+                    {
+                        std::cerr << "Error: No data available for parameter '" << parameter << "'." << std::endl;
+                    }
                 }
             }
             else
@@ -1203,8 +1427,10 @@ namespace libforefire
                 std::cerr << "Error: Filename not provided in the argument." << std::endl;
             }
         }
+    
         return normal;
     }
+    
 
     int Command::loadSimulation(const std::string &arg, size_t &numTabs)
     {
@@ -2115,11 +2341,13 @@ namespace libforefire
         }
 
         // Check the option to determine how to interpret the values.
-        if (opt == "lonLat")
+      
+        if (opt == "lonlat")
         {
             // Convert spherical (lon, lat) to Cartesian coordinates (x, y).
             double x = getDomain()->getXFromLon(v1);
             double y = getDomain()->getYFromLat(v2);
+   
             return FFPoint(x, y, v3);
         }
         else
