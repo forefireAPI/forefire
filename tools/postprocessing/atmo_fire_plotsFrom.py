@@ -9,7 +9,6 @@ Created on Tue Jun 11 18:07:15 2024
 import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from matplotlib.ticker import ScalarFormatter, LogFormatter
 import numpy as np
 import contextily as ctx
 # from pyproj import Proj, transform
@@ -18,11 +17,8 @@ from pyproj import Transformer
 import pandas as pd
 from datetime import datetime
 import os
-from scipy import ndimage
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pylatex import Document, Section, Subsection, Itemize, Figure, NoEscape, Command
 from pylatex import MiniPage,SubFigure
-import subprocess
 
 import glob
 # Function to compute the normal vector

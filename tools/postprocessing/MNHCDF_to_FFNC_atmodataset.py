@@ -21,7 +21,6 @@ import sys
 home_dir = os.path.expanduser("~")
 
 sys.path.append(home_dir+'/soft/firefront/tools/')
-from preprocessing.ffToGeoJson import get_WSEN_LBRT_ZS_From_Pgd
 
 ##-----------------------------------------------------------------------------
 # Function to print the file list inside a directory
