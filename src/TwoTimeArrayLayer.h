@@ -59,7 +59,6 @@ template<typename T> class TwoTimeArrayLayer : public DataLayer<T> {
 
 	SimulationParameters* params;
 
-	static const int mnhMult = 100;
 	
 
 	/*! \brief extending the matrix of mnh size to an extended one */
@@ -97,8 +96,6 @@ public:
 		size = arrayt1->getSize();
 		
 		tmpMatrix = new FFArray<T>("coreMatrix", 0., nx-2, ny-2);
-		params = SimulationParameters::GetInstance();
-		params->setInt("mnhMultiplier", mnhMult);
 	};
 	/*! \brief Destructor */
 	virtual ~TwoTimeArrayLayer(){
@@ -198,85 +195,6 @@ void TwoTimeArrayLayer<T>::copyDomainInformation(
 	}
 }
 
-template<typename T>
-void TwoTimeArrayLayer<T>::dispatchOuterInformation(
-		FFArray<T>* outMatrix, FFArray<T>* exMatrix){
-	size_t nnx = outMatrix->getDim("x");
-	size_t nny = outMatrix->getDim("y");
-	/* copying the data from the matrix into the borders */
-	for ( size_t i = 1; i < nnx-1; i++ ){
-		(*exMatrix)(i+1,0) = (*outMatrix)(i,0);
-		(*exMatrix)(i+1,nny+1) = (*outMatrix)(i,nny-1);
-	}
-	for ( size_t j = 1; j < nny-2; j++ ){
-		(*exMatrix)(0,j+1) = (*outMatrix)(0,j);
-		(*exMatrix)(nnx+1,j+1) = (*outMatrix)(nnx-1,j);
-	}
-	/* handling the corners */
-	double val1, val2, val3;
-	// SW Corner
-	int val = (int) (*outMatrix)(0,0);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(1,0) = val1;
-	(*exMatrix)(0,0) = val2;
-	(*exMatrix)(0,1) = val3;
-	val = (int) (*outMatrix)(1,0);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(2,0) = val3;
-	val = (int) (*outMatrix)(0,1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(0,2) = val1;
-	// NW Corner
-	val = (int) (*outMatrix)(0,nny-1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(0,nny) = val1;
-	(*exMatrix)(0,nny+1) = val2;
-	(*exMatrix)(1,nny+1) = val3;
-	val = (int) (*outMatrix)(0,nny-2);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(0,nny-1) = val3;
-	val = (int) (*outMatrix)(1,nny-1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(2,nny+1) = val1;
-	// NE Corner
-	val = (int) (*outMatrix)(nnx-1,nny-1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx,nny+1) = val1;
-	(*exMatrix)(nnx+1,nny+1) = val2;
-	(*exMatrix)(nnx+1,nny) = val3;
-	val = (int) (*outMatrix)(nnx-2,nny-1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx-1,nny+1) = val3;
-	val = (int) (*outMatrix)(nnx-1,nny-2);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx+1,nny-1) = val1;
-	// SE Corner
-	val = (int) (*outMatrix)(nnx-1,0);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx+1,1) = val1;
-	(*exMatrix)(nnx+1,0) = val2;
-	(*exMatrix)(nnx,0) = val3;
-	val = (int) (*outMatrix)(nnx-1,1);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx+1,2) = val3;
-	val = (int) (*outMatrix)(nnx-2,0);
-	dispatchValues(val, val1, val2, val3);
-	(*exMatrix)(nnx-1,0) = val1;
-}
-
-template<typename T>
-void TwoTimeArrayLayer<T>::dispatchValues(int& ival, double& val1, double& val2, double& val3){
-	int ival1 = ival/(mnhMult*mnhMult*100);
-	double dval1 = (double) ival1;
-	val1 = dval1/mnhMult;
-	int ival2 = (int) ival-ival1*mnhMult*mnhMult*100;
-	int ival2b = ival2/(mnhMult*10);
-	double dval2 = (double) ival2b;
-	val2 = dval2/mnhMult;
-	int ival3 = ival2%(mnhMult*10);
-	double dval3 = (double) ival3;
-	val3 = dval3/mnhMult;
-}
 
 template<typename T>
 bool TwoTimeArrayLayer<T>::inBound(const size_t& ii, const size_t& jj){
@@ -381,7 +299,8 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 		, const size_t& sizein, size_t& sizeout, const double& newTime){
 				
 	if ( tmpMatrix->getSize() == sizein ){
-		if ( mname == "windU" or mname == "windV" ){
+		if ( mname == "windU" or mname == "windV" or mname == "plumeTopHeight" or mname == "plumeBottomHeight" or mname == "smokeAtGround" or mname == "tke"  ){
+			
 			
 			/* Information concerning the whole domain */
 			// pointing the current array to the future one
@@ -406,10 +325,6 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 				FileOut.close();
 			#endif
 
-		} else if ( mname == "outerWindU" or mname == "outerWindV" ){
-			/* Information concerning the outer wind velocities */
-			tmpMatrix->copyDataFromFortran(inMatrix);
-			dispatchOuterInformation(tmpMatrix, arrayt2);
 		} else {
 			cout<<"Argument in setMatrix for "<<this->getKey()
 					<<" not recognized: "<<mname<<endl;
@@ -426,8 +341,8 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 					, plotSW, plotNE, nnx, nny);
 		}
 	} else {
-		cout<<"Error while trying to retrieve data for data layer "
-				<<this->getKey()<<", matrix size not matching"<<endl;
+		cout<<"Error while trying to retrieve data for two times array data layer "
+				<<this->getKey()<<", matrix size "<< tmpMatrix->getSize() <<" not matching "<<sizein  <<endl;
 	}
 }
 

@@ -178,6 +178,7 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("relax","0.5"));
 	parameters.insert(make_pair("smoothing","1"));
 	parameters.insert(make_pair("windReductionFactor","0.4"));
+	parameters.insert(make_pair("defaultColormap","turbo"));
 	parameters.insert(make_pair("atmoNX", "100"));
 	parameters.insert(make_pair("atmoNY", "100"));
 	parameters.insert(make_pair("atmoNZ", "20"));

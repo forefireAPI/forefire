@@ -411,19 +411,40 @@ namespace libforefire
 																	   atmosphericData->windU, time, atmosphericData->oldWindU, time,
 																	   windUOrigin, dx, dy);
 		registerLayer("windU", wul);
-		registerLayer("outerWindU", wul);
+		 
 		FFPoint windVOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
 									  atmoSWCorner.getY() - dy, 0);
 		TwoTimeArrayLayer<double> *wvl = new TwoTimeArrayLayer<double>("windV",
 																	   atmosphericData->windV, time, atmosphericData->oldWindV, time,
 																	   windVOrigin, dx, dy);
 		registerLayer("windV", wvl);
-		registerLayer("outerWindV", wvl);
-
+	 
+		
 		// Loading the topography
 		Array2DdataLayer<double> *alt = new Array2DdataLayer<double>("altitude", atmosphericData->topography, atmoSWCorner, atmoNECorner);
-
 		registerLayer("altitude", alt);
+
+		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
+									  atmoSWCorner.getY() - 0.5 *dy, 0);
+
+	   TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time,  scalarOrigin, dx,dy);
+	   registerLayer("plumeTopHeight", pth);
+
+	   // Loading the plume bottom height layer
+	   TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", atmosphericData->plumeBottomHeight, time, atmosphericData->oldplumeBottomHeight, time,  scalarOrigin, dx,dy);
+	   registerLayer("plumeBottomHeight", pbh);
+
+	   // Loading the smoke at ground layer
+	   TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", atmosphericData->smokeAtGround, time, atmosphericData->oldsmokeAtGround, time,  scalarOrigin, dx,dy);
+	   registerLayer("smokeAtGround", sag);
+
+	   // Loading the TKE layer
+	   TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", atmosphericData->tke,time, atmosphericData->oldtke, time,  scalarOrigin, dx,dy);
+	   registerLayer("tke", tkeLayer);
+
+
+
+
 	}
 
 	void DataBroker::loadMultiWindBin(double refTime, size_t numberOfDomains, size_t *startI, size_t *startJ)

@@ -172,12 +172,8 @@ namespace libforefire
 
     int Command::startFire(const string &arg, size_t &numTabs)
     {
-
+        double t = getDomain()->getTime();
         size_t n = argCount(arg);
-        if (n < 2)
-        {
-            throw MissingTime();
-        }
 
         if (getDomain()->getDomainID() > 0)
         {
@@ -203,17 +199,17 @@ namespace libforefire
                 completeFront(currentSession.ff);
             }
 
-            double t = getFloat("t", arg);
+            double nt = getFloat("t", arg);
 
-            if (t == FLOATERROR)
+            if (nt != FLOATERROR)
             {
-                string date = getString("date", arg);
+                t = nt;
+            }
+             
+            string date = getString("date", arg);
 
-                if (date == stringError)
-                {
-                    return error;
-                }
-
+            if (date != stringError)
+            {
                 int year, yday;
                 double secs;
 
@@ -886,14 +882,15 @@ namespace libforefire
         ofstream outputfile(finalStr.c_str());
         if (outputfile)
         {
+            cout<<" putting into file "<<finalStr<<endl;
             simParam->setInt("count", simParam->getInt("count") + 1);
             if (currentSession.fdp != 0)
             {
-                *currentSession.outStream << currentSession.outStrRepp->dumpStringRepresentation();
+                outputfile << currentSession.outStrRepp->dumpStringRepresentation();
             }
             else
             {
-                *currentSession.outStream << currentSession.outStrRep->dumpStringRepresentation();
+                outputfile << currentSession.outStrRep->dumpStringRepresentation();
             }
         }
         else
@@ -1176,8 +1173,8 @@ namespace libforefire
                             double northLat = getDomain()->getLatFromY(NEY);
 
                             // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
-                            size_t nrows = matrixU.size();
-                            size_t ncols = (nrows > 0) ? matrixU[0].size() : 0;
+                            size_t ncols = matrixU.size();
+                            size_t nrows = (ncols > 0) ? matrixU[0].size() : 0;
 
                             double dx = (ncols > 1) ? (eastLon - westLon) / (ncols - 1) : 0.0;
                             double dy = (nrows > 1) ? (northLat - southLat) / (nrows - 1) : 0.0;
@@ -1226,7 +1223,7 @@ namespace libforefire
                                         {
                                             if (!firstVal)
                                                 outFile << ",";
-                                            double val = matrixU[r][c];
+                                            double val = matrixU[c][nrows-r-1];
                                             if (std::isnan(val))
                                                 outFile << 0.0;
                                             else
@@ -2834,7 +2831,12 @@ namespace libforefire
         //  Use the predefined colormaps or default to grayscale
         //  Retrieve colormap from map
         auto it = colormapMap.find(colormapName);
+        if (it == colormapMap.end()) {
+            it = colormapMap.find(currentSession.params->getParameter("defaultColormap"));
+        }
+        
         const ColorEntry *colorMap = it != colormapMap.end() ? it->second : greyColormap;
+        
         int mapSize = colormapSize; // Assuming all colormaps have the same size
 
         // Apply color mapping with corrected indices and flipping vertically

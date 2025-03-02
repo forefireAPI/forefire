@@ -4,7 +4,7 @@ const commands = {
     "FireNode": "FireNode[loc=(0.0,0.0,0.0);vel=(0.0,0.0,0.0);t=0.]",
     "FireFront": "FireFront[]",
     "startFire": "startFire[lonlat=(9.0,42.0,0.0);t=0.0]",
-    "step": "step[dt=5]",
+    "step": "step[dt=1200]",
     "trigger": "trigger[fuelIndice;loc=(x,y,z);fuelType=int or wind;loc=(x,y,z);vel=(vx,vy,vz);t=f]",
     "goTo": "goTo[t=56.2]",
     "print": "print[]",
@@ -127,17 +127,34 @@ const commands = {
       map.fitBounds(mapLayer.getBounds());
     }
   }
-  
-  // Update map with GeoJSON overlay.
-  function updateMapWithGeoJSON(geojson) {
-    if (mapLayer) {
+// Update map with GeoJSON overlay.
+function updateMapWithGeoJSON(geojson, refit = true) {
+  if (mapLayer) {
       map.removeLayer(mapLayer);
-    }
-    mapLayer = L.geoJSON(geojson).addTo(map);
-    if (mapLayer.getBounds && mapLayer.getBounds().isValid()) {
-      map.fitBounds(mapLayer.getBounds());
-    }
   }
+
+  // Define fire-like colors for styling
+  const fireStyle = {
+      color: "#ff4500",  // Fire orange-red outline
+      weight: 2,         // Line thickness
+      opacity: 1,        // Full opacity for edges
+      fillColor: "#ff6600", // Fire orange fill
+      fillOpacity: 0.7   // Semi-transparent fill
+  };
+
+  // Apply the fire-style to the GeoJSON layer
+  mapLayer = L.geoJSON(geojson, {
+      style: function (feature) {
+          return fireStyle;
+      }
+  }).addTo(map);
+
+  // Fit map to the bounds of the new GeoJSON layer if refit is true
+  if (refit && mapLayer.getBounds && mapLayer.getBounds().isValid()) {
+      map.fitBounds(mapLayer.getBounds());
+  }
+}
+
   
   // Add image overlay.
   function addImageOverlay(imageUrl, bounds) {
@@ -248,7 +265,7 @@ const commands = {
   map.on('dblclick', function(e) {
     const lat = e.latlng.lat.toFixed(6);
     const lon = e.latlng.lng.toFixed(6);
-    document.getElementById('commandInput').value += "startFire[lonlat=(" + lon + ", " + lat + ",0);t=0.0]";
+    document.getElementById('commandInput').value += "startFire[lonlat=(" + lon + ", " + lat + ",0)]";
   });
   
   // --- Layers Sidebar and Update ---
@@ -268,11 +285,11 @@ const commands = {
           if (layer === "fuel") {
             cmd = `plot[parameter=fuel;filename=fuel.png;range=(0,255);cmap=fuel;projectionOut=json${getBBoxParam()}]`;
           } else if (layer === "windU" || layer === "windV") {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;cmap=turbo;projectionOut=json${getBBoxParam()}]`;
+            cmd = `plot[parameter=${layer};filename=${layer}.png;projectionOut=json${getBBoxParam()}]`;
             if (layer === "windU") hasWindU = true;
             if (layer === "windV") hasWindV = true;
           } else {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;cmap=turbo;projectionOut=json${getBBoxParam()}]`;
+            cmd = `plot[parameter=${layer};filename=${layer}.png;projectionOut=json${getBBoxParam()}]`;
           }
           sendCommand(cmd).then(responseText => {
             try {
@@ -333,6 +350,7 @@ const commands = {
                     emptyString: "No velocity data",
                     angleConvention: "bearingCW",
                     showCardinal: false,
+                    useVectors: true,    
                     speedUnit: "ms",
                     directionString: "Direction",
                     speedString: "Speed"
@@ -342,7 +360,7 @@ const commands = {
                   minVelocity: windMin,
                   maxVelocity: windMax,
                   velocityScale: 0.005,
-                  opacity: 0.97,
+                  opacity: 1,
                   paneName: "overlayPane"
                 });
                 velocityLayer.addTo(map);
@@ -393,3 +411,89 @@ const commands = {
     sendCommand(cmd);
   });
   commandButtonsDiv.appendChild(freeMNH);
+
+  function setWindMapUseVector(useVectors) {
+    if (velocityLayer) {
+      velocityLayer.setOptions({
+        displayOptions: {
+          useVectors: useVectors
+        }
+      });
+    } else {
+      console.error("Velocity layer is not initialized");
+    }
+  }
+
+
+  let autoRefreshInterval = null;
+
+// 1) Factor out the refresh logic into a separate function:
+async function refreshMap() {
+  // The same logic you had in the 'refreshMap' button’s click handler
+  await sendCommand("setParameter[dumpMode=geojson]");
+  const geojsonText = await sendCommand("print[]");
+  if (geojsonText) {
+    try {
+      const geojson = JSON.parse(geojsonText);
+      updateMapWithGeoJSON(geojson, false);
+    } catch (e) {
+      console.error("Failed to parse GeoJSON:", e);
+    }
+  }
+
+  // If velocityLayer is active, refresh the wind data too:
+  if (velocityLayer) {
+    // Similar logic to the "wind" layer button
+    let cmd = `plot[parameter=wind;filename=windCS.json;size=60,60;projectionOut=json${getBBoxParam()}]`;
+    let responseText = await sendCommand(cmd);
+
+    let bboxData;
+    try {
+      bboxData = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Error parsing bounding box data:", e);
+    }
+
+    // Possibly create bounding box if none is defined yet
+    if (!bboxRect && bboxData && bboxData.SWlon !== undefined) {
+      createBoundingBoxFromResponse(bboxData);
+    }
+
+    let windMin = (bboxData && bboxData.minVal !== undefined) ? bboxData.minVal : 0;
+    let windMax = (bboxData && bboxData.maxVal !== undefined) ? bboxData.maxVal : 10;
+
+    // Re-fetch the actual JSON wind data
+    fetch("windCS.json")
+      .then(resp => resp.json())
+      .then(windData => {
+        // Remove old layer, if present
+        if (velocityLayer) {
+          velocityLayer.setData(windData);
+        }
+
+      })
+      .catch(e => {
+        console.error("Error fetching wind data:", e);
+      });
+  }
+}
+
+
+// 2) Link existing "Refresh Map" button to our new function:
+document.getElementById('refreshMap').addEventListener('click', refreshMap);
+
+// 3) Handle the auto-refresh checkbox changes:
+document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    // Start auto-refresh every 10 seconds (adjust as needed)
+    autoRefreshInterval = setInterval(refreshMap, 500);
+  } else {
+    // Stop auto-refresh
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+});
+
+document.getElementById('WindOrParts').addEventListener('change', (e) => {
+  setWindMapUseVector(e.target.checked)
+});
