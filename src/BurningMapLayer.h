@@ -130,10 +130,13 @@ size_t BurningMapLayer<T>::getValuesAt(FFPoint loc, const double& t
 
 template<typename T>
 T BurningMapLayer<T>::getNearestData(FFPoint loc){
-	cout<<"BurningMapLayer<T>::getNearestData() "
-			<<"shouldn't have been called"<<endl;
-	return 0.;
-}
+
+	/* getting the floor value */
+	size_t i = (size_t) (loc.getX()-getOriginX())/getDx();
+	size_t j = (size_t) (loc.getY()-getOriginY())/getDy();
+	
+	return domain->getArrivalTime(i, j);
+	}
 
 template<typename T>
 void BurningMapLayer<T>::getMatrix(

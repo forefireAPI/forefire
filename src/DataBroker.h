@@ -272,12 +272,6 @@ public:
 			, const size_t&, const size_t&);
 	void initializeAtmosphericLayers(const double&, const size_t&, const size_t&);
 
-	/*! \brief initializing the propagative layer */
-	//void initializePropagativeLayer(string);
-
-	/*! \brief initializing the flux layers */
-	//void initializeFluxLayers(string);
-
 	/*! \brief insuring the presence of all needed layers */
 	void insureLayersExistence();
 
@@ -285,17 +279,17 @@ public:
 	void initFluxLayers(const double&);
 
 	/*! \brief default constant layer constructor */
-	void addConstantLayer(string, const double&);
+	void addConstantLayer(const string& ,const string& ,const string& , double ,const FFPoint&S ,const FFPoint& );
 
 	/*! \brief typical double layer constructor */
-	void addLayer(string name, double &x0 , double &y0, double& t0, double& width , double& height, double& timespan, size_t& nnx, size_t& nny, size_t& nnz,  double* values);
+	//void addLayer(string name, double &x0 , double &y0, double& t0, double& width , double& height, double& timespan, size_t& nnx, size_t& nny, size_t& nnz,  double* values);
 
 	/*! \brief accessor to the desired data layer */
 	DataLayer<double>* getLayer(const string&);
 	
 	bool hasLayer(const string& ) ;
 
- 	XYZTDataLayer<double>* getwindULayer(); 
+ 	//XYZTDataLayer<double>* getwindULayer(); 
 	/*! \brief accessor to the desired flux layer */
 	FluxLayer<double>* getFluxLayer(const string&);
 
