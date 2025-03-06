@@ -72,6 +72,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return parent->getDx(); };
+	double getDy(){ return parent->getDy(); };
+	double getDz(){ return parent->getDz(); };
+	double getOriginX(	){ return parent->getOriginX(); };
+	double getOriginY(){ return parent->getOriginY(); };
+	double getOriginZ(){ return parent->getOriginZ(); };
+	double getWidth(){ return parent->getWidth(); };
+	double getHeight(){ return parent->getHeight(); };
+	double getDepth(){ return parent->getDepth(); };
 
 };
 

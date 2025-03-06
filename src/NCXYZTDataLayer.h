@@ -245,6 +245,17 @@ public:
 			, FFPoint&, FFPoint&, size_t&, size_t&);
 
 	void setProjectionDirVector(FFVector& ,FFPoint& );
+		
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return 		SWCornerX ; };
+	double getOriginY(){ return SWCornerX ; };
+	double getOriginZ(){ return SWCornerZ ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
+
 
 };
 
@@ -252,8 +263,6 @@ template<typename T>
 XYZTDataLayer<T>::~XYZTDataLayer() {
 	delete array;
 }
-
-
 
 template<typename T>
 T XYZTDataLayer<T>::getVal(size_t pos){
@@ -328,11 +337,16 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 
 		int uu = (int) ceil(ud-1);
 		int vv = (int) ceil(vd-1);
-
+/*
 		if ( uu < 0 ) uu = 0;
 		if ( uu > ((int) nx) - 2 ) uu = ((int) nx) - 2;
 		if ( vv < 0 ) vv = 0;
 		if ( vv > ((int) ny) - 2 ) vv = ((int) ny) - 2;
+		*/
+		if (uu < 0) return NAN;
+		if (uu > ((int) nx) - 2) return NAN;
+		if (vv < 0) return NAN;
+		if (vv > ((int) ny) - 2) return	NAN;
 
 		double udif = ud - ((double) uu);
 		double vdif = vd - ((double) vv);

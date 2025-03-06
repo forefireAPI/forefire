@@ -223,6 +223,17 @@ public:
 	string print2D(size_t, size_t);
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+ 
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return originX; };
+	double getOriginY(){ return originY; };
+	double getOriginZ(){ return originZ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
+
 
 	void setProjectionDirVector(FFVector& ,FFPoint& );
 

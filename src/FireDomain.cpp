@@ -44,7 +44,6 @@
 	 const double FireDomain::endChain = -1.;
 	 const double FireDomain::endCom = -10.;
 	 const double FireDomain::noCom = -100.;
-	 const int FireDomain::maxComNodes = 20;
  
  
 	 const string FireDomain::altitude = "altitude";
@@ -132,18 +131,15 @@
 						 Mney = std::max(Mney,(*it)->NECorner->getY());
 			  
 			 }
-			 SWCorner.setLoc(Mswx,Mswy);
-			 NECorner.setLoc(Mnex,Mney); 
-			 
-						 atmoNX = (Mnex-Mswx)/readRes;
-						 atmoNY = (Mney-Mswy)/readRes;
- 
-						 params->setSize("atmoNX",atmoNX);
-					  
-						 params->setSize("atmoNY",atmoNY);
-			 atmoNY = params->getSize("atmoNY");
- 
-			 
+			SWCorner.setLoc(Mswx,Mswy);
+			NECorner.setLoc(Mnex,Mney); 
+
+			atmoNX = (Mnex-Mswx)/readRes;
+			atmoNY = (Mney-Mswy)/readRes;
+
+			params->setSize("atmoNX",atmoNX);
+			params->setSize("atmoNY",atmoNY);
+			
  
 			 for (it = parallelDispatchDomains.begin(); it != parallelDispatchDomains.end(); it++)
 				 {
@@ -219,6 +215,7 @@
 						 SWCorner.getY() - 0.5 * dy,0);
 				 FFArray<double>* GwindU = new FFArray<double>("WindU", 0., atmoNX+2, atmoNY+2);
 				 FFArray<double>* GoldWindU = new FFArray<double>("oldWindU", 0., atmoNX+2, atmoNY+2);
+
 				 FFArray<double>* GwindV = new FFArray<double>("WindV", 0., atmoNX+2, atmoNY+2);
 				 FFArray<double>* GoldWindV = new FFArray<double>("oldWindV", 0., atmoNX+2, atmoNY+2);
  
@@ -226,8 +223,6 @@
 						 GwindU, getTime(), GoldWindU, getTime(),
 						 windUOrigin, dx, dy);
 				 dataBroker->registerLayer("windU", wul);
- 
- 
 				 cout<<"creating big wind data atmo resolution is "<<readRes<<" size "<< atmoNX+2<<":"<< atmoNY+2 <<endl;
 				 FFPoint windVOrigin = FFPoint(SWCorner.getX() - 0.5 * dx,
 						 SWCorner.getY() - dy,0.);
@@ -235,6 +230,38 @@
 						 GwindV, getTime(), GoldWindV, getTime(),
 						 windVOrigin, dx, dy);
 				 dataBroker->registerLayer("windV", wvl);
+				 
+				 FFPoint scalarOrigin = FFPoint(SWCorner.getX() - 0.5 * dx,
+				 SWCorner.getY() - 0.5 * dy,0.);
+
+				 FFArray<double>* plumeTopHeight = new FFArray<double>("plumeTopHeight", 0.,  atmoNX+2, atmoNY+2); 
+				 FFArray<double>* plumeBottomHeight = new FFArray<double>("plumeBottomHeight", 0.,  atmoNX+2, atmoNY+2); 
+				 FFArray<double>* smokeAtGround = new FFArray<double>("smokeAtGround", 0.,  atmoNX+2, atmoNY+2); 
+				 FFArray<double>* tke = new FFArray<double>("tke", 0.,  atmoNX+2, atmoNY+2);
+
+				 FFArray<double>* oldplumeTopHeight = new FFArray<double>("oldplumeTopHeight", 0.,atmoNX+2, atmoNY+2); 
+				 FFArray<double>* oldplumeBottomHeight = new FFArray<double>("oldplumeBottomHeight", 0., atmoNX+2, atmoNY+2); 
+				 FFArray<double>* oldsmokeAtGround = new FFArray<double>("oldsmokeAtGround", 0., atmoNX+2, atmoNY+2); 
+				 FFArray<double>* oldtke = new FFArray<double>("oldtke", 0., atmoNX+2, atmoNY+2); 
+
+		
+				 TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", plumeTopHeight, getTime(), oldplumeTopHeight, getTime(),  scalarOrigin, dx,dy);
+				dataBroker->registerLayer("plumeTopHeight", pth);
+
+				// Loading the plume bottom height layer
+				TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", plumeBottomHeight, getTime(), oldplumeBottomHeight, getTime(),  scalarOrigin, dx,dy);
+				dataBroker->registerLayer("plumeBottomHeight", pbh);
+
+				// Loading the smoke at ground layer
+				TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", smokeAtGround, getTime(), oldsmokeAtGround, getTime(),  scalarOrigin, dx,dy);
+				dataBroker->registerLayer("smokeAtGround", sag);
+
+				// Loading the TKE layer
+				TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", tke,getTime(), oldtke, getTime(),  scalarOrigin, dx,dy);
+				dataBroker->registerLayer("tke", tkeLayer);
+
+
+
 				 ///////////////////
 		 }
  
@@ -730,21 +757,28 @@
 		 PropagationModel* model = propModelInstanciation(mindex, mname);
 		 if ( model == 0 ) return false;
 		 /* Instantiating a flux layer related to this model */
-		 propagativeLayer = new PropagativeLayer<double>(mname, mindex);
+		 propagativeLayer = new PropagativeLayer<double>("ROSlayer", mindex);
 		 return true;
 	 }
  
 	 bool FireDomain::addLayer(string type, string layername, string keyname){
- 
+		double timespan = 0;
+		size_t  nnx = 1;
+		size_t nny = 1;
+		size_t nnz = 1;
+		size_t nnk = 1;
+
+		double spanx = NECorner.x -SWCorner.x;
+		double spany = NECorner.y -SWCorner.y;
  
  
 		 if ( type == "BRatio" ){
-			 BurningRatioLayer<double>* brlayer = new BurningRatioLayer<double>(layername, atmoNX, atmoNY, cells);
+			 BurningRatioLayer<double>* brlayer = new BurningRatioLayer<double>(layername, SWCorner, NECorner, atmoNX, atmoNY, cells);
 			 dataBroker->registerLayer(layername, brlayer);
 			 return true;
 		 }
 		 if ( type == "MaxRos" ){
-			 RosLayer<double>* mrlayer = new RosLayer<double>(layername, atmoNX, atmoNY, cells);
+			 RosLayer<double>* mrlayer = new RosLayer<double>(layername, SWCorner, NECorner, atmoNX, atmoNY, cells);
 				 dataBroker->registerLayer(layername, mrlayer);
 				 return true;
 			 }
@@ -755,14 +789,7 @@
 			 return false;
 		 }
  
-		 double timespan = 0;
-		 size_t  nnx = 1;
-		 size_t nny = 1;
-		 size_t nnz = 1;
-		 size_t nnk = 1;
- 
-		 double spanx = NECorner.x -SWCorner.x;
-		 double spany = NECorner.y -SWCorner.y;
+
  
 		 if ( type == "data" ){
 			 double* values = new double[1];
@@ -841,7 +868,7 @@
 		 if ( lname == "BRatio" or lname == "Bratio" or lname == "bratio" ){
 			 /* Instantiating a burning ratio layer */
 			 BurningRatioLayer<double>* brlayer =
-			 new BurningRatioLayer<double>(lname, atmoNX, atmoNY, cells);
+			 new BurningRatioLayer<double>(lname,  SWCorner, NECorner,atmoNX, atmoNY, cells);
 			 dataBroker->registerLayer(lname, brlayer);
 			 return true;
 		 }
@@ -1741,7 +1768,28 @@
 		 return ncell;
 	 }
  
- 
+	 vector<double> FireDomain::getActiveBBoxLBRT() {
+		double left   = std::numeric_limits<double>::infinity();
+		double bottom = std::numeric_limits<double>::infinity();
+		double right  = -std::numeric_limits<double>::infinity();
+		double top    = -std::numeric_limits<double>::infinity();
+	
+		for (size_t i = 0; i < atmoNX; i++) {
+			for (size_t j = 0; j < atmoNY; j++) {
+				if (cells[i][j].isActive()) {
+					// Update left and bottom from the southwest corner.
+					left   = min(left, cells[i][j].getSWCorner().getX());
+					bottom = min(bottom, cells[i][j].getSWCorner().getY());
+	
+					// Update right and top from the northeast corner.
+					right  = max(right, cells[i][j].getNECorner().getX());
+					top    = max(top, cells[i][j].getNECorner().getY());
+				}
+			}
+		}
+	
+		return {left, bottom, right, top};
+	}
  /*
 	 void FireDomain::dumpCellsInBinary(){
 		 // Check if the run mode is "masterMNH" and the domain ID is 0
@@ -2857,10 +2905,8 @@
 		 }
  
 		 /* loading the layers for parallel processing */
-		 if ( parallel ){
-			 dataBroker->initializeParallelProperties(
-													  atmoNX, atmoNY, params->getInt("numFNMax"), noCom);
-		 } else {
+		 if ( not parallel ){
+			 
 			 if ( getDomainID() != 0 ) {
 				 cout<<"WARNING: but this proc has an mpi rank of "<<getDomainID()<<endl;
 			 }
@@ -2893,7 +2939,6 @@
  
 	 DataLayer<double>* FireDomain::getDataLayer(const string& name){
  
- 
 		 return dataBroker->getLayer(name);
 	 }
  
@@ -2921,6 +2966,24 @@
 	 double FireDomain::getMetersPerDegreesLon()  {
 		 return metersPerDegreesLon;
 	 }
+
+
+	double FireDomain::getXFromLon(double lon) {
+		return (lon - getRefLongitude()) * getMetersPerDegreesLon();
+	}
+	
+	double FireDomain::getYFromLat(double lat) {
+		return (lat - getRefLatitude()) * getMetersPerDegreeLat();
+	}
+	
+	double FireDomain::getLonFromX(double x) {
+		return x / getMetersPerDegreesLon() + getRefLongitude();
+	}
+	
+	double FireDomain::getLatFromY(double y) {
+		return y / getMetersPerDegreeLat() + getRefLatitude();
+	}
+
  
 	 void FireDomain::getChainAt(
 								 const list<FireNodeData*>& hlist, const int& pos
@@ -3027,9 +3090,7 @@
 		 if ( abs(loc.getY()-SWCornerY()) < EPSILONX ) return 3;
 		 return -1;
 	 }
-	 int FireDomain::getMaxComNodes(){
-		 return maxComNodes;
-	 }
+
 	 FireNode* FireDomain::findRelatedPreviousLink(
 												   list<FireNode*> prevLinks, FFPoint loc){
  
@@ -3317,91 +3378,90 @@
  
 	 // Function: getDataMatrix
 // Description: Returns a 2D matrix of doubles corresponding to the provided data name.
-	std::vector<std::vector<double>> FireDomain::getDataMatrix(const std::string& name, const std::string& arg) {
+    std::vector<std::vector<double>> FireDomain::getDataMatrix(const std::string& name) {
+		size_t eni = 0;
+		size_t enj = 0;
+		return getDataMatrix(name, SWCorner ,NECorner,eni,enj);
+	}
+	std::vector<std::vector<double>> FireDomain::getDataMatrix(const std::string& name, FFPoint& SWbound, FFPoint& NEbound, size_t& eni, size_t& enj) {
+		double extractWidth = NEbound.getX() - SWbound.getX();
+		double extractHeight = NEbound.getY() - SWbound.getY();
+		double domainWidth = NECornerX() - SWCornerX();
+		double domainHeight = NECornerY() - SWCornerY();
 
-		
-		// Case 1: "speed" data
-		if (name == "speed") {
-			// Create a matrix with dimensions (globalBMapSizeX x globalBMapSizeY), initialized to -9999
-			std::vector<std::vector<double>> matrix(globalBMapSizeX, std::vector<double>(globalBMapSizeY, -9999));
-			for (size_t i = 0; i < globalBMapSizeX; i++) {
-				for (size_t j = 0; j < globalBMapSizeY; j++) {
-					matrix[i][j] = getMaxSpeed(i, j);  // Assumes getMaxSpeed returns the speed value at (i, j)
-				}
-			}
-			return matrix;
+		if((extractWidth <= 0) || (extractHeight <= 0)) {
+			std::cerr << "Error: Invalid bounding box " << std::endl;
+			return std::vector<std::vector<double>>(1, std::vector<double>(1, -9999));
 		}
 
-		// Case 2: "arrival_time" data
-		if (name == "arrival_time") {
-			// Create a matrix with dimensions (globalBMapSizeX x globalBMapSizeY), initialized to -9999
-			std::vector<std::vector<double>> matrix(globalBMapSizeX, std::vector<double>(globalBMapSizeY, -9999));
-			for (size_t i = 0; i < globalBMapSizeX; i++) {
-				for (size_t j = 0; j < globalBMapSizeY; j++) {
-					matrix[i][j] = getArrivalTime(i, j);  // Assumes getArrivalTime returns the arrival time at (i, j)
-				}
-			}
-			return matrix;
-		}
+
+		double resX = 0.0;
+		double resY = 0.0;
 		double lTime = getSimulationTime();
-		// Case 3: Data available from a FluxLayer
-		FluxLayer<double>* fluxLayer = getFluxLayer(name);
-		if (fluxLayer != nullptr) {
-			//std::cout << "DataLayer " << name << " found" << std::endl;
+		// Case 1: "speed" data
+		if ((name == "speed") || (name == "arrival_time")) {
 
-			// Retrieve the multidimensional array from the flux layer (t is assumed to be defined in context)
-			FFArray<double>* srcD = nullptr;
-			fluxLayer->getMatrix(&srcD, lTime);
-			double* data = srcD->getData();
-			int nnx = srcD->getDim("x");
-			int nny = srcD->getDim("y");
-			int nnz = srcD->getDim("z");
-			int nnt = srcD->getDim("t");
-
-			// Proceed only if the data is effectively 2D (i.e. z == 1 and t == 1)
-			if (nnz == 1 && nnt == 1) {
-				size_t total_size = static_cast<size_t>(nnx) * nny;
-				// Temporary vector for reshaping data (if necessary for index order conversion)
-				std::vector<double> reshaped_data(total_size);
-
-				if (nnz == 1 && nnt == 1) {
-					// Build the final 2D matrix
-					std::vector<std::vector<double>> matrix(nnx, std::vector<double>(nny, -9999));
-					for (int x = 0; x < nnx; ++x) {
-						for (int y = 0; y < nny; ++y) {
-							matrix[x][y] = data[y + nny * x];
-						}
-					}
-					return matrix;
-				}
-
+			// Create a matrix with dimensions (globalBMapSizeX x globalBMapSizeY), initialized to -9999
+			if ((eni == 0)||(enj == 0)) {
+				resX = domainWidth/globalBMapSizeX;
+				resY = domainHeight/globalBMapSizeY;		
+				eni = extractWidth/resX;
+				enj = extractHeight/resY;
+			}else{
+				resX = extractWidth/eni;
+				resY = extractHeight/enj;
 			}
+
+			std::vector<std::vector<double>> matrix(eni, std::vector<double>(enj, -9999));
+
+			FFPoint itp = FFPoint(SWbound.getX()+resX/2, SWbound.getY()+resY/2, 0.0);
+			if (name == "speed") {
+				for (size_t i = 0; i < eni; i++) {
+					itp.setX(SWbound.getX()+resX/2 + i*resX);
+					for (size_t j = 0; j < enj; j++) {
+						itp.setY(SWbound.getY()+resY/2 + j*resY);
+						matrix[i][j] = getMaxSpeed(itp);  
+					}
+				}
+			}
+			if (name == "arrival_time") {
+				for (size_t i = 0; i < eni; i++) {
+					itp.setX(SWbound.getX()+resX/2 + i*resX);
+					for (size_t j = 0; j < enj; j++) {
+						itp.setY(SWbound.getY()+resY/2 + j*resY);
+						matrix[i][j] = getArrivalTime(itp);  
+					}
+				}
+			}
+			return matrix;
 		}
-
-		// Case 4: Data available from a DataLayer
+		// Case 3: Data available from a FluxLayer
 		DataLayer<double>* dataLayer = getDataLayer(name);
-		if (dataLayer != nullptr) {
-			//std::cout << "DataLayer " << name << " found" << std::endl;
-
-			// Retrieve the multidimensional array from the data layer
-			FFArray<double>* srcD = nullptr;
-			dataLayer->getMatrix(&srcD, lTime);
-			double* data = srcD->getData();
-			int nnx = srcD->getDim("x");
-			int nny = srcD->getDim("y");
-			int nnz = srcD->getDim("z");
-			int nnt = srcD->getDim("t");
-			// Proceed only if the data is effectively 2D (i.e. z == 1 and t == 1)
-			if (nnz == 1 && nnt == 1) {
-				// Build the final 2D matrix
-				std::vector<std::vector<double>> matrix(nnx, std::vector<double>(nny, -9999));
-				for (int x = 0; x < nnx; ++x) {
-					for (int y = 0; y < nny; ++y) {
-						matrix[x][y] = data[y + nny * x];
-					}
-				}
-				return matrix;
+		if (dataLayer == 0) {
+			cout << "DataLayer is null from data" << endl;
+			dataLayer = getFluxLayer(name);
+		
+		}
+	 	if (dataLayer != 0) {
+			if ((eni == 0)||(enj == 0)) {
+				resX = dataLayer->getDx();
+				resY = dataLayer->getDy();	
+				eni = extractWidth/resX;
+				enj = extractHeight/resY;
+			}else{
+				resX = extractWidth/eni;
+				resY = extractHeight/enj;
 			}
+			FFPoint itp = FFPoint(SWbound.getX()+resX/2, SWbound.getY()+resY/2, 0.0);
+			std::vector<std::vector<double>> matrix(eni, std::vector<double>(enj, -9999));
+			for (size_t i = 0; i < eni; i++) {
+				itp.setX(SWbound.getX()+resX/2 + i*resX);
+				for (size_t j = 0; j < enj; j++) {
+					itp.setY(SWbound.getY()+resY/2 + j*resY);
+					matrix[i][j] = dataLayer->getValueAt(itp,lTime);  
+				}
+			}
+			return matrix;
 		}
 
 		// Error case: Unrecognized data name
