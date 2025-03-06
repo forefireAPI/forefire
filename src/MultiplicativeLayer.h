@@ -98,6 +98,16 @@ public:
 	string print2D(size_t, size_t);
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return baseLayer->getDx(); };
+	double getDy(){ return baseLayer->getDy(); };
+	double getDz(){ return baseLayer->getDz(); };
+	double getOriginX(	){ return baseLayer->getOriginX(); };
+	double getOriginY(){ return baseLayer->getOriginY(); };
+	double getOriginZ(){ return baseLayer->getOriginZ(); };
+	double getWidth(){ baseLayer->getWidth(); };
+	double getHeight(){ baseLayer->getHeight(); };
+	double getDepth(){ baseLayer->getDepth(); };
 
 };
 

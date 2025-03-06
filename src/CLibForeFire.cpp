@@ -357,10 +357,9 @@ void MNHStep(double dt){
 	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 
 	while (mnhPause>0) {
-		sleep(1);
-		mnhPause = mnhPause-1;
+		sleep(static_cast<unsigned int>(mnhPause));
 		mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
-		std::cout<<"restarting in "<<mnhPause<<std::endl;
+		std::cout<<"setParameter[MNHalt=0] to restart, waiting for "<<mnhPause<<std::endl;
 	}
 	SimulationParameters::GetInstance()->setInt("MNHalt",0);
 
@@ -375,14 +374,14 @@ void FFGetDoubleArray(const char* mname, double t
 	string tmpname(mname);
 	double ct = executor.refTime + t;
 	// searching for the layer to put data
-	//cout<<session->fd->getDomainID()<<" is getting "<<tmpname<<endl;
 
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
 	if ( myLayer ){
 		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
-
+		
+	
 			#ifdef MPI_COUPLING
-			if ( tmpname == "windU" or tmpname == "windV"  ){
+			if ( tmpname == "windU" or tmpname == "windV" or tmpname == "plumeTopHeight" or tmpname == "plumeBottomHeight" or tmpname == "smokeAtGround" or tmpname == "tke"  ){
 				FFArray<double>* t2;
 				myLayer->getMatrix(&t2,0);
 				MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);

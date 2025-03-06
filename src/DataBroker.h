@@ -70,15 +70,13 @@ class DataBroker {
 	size_t atmosphericNx, atmosphericNy; /*!< size of the atmospheric matrices */
 	AtmosphericData* atmosphericData; /*!< pointer to the atmospheric-related data */
 
-	// Information concerning the embedded parallelism
-	ParallelData* parallelData; /*!< pointer to the parallel-related data */
 
 	// map of the data layers
 	map<string, DataLayer<double>* > layersMap; /*!< map of the different scalar layers stored in the data broker */
 	map<string, DataLayer<double>* >::iterator ilayer; /*!< iterator of the list of layers */
 	map<string, FluxLayer<double>* > fluxLayersMap; /*!< map of the different flux layers stored in the data broker */
 	map<string, FluxLayer<double>* >::iterator flayer; /*!< iterator of the list of layers */
-
+	
 	// List of the data layers
 	list<DataLayer<double>* > layers; /*!< list of the different layers stored in the data broker */
 	list<FluxLayer<double>* > fluxLayers; /*!< list of the different flux layers stored in the data broker */
@@ -155,9 +153,7 @@ class DataBroker {
 	/*! \brief getting the desired property for given firenode */
 	double getProperty(FireNode*, string);
 
-	/*! \brief getting the desired property for given location */
-	double getProperty(FFPoint, string);
-
+	
 	/* Pre-defined function for propagation models */
 
 	/*! \brief predefined function for getting the value of a dummy variable for given firenode */
@@ -247,7 +243,7 @@ public:
 
 	/*! \brief registering a propagation model */
 	void registerPropagationModel(PropagationModel*);
-
+	vector<string> getAllLayerNames() ;
 	void updateFuelValues(PropagationModel*, string key, double value );
 
 	/*! \brief registering a flux model */
@@ -281,10 +277,6 @@ public:
 
 	/*! \brief initializing the flux layers */
 	//void initializeFluxLayers(string);
-
-	/*! \brief initializing the parallel properties */
-	void initializeParallelProperties(const size_t&, const size_t&
-			, const size_t&, const double&);
 
 	/*! \brief insuring the presence of all needed layers */
 	void insureLayersExistence();

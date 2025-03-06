@@ -63,7 +63,7 @@ public:
 	void setDouble(string, double);
 	void setInt(string, int);
 	void setSize(string, size_t);
-
+	vector<string> getAllKeys();
 	bool isValued(string);
 
 	string getParameter(string);

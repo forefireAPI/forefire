@@ -49,12 +49,11 @@ ff["atmoNX"] = sim_shape[1]
 ff["atmoNY"] = sim_shape[0]
 
 fuel_map = np.zeros((1, 1) + sim_shape)
-altitude_map = np.zeros((1, 1) + sim_shape)
 
 for i, k in enumerate(k_coeffs):
     fuel_map[0, 0, :, sub_sim_shape[1] *i:sub_sim_shape[1] * (i + 1)] = ffhelpers.fill_random((sub_sim_shape[0], sub_sim_shape[1]), k, fuel_type)
-
-wind_map = np.zeros((2,2,domain_width,domain_height))
+print("creating domain of ",domain_width,domain_height, " size of data ",sim_shape[1],sim_shape[0]) 
+wind_map = np.zeros((2,2,sim_shape[1],sim_shape[0]))
 
 windU=wind_map[0:1,:,:,:]  
 windU[0,0,:,:].fill(1.0)
@@ -80,7 +79,7 @@ ff.addScalarLayer("windScalDir", "windU", float(ff["SWx"]), float(ff["SWy"]), 0,
 ff.addScalarLayer("windScalDir", "windV", float(ff["SWx"]), float(ff["SWy"]), 0, float(ff["Lx"]), float(ff["Ly"]), 0, windV)
 
 
-GlobalWindScalerU = 0                       # The Horizontal wind
+GlobalWindScalerU = 0                     # The Horizontal wind
 GlobalWindScalerV = 3                     # The Vertical wind
 ff.execute(f"trigger[wind;loc=(0.,0.,0.);vel=({GlobalWindScalerU},{GlobalWindScalerV},0);t={0}]")
 
@@ -102,9 +101,9 @@ for i in range(1, nb_steps+1):
 
     except KeyboardInterrupt:
         break
-ff.execute("save[filename=percolation.nc;fields=altitude,wind]")
+ff.execute("save[filename=percolation.nc;fields=altitude,wind,fuel]")
 ffplotExtents =(float(ff["SWx"]),float(ff["SWx"]) + float(ff["Lx"]),float(ff["SWy"]),float(ff["SWy"]) + float(ff["Ly"]))
-bmap = ff.getDoubleArray("BMap")[0,0,:,:]
+#bmap = ff.getDoubleArray("BMap")[0,0,:,:]
 ff.execute("save[]")
 
 #ffhelpers.plot_simulation(pathes,ff.getDoubleArray("fuel")[0,0,:,:] ,None,  ffplotExtents ,scalMap=bmap)

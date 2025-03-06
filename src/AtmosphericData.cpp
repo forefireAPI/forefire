@@ -30,6 +30,10 @@ AtmosphericData::AtmosphericData() {
 	topography = 0;
 	oldTime = 0;
 	currentTime=0;
+	plumeTopHeight= 0; 
+	plumeBottomHeight= 0; 
+	smokeAtGround= 0; 
+	tke = 0; 
 }
 
 AtmosphericData::~AtmosphericData() {
@@ -47,6 +51,26 @@ void AtmosphericData::setSize(const size_t& nx, const size_t& ny){
 	oldWindV = new FFArray<double>("OldWindV", 0., nx+2, ny+2);
 	if ( topography ) delete topography;
 	topography = new FFArray<double>("Topography", 0., nx, ny);
+	
+	if ( plumeTopHeight ) delete plumeTopHeight;
+	plumeTopHeight = new FFArray<double>("plumeTopHeight", 0., nx+2, ny+2);
+	if ( plumeBottomHeight ) delete plumeBottomHeight;
+	plumeBottomHeight = new FFArray<double>("plumeBottomHeight", 0., nx+2, ny+2);
+	if ( smokeAtGround ) delete smokeAtGround;
+	smokeAtGround = new FFArray<double>("smokeAtGround", 0.,nx+2, ny+2);
+	if ( tke ) delete tke;
+	tke = new FFArray<double>("tke", 0., nx+2, ny+2);
+
+	if ( oldplumeTopHeight ) delete oldplumeTopHeight;
+	oldplumeTopHeight = new FFArray<double>("oldplumeTopHeight", 0.,  nx+2, ny+2);
+	if ( oldplumeBottomHeight ) delete oldplumeBottomHeight;
+	oldplumeBottomHeight = new FFArray<double>("oldplumeBottomHeight", 0.,  nx+2, ny+2);
+	if ( oldsmokeAtGround ) delete oldsmokeAtGround;
+	oldsmokeAtGround = new FFArray<double>("oldsmokeAtGround", 0.,  nx+2, ny+2);
+	if ( oldtke ) delete oldtke;
+	oldtke = new FFArray<double>("oldtke", 0.,  nx+2, ny+2);
+
+
 }
 
 size_t AtmosphericData::getSize(){

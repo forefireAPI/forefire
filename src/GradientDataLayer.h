@@ -72,6 +72,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return parent->getDx(); };
+	double getDy(){ return parent->getDy(); };
+	double getDz(){ return parent->getDz(); };
+	double getOriginX(	){ return parent->getOriginX(); };
+	double getOriginY(){ return parent->getOriginY(); };
+	double getOriginZ(){ return parent->getOriginZ(); };
+	double getWidth(){ return parent->getWidth(); };
+	double getHeight(){ return parent->getHeight(); };
+	double getDepth(){ return parent->getDepth(); };
 
 };
 
@@ -86,11 +96,36 @@ T GradientDataLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time){
-	cout << "this call shouln't be used in a gradient layer" << endl;
-	return 0.;
-}
+T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time) {
+    // Get the current value at the given location.
+    T currentValue = parent->getValueAt(loc, time);
 
+    // Prepare the eight unit directions.
+    vector<FFPoint> directions;
+    directions.push_back(FFPoint(1, 0,0));
+    directions.push_back(FFPoint(1, 1,0));
+    directions.push_back(FFPoint(0, 1,0));
+    directions.push_back(FFPoint(-1, 1,0));
+    directions.push_back(FFPoint(-1, 0,0));
+    directions.push_back(FFPoint(-1, -1,0));
+    directions.push_back(FFPoint(0, -1,0));
+    directions.push_back(FFPoint(1, -1,0));
+
+
+    // Compute the gradient in each direction and find the maximum.
+    T maxGradient = 0.0;
+    for (size_t i = 0; i < directions.size(); ++i) {
+        FFPoint nextLoc = loc + (10 * directions[i]);
+        T neighborValue = parent->getValueAt(nextLoc, time);
+        // Since the displacement magnitude is dx in every case (after normalization),
+        // the gradient is computed as the difference divided by dx.
+        T gradient = (neighborValue - currentValue) / 10;
+        if (gradient > maxGradient) {
+            maxGradient = gradient;
+        }
+    }
+    return maxGradient;
+}
 template<typename T>
 size_t GradientDataLayer<T>::getValuesAt(FireNode* fn
 		, PropagationModel* model, size_t curItem){

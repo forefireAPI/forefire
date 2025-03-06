@@ -194,6 +194,17 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return SWCorner.getX(); };
+	double getOriginY(){ return SWCorner.getY(); };
+	double getOriginZ(){ return SWCorner.getZ(); };
+	double getWidth(){ return NECorner.getX()-SWCorner.getX(); };
+	double getHeight(){ return NECorner.getY()-SWCorner.getY(); };
+	double getDepth(){ return 0; };
+		
 
 };
 

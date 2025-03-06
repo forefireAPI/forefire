@@ -178,6 +178,7 @@ SimulationParameters::SimulationParameters(){
 	parameters.insert(make_pair("relax","0.5"));
 	parameters.insert(make_pair("smoothing","1"));
 	parameters.insert(make_pair("windReductionFactor","0.4"));
+	parameters.insert(make_pair("defaultColormap","turbo"));
 	parameters.insert(make_pair("atmoNX", "100"));
 	parameters.insert(make_pair("atmoNY", "100"));
 	parameters.insert(make_pair("atmoNZ", "20"));
@@ -217,7 +218,13 @@ SimulationParameters::SimulationParameters(){
 
 SimulationParameters::~SimulationParameters() {
 }
-
+vector<string> SimulationParameters::getAllKeys() {
+    vector<string> keys;
+    for (map<string, string>::iterator it = parameters.begin(); it != parameters.end(); ++it) {
+        keys.push_back(it->first);
+    }
+    return keys;
+}
 void SimulationParameters::setParameter(string key, string value, bool protect){
 	//cout<<"setting "<<key<<" to "<<value<<endl;
 	list<string>::iterator protection
