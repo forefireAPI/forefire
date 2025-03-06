@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 
 #include "DataLayer.h"
 #include "FDCell.h"
+#include "FFPoint.h"
 
 using namespace std;
 
@@ -43,7 +44,7 @@ template<typename T> class BurningRatioLayer : public DataLayer<T> {
 	size_t size; /*!< size of the array */
 
 	FFArray<T>* ratioMap; /*!< pointer to the array of burning ratios */
-
+	FFPoint SWCorner, NECorner;
 	FDCell** cells; /*!< pointers to the atmospheric cells */
 
 	double latestCall; /*!< time of the latest call to getMatrix() */
@@ -57,8 +58,8 @@ public:
 	/*! \brief Default constructor */
 	BurningRatioLayer() : DataLayer<T>() {};
 	/*! \brief Constructor with all necessary information */
-	BurningRatioLayer(string name, const size_t& nnx, const size_t& nny, FDCell** FDcells)
-	: DataLayer<T>(name), nx(nnx), ny(nny), cells(FDcells) {
+	BurningRatioLayer(string name, FFPoint& atmoSWCorner, FFPoint& atmoNECorner, const size_t& nnx, const size_t& nny, FDCell** FDcells)
+	: DataLayer<T>(name), SWCorner(atmoSWCorner), NECorner(atmoNECorner), nx(nnx), ny(nny), cells(FDcells) {
 		size = nx*ny;
 		ratioMap = new FFArray<T>("BRatio", 0., nx, ny);
 		latestCall = -1.;
@@ -91,6 +92,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return SWCorner.getX(); };
+	double getOriginY(){ return SWCorner.getY(); };
+	double getOriginZ(){ return SWCorner.getZ(); };
+	double getWidth(){ return NECorner.getX()-SWCorner.getX(); };
+	double getHeight(){ return NECorner.getY()-SWCorner.getY(); };
+	double getDepth(){ return 0; };
 
 };
 

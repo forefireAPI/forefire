@@ -57,6 +57,17 @@ public:
 	/*! \brief computes the value at a given location and time */
 	virtual T getValueAt(FFPoint, const double&) =0;
 
+	virtual double getDx() = 0;
+	virtual double getDy() = 0;
+	virtual double getDz() = 0;
+	virtual double getOriginX() = 0;
+	virtual double getOriginY() = 0;
+	virtual double getOriginZ() = 0;
+	virtual double getWidth() = 0;
+	virtual double getHeight() = 0;
+	virtual double getDepth() = 0;
+	
+	
 	/*! \brief set the value at a given location and time */
 
 	virtual void setValueAt(FFPoint ,  double , T ) = 0;

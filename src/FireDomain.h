@@ -172,7 +172,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	static const double endChain; /*!< Marker for the end of the chain */
 	static const double endCom; /*!< Marker for the end of communication */
 	static const double noCom; /*!< Marker for no communication (non-active halos) */
-	static const int maxComNodes; /*!< Max number of com markers */
 
 	/*! \brief list of link nodes */
 	list<FireNode*> linkNodes;
@@ -250,9 +249,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 	FireNode* findClosestWithinNodeInList(FFPoint&, const double&, const list<FireNode*>&);
 	FireNode* findClosestWithinNodeInList(FireNodeData*, const double&, const list<FireNode*>&);
 
-	/*! \brief finding good candidates when information from other procs isn't relevant */
-	FireNode* findSuitableRelatedNodeBackward(FireNode*);
-	FireNode* findSuitableRelatedNodeForward(FireNode*);
+
 	FireNode* findExistingNodeNear(FireNodeData*);
 
 	/*-----------------*/
@@ -353,21 +350,18 @@ public:
     // Getter for the longitude conversion factor.
     double getMetersPerDegreesLon() ;
 
+	double getXFromLon(double) ;
+	double getYFromLat(double) ;
+	double getLonFromX(double) ;
+	double getLatFromY(double) ;
+	vector<double> getActiveBBoxLBRT();
+
 	static bool commandOutputs; /*! boolean for command outputs */
 	static bool outputs; /*! boolean for outputs */
 	static bool recycleNodes; // to recycle nodes in memory
 	static bool recycleFronts; //to recycle fronts in memory
 	static size_t atmoIterNumber;
 
-	/*! \brief halos
-	Halo* southOuterHalo;
-	Halo* westOuterHalo;
-	Halo* northOuterHalo;
-	Halo* eastOuterHalo;
-	Halo* southInnerHalo;
-	Halo* westInnerHalo;
-	Halo* northInnerHalo;
-	Halo* eastInnerHalo; */
 
 	bool atmosphericCoupling; /*! boolean for coupled simulations */
 	bool parallel; /*! boolean for parallel simulations */
@@ -447,8 +441,6 @@ public:
 	/*! \brief give Max com nodes */
 	int getMaxComNodes();
 
-	/*! \brief Setting parameters of the simulation */
-	void setParameter(string, string);
 
 	/*! \brief Mutators */
 	void setBoundariesFront(FireFront*);
@@ -641,8 +633,8 @@ public:
 	void areaBurningScan(FFPoint&, FFPoint&, double);
 
     /*! \brief retrun a diag matrix */
-	std::vector<std::vector<double>> getDataMatrix(const std::string& ,const std::string& ) ;
-	
+	std::vector<std::vector<double>> getDataMatrix(const std::string& ) ;
+	std::vector<std::vector<double>> getDataMatrix(const std::string& , FFPoint& , FFPoint& , size_t& , size_t& ) ;
 	/*! \brief checking the burning status of a given location */
 	bool checkForBurningStatus(FFPoint&);
 

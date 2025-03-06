@@ -54,6 +54,7 @@ public:
 	BurningMapLayer(string name, FireDomain* fd
 			, const size_t& nnx, const size_t& nny)
 	: DataLayer<T>(name), nx(nnx), ny(nny), domain(fd) {
+		domain=fd;
 		size = nx*ny;
 		arrivalTimes = new FFArray<T>("BMap", 0., nx, ny);
 		latestCall = -1.;
@@ -86,6 +87,17 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return domain->getSWCorner().getX(); };
+	double getOriginY(){ return domain->getSWCorner().getY(); };
+	double getOriginZ(){ return 0;};
+	double getWidth(){ return domain->getNECorner().getX()-domain->getSWCorner().getX(); };
+	double getHeight(){ return domain->getNECorner().getY()-domain->getSWCorner().getY(); };
+	double getDepth(){ return 0; };
+
 
 };
 

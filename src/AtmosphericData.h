@@ -48,6 +48,16 @@ public:
 	FFArray<double>* oldWindV; /*!< Surface wind field, V component (end of the time step) */
 
 	FFArray<double>* topography; /*!< Topography provided by the atmospheric model for real cases */
+	FFArray<double>* plumeTopHeight; 
+	FFArray<double>* plumeBottomHeight; 
+	FFArray<double>* smokeAtGround; 
+	FFArray<double>* tke; 
+
+
+	FFArray<double>* oldplumeTopHeight; 
+	FFArray<double>* oldplumeBottomHeight; 
+	FFArray<double>* oldsmokeAtGround; 
+	FFArray<double>* oldtke; 
 
 	/*! \brief Setting all the size parameters according to atmospheric simulation */
 	void setSize(const size_t&, const size_t&);
