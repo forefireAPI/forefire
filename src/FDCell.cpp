@@ -269,10 +269,14 @@ int FDCell::activeModelsOnBmap(string layername,const double& t, int* modelCount
 
 double FDCell::applyModelsOnBmap(string layername, const double& bt, const double& et,int* modelCount){
 	/* if the burning map is not allocated */
-	if ( arrivalTimes == 0 ) return 0.;
+	if ( arrivalTimes == 0 ){ 
+		return 0.;
+	}
+	 
 	/* loading the flux layer */
 	FluxLayer<double>* layer = domain->getFluxLayer(layername);
 
+	 
 	/* else getting the ratio and checking
 	 * that there is still something burning*/
 	double cellFlux = 0.;
@@ -280,6 +284,7 @@ double FDCell::applyModelsOnBmap(string layername, const double& bt, const doubl
 	int modelIndex;
 	center.setX(SWCorner.getX()+0.5*dx);
 	double arrivalTime, value;
+	 
 	for ( size_t i = 0; i < mapSizeX; i++ ){
 		center.setY(SWCorner.getY()+0.5*dy);
 		for ( size_t j = 0; j < mapSizeY; j++ ){

@@ -240,6 +240,7 @@ void CheckLayer(const char* lname){
 	FluxLayer<double>* myLayer = session->fd->getFluxLayer(tmpname);
 
 	if ( myLayer == 0 ){
+		cout<<"WARNING: "<<tmpname <<" is required but not defined, creating default"<<endl;
 		if ( !session->fd->addFluxLayer(tmpname) ){
 			cout<<"WARNING: layer for "<<tmpname
 					<<" could not be found within ForeFire framework, "
@@ -251,6 +252,10 @@ void CheckLayer(const char* lname){
 void MNHStep(double dt){
 
 	#ifdef MPI_COUPLING
+
+
+	 
+
 		size_t sizeofcell = session->fd->getlocalBMapSize();
 	
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -352,8 +357,8 @@ void MNHStep(double dt){
  		
 	ostringstream cmd;
 	cmd << "step[dt=" << dt <<"]";
-	string scmd = cmd.str();
-	executor.ExecuteCommand(scmd);
+	string scmd = cmd.str(); 
+	executor.ExecuteCommand(scmd); 
 	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 
 	while (mnhPause>0) {
@@ -362,8 +367,8 @@ void MNHStep(double dt){
 		std::cout<<"setParameter[MNHalt=0] to restart, waiting for "<<mnhPause<<std::endl;
 	}
 	SimulationParameters::GetInstance()->setInt("MNHalt",0);
-
-
+ 
+	
 	}
 	
 
@@ -373,14 +378,14 @@ void FFGetDoubleArray(const char* mname, double t
 		, double* x, size_t sizein, size_t sizeout){
 	string tmpname(mname);
 	double ct = executor.refTime + t;
-	// searching for the layer to put data
-
-	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
+	// searching for the layer to put data 
+	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname); 
 	if ( myLayer ){
 		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
 		
 	
 			#ifdef MPI_COUPLING
+			
 			if ( tmpname == "windU" or tmpname == "windV" or tmpname == "plumeTopHeight" or tmpname == "plumeBottomHeight" or tmpname == "smokeAtGround" or tmpname == "tke"  ){
 				FFArray<double>* t2;
 				myLayer->getMatrix(&t2,0);
@@ -468,8 +473,8 @@ void FFPutDoubleArray(const char* mname, double* x,
 		size_t sizein, size_t sizeout){
 	string tmpname(mname);
 	// searching for concerned layer
-
-	//cout<<session->fd->getDomainID()<<" is putting "<<tmpname<<endl;
+ 
+ 
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
 
 	if ( myLayer ){

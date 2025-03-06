@@ -91,7 +91,7 @@
 		 isFireActive = false;
 		 refLatitude = 0.;
 		 refLongitude = 0.;
- 
+		 atmosphericCoupling = false;
 		 propagationSpeedAdjustmentFactor =1;
 		 //parallelDispatchDomains.size() = 0;
 		 params = SimulationParameters::GetInstance();
@@ -109,7 +109,7 @@
 			 #endif
 			 cout<<"all inited, the big now with "<<parallelDispatchDomains.size()<<" total "<<parallelDispatchDomains.size()<<endl;
  
-  
+			 atmosphericCoupling = true;
 	 
 			 if(parallelDispatchDomains.size() >0){
  
@@ -188,7 +188,7 @@
 		 params->setInt("parallel", 0);
  
 		 // simulation won't be be run with mnh
-		 atmosphericCoupling = false;
+		
  
 		 // reference time
 		 int year = params->getInt("refYear");
@@ -205,7 +205,7 @@
 		 // Common initialization for all constructors
 		 commonInitialization(cellsMeshX,cellsMeshY , year, yday);
  
-		 if ((params->getParameter("runmode") == "masterMNH")&&(readRes>0)){
+		/* if ((params->getParameter("runmode") == "masterMNH")&&(readRes>0)){
  
 				 double dx = readRes;
 				 double dy = readRes;
@@ -263,7 +263,7 @@
 
 
 				 ///////////////////
-		 }
+		 }*/
  
 	 }
  
@@ -863,7 +863,7 @@
 	 bool FireDomain::addFluxLayer(string lname){
 		 /* searching if there exists a flux model with associated name */
 		 /* affecting it to free index */
- 
+		
 		 // Burning ratio is special as it is derived from the heat flux layer
 		 if ( lname == "BRatio" or lname == "Bratio" or lname == "bratio" ){
 			 /* Instantiating a burning ratio layer */
@@ -878,6 +878,13 @@
 		 string fmname = lname;
 		 if ( lname == "heatFlux" ) fmname = "heatFluxBasic";
 		 if ( lname == "vaporFlux" ) fmname = "vaporFluxBasic";
+		 
+		 string defaultModelKey = lname+"DefaultModel";
+
+		 if (params->isValued(defaultModelKey)){
+			fmname =  params->getParameter(lname+"DefaultModel");
+		 }
+
 		 FluxModel* model = fluxModelInstanciation(mindex, fmname);
  
 		 if ( model != 0 ){
@@ -1406,7 +1413,7 @@
 	 double FireDomain::getModelValueAt(int& modelIndex
 										, FFPoint& loc, const double& bt, const double& et, const double& at){
 		 if(fluxModelsTable[0] == NULL){
-			 cout <<"Warning, no heat flux layer registered"<<endl;
+			 cout <<"Warning, no  flux layer registered"<<endl;
 			 return 0;
 		 }
 		 return fluxModelsTable[modelIndex]->getValueAt(loc, bt, et, at);
@@ -2572,45 +2579,8 @@
 			 // std::cout<<"ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<refLongitude<< " mx:"<<cellsMeshX[0]<<" my:"<<cellsMeshY[0] <<std::endl;
 		 }
  
-		 const double EARTH_RADIUS = 6370987.0; // Earth's radius in meters
-		 double EARTH_RADIUS_ALONG_MERIDIAN = 6342516;
-		 double EARTH_RADIUS_ALONG_LATITUDE = 6371189;
-		 
-		 double refLatitudeRad = refLatitude * (PI / 180.0);
-		 
- 
-		 // Compute metersPerDegreeLat
-		 metersPerDegreeLat = (PI * EARTH_RADIUS_ALONG_LATITUDE) / 180.0;
-		 metersPerDegreesLon = (PI * EARTH_RADIUS_ALONG_MERIDIAN * std::cos(refLatitudeRad)) / 180.0;
- /*
-		 vector<double> WSENLBRT = params->getDoubleArray("WSENLBRT");
-		 double metersPerDegreeLatR = (WSENLBRT[7]-WSENLBRT[5])/(WSENLBRT[3]-WSENLBRT[1]);
-		 
-		 double metersPerDegreeLonR = (WSENLBRT[6]-WSENLBRT[4])/(WSENLBRT[2]-WSENLBRT[0]);
-  
-		metersPerDegreeLat is not correct enough... value in metersPerDegreeLatR is perfect
-		 metersPerDegreesLon is not correct enough...  value in metersPerDegreeLonR i perfect
-		 can you compute and cout<<CORRECTED_EARTH_RADIUS_ALONG_LATITUDE and CORRECTED_EARTH_RADIUS_ALONG_MERIDIAN from metersPerDegreeLatR and metersPerDegreeLonR
-		 *//*
-		 std::cout<<"ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<getRefLongitude()<< " mx:"<<getMetersPerDegreesLon()<<" my:"<<getMetersPerDegreeLat()<<endl;
-		 std::cout<<"ID"<<getID()<< " la:"<< WSENLBRT[1]<<" lo:"<<WSENLBRT[0]<< " mx:"<<metersPerDegreeLonR<<" my:"<<metersPerDegreeLatR<<endl;
-		 
-		 double CORRECTED_EARTH_RADIUS_ALONG_LATITUDE = (metersPerDegreeLatR * 180.0) / PI;
-		 double CORRECTED_EARTH_RADIUS_ALONG_MERIDIAN = (metersPerDegreeLonR * 180.0) / (PI * std::cos(refLatitudeRad));
- 
-		 std::cout << "Corrected Earth Radius along Latitude: " << (size_t)CORRECTED_EARTH_RADIUS_ALONG_LATITUDE << std::endl;
-		 std::cout << "Corrected Earth Radius along Meridian: " << (size_t)CORRECTED_EARTH_RADIUS_ALONG_MERIDIAN << std::endl;
-		 
-		 std::cout<<cellsMeshX[0]<< ":"<<cellsMeshX[atmoNX]<< "    "<<cellsMeshY[0]<<":"<<cellsMeshY[atmoNY]<<endl;
-		 std::cout<<WSENLBRT[4]<< ":"<<WSENLBRT[6]<< "    "<<WSENLBRT[5]<<":"<<WSENLBRT[7]<<endl;
- */
-		 
-		 //std::cout<<"ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<getRefLongitude()<< " mx:"<<getMetersPerDegreesLon()<<" my:"<<getMetersPerDegreeLat()<<endl;
- 
- //		std::cout<<"ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<refLongitude<< " mx:"<<cellsMeshX[0]<<" my:"<<cellsMeshY[0] ;
-	 //	std::cout<<" atmoNX:"<< atmoNX<<" atmoNY:"<<atmoNY<< " mxe:"<<cellsMeshX[atmoNX-1]<<" mye:"<<cellsMeshY[atmoNY-1] ;
- //		std::cout<<" END"<<endl;
- 
+
+
  
 		 /* domain front */
 		 domainFront = FireFrontFactory();
@@ -2873,24 +2843,22 @@
 			 dataBroker->initializeAtmosphericLayers(getTime()
 													 , globalBMapSizeX, globalBMapSizeY);
 		 }
-		 //dataBroker->initializePropagativeLayer(infile.str());
-		 //dataBroker->initializeFluxLayers(infile.str());
-		 /* loading the data from a netCDF file */
+
 		 dataBroker->loadFromNCFile(infile.str());
- 
-		 /*std::cout<<"AFTER LOAD ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<refLongitude<< " mx:"<<cellsMeshX[0]<<" my:"<<cellsMeshY[0]<< " mxe:"<<cellsMeshX[atmoNX]<<" mye:"<<cellsMeshY[atmoNY]<<std::endl;
-		 if (params->isValued("SWLngLat"))
-			 std::cout<<" SWLngLat:"<<params->getParameter("SWLngLat");
-		 if (params->isValued("NELngLat"))
-			 std::cout<<" NELngLat:"<<params->getParameter("NELngLat");
-		 if (params->isValued("WSENLBRT"))
-			 std::cout<<" WSENLBRT:"<<params->getParameter("WSENLBRT");
-		 if (params->isValued("BBoxWSEN"))
-			 std::cout<<" BBoxWSEN:"<<params->getParameter("BBoxWSEN");
-		 if (params->isValued("runmode"))
-			 std::cout<<"runmode: "<<params->getParameter("runmode");
-		 std::cout<<" END"<<endl;
- */
+
+		 if ( params->isValued("metersPerDegreeLat") ){
+			 metersPerDegreeLat = params->getDouble("metersPerDegreeLat");
+			 metersPerDegreesLon = params->getDouble("metersPerDegreesLon");
+		 } else {
+			double EARTH_RADIUS_ALONG_MERIDIAN = 6342516;
+			double EARTH_RADIUS_ALONG_LATITUDE = 6371189;
+			
+			double refLatitudeRad = refLatitude * (PI / 180.0);
+		   
+			metersPerDegreeLat = (PI * EARTH_RADIUS_ALONG_LATITUDE) / 180.0;
+			metersPerDegreesLon = (PI * EARTH_RADIUS_ALONG_MERIDIAN * std::cos(refLatitudeRad)) / 180.0;
+		}
+
  
  
 		 /* Insuring the presence of needed layers */
@@ -2911,7 +2879,7 @@
 				 cout<<"WARNING: but this proc has an mpi rank of "<<getDomainID()<<endl;
 			 }
 		 }
- 
+		 cout<<"INITED: this proc has an mpi rank of "<<getDomainID()<<endl;
 	 }
  
 	 int FireDomain::getNumFN(){
@@ -3443,6 +3411,7 @@
 		
 		}
 	 	if (dataLayer != 0) {
+			
 			if ((eni == 0)||(enj == 0)) {
 				resX = dataLayer->getDx();
 				resY = dataLayer->getDy();	
