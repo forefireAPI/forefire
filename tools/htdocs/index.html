@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <!-- leaflet-velocity CSS -->
   <link rel="stylesheet" href="js/leaflet-velocity.css" />
-
   <style>
     /* Global Styles */
     html, body {
@@ -62,13 +61,19 @@
       display: flex;
       flex-direction: column;
     }
-    /* Header: big orange date */
+    /* Header: big orange date with toggle checkbox */
     #dateHeader {
       background: #111;
       text-align: center;
       font-size: 2em;
       color: orange;
       padding: 10px;
+    }
+    #dateHeader label {
+      font-size: 0.5em;
+      color: #ccc;
+      margin-left: 10px;
+      cursor: pointer;
     }
     /* Response Console: server responses */
     #responseConsole {
@@ -159,8 +164,15 @@
     </div>
     <!-- Main area -->
     <div id="mainArea">
-      <!-- Header: Date -->
-      <div id="dateHeader">Date: N/A</div>
+      <!-- Header: Date with a toggle checkbox for logs -->
+      <div id="dateHeader">
+        Date: N/A
+
+      </div>
+      <label>
+        <input type="checkbox" id="toggleLogs" checked>
+        Show Logs
+      </label>
       <!-- Response Console -->
       <div id="responseConsole"></div>
       <!-- Command History -->
@@ -181,8 +193,6 @@
       <div id="commandButtons"></div>
       <!-- Map Container -->
       <div id="map"></div>
-      <!-- Wind Canvas for rosacewind -->
-
     </div>
   </div>
   
@@ -193,5 +203,26 @@
   <script src="js/rosacewind.js"></script>
   <!-- Our GUI JS -->
   <script src="js/forefireGUI.js"></script>
+  
+  <!-- Script to toggle logs -->
+  <script>
+    const toggleLogs = document.getElementById('toggleLogs');
+    const responseConsole = document.getElementById('responseConsole');
+    const commandHistory = document.getElementById('commandHistory');
+
+    toggleLogs.addEventListener('change', function() {
+      const displayStyle = this.checked ? 'block' : 'none';
+      responseConsole.style.display = displayStyle;
+      commandHistory.style.display = displayStyle;
+      
+      // Optional: Adjust map height if needed when logs are hidden
+      // For example, increase the map height when logs are hidden
+      if (!this.checked) {
+        document.getElementById('map').style.height = '700px';
+      } else {
+        document.getElementById('map').style.height = '500px';
+      }
+    });
+  </script>
 </body>
 </html>

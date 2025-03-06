@@ -74,7 +74,7 @@ namespace libforefire
 		/* atmospheric data */
 		atmosphericData = new AtmosphericData();
 		/* parallel data */
-	
+
 		/* data brokers for propagation models */
 		propDataGetters.resize(FireDomain::NUM_MAX_PROPMODELS);
 		numPropDataGetters.resize(FireDomain::NUM_MAX_PROPMODELS);
@@ -304,7 +304,7 @@ namespace libforefire
 	{
 
 		/* inserting the layer into the map of layers */
-		 
+
 		ilayer = layersMap.find(name);
 		if (ilayer != layersMap.end())
 		{
@@ -364,11 +364,12 @@ namespace libforefire
 	}
 
 	void DataBroker::registerFluxLayer(string name, FluxLayer<double> *layer)
-	{
-
+	{	
+ 
 		flayer = fluxLayersMap.find(name);
 		if (flayer != fluxLayersMap.end())
 		{
+		 
 			FluxLayer<double> *oldlayer = flayer->second;
 			fluxLayersMap.erase(name);
 			fluxLayers.remove(oldlayer);
@@ -381,9 +382,9 @@ namespace libforefire
 		/* looking for possible match with predefined layers */
 		if (name.find("heatFlux") != string::npos)
 		{
-
 			heatFluxLayer = layer;
 		}
+		
 	}
 
 	void DataBroker::setAtmosphericDomain(const FFPoint &SWCorner,
@@ -411,40 +412,35 @@ namespace libforefire
 																	   atmosphericData->windU, time, atmosphericData->oldWindU, time,
 																	   windUOrigin, dx, dy);
 		registerLayer("windU", wul);
-		 
+
 		FFPoint windVOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
 									  atmoSWCorner.getY() - dy, 0);
 		TwoTimeArrayLayer<double> *wvl = new TwoTimeArrayLayer<double>("windV",
 																	   atmosphericData->windV, time, atmosphericData->oldWindV, time,
 																	   windVOrigin, dx, dy);
 		registerLayer("windV", wvl);
-	 
-		
+
 		// Loading the topography
 		Array2DdataLayer<double> *alt = new Array2DdataLayer<double>("altitude", atmosphericData->topography, atmoSWCorner, atmoNECorner);
 		registerLayer("altitude", alt);
 
 		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-									  atmoSWCorner.getY() - 0.5 *dy, 0);
+									   atmoSWCorner.getY() - 0.5 * dy, 0);
 
-	   TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time,  scalarOrigin, dx,dy);
-	   registerLayer("plumeTopHeight", pth);
+		TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time, scalarOrigin, dx, dy);
+		registerLayer("plumeTopHeight", pth);
 
-	   // Loading the plume bottom height layer
-	   TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", atmosphericData->plumeBottomHeight, time, atmosphericData->oldplumeBottomHeight, time,  scalarOrigin, dx,dy);
-	   registerLayer("plumeBottomHeight", pbh);
+		// Loading the plume bottom height layer
+		TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", atmosphericData->plumeBottomHeight, time, atmosphericData->oldplumeBottomHeight, time, scalarOrigin, dx, dy);
+		registerLayer("plumeBottomHeight", pbh);
 
-	   // Loading the smoke at ground layer
-	   TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", atmosphericData->smokeAtGround, time, atmosphericData->oldsmokeAtGround, time,  scalarOrigin, dx,dy);
-	   registerLayer("smokeAtGround", sag);
+		// Loading the smoke at ground layer
+		TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", atmosphericData->smokeAtGround, time, atmosphericData->oldsmokeAtGround, time, scalarOrigin, dx, dy);
+		registerLayer("smokeAtGround", sag);
 
-	   // Loading the TKE layer
-	   TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", atmosphericData->tke,time, atmosphericData->oldtke, time,  scalarOrigin, dx,dy);
-	   registerLayer("tke", tkeLayer);
-
-
-
-
+		// Loading the TKE layer
+		TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", atmosphericData->tke, time, atmosphericData->oldtke, time, scalarOrigin, dx, dy);
+		registerLayer("tke", tkeLayer);
 	}
 
 	void DataBroker::loadMultiWindBin(double refTime, size_t numberOfDomains, size_t *startI, size_t *startJ)
@@ -459,15 +455,6 @@ namespace libforefire
 		{
 			((TwoTimeArrayLayer<double> *)windVLayer)->loadMultiWindBin(windFileName, refTime, numberOfDomains, startI, startJ);
 		}
-	}
-
-	
-
-	void DataBroker::addConstantLayer(string name, const double &val)
-	{
-		/* Adding a simple constant layer for variable name */
-		XYZTDataLayer<double> *newLayer = new XYZTDataLayer<double>(name, val);
-		registerLayer(name, newLayer);
 	}
 
 	void DataBroker::dropProperty(string name)
@@ -504,14 +491,15 @@ namespace libforefire
 						double val = 0.;
 						if (params->isValued("windU"))
 							val = params->getDouble("windU");
-						addConstantLayer("windU", val);
+						addConstantLayer("windU", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner() );
+						
 					}
 					if (windVLayer == 0)
 					{
 						double val = 0.;
 						if (params->isValued("windV"))
 							val = params->getDouble("windV");
-						addConstantLayer("windV", val);
+						addConstantLayer("windV", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
 					}
 				}
 				else if (neededProperties.back().find("uel") != string::npos)
@@ -532,7 +520,7 @@ namespace libforefire
 					double val = 0.;
 					if (params->isValued("altitude"))
 						val = params->getDouble("altitude");
-					addConstantLayer("altitude", val);
+					addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
 				}
 				else if (neededProperties.back().find("epth") != string::npos)
 				{
@@ -559,7 +547,7 @@ namespace libforefire
 					double val = 0.;
 					if (params->isValued(neededProperties.back()))
 						val = params->getDouble(neededProperties.back());
-					addConstantLayer(neededProperties.back(), val);
+					addConstantLayer(neededProperties.back(), "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
 				}
 			}
 			/* erasing the property from the list of properties to be treated */
@@ -572,8 +560,11 @@ namespace libforefire
 			double val = 0.;
 			if (params->isValued("altitude"))
 				val = params->getDouble("altitude");
-			addConstantLayer("altitude", val);
+			addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
 		}
+
+
+		
 	}
 
 	void DataBroker::initFluxLayers(const double &t)
@@ -768,19 +759,20 @@ namespace libforefire
 		return getLayer(property)->getValueAt(fn);
 	}
 
-	vector<string> DataBroker::getAllLayerNames() {
+	vector<string> DataBroker::getAllLayerNames()
+	{
 		vector<string> names;
-		
+
 		// Iterate over regular layers and add their names.
-		for (const auto &entry : layersMap) {
+		for (const auto &entry : layersMap)
+		{	
+		
 			names.push_back(entry.first);
 		}
-		
+
 		// Iterate over flux layers and add their names.
-		for (const auto &entry : fluxLayersMap) {
-			names.push_back(entry.first);
-		}
-		
+	
+
 		return names;
 	}
 
@@ -792,7 +784,6 @@ namespace libforefire
 		if (ilayer != layersMap.end())
 			return ilayer->second;
 
-		
 		return 0;
 	}
 
@@ -809,10 +800,16 @@ namespace libforefire
 	FluxLayer<double> *DataBroker::getFluxLayer(const string &property)
 	{
 		// Scanning the scalar layers
-
+	 
 		flayer = fluxLayersMap.find(property);
-		if (flayer != fluxLayersMap.end())
+ 
+		if (flayer != fluxLayersMap.end()){
+			
+ 
 			return flayer->second;
+		}
+		
+ 
 
 		return 0;
 	}
@@ -1030,6 +1027,71 @@ namespace libforefire
 		return oss.str();
 	}
 
+	void DataBroker::addConstantLayer(const string& name,const string& layertype,const string& modelName, double value,
+		 const FFPoint &SWOrigin,const FFPoint &shapeExtends)
+	{
+		// Set time origin to 0 and Lt to infinity.
+		double timeOrigin = 0.0;
+		double Lt = std::numeric_limits<double>::infinity();
+
+		// Define grid dimensions.
+		// These are placeholder values; replace with your actual grid resolution.
+		size_t nx = 1;
+		size_t ny = 1;
+		size_t nz = 1;
+		size_t nt = 1;
+		size_t totalElements = nx * ny * nz * nt;
+		FFPoint spatialExtent = FFPoint(shapeExtends.x,shapeExtends.y , shapeExtends.z);
+		FFPoint SWCorner = FFPoint(SWOrigin.x,SWOrigin.y , SWOrigin.z);
+		
+		if (layertype == "data")
+		{
+			// Create an array filled with the constant value.
+			double *data = new double[totalElements];
+			for (size_t i = 0; i < totalElements; ++i)
+			{
+				data[i] = value;
+			}
+			// Construct the data layer using the constant field.
+			XYZTDataLayer<double> *layer = new XYZTDataLayer<double>(name, SWCorner, timeOrigin, spatialExtent, Lt,
+																	 nx, ny, nz, nt, data);
+							 
+			//delete[] data;
+			registerLayer(name, layer);
+		}
+		else if (layertype == "flux")
+		{
+		
+			size_t mindex = domain->getFreeFluxModelIndex();
+		 
+			FluxModel* newFluxmodel = domain->fluxModelInstanciation(mindex, modelName);
+
+			int *data = new int[totalElements];
+			for (size_t i = 0; i < totalElements; ++i)
+			{
+				data[i] = (int)mindex;
+			}
+			// Construct the flux layer.
+			FluxLayer<double> *layer = new FluxLayer<double>(name,
+															 atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy, domain->getCells(),
+															 data, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt);
+			//delete[] data;
+			registerFluxModel(newFluxmodel);
+		 
+			registerFluxLayer(name, layer);
+		}else if( layertype == "BRatio" or layertype == "Bratio" or layertype == "bratio" ){
+			/* Instantiating a burning ratio layer */
+			BurningRatioLayer<double>* brlayer =
+			new BurningRatioLayer<double>(name,  atmoSWCorner, atmoNECorner,atmosphericNx, atmosphericNy, domain->getCells());
+			registerLayer(name, brlayer);
+			 
+		}
+		else
+		{
+			std::cout << "addConstantLayer: Unknown layer type " << layertype << std::endl;
+		}
+	}
+
 	void DataBroker::loadFromNCFile(string filename)
 	{
 		try
@@ -1040,10 +1102,11 @@ namespace libforefire
 			{
 				NcVar domvar = dataFile.getVar("domain");
 				double version = 1;
-				map<string,NcVarAtt> attributeList = domvar.getAtts();
-				map<string,NcVarAtt>::iterator myIter;
+				map<string, NcVarAtt> attributeList = domvar.getAtts();
+				map<string, NcVarAtt>::iterator myIter;
 				myIter = attributeList.find("version");
-				if(myIter != attributeList.end()){
+				if (myIter != attributeList.end())
+				{
 					myIter->second.getValues(&version);
 				}
 
@@ -1051,38 +1114,109 @@ namespace libforefire
 				double Yorigin = 0;
 				double Zorigin = 0;
 				NcVarAtt att = domvar.getAtt("SWx");
-				if(!att.isNull()){
-					   att.getValues(&Xorigin);
-				} 
+				if (!att.isNull())
+				{
+					att.getValues(&Xorigin);
+				}
 				att = domvar.getAtt("SWy");
-				if(!att.isNull()){
-					   att.getValues(&Yorigin);
-				} 
+				if (!att.isNull())
+				{
+					att.getValues(&Yorigin);
+				}
 				att = domvar.getAtt("SWz");
-				if(!att.isNull()){
-					   att.getValues(&Zorigin);
-				} 
-				FFPoint SWCorner = FFPoint(Xorigin, Yorigin, Zorigin);
-
+				if (!att.isNull())
+				{
+					att.getValues(&Zorigin);
+				}
+	
 
 				double Lx = 0;
-				double Ly = 0; 
-				double Lz = 0; 
-				 att = domvar.getAtt("Lx");
-				if(!att.isNull()) att.getValues(&Lx);
+				double Ly = 0;
+				double Lz = 0;
+				att = domvar.getAtt("Lx");
+				if (!att.isNull())
+					att.getValues(&Lx);
 				att = domvar.getAtt("Ly");
-				if(!att.isNull()) att.getValues(&Ly);
+				if (!att.isNull())
+					att.getValues(&Ly);
 				att = domvar.getAtt("Lz");
-				if(!att.isNull()) att.getValues(&Lz);
-				FFPoint spatialExtent = FFPoint(Lx, Ly, Lz);
+				if (!att.isNull())
+					att.getValues(&Lz);
 
-				double timeOrigin =0;
+
+
+				
+				FFPoint spatialExtent = FFPoint(Lx, Ly, Lz);
+				//Xorigin = Xorigin+10000.;
+				//Yorigin = Yorigin+10000.;
+				 
+	
+				att = domvar.getAtt("BBoxWSEN");
+				string bboxwsen;
+				if (!att.isNull())
+				{
+					size_t len = att.getAttLength(); // Get the length of the attribute
+					std::vector<char> buffer(len + 1, '\0'); // Allocate buffer with extra space for null terminator
+					att.getValues(&buffer[0]);  // Read attribute into the buffer
+					std::string bboxwsen(buffer.data()); // Construct std::string from the buffer
+				
+					params->setParameter("dataTileBBoxWSEN", bboxwsen);
+					vector<double> bbox = params->getDoubleArray("dataTileBBoxWSEN");
+					
+					double metersPerDegreeLat =  Ly/(bbox[3]-bbox[1]);
+					double metersPerDegreeLon =  Lx/(bbox[2]-bbox[0]);
+					params->setDouble("metersPerDegreeLat",metersPerDegreeLat);
+					params->setDouble("metersPerDegreesLon",metersPerDegreeLon);
+
+					double simSWLat = 9999;
+					double simSXLon = 9999;
+					
+					if(params->getParameter("runmode") == "coupled"){
+						if(params->isValued("SWLngLat")){
+							simSWLat = params->getDoubleArray("SWLngLat")[1];
+							simSXLon = params->getDoubleArray("SWLngLat")[0];
+							
+						}
+					}
+					
+					if(params->getParameter("runmode") == "masterMNH"){	
+							if(params->isValued("SWLngLat")){
+								simSWLat = params->getDoubleArray("SWLngLat")[1];
+								simSXLon = params->getDoubleArray("SWLngLat")[0];
+							}
+					}
+					if(simSWLat <= 9999){
+ 
+						
+						double dx = (bbox[0] - simSXLon)*metersPerDegreeLon;
+						double dy = (bbox[1] - simSWLat )*metersPerDegreeLat;
+						cout<<" I have sim domain "<<domain->getSWCorner().getX()<<" "<<domain->getSWCorner().getY()<<" corresponding to "<<simSXLon<<","<<simSWLat<<" in my data this point is "<<dx<<","<<dy<<endl;
+
+						
+						Xorigin = Xorigin + dx;
+						Yorigin = Yorigin + dy;
+					}
+
+
+					
+				}
+				
+
+
+				FFPoint SWCorner = FFPoint(Xorigin, Yorigin, Zorigin);
+				// OK here is the X,Y and Y origin of the tile...
+				// but they may differ from the actual data...
+
+
+				double timeOrigin = 0;
 				att = domvar.getAtt("t0");
-			    if(!att.isNull()) att.getValues(&timeOrigin);
-			
+				if (!att.isNull())
+					att.getValues(&timeOrigin);
+
 				double Lt = 0;
 				att = domvar.getAtt("t0");
-			    if(!att.isNull()) att.getValues(&timeOrigin);
+				if (!att.isNull())
+					att.getValues(&timeOrigin);
 
 				std::multimap<std::string, NcVar> allVariables = dataFile.getVars();
 				NcVarAtt layerTypeNC;
@@ -1121,14 +1255,20 @@ namespace libforefire
 					string varName = it->first;
 
 					if (varName == "wind")
-					{ 
-					 
-						XYZTDataLayer<double> *wul = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 0);
-						registerLayer("windU", wul);
-						XYZTDataLayer<double> *wvl = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 1);
-						registerLayer("windV", wvl);
-						PwindULayer = wul;
-						PwindVLayer = wvl;
+					{
+						if (!domain->atmosphericCoupling){
+							XYZTDataLayer<double> *wul = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 0);
+							registerLayer("windU", wul);
+							XYZTDataLayer<double> *wvl = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 1);
+							registerLayer("windV", wvl);
+							PwindULayer = wul;
+							PwindVLayer = wvl;
+							cout<<" I should not load "<<domain->getDomainID()<<endl;
+				
+						}else{
+							cout<<" all OK "<<domain->getDomainID()<<endl;
+				
+						}
 					}
 
 					pg = propPropertiesGetters.find(varName);
@@ -1171,6 +1311,7 @@ namespace libforefire
 						else if (varName == "fuel")
 						{
 							fuelLayer = constructFuelLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+							
 							registerLayer("fuel", fuelLayer);
 						}
 						else if (varName == "fieldSpeed")
@@ -1178,7 +1319,6 @@ namespace libforefire
 							dummyLayer = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
 							registerLayer(varName, dummyLayer);
 						}
-
 					}
 
 					else if (layerType.find("data") != string::npos)
@@ -1189,14 +1329,15 @@ namespace libforefire
 							registerLayer(varName, newlayer);
 						}
 					}
-					else if (layerType.find("flux") != string::npos)	
+					else if (layerType.find("flux") != string::npos)
 					{
+						cout<<"addind "<<it->first<<endl;
 						FluxLayer<double> *newlayer = constructFluxLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
 						registerFluxLayer(it->first, newlayer);
 					}
 					else if (layerType.find("propagative") != string::npos)
 					{
-						cout<<varName<<" in propagation layers"<<endl;
+						cout << varName << " in propagation layers" << endl;
 						PropagativeLayer<double> *propLayer = constructPropagativeLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
 						domain->setPropagativeLayer(propLayer);
 					}
@@ -1255,22 +1396,22 @@ namespace libforefire
 			e.what();
 		}
 	}
-	
 
-	XYZTDataLayer<double> *DataBroker::constructXYZTLayer(NcVar& values, FFPoint &SWCorner, FFPoint &spatialExtent,
+	XYZTDataLayer<double> *DataBroker::constructXYZTLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
 														  double timeOrigin, double Lt, int dimTSelected /* = -1 */)
 	{
 		size_t nx = 0, ny = 0, nz = 0, nt = 0;
-		switch (values.getDimCount()) {
-			case 2:
-				ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
-				break;
-			case 3:
-				nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
-				break;
-			case 4:
-				nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
-				break;
+		switch (values.getDimCount())
+		{
+		case 2:
+			ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
+			break;
+		case 3:
+			nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
+			break;
+		case 4:
+			nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
+			break;
 		}
 		if (dimTSelected > -1)
 			nt = 1;
@@ -1291,7 +1432,7 @@ namespace libforefire
 			cout << "WARNING, NC variable " << property << " is not in domain, Failsafe Reprojection to whole domain extent" << endl;
 			FFPoint SWC = FFPoint(domain->SWCornerX(), domain->SWCornerY(), 0.);
 			FFPoint ext = FFPoint(domain->NECornerX() - domain->SWCornerX(),
-									   domain->NECornerY() - domain->SWCornerY(), 10000.);
+								  domain->NECornerY() - domain->SWCornerY(), 10000.);
 			double t0 = 0;
 			double Dt = 10000000.;
 			XYZTDataLayer<double> *newlayer = new XYZTDataLayer<double>(property, SWC, t0, ext, Dt,
@@ -1300,32 +1441,33 @@ namespace libforefire
 			return newlayer;
 		}
 	}
-	
-	PropagativeLayer<double> *DataBroker::constructPropagativeLayer(NcVar& values, FFPoint &SWCorner, FFPoint &spatialExtent,
-		double timeOrigin, double Lt, int dimTSelected /* = -1 */)
+
+	PropagativeLayer<double> *DataBroker::constructPropagativeLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
+																	double timeOrigin, double Lt, int dimTSelected /* = -1 */)
 	{
 		cout << "DataBroker::constructPropagativeLayerFromFile " << " from netCDF Not Implemented" << endl;
 		return NULL;
 	}
 
-	FuelDataLayer<double>* DataBroker::constructFuelLayer(NcVar& values, FFPoint &SWCorner, FFPoint &spatialExtent,
-		double timeOrigin, double Lt, int dimTSelected /* = -1 */)
+	FuelDataLayer<double> *DataBroker::constructFuelLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
+														  double timeOrigin, double Lt, int dimTSelected)
 	{
+
 		size_t nx = 0, ny = 0, nz = 0, nt = 0;
-		switch (values.getDimCount()) {
-			case 2:
-				ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
-				break;
-			case 3:
-				nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
-				break;
-			case 4:
-				nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
-				break;
+		switch (values.getDimCount())
+		{
+		case 2:
+			ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
+			break;
+		case 3:
+			nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
+			break;
+		case 4:
+			nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
+			break;
 		}
 		std::string property = values.getName();
-		/* Getting the data */
-		/*------------------*/
+
 		int *fuelMap = readAndTransposeIntFortranProjectedField(&values, nt, nz, ny, nx, true, -1);
 
 		if (isRelevantData(SWCorner, spatialExtent))
@@ -1346,17 +1488,16 @@ namespace libforefire
 			delete[] fuelMap;
 			return newlayer;
 		}
-	 
 	}
 
-	FluxLayer<double> *DataBroker::constructFluxLayer(NcVar& values, FFPoint &SWCorner, FFPoint &spatialExtent,
-		double timeOrigin, double Lt, int dimTSelected /* = -1 */)
+	FluxLayer<double> *DataBroker::constructFluxLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
+													  double timeOrigin, double Lt, int dimTSelected /* = -1 */)
 	{
 
 		/* Sending the information on the models to the domain */
 		/*-----------------------------------------------------*/
 		std::string property = values.getName();
- 
+
 		NcVarAtt indices = values.getAtt("indices");
 		int indModel = 0;
 		if (!indices.isNull())
@@ -1367,7 +1508,7 @@ namespace libforefire
 		for (int i = indModel; i < indModel + 5; i++) {
 			stringstream mname;
 			mname << "model" << i << "name";
-			
+
 			NcVarAtt tmpName = values.getAtt(mname.str());
 			if (!tmpName.isNull()) {
 				string modelName;
@@ -1376,26 +1517,28 @@ namespace libforefire
 				cout << mname.str() << " DataBroker::Instanciated " <<modelName<< endl;
 			}
 		}*/
-				 
+
 		stringstream mname;
 		string modelName;
 		mname << "model" << indModel << "name";
-		NcVarAtt tmpName = values.getAtt(mname.str());//mname.str());
-		if(!tmpName.isNull()) tmpName.getValues(modelName);
+		NcVarAtt tmpName = values.getAtt(mname.str()); // mname.str());
+		if (!tmpName.isNull())
+			tmpName.getValues(modelName);
 		domain->fluxModelInstanciation(indModel, modelName);
+		cout << "DataBroker::construct flux " << modelName << " layer " << domain->getID() << endl;
 
-		
 		size_t nx = 0, ny = 0, nz = 0, nt = 0;
-		switch (values.getDimCount()) {
-			case 2:
-				ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
-				break;
-			case 3:
-				nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
-				break;
-			case 4:
-				nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
-				break;
+		switch (values.getDimCount())
+		{
+		case 2:
+			ny = values.getDim(0).getSize(), nx = values.getDim(1).getSize();
+			break;
+		case 3:
+			nz = values.getDim(0).getSize(), ny = values.getDim(1).getSize(), nx = values.getDim(2).getSize();
+			break;
+		case 4:
+			nt = values.getDim(0).getSize(), nz = values.getDim(1).getSize(), ny = values.getDim(2).getSize(), nx = values.getDim(3).getSize();
+			break;
 		}
 
 		/* Getting the data */
@@ -1430,8 +1573,6 @@ namespace libforefire
 			return newlayer;
 		}
 	}
-
-
 
 	int *DataBroker::readAndTransposeIntFortranProjectedField(NcVar *val, const size_t &nt, const size_t &nz, const size_t &ny, const size_t &nx, bool transpose, int selectedT)
 	{
@@ -1532,7 +1673,5 @@ namespace libforefire
 		delete[] tmp;
 		return data;
 	}
-	
-
 
 }

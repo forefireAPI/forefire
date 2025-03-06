@@ -84,7 +84,13 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
             "Example: step[dt=5.]\n"
             "Arguments:\n"
             " - 'dt': Duration (in seconds) for which the simulation will run";
-        
+
+        m["addLayer"] =
+            "addLayer[name=]\n"
+            "add a constant layer of type type (default data) with name and value V (default search for parameter of same name, then 0), optional modelName = with bounds matching the FireDomain \n"
+            "Example: addLayer[name=heatFlux;type=flux;modelName=heatFluxBasic;value=3]\n";
+
+
         m["trigger"] =
             "trigger[fuelIndice=<value>;loc=(x,y,z);fuelType=<int|wind>;vel=(vx,vy,vz);t=<time>]\n"
             "Triggers a change in simulation data, such as fuel or dynamic wind conditions\n"

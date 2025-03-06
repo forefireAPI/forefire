@@ -98,7 +98,7 @@ class Command {
 		trans["save"] = &saveSimulation;
 		trans["plot"] = &plotSimulation;
 		trans["computeSpeed"] = &computeModelSpeed;
-		trans["load"] = &loadSimulation;
+		trans["addLayer"] = &addLayer;
 		trans["setParameter"] = &setParameter;
 		trans["setParameters"] = &setParameters;
 		trans["getParameter"] = &getParameter;
@@ -160,7 +160,7 @@ class Command {
 	/*! \brief command to save in print format the simulation */
 	static int saveSimulation(const string&, size_t&);
 	/*! \brief command to load in print format the simulation */
-	static int loadSimulation(const string&, size_t&);
+	static int addLayer(const string&, size_t&);
 	/*! \brief command to plot in png/jpg format the simulation */
 	static int plotSimulation(const string&, size_t&);
 	/*! \brief command to get speed and cout a double */

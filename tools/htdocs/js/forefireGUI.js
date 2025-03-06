@@ -9,7 +9,7 @@ const commands = {
     "goTo": "goTo[t=56.2]",
     "print": "print[]",
     "save": "save[]",
-    "load": "load[]",
+    "addLayer": "addLayer[name=heatFlux;type=flux;modelName=heatFluxBasic;value=3]",
     "plot": "plot[parameter=speed;filename=out_file_name.png;range=(0,0.1);cmap=viridis]",
     "computeSpeed": "computeSpeed[]",
     "setParameter": "setParameter[param=value]",

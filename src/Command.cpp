@@ -186,7 +186,7 @@ namespace libforefire
         SimulationParameters *simParam = SimulationParameters::GetInstance();
 
         FFPoint pos = getPoint("lonlat", arg);
-        
+
         if (pos == pointError)
         {
             pos = getPoint("loc", arg);
@@ -205,7 +205,7 @@ namespace libforefire
             {
                 t = nt;
             }
-             
+
             string date = getString("date", arg);
 
             if (date != stringError)
@@ -695,16 +695,17 @@ namespace libforefire
     {
 
         /* Advancing simulation to the prescribed time */
-        endTime = getFloat("t", arg);
-
+        endTime = getFloat("t", arg); 
         if (init)
         {
             /* finishing the initialization process */
+     
             bmapOutputUpdate = currentSession.params->getDouble("bmapOutputUpdate");
             if (!currentFrontCompleted)
                 completeFront(currentSession.ff);
             numAtmoIterations = currentSession.params->getInt("numAtmoIterations") - 1;
             init = false;
+          
         }
 
         if (endTime > startTime)
@@ -735,7 +736,7 @@ namespace libforefire
 
 //
 #ifdef MPI_COUPLING
-                currentSession.sim->goTo(endTime);
+                currentSession.sim->goTo(endTime); 
 #else
                 currentSession.fd->loadCellsInBinary();
                 currentSession.sim->goTo(endTime);
@@ -849,12 +850,9 @@ namespace libforefire
         }
         SimulationParameters *simParam = SimulationParameters::GetInstance();
         simParam->setParameter("ISOdate", simParam->FormatISODate(simParam->getInt("refTime") + getDomain()->getSimulationTime(), getDomain()->getReferenceYear(), getDomain()->getReferenceDay()));
-
+ 
         return normal;
     }
-
-
-
 
     int Command::printSimulation(const string &arg, size_t &numTabs)
     {
@@ -882,7 +880,7 @@ namespace libforefire
         ofstream outputfile(finalStr.c_str());
         if (outputfile)
         {
-            cout<<" putting into file "<<finalStr<<endl;
+            cout << " putting into file " << finalStr << endl;
             simParam->setInt("count", simParam->getInt("count") + 1);
             if (currentSession.fdp != 0)
             {
@@ -945,30 +943,40 @@ namespace libforefire
         return status;
     }
 
-    std::vector<double> getMinMax(const std::vector<std::vector<double>> &matrix) {
+    std::vector<double> getMinMax(const std::vector<std::vector<double>> &matrix)
+    {
         // Initialize min and max with extreme values.
         double minVal = std::numeric_limits<double>::max();
         double maxVal = std::numeric_limits<double>::lowest();
-    
+
         // Iterate over each row and each value in the row.
-        for (const auto &row : matrix) {
-            for (double value : row) {
-                if (value < minVal) {
-                    minVal = value;
-                }
-                if (value > maxVal) {
-                    maxVal = value;
+        for (const auto &row : matrix)
+        {
+            for (double value : row)
+            {
+                if (value != std::numeric_limits<double>::infinity())
+                {
+                    if (value < minVal)
+                    {
+                        minVal = value;
+                    }
+                    if (value > maxVal)
+                    {
+                        maxVal = value;
+                    }
                 }
             }
         }
-        
+
         return std::vector<double>{minVal, maxVal};
     }
     std::vector<double> getMinMaxFromUV(const std::vector<std::vector<double>> &matrixU,
-                                        const std::vector<std::vector<double>> &matrixV) {
+                                        const std::vector<std::vector<double>> &matrixV)
+    {
         // Ensure matrices have the same dimensions
         size_t numRows = matrixU.size();
-        if (numRows != matrixV.size()) {
+        if (numRows != matrixV.size())
+        {
             // Handle the error as needed, here we simply return an empty vector.
             return std::vector<double>{};
         }
@@ -976,35 +984,40 @@ namespace libforefire
         double minVal = std::numeric_limits<double>::max();
         double maxVal = std::numeric_limits<double>::lowest();
 
-        for (size_t i = 0; i < numRows; ++i) {
+        for (size_t i = 0; i < numRows; ++i)
+        {
             size_t numCols = matrixU[i].size();
-            if (matrixV[i].size() != numCols) {
+            if (matrixV[i].size() != numCols)
+            {
                 // Handle dimension mismatch, here we simply return an empty vector.
                 return std::vector<double>{};
             }
-            for (size_t j = 0; j < numCols; ++j) {
+            for (size_t j = 0; j < numCols; ++j)
+            {
                 double u = matrixU[i][j];
                 double v = matrixV[i][j];
                 double magnitude = std::sqrt(u * u + v * v);
 
-                if (magnitude < minVal) {
+                if (magnitude < minVal)
+                {
                     minVal = magnitude;
                 }
-                if (magnitude > maxVal) {
+                if (magnitude > maxVal)
+                {
                     maxVal = magnitude;
                 }
             }
         }
-        
+
         return std::vector<double>{minVal, maxVal};
     }
     int Command::plotSimulation(const std::string &arg, size_t &numTabs)
     {
         if (getDomain() == nullptr)
             return normal;
-    
+
         SimulationParameters *simParam = SimulationParameters::GetInstance();
-    
+
         if (!arg.empty())
         {
             std::map<std::string, std::string> argMap;
@@ -1013,7 +1026,7 @@ namespace libforefire
             std::string token;
             const char delim = ';';
             const char assign = '=';
-    
+
             // Parse the argument string into a key-value map.
             while ((pos = temp.find(delim)) != std::string::npos)
             {
@@ -1035,12 +1048,12 @@ namespace libforefire
                 std::string value = temp.substr(eq_pos + 1);
                 argMap[key] = value;
             }
-    
+
             // Extract arguments of interest.
             std::string filename = argMap["filename"];
             std::string parameter = argMap["parameter"];
             std::string colormap = argMap["cmap"];
-    
+
             // Parse optional matrix size.
             size_t eni = 0, enj = 0;
             if (argMap.find("size") != argMap.end())
@@ -1053,7 +1066,7 @@ namespace libforefire
                     enj = std::stoul(matrixShape.substr(comma + 1));
                 }
             }
-    
+
             // Determine bounding box from arguments (BBoxWSEN or BBoxLBRT) or use domain corners.
             double SWX, SWY, NEX, NEY;
             if (argMap.find("BBoxWSEN") != argMap.end())
@@ -1117,15 +1130,15 @@ namespace libforefire
                 NEX = getDomain()->NECornerX();
                 NEY = getDomain()->NECornerY();
             }
-    
+
             // Create corner points
             FFPoint SWB(SWX, SWY, 0);
             FFPoint NEB(NEX, NEY, 0);
-    
+
             // Default range
             double minVal = std::numeric_limits<double>::infinity();
             double maxVal = -std::numeric_limits<double>::infinity();
-    
+
             // If range is specified, parse it
             if (argMap.find("range") != argMap.end())
             {
@@ -1138,7 +1151,7 @@ namespace libforefire
                     maxVal = std::stod(range.substr(mid + 1, range.length() - mid - 2));
                 }
             }
-    
+
             // Check if filename is provided
             if (!filename.empty())
             {
@@ -1148,133 +1161,152 @@ namespace libforefire
                 std::string lowerFilename = filename;
                 std::transform(lowerFilename.begin(), lowerFilename.end(),
                                lowerFilename.begin(), ::tolower);
-    
-                if (parameter == "wind" &&
-                    lowerFilename.size() >= 5 &&
-                    lowerFilename.substr(lowerFilename.size() - 5) == ".json")
-                {
-                        // We want two data matrices: "windU" and "windV".
-                        // Suppose these are each std::vector<std::vector<double>>.
-                        auto matrixU = getDomain()->getDataMatrix("windU", SWB, NEB, eni, enj);
-             
-                        auto matrixV = getDomain()->getDataMatrix("windV", SWB, NEB, eni, enj);
-                        auto minMax = getMinMaxFromUV(matrixU, matrixV);
 
-                        if (matrixU.empty() || matrixV.empty())
+                if (parameter == "wind" && lowerFilename.size() >= 5)
+                {
+
+                    // We want two data matrices: "windU" and "windV".
+                    // Suppose these are each std::vector<std::vector<double>>.
+                    auto matrixU = getDomain()->getDataMatrix("windU", SWB, NEB, eni, enj);
+                    auto matrixV = getDomain()->getDataMatrix("windV", SWB, NEB, eni, enj);
+
+                    auto minMax = getMinMaxFromUV(matrixU, matrixV);
+
+                    if (matrixU.empty() || matrixV.empty())
+                    {
+                        std::cerr << "Error: No data available for 'windU' or 'windV'." << std::endl;
+                    }
+                    else if (lowerFilename.substr(lowerFilename.size() - 5) == ".json")
+                    {
+                        // Convert bounding box corners back to lat/lon, etc.
+                        double westLon = getDomain()->getLonFromX(SWX);
+                        double eastLon = getDomain()->getLonFromX(NEX);
+                        double southLat = getDomain()->getLatFromY(SWY);
+                        double northLat = getDomain()->getLatFromY(NEY);
+
+                        // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
+                        size_t ncols = matrixU.size();
+                        size_t nrows = (ncols > 0) ? matrixU[0].size() : 0;
+
+                        double dx = (ncols > 1) ? (eastLon - westLon) / (ncols - 1) : 0.0;
+                        double dy = (nrows > 1) ? (northLat - southLat) / (nrows - 1) : 0.0;
+
+                        std::string referenceTime = simParam->FormatISODate(
+                            simParam->getDouble("refTime"),
+                            simParam->getInt("refYear"),
+                            simParam->getInt("refDay"));
+
+                        // Open JSON file
+                        std::ofstream outFile(filename);
+                        if (!outFile.is_open())
                         {
-                            std::cerr << "Error: No data available for 'windU' or 'windV'." << std::endl;
+                            std::cerr << "Error: Cannot open output file " << filename << std::endl;
                         }
                         else
                         {
-                            // Convert bounding box corners back to lat/lon, etc.
-                            double westLon = getDomain()->getLonFromX(SWX);
-                            double eastLon = getDomain()->getLonFromX(NEX);
-                            double southLat = getDomain()->getLatFromY(SWY);
-                            double northLat = getDomain()->getLatFromY(NEY);
+                            // Write JSON array with two objects
+                            outFile << "[";
 
-                            // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
-                            size_t ncols = matrixU.size();
-                            size_t nrows = (ncols > 0) ? matrixU[0].size() : 0;
+                            // ------------------
+                            // 1) Eastward wind (windU)
+                            // ------------------
+                            outFile << R"({"header": {)"
+                                    << R"("parameterUnit": "m.s-1",)"
+                                    << R"("parameterNumber": 2,)"
+                                    << R"("dx": )" << dx << ","
+                                    << R"("dy": )" << dy << ","
+                                    << R"("parameterNumberName": "eastward_wind",)"
+                                    << R"("la1": )" << northLat << ","
+                                    << R"("la2": )" << southLat << ","
+                                    << R"("parameterCategory": 2,)"
+                                    << R"("lo2": )" << eastLon << ","
+                                    << R"("nx": )" << ncols << ","
+                                    << R"("ny": )" << nrows << ","
+                                    << R"("refTime": ")" << referenceTime << R"(",)"
+                                    << R"("lo1": )" << westLon
+                                    << R"(},"data":[)";
 
-                            double dx = (ncols > 1) ? (eastLon - westLon) / (ncols - 1) : 0.0;
-                            double dy = (nrows > 1) ? (northLat - southLat) / (nrows - 1) : 0.0;
-
-                            std::string referenceTime = simParam->FormatISODate(
-                                simParam->getDouble("refTime"),
-                                simParam->getInt("refYear"),
-                                simParam->getInt("refDay"));
-
-                            // Open JSON file
-                            std::ofstream outFile(filename);
-                            if (!outFile.is_open())
                             {
-                                std::cerr << "Error: Cannot open output file " << filename << std::endl;
-                            }
-                            else
-                            {
-                                // Write JSON array with two objects
-                                outFile << "[";
-
-                                // ------------------
-                                // 1) Eastward wind (windU)
-                                // ------------------
-                                outFile << R"({"header": {)"
-                                        << R"("parameterUnit": "m.s-1",)"
-                                        << R"("parameterNumber": 2,)"
-                                        << R"("dx": )" << dx << ","
-                                        << R"("dy": )" << dy << ","
-                                        << R"("parameterNumberName": "eastward_wind",)"
-                                        << R"("la1": )" << northLat << ","
-                                        << R"("la2": )" << southLat << ","
-                                        << R"("parameterCategory": 2,)"
-                                        << R"("lo2": )" << eastLon << ","
-                                        << R"("nx": )" << ncols << ","
-                                        << R"("ny": )" << nrows << ","
-                                        << R"("refTime": ")" << referenceTime << R"(",)"
-                                        << R"("lo1": )" << westLon
-                                        << R"(},"data":[)";
-
+                                // Flatten matrixU to a 1D comma-separated list
+                                bool firstVal = true;
+                                for (size_t r = 0; r < nrows; r++)
                                 {
-                                    // Flatten matrixU to a 1D comma-separated list
-                                    bool firstVal = true;
-                                    for (size_t r = 0; r < nrows; r++)
+                                    for (size_t c = 0; c < ncols; c++)
                                     {
-                                        for (size_t c = 0; c < ncols; c++)
-                                        {
-                                            if (!firstVal)
-                                                outFile << ",";
-                                            double val = matrixU[c][nrows-r-1];
-                                            if (std::isnan(val))
-                                                outFile << 0.0;
-                                            else
-                                                outFile << val;
-                                        
-                                            firstVal = false;
-                                        }
+                                        if (!firstVal)
+                                            outFile << ",";
+                                        double val = matrixU[c][nrows - r - 1];
+                                        if (std::isnan(val))
+                                            outFile << 0.0;
+                                        else
+                                            outFile << val;
+
+                                        firstVal = false;
                                     }
                                 }
+                            }
 
-                                outFile << "]},"; // close first object
+                            outFile << "]},"; // close first object
 
-                                // ------------------
-                                // 2) Northward wind (windV)
-                                // ------------------
-                                outFile << R"({"header": {)"
-                                        << R"("parameterUnit": "m.s-1",)"
-                                        << R"("parameterNumber": 3,)"
-                                        << R"("dx": )" << dx << ","
-                                        << R"("dy": )" << dy << ","
-                                        << R"("parameterNumberName": "northward_wind",)"
-                                        << R"("la1": )" << northLat << ","
-                                        << R"("la2": )" << southLat << ","
-                                        << R"("parameterCategory": 2,)"
-                                        << R"("lo2": )" << eastLon << ","
-                                        << R"("nx": )" << ncols << ","
-                                        << R"("ny": )" << nrows << ","
-                                        << R"("refTime": ")" << referenceTime << R"(",)"
-                                        << R"("lo1": )" << westLon
-                                        << R"(},"data":[)";
+                            // ------------------
+                            // 2) Northward wind (windV)
+                            // ------------------
+                            outFile << R"({"header": {)"
+                                    << R"("parameterUnit": "m.s-1",)"
+                                    << R"("parameterNumber": 3,)"
+                                    << R"("dx": )" << dx << ","
+                                    << R"("dy": )" << dy << ","
+                                    << R"("parameterNumberName": "northward_wind",)"
+                                    << R"("la1": )" << northLat << ","
+                                    << R"("la2": )" << southLat << ","
+                                    << R"("parameterCategory": 2,)"
+                                    << R"("lo2": )" << eastLon << ","
+                                    << R"("nx": )" << ncols << ","
+                                    << R"("ny": )" << nrows << ","
+                                    << R"("refTime": ")" << referenceTime << R"(",)"
+                                    << R"("lo1": )" << westLon
+                                    << R"(},"data":[)";
 
+                            {
+                                // Flatten matrixU to a 1D comma-separated list
+                                bool firstVal = true;
+                                for (size_t r = 0; r < nrows; r++)
                                 {
-                                    // Flatten matrixV to a 1D comma-separated list
-                                    bool firstVal = true;
-                                    for (size_t r = 0; r < nrows; r++)
+                                    for (size_t c = 0; c < ncols; c++)
                                     {
-                                        for (size_t c = 0; c < ncols; c++)
-                                        {
-                                            if (!firstVal)
-                                                outFile << ",";
-                                            outFile << matrixV[r][c];
-                                            firstVal = false;
-                                        }
+                                        if (!firstVal)
+                                            outFile << ",";
+                                        double val = matrixV[c][nrows - r - 1];
+                                        if (std::isnan(val))
+                                            outFile << 0.0;
+                                        else
+                                            outFile << val;
+
+                                        firstVal = false;
                                     }
                                 }
-
-                                outFile << "]}]"; // close second object + JSON array
-                                outFile.close();
                             }
+
+                            outFile << "]}]"; // close second object + JSON array
+                            outFile.close();
+                        }
                     }
-    
+                    else if (lowerFilename.size() >= 4 &&
+                             (lowerFilename.substr(lowerFilename.size() - 4) == ".png" ||
+                              lowerFilename.substr(lowerFilename.size() - 4) == ".jpg"))
+                    {
+                        for (size_t i = 0; i < matrixU.size(); ++i)
+                        {
+                            for (size_t j = 0; j < matrixU[i].size(); ++j)
+                            {
+                                matrixU[i][j] = std::sqrt(matrixU[i][j] * matrixU[i][j] + matrixV[i][j] * matrixV[i][j]);
+                            }
+                        }
+
+                        writeImage(filename.c_str(), matrixU, minVal, maxVal, colormap);
+                    }
+                    // e.g.
+
                     // Still handle optional projectionOut if present
                     if (argMap.find("projectionOut") != argMap.end())
                     {
@@ -1282,21 +1314,20 @@ namespace libforefire
                         double eastLon = getDomain()->getLonFromX(NEX);
                         double southLat = getDomain()->getLatFromY(SWY);
                         double northLat = getDomain()->getLatFromY(NEY);
-    
+
                         std::string projectionPath = argMap["projectionOut"];
                         if (projectionPath == "json")
                         {
-                            double minVal = minMax[0] ;
+                            double minVal = minMax[0];
                             double maxVal = minMax[1];
                             *currentSession.outStream << "{\"SWlon\":" << westLon
                                                       << ",\"SWlat\":" << southLat
                                                       << ",\"NElon\":" << eastLon
-                                                      << ",\"NElat\":" << northLat 
+                                                      << ",\"NElat\":" << northLat
                                                       << ",\"minVal\":" << minVal
                                                       << ",\"maxVal\":" << maxVal
                                                       << "}" << std::endl;
                         }
-
                     }
                 }
                 // --------------------------------------------------------------
@@ -1312,11 +1343,11 @@ namespace libforefire
                         std::string lowerFilename = filename;
                         std::transform(lowerFilename.begin(), lowerFilename.end(),
                                        lowerFilename.begin(), ::tolower);
-    
+
                         // e.g. PNG/JPG
                         if (lowerFilename.size() >= 4 &&
-                           (lowerFilename.substr(lowerFilename.size() - 4) == ".png" ||
-                            lowerFilename.substr(lowerFilename.size() - 4) == ".jpg"))
+                            (lowerFilename.substr(lowerFilename.size() - 4) == ".png" ||
+                             lowerFilename.substr(lowerFilename.size() - 4) == ".jpg"))
                         {
                             writeImage(filename.c_str(), matrix, minVal, maxVal, colormap);
                             if (argMap.find("histbins") != argMap.end())
@@ -1338,12 +1369,12 @@ namespace libforefire
                             size_t nlon = (eni > 0) ? eni : 100;
                             double dLat = (northLat - southLat) / (nlat - 1);
                             double dLon = (eastLon - westLon) / (nlon - 1);
-    
+
                             for (size_t j = 0; j < nlat; j++)
                                 latitudes.push_back(southLat + j * dLat);
                             for (size_t i = 0; i < nlon; i++)
                                 longitudes.push_back(westLon + i * dLon);
-    
+
                             writeNetCDF(filename.c_str(), parameter, matrix, latitudes, longitudes);
                         }
                         // e.g. ASCII
@@ -1356,7 +1387,7 @@ namespace libforefire
                         {
                             std::cerr << "Unsupported file extension: " << filename << std::endl;
                         }
-    
+
                         // Optional projectionOut
                         if (argMap.find("projectionOut") != argMap.end())
                         {
@@ -1364,7 +1395,7 @@ namespace libforefire
                             double eastLon = getDomain()->getLonFromX(NEX);
                             double southLat = getDomain()->getLatFromY(SWY);
                             double northLat = getDomain()->getLatFromY(NEY);
-    
+
                             std::string projectionPath = argMap["projectionOut"];
                             if (projectionPath == "json")
                             {
@@ -1373,7 +1404,7 @@ namespace libforefire
                                 *currentSession.outStream << "{\"SWlon\":" << westLon
                                                           << ",\"SWlat\":" << southLat
                                                           << ",\"NElon\":" << eastLon
-                                                          << ",\"NElat\":" << northLat 
+                                                          << ",\"NElat\":" << northLat
                                                           << ",\"minVal\":" << minVal
                                                           << ",\"maxVal\":" << maxVal
                                                           << "}" << std::endl;
@@ -1424,18 +1455,108 @@ namespace libforefire
                 std::cerr << "Error: Filename not provided in the argument." << std::endl;
             }
         }
-    
+
         return normal;
     }
-    
 
-    int Command::loadSimulation(const std::string &arg, size_t &numTabs)
+    int Command::addLayer(const std::string &arg, size_t &numTabs)
     {
         if (getDomain() == nullptr)
             return normal;
-        string ncfilePath = getString("arrival_time_of_front", arg);
-        cout << getDomain()->getDomainID() << ": " << "loading " << ncfilePath << endl;
-        getDomain()->loadArrivalTimeNC(ncfilePath); // Default save operation if no arguments provided
+
+        if (arg.empty())
+        {
+            *currentSession.outStream << "Error: No arguments provided." << std::endl;
+            return error;
+        }
+
+        // Parse the argument string into key-value pairs.
+        std::map<std::string, std::string> argMap;
+        std::string temp = arg;
+        size_t pos = 0;
+        std::string token;
+        const char delim = ';';
+        const char assign = '=';
+
+        while ((pos = temp.find(delim)) != std::string::npos)
+        {
+            token = temp.substr(0, pos);
+            size_t eq_pos = token.find(assign);
+            if (eq_pos != std::string::npos)
+            {
+                std::string key = token.substr(0, eq_pos);
+                std::string value = token.substr(eq_pos + 1);
+                argMap[key] = value;
+            }
+            temp.erase(0, pos + 1);
+        }
+        // Handle the last token
+        size_t eq_pos = temp.find(assign);
+        if (eq_pos != std::string::npos)
+        {
+            std::string key = temp.substr(0, eq_pos);
+            std::string value = temp.substr(eq_pos + 1);
+            argMap[key] = value;
+        }
+
+        // 'name' is required.
+        if (argMap.find("name") == argMap.end() || argMap["name"].empty())
+        {
+            *currentSession.outStream << "Error: name parameter is required." << std::endl;
+            return error;
+        }
+        std::string layerName = argMap["name"];
+
+        // 'type' is optional, default is "data"
+        std::string layerType = "data";
+        if (argMap.find("type") != argMap.end())
+            layerType = argMap["type"];
+
+        // 'modelName' is optional (used for flux layers)
+        std::string modelName = "";
+        if (argMap.find("modelName") != argMap.end())
+            modelName = argMap["modelName"];
+
+        // 'value' is optional; default behavior is to search for a parameter with the same name, then use 0.
+        double layerValue = 0.0;
+        if (argMap.find("value") != argMap.end())
+        {
+            layerValue = std::stod(argMap["value"]);
+        }
+        else
+        {
+            std::string param = currentSession.params->getParameter(layerName);
+            if (param != "1234567890")
+            {
+                try
+                {
+                    layerValue = std::stod(param);
+                }
+                catch (...)
+                {
+                    layerValue = 0.0;
+                }
+            }
+            else
+            {
+                layerValue = 0.0;
+            }
+        }
+
+        // Get the bounds of the FireDomain.
+        double SWX = getDomain()->SWCornerX();
+        double SWY = getDomain()->SWCornerY();
+        double NEX = getDomain()->NECornerX();
+        double NEY = getDomain()->NECornerY();
+
+        FFPoint SWCorner(SWX, SWY, 0.0);
+        // Using a default height (e.g., 10000) for the z-extent.
+        FFPoint spatialExtent(NEX - SWX, NEY - SWY, 10000.0);
+
+        // Call addConstantLayer on the DataBroker.
+        getDomain()->getDataBroker()->addConstantLayer(layerName, layerType, modelName, layerValue, SWCorner, spatialExtent);
+
+        *currentSession.outStream << "Layer " << layerName << " added." << std::endl;
         return normal;
     }
 
@@ -1573,12 +1694,18 @@ namespace libforefire
 
     int Command::getParameter(const string &arg, size_t &numTabs)
     {
+
+        if (getDomain() == nullptr)
+        {
+            return normal;
+        }
+
         if (arg.empty())
         {
-            cout << "You have to specify one argument" << endl;
+
             return error;
         }
-    
+
         // If the argument is "parameterNames", output a comma-separated list of parameter keys.
         if (arg == "parameterNames")
         {
@@ -1592,7 +1719,7 @@ namespace libforefire
                 if (i != names.size() - 1)
                     result += ", ";
             }
-            *currentSession.outStream << result;
+            *currentSession.outStream << result <<std::endl;
             return normal;
         }
         // If the argument is "layerNames", output a comma-separated list of layer names.
@@ -1606,7 +1733,7 @@ namespace libforefire
                 if (i != names.size() - 1)
                     result += ", ";
             }
-            *currentSession.outStream << result;
+            *currentSession.outStream << result<<std::endl;
             return normal;
         }
         else
@@ -1618,7 +1745,7 @@ namespace libforefire
                 cout << "Parameter doesn't exist : " << arg << endl;
                 return error;
             }
-            *currentSession.outStream << param;
+            *currentSession.outStream << param<<std::endl;
             return normal;
         }
     }
@@ -2124,8 +2251,8 @@ namespace libforefire
                     {
                         size_t ncNX = nxDim.getSize();
                         size_t ncNY = nyDim.getSize();
-                        simParam->setParameter("AtmoNX", std::to_string(ncNX));
-                        simParam->setParameter("AtmoNY", std::to_string(ncNY));
+                        simParam->setParameter("atmoNX", std::to_string(ncNX));
+                        simParam->setParameter("atmoNY", std::to_string(ncNY));
                     }
                 }
             }
@@ -2338,13 +2465,13 @@ namespace libforefire
         }
 
         // Check the option to determine how to interpret the values.
-      
+
         if (opt == "lonlat")
         {
             // Convert spherical (lon, lat) to Cartesian coordinates (x, y).
             double x = getDomain()->getXFromLon(v1);
             double y = getDomain()->getYFromLat(v2);
-   
+
             return FFPoint(x, y, v3);
         }
         else
@@ -2831,12 +2958,13 @@ namespace libforefire
         //  Use the predefined colormaps or default to grayscale
         //  Retrieve colormap from map
         auto it = colormapMap.find(colormapName);
-        if (it == colormapMap.end()) {
+        if (it == colormapMap.end())
+        {
             it = colormapMap.find(currentSession.params->getParameter("defaultColormap"));
         }
-        
+
         const ColorEntry *colorMap = it != colormapMap.end() ? it->second : greyColormap;
-        
+
         int mapSize = colormapSize; // Assuming all colormaps have the same size
 
         // Apply color mapping with corrected indices and flipping vertically
@@ -2960,12 +3088,12 @@ namespace libforefire
         stbi_write_png(hist_filename.c_str(), width, height, 4, histogram.data(), width * 4);
     }
 
-    void Command::writeNetCDF(const char *filename, const string& varName, const std::vector<std::vector<double>> &matrix, const vector<double> &latitudes, const vector<double> &longitudes)
+    void Command::writeNetCDF(const char *filename, const string &varName, const std::vector<std::vector<double>> &matrix, const vector<double> &latitudes, const vector<double> &longitudes)
     {
         try
         {
             // Create (or replace) the NetCDF file using NetCDF-4 mode.
-            NcFile dataFile(filename, NcFile::replace );
+            NcFile dataFile(filename, NcFile::replace);
 
             // Dimensions.
             size_t nlat = latitudes.size();
@@ -3006,7 +3134,7 @@ namespace libforefire
             std::cerr << "Error writing NetCDF file: " << e.what() << std::endl;
         }
     }
-    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>>& matrix, double SWX, double SWY, double NEX, double NEY)
+    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double NEY)
     {
         std::ofstream out(filename);
         if (!out)

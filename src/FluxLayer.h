@@ -132,7 +132,6 @@ public:
 	: DataLayer<T>(name), SWCorner(atmoSWCorner), NECorner(atmoNECorner)
 	  	  , nx(nnx), ny(nny), cells(FDcells), mapStartTime(t0)
 	  	  , mapNx(nmx), mapNy(nmy), mapNz(nmz), mapNt(nmt) {
-
 		size = nx*ny;
 		flux = new FFArray<T>(name, 0., nx, ny);
 
@@ -248,6 +247,7 @@ T FluxLayer<T>::getValueAt(FireNode* fn){
 
 template<typename T>
 T FluxLayer<T>::getValueAt(FFPoint loc, const double& t){
+
 	return getNearestData(loc, t);
 }
 
@@ -266,8 +266,13 @@ T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 
 	nx > 1 ? i = ((size_t) (loc.getX()-SWCorner.getX())/dx) : i = 0;
 	ny > 1 ? j = ((size_t) (loc.getY()-SWCorner.getY())/dy) : j = 0;
-
-	return (*flux)(i, j);
+	
+	int numFluxModelsMax = 50;
+	int modelCount[numFluxModelsMax];
+	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
+	double v= cells[i][j].applyModelsOnBmap(this->getKey(), t, t, modelCount);
+ 
+	return v;
 }
 
 template<typename T>
@@ -315,7 +320,7 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 
 	   	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
 	   	int totalcount = 0;
-	   	totalcount = 0;
+ 
 
 	   	for ( size_t i = 0; i < nx; i++ ){
 			for ( size_t j = 0; j < ny; j++ ){

@@ -81,10 +81,10 @@ HeatFluxBasicModel::HeatFluxBasicModel(
 	dataBroker->registerFluxModel(this);
  
 	/* Definition of the coefficients */
-	burningDuration = 30.;
+	burningDuration = 300.;
 	if ( params->isValued("burningDuration") )
 		burningDuration = params->getDouble("burningDuration");
-	nominalHeatFlux = 150000.;
+	nominalHeatFlux = 1000000.;
 	if ( params->isValued("nominalHeatFlux") )
 		nominalHeatFlux = params->getDouble("nominalHeatFlux");
 }
@@ -102,6 +102,7 @@ string HeatFluxBasicModel::getName(){
 /* ****************** */
 /* Model for the flux */
 /* ***	*************** */
+#include <iostream>
 
 double HeatFluxBasicModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
@@ -111,27 +112,46 @@ double HeatFluxBasicModel::getValue(double* valueOf
 
 	/* Instantaneous flux */
 	/* ------------------ */
-
+    double v = 0;
 	if ( bt == et ){
-		if ( bt < at ) return 0;
-		if ( bt < at + burningDuration ) return nominalHeatFlux;
-		return 0;
+		if ( bt < at ) v = 0;
+		else if ( bt < at + burningDuration ) v = nominalHeatFlux;
+		else v = 0; 
+		return v;
 	}
 
 	/* Averaged flux */
 	/* ------------- */
 
 	/* looking outside burning interval */
-	if ( et < at or bt > at + burningDuration ) return 0;
-	/* begin time outside interval, end time inside */
-	if ( bt < at and et <= at + burningDuration ) return nominalHeatFlux*(et-at)/(et-bt);
-	/* begin time outside interval, end time outside */
-	if ( bt < at and et > at + burningDuration ) return nominalHeatFlux*burningDuration/(et-bt);
-	/* begin time inside interval, end time inside */
-	if ( bt >= at and et <= at + burningDuration ) return nominalHeatFlux;
-	/* begin time inside interval, end time outside */
-	return nominalHeatFlux*(at+burningDuration-bt)/(et-bt);
+	if ( et < at or bt > at + burningDuration ) {
+		v = 0;
+		return v;
+	}
 
+	/* begin time outside interval, end time inside */
+	if ( bt < at and et <= at + burningDuration ) {
+		v = nominalHeatFlux * (et - at) / (et - bt);
+	 
+		return v;
+	}
+
+	/* begin time outside interval, end time outside */
+	if ( bt < at and et > at + burningDuration ) {
+		v = nominalHeatFlux * burningDuration / (et - bt);
+	 
+		return v;
+	}
+
+	/* begin time inside interval, end time inside */
+	if ( bt >= at and et <= at + burningDuration ) {
+		v = nominalHeatFlux;
+		 		return v;
+	}
+
+	/* begin time inside interval, end time outside */
+	v = nominalHeatFlux * (at + burningDuration - bt) / (et - bt); 
+	return v;
 }
 
 } /* namespace libforefire */
