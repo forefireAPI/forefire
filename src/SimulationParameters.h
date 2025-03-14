@@ -88,6 +88,9 @@ public:
     
     /*! returns the correct absolute path from a relative or absolute path */
     static string GetPath(string arg);
+
+	static std::vector<double> UTM2lonlat(double x, double y, int utmzone, bool isNorth) ;
+	static std::vector<double> lonlat2UTM(double lon, double lat, int utmzone, bool isNorth) ;
 };
 
 }

@@ -19,6 +19,12 @@ def get_fuels_table(propagation_model):
     else:
         raise NotImplementedError
 
+import struct
+
+# Example usage:
+# lcp_data = readLCPFile("myfile.lcp")
+# print(lcp_data["ElevFile"])
+# print(lcp_data["landscape"][0])  # prints the first row of landscape values
 
 def RothermelAndrews2018FuelTable():
     """

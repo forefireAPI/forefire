@@ -98,15 +98,20 @@ namespace libforefire
 		/* Getting the fuel parameters' table */
 		/*------------------------------------*/
 		ostringstream infile;
-		/*
-		infile << params->getParameter("caseDirectory") << '/'
-				<< params->getParameter("ForeFireDataDirectory") << '/'
-				<< params->getParameter("fuelsTableFile");
-		*/
+
 		std::string paramTable = params->getParameter("fuelsTable");
 		if (paramTable != "1234567890")
 		{
-			readTableFromString(paramTable, fuelPropertiesTable);
+			cout << "Read fuel table" << paramTable << endl;
+			if (paramTable.substr(0, 3) == "STD")
+			{
+				cout << "Using standard fuel table" << paramTable << endl;
+				readTableFromString(params->getParameter(paramTable), fuelPropertiesTable);
+			}
+			else
+			{
+				readTableFromString(paramTable, fuelPropertiesTable);
+			}
 		}
 		else
 		{
@@ -139,10 +144,9 @@ namespace libforefire
 	void DataBroker::registerPropagationModel(PropagationModel *model)
 	{
 		/* Constructing the vector of property getters */
-
 		propGetterMap::const_iterator pg;
 		bool fuelAsked = false;
-
+		bool moistAsked = false;
 		for (size_t prop = 0; prop < model->numProperties; prop++)
 		{
 			try
@@ -155,6 +159,17 @@ namespace libforefire
 						numPropDataGetters[model->index]++;
 						neededProperties.push_back("fuel");
 						fuelAsked = true;
+					}
+				}
+				else
+				if ((model->wantedProperties)[prop].substr(0, 5) == "moist")
+				{
+					if (!moistAsked)
+					{
+						propDataGetters[model->index].push_back(&getMoisturesProperties);
+						numPropDataGetters[model->index]++;
+						neededProperties.push_back("fuel");
+						moistAsked = true;
 					}
 				}
 				else
@@ -309,14 +324,14 @@ namespace libforefire
 		if (ilayer != layersMap.end())
 		{
 
-			if (params->getParameter("runmode") == "standalone")
-			{
-				// cout << "Redefining layer for variable " << name << " !" << endl;
-				DataLayer<double> *oldlayer = ilayer->second;
-				layersMap.erase(name);
-				layers.remove(oldlayer);
-				delete oldlayer;
-			}
+			//	if (params->getParameter("runmode") == "standalone")
+			//	{
+			// cout << "Redefining layer for variable " << name << " !" << endl;
+			DataLayer<double> *oldlayer = ilayer->second;
+			layersMap.erase(name);
+			layers.remove(oldlayer);
+			delete oldlayer;
+			//}
 		}
 
 		layersMap.insert(make_pair(name, layer));
@@ -359,17 +374,18 @@ namespace libforefire
 		}
 		if (name.find("fuel") != string::npos)
 		{
+	 
 			fuelLayer = layer;
 		}
 	}
 
 	void DataBroker::registerFluxLayer(string name, FluxLayer<double> *layer)
-	{	
- 
+	{
+
 		flayer = fluxLayersMap.find(name);
 		if (flayer != fluxLayersMap.end())
 		{
-		 
+
 			FluxLayer<double> *oldlayer = flayer->second;
 			fluxLayersMap.erase(name);
 			fluxLayers.remove(oldlayer);
@@ -384,7 +400,6 @@ namespace libforefire
 		{
 			heatFluxLayer = layer;
 		}
-		
 	}
 
 	void DataBroker::setAtmosphericDomain(const FFPoint &SWCorner,
@@ -421,11 +436,14 @@ namespace libforefire
 		registerLayer("windV", wvl);
 
 		// Loading the topography
-		Array2DdataLayer<double> *alt = new Array2DdataLayer<double>("altitude", atmosphericData->topography, atmoSWCorner, atmoNECorner);
-		registerLayer("altitude", alt);
+		if (domain->getDomainID() != 0)
+		{
+			Array2DdataLayer<double> *alt = new Array2DdataLayer<double>("altitude", atmosphericData->topography, atmoSWCorner, atmoNECorner);
+			registerLayer("altitude", alt);
+		}
 
 		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-									   atmoSWCorner.getY() - 0.5 * dy, 0);
+									   atmoSWCorner.getY() - 1.5 * dy, 0);
 
 		TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time, scalarOrigin, dx, dy);
 		registerLayer("plumeTopHeight", pth);
@@ -491,15 +509,14 @@ namespace libforefire
 						double val = 0.;
 						if (params->isValued("windU"))
 							val = params->getDouble("windU");
-						addConstantLayer("windU", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner() );
-						
+						addConstantLayer("windU", "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 					}
 					if (windVLayer == 0)
 					{
 						double val = 0.;
 						if (params->isValued("windV"))
 							val = params->getDouble("windV");
-						addConstantLayer("windV", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
+						addConstantLayer("windV", "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 					}
 				}
 				else if (neededProperties.back().find("uel") != string::npos)
@@ -520,7 +537,7 @@ namespace libforefire
 					double val = 0.;
 					if (params->isValued("altitude"))
 						val = params->getDouble("altitude");
-					addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
+					addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 				}
 				else if (neededProperties.back().find("epth") != string::npos)
 				{
@@ -547,7 +564,7 @@ namespace libforefire
 					double val = 0.;
 					if (params->isValued(neededProperties.back()))
 						val = params->getDouble(neededProperties.back());
-					addConstantLayer(neededProperties.back(), "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
+					addConstantLayer(neededProperties.back(), "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 				}
 			}
 			/* erasing the property from the list of properties to be treated */
@@ -560,11 +577,8 @@ namespace libforefire
 			double val = 0.;
 			if (params->isValued("altitude"))
 				val = params->getDouble("altitude");
-			addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner()-domain->getSWCorner());
+			addConstantLayer("altitude", "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 		}
-
-
-		
 	}
 
 	void DataBroker::initFluxLayers(const double &t)
@@ -588,14 +602,12 @@ namespace libforefire
 		std::string line;
 		const std::string delimiter = ";";
 		std::vector<std::string> paramNames;
-
 		// Get the first line to extract parameter names
 		if (!std::getline(dataStream, line))
 		{
 			throw std::runtime_error("ERROR: could not read the header line from data.");
 		}
 		tokenize(line, paramNames, delimiter);
-
 		// Process the rest of the data
 		std::vector<std::string> vals;
 		double dval;
@@ -614,9 +626,8 @@ namespace libforefire
 				std::istringstream iss(vals[pos]);
 				if (!(iss >> dval))
 				{
-					throw std::runtime_error("ERROR: could not cast " + vals[pos] +
-											 " into a suitable value for parameter " + paramNames[pos] +
-											 " of fuel " + vals[0]);
+					dval = 0.0;
+				//	cout<<"FUEL: " << vals[pos] <<" parameter " << paramNames[pos] <<" index " + vals[0]<<endl;
 				}
 				currentMap[paramNames[pos]] = dval;
 			}
@@ -624,71 +635,24 @@ namespace libforefire
 		}
 	}
 
-	void DataBroker::readTableFromAsciiFile(string filename,
-											vector<map<string, double>> &table)
+	void DataBroker::readTableFromAsciiFile(std::string filename,
+											std::vector<std::map<std::string, double>> &table)
 	{
-
-		vector<string> paramNames;
-
-		/* Opening the file */
-		ifstream file(filename.c_str());
-
+		std::ifstream file(filename);
 		if (!file)
 		{
-			cout << "WARNING: could not load file for fuel properties " << filename
-				 << endl;
+			std::cout << "WARNING: could not load file for fuel properties " << filename << std::endl;
 			return;
 		}
 
-		string line;
-		const string delimiter = ";";
-
-		/* getting lines of parameter one after each other.
-		 * First line corresponds to the keys of the parameters. */
-		getline(file, line);
-		tokenize(line, paramNames, delimiter);
-
-		/* Retrieving the data in the other lines */
-		size_t fuelNum = 0;
-		vector<string> vals;
-		double dval;
-		while (getline(file, line))
-		{
-			/* Affecting the map */
-			table.push_back(map<string, double>());
-			/* cutting the line according to delimiter */
-			tokenize(line, vals, delimiter);
-			if (vals.size() != paramNames.size())
-			{
-				cout << "Number of parameters for fuel " << vals[0]
-					 << " isn't in accordance with the number of parameters in the table"
-					 << " (" << vals.size() << " vs " << paramNames.size() << ")"
-					 << endl;
-				;
-			}
-			else
-			{
-				for (size_t pos = 0; pos < vals.size(); pos++)
-				{
-					istringstream iss(vals[pos]);
-					if (iss >> dval)
-					{
-						table[fuelNum].insert(make_pair(paramNames[pos], dval));
-						// cout << "at "<<fuelNum<< "  param "<<paramNames[pos] <<" = "<<dval<<endl;
-					}
-					else
-					{
-						cout << "could not cast " << vals[pos]
-							 << " into a suitable value " << "for parameter "
-							 << paramNames[pos] << " of fuel " << vals[0]
-							 << endl;
-					}
-				}
-				fuelNum++;
-			}
-			vals.clear();
-		}
+		// Read the entire file content into a string.
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		std::string data = buffer.str();
 		file.close();
+
+		// Call the existing function to parse the table.
+		readTableFromString(data, table);
 	}
 
 	void DataBroker::tokenize(const string &str, vector<string> &tokens,
@@ -765,13 +729,12 @@ namespace libforefire
 
 		// Iterate over regular layers and add their names.
 		for (const auto &entry : layersMap)
-		{	
-		
+		{
+
 			names.push_back(entry.first);
 		}
 
 		// Iterate over flux layers and add their names.
-	
 
 		return names;
 	}
@@ -779,10 +742,13 @@ namespace libforefire
 	DataLayer<double> *DataBroker::getLayer(const string &property)
 	{
 		// Scanning the scalar layers
-
+		
 		ilayer = layersMap.find(property);
-		if (ilayer != layersMap.end())
+		if (ilayer != layersMap.end()){
+			//cout << "found lmayer  "<<ilayer->second->getKey()<<endl;
 			return ilayer->second;
+		}
+			
 
 		return 0;
 	}
@@ -800,16 +766,14 @@ namespace libforefire
 	FluxLayer<double> *DataBroker::getFluxLayer(const string &property)
 	{
 		// Scanning the scalar layers
-	 
+
 		flayer = fluxLayersMap.find(property);
- 
-		if (flayer != fluxLayersMap.end()){
-			
- 
+
+		if (flayer != fluxLayersMap.end())
+		{
+
 			return flayer->second;
 		}
-		
- 
 
 		return 0;
 	}
@@ -842,8 +806,40 @@ namespace libforefire
 	int DataBroker::getFuelProperties(FireNode *fn, PropagationModel *model,
 									  int start)
 	{
+	
 		int numberOfValuesFilled = fuelLayer->getValuesAt(fn, model, start);
 		return numberOfValuesFilled;
+	}
+
+	int DataBroker::getMoisturesProperties(FireNode *fn, PropagationModel *model, int keynum)
+	{   //
+		double m_ones = 0.032;
+		double m_liveh =  0.7;
+		double m_tens = 0.04;
+		double m_livew = 1;
+		double m_hundreds = 0.06;
+		
+		if (params->isValued("moistures.ones"))
+			m_ones = params->getDouble("moistures.ones");
+	
+		if (params->isValued("moistures.liveh"))
+			m_liveh = params->getDouble("moistures.liveh");
+		
+		if (params->isValued("moistures.tens"))
+			m_tens = params->getDouble("moistures.tens");
+		
+		if (params->isValued("moistures.livew"))
+			m_livew = params->getDouble("moistures.livew");
+		
+		if (params->isValued("moistures.hundreds"))
+			m_hundreds = params->getDouble("moistures.hundreds");
+
+		(model->properties)[keynum] = m_ones;
+		(model->properties)[keynum+1] = m_liveh; 
+		(model->properties)[keynum+2] = m_tens;
+		(model->properties)[keynum+3] = m_livew;
+		(model->properties)[keynum+4] = m_hundreds;
+		return 5;
 	}
 
 	int DataBroker::getMoisture(FireNode *fn, PropagationModel *model, int keynum)
@@ -1027,8 +1023,8 @@ namespace libforefire
 		return oss.str();
 	}
 
-	void DataBroker::addConstantLayer(const string& name,const string& layertype,const string& modelName, double value,
-		 const FFPoint &SWOrigin,const FFPoint &shapeExtends)
+	void DataBroker::addConstantLayer(const string &name, const string &layertype, const string &modelName, double value,
+									  const FFPoint &SWOrigin, const FFPoint &shapeExtends)
 	{
 		// Set time origin to 0 and Lt to infinity.
 		double timeOrigin = 0.0;
@@ -1041,9 +1037,9 @@ namespace libforefire
 		size_t nz = 1;
 		size_t nt = 1;
 		size_t totalElements = nx * ny * nz * nt;
-		FFPoint spatialExtent = FFPoint(shapeExtends.x,shapeExtends.y , shapeExtends.z);
-		FFPoint SWCorner = FFPoint(SWOrigin.x,SWOrigin.y , SWOrigin.z);
-		
+		FFPoint spatialExtent = FFPoint(shapeExtends.x, shapeExtends.y, shapeExtends.z);
+		FFPoint SWCorner = FFPoint(SWOrigin.x, SWOrigin.y, SWOrigin.z);
+
 		if (layertype == "data")
 		{
 			// Create an array filled with the constant value.
@@ -1055,16 +1051,16 @@ namespace libforefire
 			// Construct the data layer using the constant field.
 			XYZTDataLayer<double> *layer = new XYZTDataLayer<double>(name, SWCorner, timeOrigin, spatialExtent, Lt,
 																	 nx, ny, nz, nt, data);
-							 
-			//delete[] data;
+
+			// delete[] data;
 			registerLayer(name, layer);
 		}
 		else if (layertype == "flux")
 		{
-		
+
 			size_t mindex = domain->getFreeFluxModelIndex();
-		 
-			FluxModel* newFluxmodel = domain->fluxModelInstanciation(mindex, modelName);
+
+			FluxModel *newFluxmodel = domain->fluxModelInstanciation(mindex, modelName);
 
 			int *data = new int[totalElements];
 			for (size_t i = 0; i < totalElements; ++i)
@@ -1075,16 +1071,17 @@ namespace libforefire
 			FluxLayer<double> *layer = new FluxLayer<double>(name,
 															 atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy, domain->getCells(),
 															 data, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt);
-			//delete[] data;
+			// delete[] data;
 			registerFluxModel(newFluxmodel);
-		 
+
 			registerFluxLayer(name, layer);
-		}else if( layertype == "BRatio" or layertype == "Bratio" or layertype == "bratio" ){
+		}
+		else if (layertype == "BRatio" or layertype == "Bratio" or layertype == "bratio")
+		{
 			/* Instantiating a burning ratio layer */
-			BurningRatioLayer<double>* brlayer =
-			new BurningRatioLayer<double>(name,  atmoSWCorner, atmoNECorner,atmosphericNx, atmosphericNy, domain->getCells());
+			BurningRatioLayer<double> *brlayer =
+				new BurningRatioLayer<double>(name, atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy, domain->getCells());
 			registerLayer(name, brlayer);
-			 
 		}
 		else
 		{
@@ -1092,308 +1089,304 @@ namespace libforefire
 		}
 	}
 
-	void DataBroker::loadFromNCFile(string filename)
+	void DataBroker::loadFromNCFile(std::string filename)
 	{
+		if(filename.empty())
+		{
+			return;
+		}
 		try
 		{
 			NcFile dataFile(filename.c_str(), NcFile::read);
-			propGetterMap::const_iterator pg;
-			if (!dataFile.isNull())
+			if (dataFile.isNull())
 			{
-				NcVar domvar = dataFile.getVar("domain");
-				double version = 1;
-				map<string, NcVarAtt> attributeList = domvar.getAtts();
-				map<string, NcVarAtt>::iterator myIter;
-				myIter = attributeList.find("version");
-				if (myIter != attributeList.end())
+				cout << "Error: Unable to open file " << filename << endl;
+				return;
+			}
+
+			NcVar domvar = dataFile.getVar("domain");
+			if (domvar.isNull())
+			{
+				cout << "Error: Domain variable not found in file " << filename << endl;
+				return;
+			}
+
+			// Helper lambda to check if an attribute exists
+			auto hasAttribute = [&](const NcVar &var, const std::string &attName) -> bool
+			{
+				std::map<std::string, NcVarAtt> attMap = var.getAtts();
+				return (attMap.find(attName) != attMap.end());
+			};
+
+			// Read version attribute
+			double version = 1;
+			{
+				auto attributes = domvar.getAtts();
+				auto it = attributes.find("version");
+				if (it != attributes.end() && !it->second.isNull())
 				{
-					myIter->second.getValues(&version);
+					it->second.getValues(&version);
 				}
+			}
 
-				double Xorigin = 0;
-				double Yorigin = 0;
-				double Zorigin = 0;
-				NcVarAtt att = domvar.getAtt("SWx");
-				if (!att.isNull())
+			// Read simulation origin coordinates
+			double Xorigin = 0, Yorigin = 0, Zorigin = 0;
+			double Lx = 0, Ly = 0, Lz = 0;
+			{
+				auto attributes = domvar.getAtts();
+				auto getAttributeValue = [&](const std::string &attName, double &value)
 				{
-					att.getValues(&Xorigin);
+					auto it = attributes.find(attName);
+					if (it != attributes.end() && !it->second.isNull())
+					{
+						it->second.getValues(&value);
+					}
+				};
+				getAttributeValue("SWx", Xorigin);
+				getAttributeValue("SWy", Yorigin);
+				getAttributeValue("SWz", Zorigin);
+				getAttributeValue("Lx", Lx);
+				getAttributeValue("Ly", Ly);
+				getAttributeValue("Lz", Lz);
+			}
+
+			// Process BBoxWSEN attribute if available
+
+			if (hasAttribute(domvar, "BBoxWSEN"))
+			{
+				NcVarAtt bboxAtt = domvar.getAtt("BBoxWSEN");
+				size_t len = bboxAtt.getAttLength();
+				if (len == 4)
+				{
+					std::vector<double> bbox(4);
+					bboxAtt.getValues(&bbox[0]);
+
+					std::ostringstream oss;
+					oss << bbox[0] << "," << bbox[1] << "," << bbox[2] << "," << bbox[3];
+					cout << "WARNING got BBoxWSEN as a double array in NC data, should be a string parameter, not using it: " << oss.str() << endl;
+					// params->setParameter("dataTileBBoxWSEN", oss.str());
 				}
-				att = domvar.getAtt("SWy");
-				if (!att.isNull())
+				else
 				{
-					att.getValues(&Yorigin);
-				}
-				att = domvar.getAtt("SWz");
-				if (!att.isNull())
-				{
-					att.getValues(&Zorigin);
-				}
-	
-
-				double Lx = 0;
-				double Ly = 0;
-				double Lz = 0;
-				att = domvar.getAtt("Lx");
-				if (!att.isNull())
-					att.getValues(&Lx);
-				att = domvar.getAtt("Ly");
-				if (!att.isNull())
-					att.getValues(&Ly);
-				att = domvar.getAtt("Lz");
-				if (!att.isNull())
-					att.getValues(&Lz);
-
-
-
-				
-				FFPoint spatialExtent = FFPoint(Lx, Ly, Lz);
-				//Xorigin = Xorigin+10000.;
-				//Yorigin = Yorigin+10000.;
-				 
-	
-				att = domvar.getAtt("BBoxWSEN");
-				string bboxwsen;
-				if (!att.isNull())
-				{
-					size_t len = att.getAttLength(); // Get the length of the attribute
-					std::vector<char> buffer(len + 1, '\0'); // Allocate buffer with extra space for null terminator
-					att.getValues(&buffer[0]);  // Read attribute into the buffer
-					std::string bboxwsen(buffer.data()); // Construct std::string from the buffer
-				
+					std::vector<char> buffer(len + 1, '\0'); // extra space for null terminator
+					bboxAtt.getValues(&buffer[0]);
+					std::string bboxwsen(buffer.data());
 					params->setParameter("dataTileBBoxWSEN", bboxwsen);
-					vector<double> bbox = params->getDoubleArray("dataTileBBoxWSEN");
-					
-					double metersPerDegreeLat =  Ly/(bbox[3]-bbox[1]);
-					double metersPerDegreeLon =  Lx/(bbox[2]-bbox[0]);
-					params->setDouble("metersPerDegreeLat",metersPerDegreeLat);
-					params->setDouble("metersPerDegreesLon",metersPerDegreeLon);
+				}
 
-					double simSWLat = 9999;
-					double simSXLon = 9999;
-					
-					if(params->getParameter("runmode") == "coupled"){
-						if(params->isValued("SWLngLat")){
-							simSWLat = params->getDoubleArray("SWLngLat")[1];
-							simSXLon = params->getDoubleArray("SWLngLat")[0];
-							
+				vector<double> bbox = params->getDoubleArray("dataTileBBoxWSEN");
+				if (bbox.size() >= 4 && (bbox[3] - bbox[1]) != 0 && (bbox[2] - bbox[0]) != 0)
+				{
+					double metersPerDegreeLat = Ly / (bbox[3] - bbox[1]);
+					double metersPerDegreeLon = Lx / (bbox[2] - bbox[0]);
+					params->setDouble("metersPerDegreeLat", metersPerDegreeLat);
+					params->setDouble("metersPerDegreesLon", metersPerDegreeLon);
+
+					double simSWLat = 9999, simSXLon = 9999;
+					std::string runmode = params->getParameter("runmode");
+					if ((runmode == "coupled" || runmode == "masterMNH") && params->isValued("SWLngLat"))
+					{
+						vector<double> swLngLat = params->getDoubleArray("SWLngLat");
+						if (swLngLat.size() >= 2)
+						{
+							simSXLon = swLngLat[0];
+							simSWLat = swLngLat[1];
 						}
 					}
-					
-					if(params->getParameter("runmode") == "masterMNH"){	
-							if(params->isValued("SWLngLat")){
-								simSWLat = params->getDoubleArray("SWLngLat")[1];
-								simSXLon = params->getDoubleArray("SWLngLat")[0];
-							}
+					if (simSWLat < 9999)
+					{
+						double dx = (bbox[0] - simSXLon) * metersPerDegreeLon;
+						double dy = (bbox[1] - simSWLat) * metersPerDegreeLat;
+						cout << "WARNING: Shifting origin. Simulation domain SWCorner ("
+							 << domain->getSWCorner().getX() << ", " << domain->getSWCorner().getY()
+							 << ") corresponds to (" << simSXLon << ", " << simSWLat
+							 << ") while data gives offset (" << dx << ", " << dy << ")" << endl;
+						Xorigin += dx;
+						Yorigin += dy;
 					}
-					if(simSWLat <= 9999){
- 
-						
-						double dx = (bbox[0] - simSXLon)*metersPerDegreeLon;
-						double dy = (bbox[1] - simSWLat )*metersPerDegreeLat;
-						cout<<" I have sim domain "<<domain->getSWCorner().getX()<<" "<<domain->getSWCorner().getY()<<" corresponding to "<<simSXLon<<","<<simSWLat<<" in my data this point is "<<dx<<","<<dy<<endl;
-
-						
-						Xorigin = Xorigin + dx;
-						Yorigin = Yorigin + dy;
-					}
-
-
-					
 				}
-				
+			}
 
+			FFPoint spatialExtent(Lx, Ly, Lz);
+			FFPoint SWCorner(Xorigin, Yorigin, Zorigin);
 
-				FFPoint SWCorner = FFPoint(Xorigin, Yorigin, Zorigin);
-				// OK here is the X,Y and Y origin of the tile...
-				// but they may differ from the actual data...
+			// Read time attributes from "t0" (and optionally "Lt")
+			double timeOrigin = 0;
+			{
+				auto attributes = domvar.getAtts();
+				auto it = attributes.find("t0");
+				if (it != attributes.end() && !it->second.isNull())
+				{
+					it->second.getValues(&timeOrigin);
+				}
+			}
+			double Lt = 0;
+			{
+				auto attributes = domvar.getAtts();
+				auto it = attributes.find("Lt");
+				if (it != attributes.end() && !it->second.isNull())
+				{
+					it->second.getValues(&Lt);
+				}
+				else
+				{
+					Lt = timeOrigin;
+				}
+			}
 
+			std::multimap<std::string, NcVar> allVariables = dataFile.getVars();
 
-				double timeOrigin = 0;
-				att = domvar.getAtt("t0");
-				if (!att.isNull())
-					att.getValues(&timeOrigin);
-
-				double Lt = 0;
-				att = domvar.getAtt("t0");
-				if (!att.isNull())
-					att.getValues(&timeOrigin);
-
-				std::multimap<std::string, NcVar> allVariables = dataFile.getVars();
-				NcVarAtt layerTypeNC;
+			// Loop through all variables in the file
+			for (auto it = allVariables.begin(); it != allVariables.end(); ++it)
+			{
+				string varName = it->first;
+				NcVar currentVar = it->second;
 				string layerType;
-				for (auto it = allVariables.begin(); it != allVariables.end(); ++it)
+
+				// Retrieve the "type" attribute if available
+				{
+					auto attributes = currentVar.getAtts();
+					auto attIt = attributes.find("type");
+					if (attIt != attributes.end() && !attIt->second.isNull())
+					{
+						attIt->second.getValues(layerType);
+					}
+				}
+				if (layerType.empty())
+				{
+					cout << "Skipping variable " << varName << " because 'type' attribute is missing." << endl;
+					continue;
+				}
+				if (varName == "wind")
+				{
+					if (!domain->atmosphericCoupling)
+					{
+						XYZTDataLayer<double> *wul = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 0);
+						registerLayer("windU", wul);
+						XYZTDataLayer<double> *wvl = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 1);
+						registerLayer("windV", wvl);
+						PwindULayer = wul;
+						PwindVLayer = wvl;
+					}
+				}
+				// Process known property layers
+				auto pg = propPropertiesGetters.find(varName);
+				if (pg != propPropertiesGetters.end())
 				{
 
-					try
+					if (varName == "altitude" && domain->getDomainID() == 0)
 					{
-						layerTypeNC = it->second.getAtt("type");
-						if (layerTypeNC.isNull())
-						{
-							layerType = "";
-						}
-						else
-						{
-							layerTypeNC.getValues(layerType);
-						}
+						cout << "HHHHHHHHHHHHHHH   read Altitude " << domain->getDomainID() << endl;
+						auto altLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, altLayer);
 					}
-					catch (const NcException &e)
+					else if (varName == "windU")
 					{
-						std::cout << "Warning: Variable " << it->first
-								  << " does not have a 'type' attribute or it could not be read. Skipping..."
-								  << std::endl;
-						continue; // Skip this variable and move to the next one
+						auto windULayerLocal = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						windULayer = windULayerLocal;
+						registerLayer(varName, windULayerLocal);
 					}
-
-					if (layerType.empty())
+					else if (varName == "windV")
 					{
-						std::cout << "Skipping variable " << it->first
-								  << " because 'type' attribute is missing."
-								  << std::endl;
-						continue;
+						auto windVLayerLocal = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, windVLayerLocal);
 					}
-
-					string varName = it->first;
-
-					if (varName == "wind")
+					else if (varName == "temperature")
 					{
-						if (!domain->atmosphericCoupling){
-							XYZTDataLayer<double> *wul = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 0);
-							registerLayer("windU", wul);
-							XYZTDataLayer<double> *wvl = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, 1);
-							registerLayer("windV", wvl);
-							PwindULayer = wul;
-							PwindVLayer = wvl;
-							cout<<" I should not load "<<domain->getDomainID()<<endl;
-				
-						}else{
-							cout<<" all OK "<<domain->getDomainID()<<endl;
-				
-						}
+						auto tempLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, tempLayer);
 					}
-
-					pg = propPropertiesGetters.find(varName);
-					if (pg != propPropertiesGetters.end())
+					else if (varName == "moisture")
 					{
-						if (varName == "altitude")
-						{
-							if (domain->getDomainID() == 0)
-							{
-								// altitude is given by the NetCDF file
-								XYZTDataLayer<double> *altus = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-								registerLayer(varName, altus);
-							}
-						}
-						else if (varName == "windU")
-						{
-							// wind is given by the NetCDF file
-							XYZTDataLayer<double> *wul = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							windULayer = wul;
-							registerLayer(varName, wul);
-						}
-						else if (varName == "windV")
-						{
-							// wind is given by the NetCDF file
-							XYZTDataLayer<double> *wvl = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							registerLayer(varName, wvl);
-						}
-						else if (varName == "temperature")
-						{
-							// wind is given by the NetCDF file
-							XYZTDataLayer<double> *temp = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							registerLayer(varName, temp);
-						}
-						else if (varName == "moisture")
-						{
-							// moinsture is given by the NetCDF file
-							XYZTDataLayer<double> *moist = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							registerLayer(varName, moist);
-						}
-						else if (varName == "fuel")
-						{
-							fuelLayer = constructFuelLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							
-							registerLayer("fuel", fuelLayer);
-						}
-						else if (varName == "fieldSpeed")
-						{
-							dummyLayer = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							registerLayer(varName, dummyLayer);
-						}
+						auto moistLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, moistLayer);
 					}
-
-					else if (layerType.find("data") != string::npos)
+					else if (varName == "fuel")
 					{
-						if (find(neededProperties.begin(), neededProperties.end(), varName) != neededProperties.end())
+						fuelLayer = constructFuelLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer("fuel", fuelLayer);
+					}
+					else if (varName == "fieldSpeed")
+					{
+						dummyLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, dummyLayer);
+					}
+				}
+				// Process additional layer types
+				else if (layerType.find("data") != std::string::npos)
+				{
+					if (std::find(neededProperties.begin(), neededProperties.end(), varName) != neededProperties.end())
+					{
+						auto newLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+						registerLayer(varName, newLayer);
+					}
+				}
+				else if (layerType.find("flux") != std::string::npos)
+				{
+					auto newLayer = constructFluxLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+					registerFluxLayer(varName, newLayer);
+				}
+				else if (layerType.find("propagative") != std::string::npos)
+				{
+					auto propLayer = constructPropagativeLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
+					domain->setPropagativeLayer(propLayer);
+				}
+				else if (layerType.find("parameter") != std::string::npos)
+				{
+					// Set parameters from variable attributes
+					auto paramAttributes = currentVar.getAtts();
+					for (auto iter = paramAttributes.begin(); iter != paramAttributes.end(); ++iter)
+					{
+						NcVarAtt att = iter->second;
+						NcType attValType = att.getType();
+						string attsVal;
+						int attiVal;
+						float attfVal;
+						double attdVal;
+						switch ((int)attValType.getTypeClass())
 						{
-							XYZTDataLayer<double> *newlayer = constructXYZTLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-							registerLayer(varName, newlayer);
-						}
-					}
-					else if (layerType.find("flux") != string::npos)
-					{
-						cout<<"addind "<<it->first<<endl;
-						FluxLayer<double> *newlayer = constructFluxLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-						registerFluxLayer(it->first, newlayer);
-					}
-					else if (layerType.find("propagative") != string::npos)
-					{
-						cout << varName << " in propagation layers" << endl;
-						PropagativeLayer<double> *propLayer = constructPropagativeLayer(it->second, SWCorner, spatialExtent, timeOrigin, Lt, -1);
-						domain->setPropagativeLayer(propLayer);
-					}
-					else if (layerType.find("parameter") != string::npos)
-					{
-						//	 std::cout << "PARAMETERS LAYERS IN NCFILE.... WHY ??? " << varName;
-						map<string, NcVarAtt> attributeList = it->second.getAtts();
-						map<string, NcVarAtt>::iterator myIter;
-						for (myIter = attributeList.begin(); myIter != attributeList.end(); ++myIter)
-						{
-							NcVarAtt att = myIter->second;
-							NcType attValType = att.getType();
-							string attsVal;
-							int attiVal;
-							float attfVal;
-							double attdVal;
-							switch ((int)attValType.getTypeClass())
-							{
-							case NC_CHAR:
-								att.getValues(attsVal);
-								params->setParameter(myIter->first, attsVal);
-								break;
-							case NC_INT:
-								att.getValues(&attiVal);
-								params->setParameter(myIter->first, std::to_string(attiVal));
-								break;
-							case NC_FLOAT:
-								att.getValues(&attfVal);
-								params->setParameter(myIter->first, std::to_string(attfVal));
-								break;
-							case NC_DOUBLE:
-								att.getValues(&attdVal);
-								params->setParameter(myIter->first, std::to_string(attdVal));
-								break;
-							default:
-								std::cout << myIter->first << " attribute of unhandled type " << attValType.getName() << endl;
-								break;
-							}
+						case NC_CHAR:
+							att.getValues(attsVal);
+							params->setParameter(iter->first, attsVal);
+							break;
+						case NC_INT:
+							att.getValues(&attiVal);
+							params->setParameter(iter->first, std::to_string(attiVal));
+							break;
+						case NC_FLOAT:
+							att.getValues(&attfVal);
+							params->setParameter(iter->first, std::to_string(attfVal));
+							break;
+						case NC_DOUBLE:
+							att.getValues(&attdVal);
+							params->setParameter(iter->first, std::to_string(attdVal));
+							break;
+						default:
+							cout << iter->first << " attribute of unhandled type "
+								 << attValType.getName() << endl;
+							break;
 						}
 					}
 				}
-				if (domain->getPropagativeLayer() == 0)
-				{
-					if (!domain->addPropagativeLayer(params->getParameter("propagationModel")))
-					{
-						cout << "PROBLEM: it was not possible to retrieve propagation model " << params->getParameter("propagationModel") << endl;
-					}
-				}
+			} // End of variable loop
 
-				if (domain->getPropagativeLayer() != 0)
-					registerLayer(domain->getPropagativeLayer()->getKey(), domain->getPropagativeLayer());
+			// Ensure propagative layer is present
+			if (domain->getPropagativeLayer() == 0)
+			{
+				std::string propagationModel = params->getParameter("propagationModel");
+				if (!domain->addPropagativeLayer(propagationModel))
+				{
+					cout << "PROBLEM: Unable to retrieve propagation model " << propagationModel << endl;
+				}
+			}
+			if (domain->getPropagativeLayer() != 0)
+			{
+				registerLayer(domain->getPropagativeLayer()->getKey(), domain->getPropagativeLayer());
 			}
 		}
 		catch (NcException &e)
 		{
-			e.what();
+			cout << "Problem Loading data from NetCDF file " << filename << ": " << e.what() << endl;
 		}
 	}
 
@@ -1525,7 +1518,6 @@ namespace libforefire
 		if (!tmpName.isNull())
 			tmpName.getValues(modelName);
 		domain->fluxModelInstanciation(indModel, modelName);
-		cout << "DataBroker::construct flux " << modelName << " layer " << domain->getID() << endl;
 
 		size_t nx = 0, ny = 0, nz = 0, nt = 0;
 		switch (values.getDimCount())

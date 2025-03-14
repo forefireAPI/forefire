@@ -161,6 +161,8 @@ class DataBroker {
 	/*! \brief predefined function for getting the fuel parameters at firenode location */
 	static int getFuelProperties(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the moisture at firenode location */
+
+	static int getMoisturesProperties(FireNode *, PropagationModel *, int );
 	static int getMoisture(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the temperature at firenode location */
 	static int getTemperature(FireNode*, PropagationModel*, int);

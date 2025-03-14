@@ -96,6 +96,32 @@ string PLibForeFire::getString(char *name)
 	return params->getParameter(string(name));
 }
 
+bool PLibForeFire::isValued(char *name){
+	return params->isValued(string(name));
+}
+
+py::object PLibForeFire::getDataMatrixPy(char *name) {
+    // Get the 2D data matrix using the string name.
+    std::vector<std::vector<double>> matrix = pyxecutor->getDomain()->getDataMatrix(string(name));
+    
+    // Check if the matrix equals the sentinel value, i.e. a 1x1 matrix with -9999.
+    if (matrix.size() == 1 && matrix[0].size() == 1 && matrix[0][0] == -9999) {
+        return py::none();
+    }
+    
+    // Flatten the 2D vector for conversion to a numpy array.
+    size_t rows = matrix.size();
+    size_t cols = matrix[0].size();
+    std::vector<double> flat_data;
+    flat_data.reserve(rows * cols);
+    for (const auto &row : matrix) {
+        flat_data.insert(flat_data.end(), row.begin(), row.end());
+    }
+    
+    // Create and return a NumPy array with the shape (rows, cols)
+    return py::array_t<double>({rows, cols}, flat_data.data());
+}
+
 string PLibForeFire::execute(char *command)
 {
 	ostringstream stringOut;
@@ -108,8 +134,8 @@ string PLibForeFire::execute(char *command)
 
 void PLibForeFire::addScalarLayer(char *type, char *name, double x0 , double y0, double t0, double width , double height, double timespan, int nnx, int nny, int nnz, int nnl, py::array_t<double> values){
 
-	FFPoint *p0 = new FFPoint(x0,y0,0);
-	FFPoint *pe = new FFPoint(width,height,0);
+	//FFPoint *p0 = new FFPoint(x0,y0,0);
+	//FFPoint *pe = new FFPoint(width,height,0);
 	string lname(name);
 	string ltype(type);
 
@@ -123,8 +149,8 @@ void PLibForeFire::addScalarLayer(char *type, char *name, double x0 , double y0,
 }
 
 void PLibForeFire::addIndexLayer(char *type, char *name, double x0 , double y0, double t0, double width , double height, double timespan, int nnx, int nny, int nnz, int nnl, py::array_t<int> values){
-	FFPoint *p0 = new FFPoint(x0,y0,0);
-	FFPoint *pe = new FFPoint(width,height,0);
+	//FFPoint *p0 = new FFPoint(x0,y0,0);
+	//FFPoint *pe = new FFPoint(width,height,0);
 	string lname(name);
 	string ltype(type);
 
@@ -154,7 +180,7 @@ py::array_t<double> PLibForeFire::getDoubleArray(char* name, double t){
 			int nny = srcD->getDim("y");
 			int nnz = srcD->getDim("z");
 			int nnt = srcD->getDim("t");
-            constexpr size_t stride_size = sizeof(double);
+         //   constexpr size_t stride_size = sizeof(double);
             size_t total_size = static_cast<size_t>(nnx) * nny * nnz * nnt;
              
              // Temporary vector to hold reshaped data
@@ -191,7 +217,7 @@ py::array_t<double> PLibForeFire::getDoubleArray(char* name, double t){
 			int nny = srcD->getDim("y");
 			int nnz = srcD->getDim("z");
 			int nnt = srcD->getDim("t");
-            constexpr size_t stride_size = sizeof(double);
+         //   constexpr size_t stride_size = sizeof(double);
             size_t total_size = static_cast<size_t>(nnx) * nny * nnz * nnt;
              
              // Temporary vector to hold reshaped data
@@ -264,7 +290,7 @@ PYBIND11_MODULE(_pyforefire, m) {
                     for (size_t jj = 0; jj < ny; ++jj) {
                         for (size_t ii = 0; ii < nx; ++ii) {
                             // Convert Fortran index to C index on the fly
-                            size_t indF = ll * (nx * ny * nz) + kk * (nx * ny) + jj * nx + ii;
+                         //   size_t indF = ll * (nx * ny * nz) + kk * (nx * ny) + jj * nx + ii;
                             size_t indC = ii * (ny * nz * nnt) + jj * (nz * nnt) + kk * nnt + ll;
         
                             // No temporary array; direct assignment
@@ -302,7 +328,7 @@ PYBIND11_MODULE(_pyforefire, m) {
                     for (size_t jj = 0; jj < ny; ++jj) {
                         for (size_t ii = 0; ii < nx; ++ii) {
                             // Convert Fortran index to C index on the fly
-                            size_t indF = ll * (nx * ny * nz) + kk * (nx * ny) + jj * nx + ii;
+                        //    size_t indF = ll * (nx * ny * nz) + kk * (nx * ny) + jj * nx + ii;
                             size_t indC = ii * (ny * nz * nnt) + jj * (nz * nnt) + kk * nnt + ll;
         
                             // No temporary array; direct assignment
@@ -336,23 +362,39 @@ PYBIND11_MODULE(_pyforefire, m) {
                 throw std::runtime_error("Unsupported value type");
             }
         })
-        .def("__getitem__", [&](PLibForeFire &self, const std::string &key) -> py::object {
-            // This example assumes that you can somehow determine the type of the parameter
-            // beforehand, which might require additional logic in your C++ code that's not
-            // shown here.
-
-            // Placeholder for type checking. You need to implement actual type determination logic.
-            // For demonstration, this code assumes everything is treated as a string for retrieval.
-
-            // Attempt to get a string, and if it fails, fall back to double, then int.
-            try {
-                return py::cast(self.getString(const_cast<char*>(key.c_str())));
-            } catch (...) {
+        .def("__getitem__", [](PLibForeFire &self, const std::string &key) -> py::object {
+            // First, check if the parameter is set in SimulationParameters
+           
+            if (self.isValued(const_cast<char*>(key.c_str()))) {
+                std::string param_str = self.getString(const_cast<char*>(key.c_str()));
                 try {
-                    return py::cast(self.getDouble(const_cast<char*>(key.c_str())));
-                } catch (...) {
-                    return py::cast(self.getInt(const_cast<char*>(key.c_str())));
+                    // Attempt to convert the parameter to a double
+                    double param_d = std::stod(param_str);
+                    return py::cast(param_d);
+                } catch (const std::exception &) {
+                    // Conversion failed, return the parameter as a string
+                    return py::cast(param_str);
                 }
+            } else {
+                // Parameter is not set: check for a data matrix with the given key.
+                std::vector<std::vector<double>> matrix = pyxecutor->getDomain()->getDataMatrix(const_cast<char*>(key.c_str()));
+                // If the returned matrix is the sentinel (1x1 with -9999), consider it non-existent.
+                if (matrix.size() == 1 && matrix[0].size() == 1 && matrix[0][0] == -9999) {
+                    throw std::runtime_error("Parameter '" + key + "' does not exist.");
+                }
+                // For the transposed case: rows come from matrix[0].size() and columns from matrix.size().
+                size_t rows = matrix[0].size();
+                size_t cols = matrix.size();
+                std::vector<double> flat_data;
+                flat_data.reserve(rows * cols);
+                // Build the flat array with the correct orientation: iterate row-wise.
+                for (size_t r = 0; r < rows; ++r) {
+                    for (size_t c = 0; c < cols; ++c) {
+                        flat_data.push_back(matrix[c][r]);
+                    }
+                }
+                // Return the data as a NumPy array with shape (rows, cols).
+                return py::array_t<double>({rows, cols}, flat_data.data());
             }
         });
 }
