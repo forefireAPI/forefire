@@ -160,6 +160,9 @@ HeatFluxFromObsModel::HeatFluxFromObsModel(
 
 }
 
+
+
+
 /* destructor (shoudn't be modified) */
 HeatFluxFromObsModel::~HeatFluxFromObsModel() {
 	if ( properties != 0 ) delete properties;
@@ -173,11 +176,10 @@ string HeatFluxFromObsModel::getName(){
 
 
 double HeatFluxFromObsModel::getValue(double* valueOf
-		, const double& bt, const double& et, const double& at){
-	
+, const double& bt, const double& et, const double& at){
     /* Mean heat flux released between the time interval [bt, et] */
-	/* The heat flux is supposed to be constant from the arrival time (at)
-	 * and for a period of time of 'burningDuration', constant of the model */
+/* The heat flux is supposed to be constant from the arrival time (at)
+* and for a period of time of 'burningDuration', constant of the model */
 
 
     double burningTime       = valueOf[burningTime_data];
@@ -185,8 +187,8 @@ double HeatFluxFromObsModel::getValue(double* valueOf
     double evaporationTime     = valueOf[evaporationTime_data];
     double nominalHeatFlux_f = valueOf[nominalHeatFlux_f_data];
     double nominalHeatFlux_s = valueOf[nominalHeatFlux_s_data];
-	
     SensibleheatFlux sensibleheatFlux = computeHeatFLuxFromBmap(burningTime,residenceTime,nominalHeatFlux_f,nominalHeatFlux_s,bt,et,at+evaporationTime);
+
 	if (at >= 0)
 		cout << "formObs " << et << ' ' << bt << ' ' << at << ' ' << "  -  " 
              <<                     burningTime/500 << '|' << residenceTime 
@@ -194,6 +196,7 @@ double HeatFluxFromObsModel::getValue(double* valueOf
              << ' ' << sensibleheatFlux.flaming << '|' <<  sensibleheatFlux.smoldering << endl;
 	
 	return sensibleheatFlux.flaming + sensibleheatFlux.smoldering ;
+
 
 }
 

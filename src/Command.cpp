@@ -1049,8 +1049,10 @@ int Command::loadData(const string& arg, size_t& numTabs){
 					map<string,NcVarAtt>::iterator myIter; 
 						for(myIter=attributeList.begin();myIter !=attributeList.end();++myIter)
 						{
+						
 						NcVarAtt att = myIter->second;
 						NcType attValType = att.getType();
+						//std::cout << myIter->first << " setting" <<attValType.getName() << endl;
 						string attsVal;
 						int attiVal;
 						float attfVal;
