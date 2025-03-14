@@ -14,6 +14,9 @@ import shutil
 from copy import copy
 import glob
 import netCDF4 as nc4
+import pdb 
+
+
 class LaserShot():
 
     valueName = "PR2"
@@ -809,7 +812,7 @@ def ffFrontsToVtk(inFFpattern = "", outPath = ""):
  
 
 def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarIn=None, lidarOut=None,
-                   startStep=-1, endStep=-1, genDomainOrigin=None, genDomainExtent=None, norecompute=False,
+                   startStep=-1, endStep=-1, dtStep = 1, genDomainOrigin=None, genDomainExtent=None, norecompute=False,
                    quitAfterCompute=False, xcfdName=None, inputcdfvars=(), vect_vars=("U", "V", "W")):
     
     # Obtenir le préfixe du fichier
@@ -892,6 +895,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
         outname = "%s/%s.full.%d.vts"%(outPath,fprefix,stepV) 
         if (cleanFile and os.path.isfile(outname)  ):
             print("Step %d already post-processed, cleaning up"%stepV)
+            pdb.set_trace()
             delCmd =  "rm %s.*.%d"%(inFFpattern,stepV)
             print(delCmd)
             #os.system(delCmd)
@@ -976,7 +980,7 @@ def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarI
     
     
     if startStep > -1 and endStep > -1:
-        selectedSteps=selectedSteps[startStep:endStep]
+        selectedSteps=selectedSteps[startStep:endStep:dtStep]
     
     print(len(selectedSteps), " time steps to be computed on ", len(Allsteps) , " list :", selectedSteps, " ")
     
@@ -1190,7 +1194,7 @@ def main():
     parser.add_argument('-fields', nargs=3, help='Input : mnhdump file pattern. PGD nc file, VTK Output directory ')
     parser.add_argument('-clean', action='store_true', help='Enable this flag to clean the output files before processing.')
     parser.add_argument('-lidar', nargs=2, help='Lidar emulator input and output files. Provide two file paths, in and out csv.')
-    parser.add_argument('-steps', nargs=2, type=int, help='Start and end generation steps for processing. Provide two integers, start and end')
+    parser.add_argument('-steps', nargs=3, type=int, help='Start and end generation steps for processing. Provide two integers, start and end')
     parser.add_argument('-norecompute', action='store_true', help='Enable this flag to skip recompute phase but make the index vtk file')
     parser.add_argument('-quit', action='store_true', help='Enable this flag to quit after computation without further processing but display number of steps in data')
     parser.add_argument('-cdf', help='Provide a prefix for CDF output (one file per step). Example: "CDFOUT/step"')
@@ -1212,6 +1216,8 @@ def main():
             lidarOut=args.lidar[1] if args.lidar else None,
             startStep=args.steps[0] if args.steps else -1,
             endStep=args.steps[1] if args.steps else -1,
+            dtStep=args.steps[2] if args.steps else 1,
+            
             norecompute=args.norecompute,
             quitAfterCompute=args.quit,
             xcfdName=args.cdf

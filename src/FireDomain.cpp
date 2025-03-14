@@ -805,7 +805,7 @@ void FireDomain::readMultiDomainMetadata(){
 		XYZTDataLayer<double>* newLayer = new XYZTDataLayer<double>(name, origin,t0, span, timespan, nnx, nny, nnz, nnk, values);
 		dataBroker->registerLayer(name, newLayer);
 
-		//cout<<"adding scalar Layer "<<name<<" of type "<<type<<" position "<<origin.x<<";"<<origin.y<<" size "<<span.x<< "initial date"<< t0<<" time duration "<<timespan<<endl;
+		cout<<"adding scalar Layer "<<name<<" of type "<<type<<" position "<<origin.x<<";"<<origin.y<<" size "<<span.x<< "initial date"<< t0<<" time duration "<<timespan<<endl;
 		if ( type == "windScalDir" ){
 			if ( name == "windU" ){
 				

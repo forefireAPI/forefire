@@ -176,7 +176,7 @@ double Andrews::getSpeed(double* valueOf){
 
 	double B = 0.02526*pow(lsd, 0.54);
 
-	double E = 0.715* exp(-3.59*(10E-4 * lsd));
+	double E = 0.715* exp(-3.59*(1.E-4 * lsd));
 
 	double Ir = Rprime*Wn*lDeltaH*Etam*Etas;
 	double Uf = 0.9*Ir;
@@ -203,7 +203,7 @@ double Andrews::getSpeed(double* valueOf){
 
 	if(R > 0.0) {
 		//cout << "Andrews =" << R * 0.00508 << endl; 
-		return R * 0.00508 ; // ft/min -> m/s
+		return R * 0.005588 ; // ft/min -> m/s
 	}else{
 		//cout << " Rhod "<< lRhod << " lMd "<< lMd << " lsd "<< lsd << " le "<< le << " lSigmad "<< lSigmad <<endl;
 		//cout << " R "<< R << " R0 "<< R0 << " phiv " << phiV <<" phiP" << phiP <<endl;

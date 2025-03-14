@@ -29,6 +29,23 @@ from scipy import interpolate
 import importlib 
 import pandas
 import math 
+import pyproj 
+
+##########################
+def load_crs_from_prj(prj_file_path):
+    # Check if the .prj file exists
+    if not os.path.exists(prj_file_path):
+        raise FileNotFoundError(f"The file {prj_file_path} does not exist.")
+    
+    # Read the WKT from the .prj file
+    with open(prj_file_path, 'r') as prj_file:
+        wkt = prj_file.read().strip()
+
+    # Create a CRS object from the WKT
+    crs = pyproj.CRS(wkt)
+
+    return crs
+
 
 ##################################################
 def ensure_dir(f):
@@ -38,7 +55,7 @@ def ensure_dir(f):
 
 
 ##################################################
-def read_MNH_domain( expr_name, dir_mnh = '../02_mnh/', domainNumber=None, specificInputMNHFile=None):
+def read_MNH_domain( expr_name, dtoutput_mnh, dir_mnh = '../02_mnh/', domainNumber=None, specificInputMNHFile=None):
 
     if specificInputMNHFile == None:
         expr_numb = '.{:d}.'.format(domainNumber) if (domainNumber is not None) else ''
@@ -89,11 +106,15 @@ def read_MNH_domain( expr_name, dir_mnh = '../02_mnh/', domainNumber=None, speci
     MNH_properties['Lz']   = 0
     nc.close()
 
-    nc = netCDF4.Dataset(outfiles_mnh_inputTime,'r')
-    MNH_properties['date']   = '_'.join(nc.variables['DTCUR'].units.split(' ')[2:4]) 
-         
-    
-    MNH_properties['t0']   = float(nc.variables['DTCUR'][0])
+    try: 
+        nc = netCDF4.Dataset(outfiles_mnh_inputTime,'r')
+        MNH_properties['date']   = '_'.join(nc.variables['DTCUR'].units.split(' ')[2:4]) 
+        MNH_properties['t0']   = float(nc.variables['DTCUR'][0])
+    except: 
+        nc = netCDF4.Dataset(outfiles_mnh_inputGrid,'r')
+        MNH_properties['date']   = '_'.join(nc.variables['DTCUR'].units.split(' ')[2:4]) 
+        MNH_properties['t0']   = float(nc.variables['DTCUR'][0]-dtoutput_mnh)
+
     MNH_properties['Lt']   = np.Inf
     
     

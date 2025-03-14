@@ -1,4 +1,4 @@
-     #!python
+#!python
 import sys
 import netCDF4
 import numpy as np
@@ -7,10 +7,10 @@ import sys
 
 #fnames = ["/Users/filippi_j/Volumes/orsu/firecaster/2023/nest150Ref/001_pgd/PGD_D2000mA.nested.nc","/Users/filippi_j/Volumes/orsu/firecaster/2023/nest150Ref/001_pgd/PGD_D400mA.nested.nc","/Users/filippi_j/Volumes/orsu/firecaster/2023/nest150Ref/001_pgd/PGD_D80mA.nested.nc"]
 #foutName = "/Users/filippi_j/data/2023/corbara20230727/domains.kml"
-#if len(sys.argv) != 2:
-#    print("usage kmlDomain PGDFile1 2....")
-#else :
-#    fnames = sys.argv[1:]
+if len(sys.argv) != 2:
+    print("usage kmlDomain PGDFile1 2....")
+else :
+    fnames = sys.argv[1:]
 
 def pgds_to_KML_nc4(fnames, fout):
     dbo={}
