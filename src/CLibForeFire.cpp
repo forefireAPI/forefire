@@ -237,10 +237,11 @@ void MNHCreateDomain(const int id
 void CheckLayer(const char* lname){
 	string tmpname(lname);
 	// searching for concerned layer
+	
 	FluxLayer<double>* myLayer = session->fd->getFluxLayer(tmpname);
 
 	if ( myLayer == 0 ){
-		cout<<"WARNING: "<<tmpname <<" is required but not defined, creating default"<<endl;
+		//cout<<"WARNING: "<<tmpname <<" is required but not defined, creating default"<<endl;
 		if ( !session->fd->addFluxLayer(tmpname) ){
 			cout<<"WARNING: layer for "<<tmpname
 					<<" could not be found within ForeFire framework, "

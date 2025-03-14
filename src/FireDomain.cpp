@@ -853,7 +853,7 @@
 			 if ( type == "table" ){
  
 					 FuelDataLayer<double>* newlayer = new FuelDataLayer<double>(name,	origin, t0, span, timespan, nnx, nny, nnz, nnk,				values);
- 
+				 
 					 dataBroker->registerLayer(name, newlayer);
 			 }
  
@@ -875,7 +875,7 @@
  
 		 // Otherwise, searching for the model in the available ones
 		 size_t mindex = getFreeFluxModelIndex();
-		 string fmname = lname;
+		 string fmname = "";
 		 if ( lname == "heatFlux" ) fmname = "heatFluxBasic";
 		 if ( lname == "vaporFlux" ) fmname = "vaporFluxBasic";
 		 
@@ -889,13 +889,14 @@
  
 		 if ( model != 0 ){
 			 /* Instantiating a flux layer related to this model */
- 
- 
 			 FluxLayer<double>* newlayer = new FluxLayer<double>(lname, SWCorner, NECorner, atmoNX, atmoNY, cells, mindex);
- 
 			 registerFluxModel(model->index, model);
 			 dataBroker->registerFluxLayer(lname, newlayer);
 			 return true;
+		 }else{
+			 cout<<"ERROR: Flux model "<<fmname
+			 <<" is not recognized, check your configuration !!"<< endl;
+			 return false;
 		 }
 		 return false;
 	 }
@@ -2858,8 +2859,6 @@
 			metersPerDegreeLat = (PI * EARTH_RADIUS_ALONG_LATITUDE) / 180.0;
 			metersPerDegreesLon = (PI * EARTH_RADIUS_ALONG_MERIDIAN * std::cos(refLatitudeRad)) / 180.0;
 		}
-
- 
  
 		 /* Insuring the presence of needed layers */
 		 dataBroker->insureLayersExistence();
@@ -2876,10 +2875,10 @@
 		 if ( not parallel ){
 			 
 			 if ( getDomainID() != 0 ) {
-				 cout<<"WARNING: but this proc has an mpi rank of "<<getDomainID()<<endl;
+				 cout<<" WARNING: not in parallel, but this proc has an mpi rank of "<<getDomainID()<<endl;
 			 }
 		 }
-		 cout<<"INITED: this proc has an mpi rank of "<<getDomainID()<<endl;
+		
 	 }
  
 	 int FireDomain::getNumFN(){

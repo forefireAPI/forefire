@@ -47,6 +47,9 @@ void setInt(char* name, int val);
 int getInt(char* name );
 void setDouble(char* name, double val);
 double getDouble(char* name);
+
+bool isValued(char *name);
+py::object getDataMatrixPy(char* name);
 py::array_t<double> getDoubleArray(char* name);
 py::array_t<double> getDoubleArray(char* name, double t);
 void setString(char* name, char* val);

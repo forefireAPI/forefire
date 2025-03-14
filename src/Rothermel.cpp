@@ -254,7 +254,7 @@ double Rothermel::getSpeed(double* valueOf){
 	}
 
    
-  
+
 
     if (csvfile.is_open()) {
         csvfile << R ;   

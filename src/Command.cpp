@@ -173,96 +173,117 @@ namespace libforefire
     int Command::startFire(const string &arg, size_t &numTabs)
     {
         double t = getDomain()->getTime();
-        size_t n = argCount(arg);
-
-        if (getDomain()->getDomainID() > 0)
-        {
-
-            return normal;
-        }
-
-        FireDomain *refDomain = getDomain();
-
         SimulationParameters *simParam = SimulationParameters::GetInstance();
-
-        FFPoint pos = getPoint("lonlat", arg);
-
-        if (pos == pointError)
+    
+        // Process time and date in any case.
+        double nt = getFloat("t", arg);
+        if (nt != FLOATERROR)
+            t = nt;
+    
+        string date = getString("date", arg);
+        if (date != stringError)
         {
-            pos = getPoint("loc", arg);
+            int year, yday;
+            double secs;
+            simParam->ISODateDecomposition(date, secs, year, yday);
+            t = simParam->SecsBetween(simParam->getDouble("refTime"),
+                                       simParam->getInt("refYear"),
+                                       simParam->getInt("refDay"),
+                                       secs, year, yday);
         }
-
-        if ((refDomain->striclyWithinDomain(pos)))
-        {
-            if (currentSession.ff != 0)
-            {
-                completeFront(currentSession.ff);
-            }
-
-            double nt = getFloat("t", arg);
-
-            if (nt != FLOATERROR)
-            {
-                t = nt;
-            }
-
-            string date = getString("date", arg);
-
-            if (date != stringError)
-            {
-                int year, yday;
-                double secs;
-
-                simParam->ISODateDecomposition(date, secs, year, yday);
-
-                t = simParam->SecsBetween(simParam->getDouble("refTime"), simParam->getInt("refYear"), simParam->getInt("refDay"), secs, year, yday);
-
-                cout << endl
-                     << endl
-                     << "REF DATE : " << simParam->FormatISODate(simParam->getDouble("refTime"), simParam->getInt("refYear"), simParam->getInt("refDay"))
-                     << endl
-                     << "DATE OF FIRE : " << date << endl
-                     << "SECS BETWEEN BOTH : " << t << endl
-                     << endl;
-            }
-
-            double perimRes = refDomain->getPerimeterResolution() * 2;
-            int fdom = getInt("domain", arg);
-            if (fdom == INTERROR)
-                fdom = 0;
-
-            double fdepth = currentSession.params->getDouble("initialFrontDepth");
-            double kappa = 0.;
-            string state = "init";
-            FireFront *contfront = currentSession.ff->getContFront();
-            currentSession.ff = refDomain->addFireFront(t, contfront);
-
-            FFVector vel1 = FFVector(0, 1);
-            FFVector vel2 = FFVector(1, -1);
-            FFVector vel3 = FFVector(-1, -1);
-            FFVector diffP1 = perimRes * vel1;
-            FFVector diffP2 = perimRes * vel2;
-            FFVector diffP3 = perimRes * vel3;
-
-            FFPoint pos1 = pos + diffP1.toPoint();
-            FFPoint pos2 = pos + diffP2.toPoint();
-            FFPoint pos3 = pos + diffP3.toPoint();
-
-            vel1 *= 0.1;
-            vel2 *= 0.1;
-            vel3 *= 0.1;
-
-            FireNode *lastnode = refDomain->addFireNode(pos1, vel1, t, fdepth, kappa, currentSession.ff, 0);
-            lastnode = refDomain->addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
-            refDomain->addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
-
-            completeFront(currentSession.ff);
-        }
-
+    
         // simParam->setParameter("ISOdate", simParam->FormatISODate(simParam->getInt("refTime") + refDomain->getSimulationTime(), refDomain->getReferenceYear(), refDomain->getReferenceDay()));
 
+        // Determine the input type based on a parameter.
+        // For example, "polyencoded", "geojson", "kml", or "points" indicate polygon input.
+        // "lonlat" or "loc" indicate a single point.
+        string type = "none";
+        if (getString("polyencoded",arg) != stringError) type="polyencoded";
+        if (getString("geojson",arg) != stringError)type="geojson";
+        if (getString("kml",arg) != stringError)type="kml";
+        if (getString("points",arg) != stringError)type="points";
+        if (getString("loc",arg) != stringError)type="loc";
+        if (getString("lonlat",arg) != stringError) type="lonlat";
+
+        FireDomain *refDomain = getDomain();
+        
+        if (type == "polyencoded" || type == "geojson" ||
+            type == "kml" || type == "points")
+        {
+            // Get the polygon points.
+            std::vector<FFPoint> polygon = getPoly(type, arg);
+            if (polygon.empty())
+                return normal;  // Handle error or malformed input as needed.
+    
+            double fdepth = currentSession.params->getDouble("initialFrontDepth");
+            double kappa = 0.0;
+            FireNode *lastnode = nullptr;
+    
+            // For each point in the polygon, add a fire node.
+            // Velocity here is set to a default; adjust as needed.
+            FireFront *contfront = currentSession.ff->getContFront();
+            currentSession.ff = refDomain->addFireFront(t, contfront);
+            for ( FFPoint &p : polygon)
+            {
+                FFVector defaultVel(0, 0);
+                lastnode = refDomain->addFireNode(p, defaultVel, t, fdepth, kappa, currentSession.ff, lastnode);
+            }
+            completeFront(currentSession.ff);
+        }
+        else if (type == "lonlat" || type == "loc")
+        {
+            // Process a single point.
+            FFPoint pos = getPoint("lonlat", arg);
+            if (pos == pointError)
+                pos = getPoint("loc", arg);
+    
+            if (refDomain->striclyWithinDomain(pos))
+            {
+                // Optional: If a current fire front exists, finalize it.
+                if (currentSession.ff != 0)
+                {
+                    completeFront(currentSession.ff);
+                }
+    
+                double perimRes = refDomain->getPerimeterResolution() * 2;
+                int fdom = getInt("domain", arg);
+                if (fdom == INTERROR)
+                    fdom = 0;
+                double fdepth = currentSession.params->getDouble("initialFrontDepth");
+                double kappa = 0.0;
+                FireFront *contfront = currentSession.ff->getContFront();
+                currentSession.ff = refDomain->addFireFront(t, contfront);
+                // Build a triangle around the point.
+                FFVector vel1(0, 1), vel2(1, -1), vel3(-1, -1);
+                FFVector diffP1 = perimRes * vel1;
+                FFVector diffP2 = perimRes * vel2;
+                FFVector diffP3 = perimRes * vel3;
+
+                FFPoint pos1 = pos + diffP1.toPoint();
+                FFPoint pos2 = pos + diffP2.toPoint();
+                FFPoint pos3 = pos + diffP3.toPoint();
+    
+                // Optionally adjust the velocities.
+                vel1 *= 0.1;
+                vel2 *= 0.1;
+                vel3 *= 0.1;
+    
+                FireNode *lastnode = refDomain->addFireNode(pos1, vel1, t, fdepth, kappa, currentSession.ff, 0);
+                lastnode = refDomain->addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
+                refDomain->addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
+                completeFront(currentSession.ff);
+                cout << "Fire started at " << pos.x << ", " << pos.y << endl;
+            }
+        }
+        else
+        {
+            // Fallback behavior in case type is not recognized.
+            // This might log an error or simply do nothing.
+        }
+    
         return normal;
     }
+
 
     std::vector<FFPoint> Command::getPoly(const std::string &opt, const std::string &arg)
     {
@@ -880,7 +901,7 @@ namespace libforefire
         ofstream outputfile(finalStr.c_str());
         if (outputfile)
         {
-            cout << " putting into file " << finalStr << endl;
+           
             simParam->setInt("count", simParam->getInt("count") + 1);
             if (currentSession.fdp != 0)
             {
@@ -1652,7 +1673,7 @@ namespace libforefire
         double speedV = model->getSpeed(test_values);
 
         ostringstream oss;
-        oss << speedV;
+        oss << speedV ;
         // Step 7: Output the result
         *currentSession.outStream << oss.str();
         // *currentSession.outStream<< speed << std::endl;
@@ -1695,11 +1716,6 @@ namespace libforefire
     int Command::getParameter(const string &arg, size_t &numTabs)
     {
 
-        if (getDomain() == nullptr)
-        {
-            return normal;
-        }
-
         if (arg.empty())
         {
 
@@ -1709,6 +1725,10 @@ namespace libforefire
         // If the argument is "parameterNames", output a comma-separated list of parameter keys.
         if (arg == "parameterNames")
         {
+            if (getDomain() == nullptr)
+            {
+                return normal;
+            }
             // Assuming currentSession.params provides a way to retrieve all parameter names.
             // For example, if params is a std::map<string, string>, we can iterate through it.
             vector<string> names = currentSession.params->getAllKeys();
@@ -1725,6 +1745,10 @@ namespace libforefire
         // If the argument is "layerNames", output a comma-separated list of layer names.
         else if (arg == "layerNames")
         {
+            if (getDomain() == nullptr)
+            {
+                return normal;
+            }
             vector<string> names = getDomain()->getDataBroker()->getAllLayerNames();
             std::string result;
             for (size_t i = 0; i < names.size(); i++)
@@ -1745,8 +1769,18 @@ namespace libforefire
                 cout << "Parameter doesn't exist : " << arg << endl;
                 return error;
             }
-            *currentSession.outStream << param<<std::endl;
-            return normal;
+            if(param.size() > 14){
+                if (param.substr(0, 12) == "getParameter[" && param.substr(param.size() - 1) == "]"){
+                    cout << "recursive call" << param<< endl;
+                    return getParameter(param, numTabs);
+                }
+                *currentSession.outStream << param << std::endl;
+                return normal;
+            }else
+            {
+                *currentSession.outStream << param << std::endl;
+                return normal;
+            }
         }
     }
 
