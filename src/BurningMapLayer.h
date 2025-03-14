@@ -57,6 +57,7 @@ public:
 		domain=fd;
 		size = nx*ny;
 		arrivalTimes = new FFArray<T>("BMap", 0., nx, ny);
+		cout<<"creating bmap"<<nx<<" "<<ny<<endl;
 		latestCall = -1.;
 		params = SimulationParameters::GetInstance();
 	};
@@ -141,7 +142,8 @@ T BurningMapLayer<T>::getNearestData(FFPoint loc){
 template<typename T>
 void BurningMapLayer<T>::getMatrix(
 		FFArray<T>** matrix, const double& t){
-	if ( t != latestCall ){
+			cout << "getting matrix lmayer  "<<nx<<"BMAPS"<<ny<<endl;
+	/*if ( t != latestCall ){
 
 		for ( size_t i=0; i < nx; i++ ){
 			for ( size_t j=0; j < ny; j++ ){
@@ -149,7 +151,7 @@ void BurningMapLayer<T>::getMatrix(
 			}
 		}
 		latestCall = t;
-	}
+	}*/
 	// Affecting the computed matrix to the desired array
 	*matrix = arrivalTimes;
 }
