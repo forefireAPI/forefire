@@ -22,7 +22,7 @@ this File is made to replicate the Farsite model in the ForeFire framework
 
 #include "PropagationModel.h"
 #include "FireDomain.h"
-
+#include <cstring>
 using namespace std;
 
 namespace libforefire
@@ -333,7 +333,7 @@ namespace libforefire
 				{
 					f[j][i] = (ai[i] > 0.0 ? a[j][i] / ai[i] : 0.0);
 				}
-				std::memset(gx, 0, 5 * sizeof(double));
+				memset(gx, 0, 5 * sizeof(double));
 				for (int j = 0; j < (int)nclas[i]; j++)
 				{
 					if (sav[j][i] >= 1200.0)
