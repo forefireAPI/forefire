@@ -30,3 +30,4 @@ CMakeLists.txt
 build.sh
 
 tools/postprocessing/loadInParaview.py
+tests/config_firecast_local.bash

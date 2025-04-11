@@ -6,10 +6,15 @@
 /
 &NAM_LUNITn  CINIFILE = "RUN12.1.PRUN1.004",
 	     CINIFILEPGD="PGD_D3200mA.nested",
+	     CCPLFILE(1)="M1.P.03",
+	     CCPLFILE(2)="M1.P.06",
+	     CCPLFILE(3)="M1.P.09",
+	     CCPLFILE(4)="M1.P.12",
+	     CCPLFILE(5)="M1.P.15",
  /
 
 &nam_dynn
-    xtstep = 4
+    xtstep = 20
     cpresopt = 'ZRESI'
     nitr = 10
     lhorelax_uvwth = .false.
@@ -47,10 +52,10 @@
             !NHALO=3 JPHEXT=3 
             /
 &NAM_CONFn  LUSERV = T, NSV_USER=2 /
-&NAM_DYN  XSEGLEN = 12000., LCORIO = T, LNUMDIFU = T,
+&NAM_DYN  XSEGLEN = 48600., LCORIO = T, LNUMDIFU = T,
            XALKTOP = 0.001, XALZBOT = 14500. /
 &NAM_NESTING NDAD(2) = 1, NDTRATIO(2) = 4, XWAY(2) = 2. /
-&NAM_BACKUP XBAK_TIME_FREQ= 1200. XBAK_TIME_FREQ_FIRST=1200. /
+&NAM_BACKUP XBAK_TIME_FREQ= 3600. XBAK_TIME_FREQ_FIRST=0. /
 &NAM_DIAG_SURFn  /
 &NAM_ISBA CALBEDO="DRY" /
 &NAM_ISBAn CSCOND="NP89", 
@@ -65,6 +70,6 @@
     couplingres = 1000
     nffscalars = 1
     ffsvnames(1) = 'BRatio'
-    ffoutups(1) = 60,    physout(1) = 1, cloudout(1) = 1,  flowout(1) = 1, chemout(1) = 0,
-    ffoutups(2) = 60,    physout(2) = 1, cloudout(2) = 1,  flowout(2) = 1, chemout(2) = 0
+    ffoutups(1) = 10800,    physout(1) = 1, cloudout(1) = 1,  flowout(1) = 1, chemout(1) = 0,
+    ffoutups(2) = 10800,    physout(2) = 1, cloudout(2) = 1,  flowout(2) = 1, chemout(2) = 0
 /

@@ -64,9 +64,6 @@ template<typename T> class TwoTimeArrayLayer : public DataLayer<T> {
 	/*! \brief extending the matrix of mnh size to an extended one */
 	void copyDomainInformation(FFArray<T>*, FFArray<T>*);
 
-	/*! \brief casting the values for outer velocities in the rightful spots */
-	void dispatchOuterInformation(FFArray<T>*, FFArray<T>*);
-	void dispatchValues(int&, double&, double&, double&);
 
 	/*! \brief checking to see if indices are within bounds */
 	bool inBound(const size_t&, const size_t& = 0);
@@ -231,8 +228,15 @@ T TwoTimeArrayLayer<T>::bilinearInterp(FFPoint loc, const double& time){
 	double ud = indices.getX() + EPSILONX;
 	double vd = indices.getY() + EPSILONX;
 
+	if ( ud < 3 ) return 0.;
+	if ( ud > (int) nx - 3 ) return 0.;
+	if ( vd < 3 ) return 0.;
+	if ( vd > (int) ny - 3 ) return 0.;
+
 	int uu = (int) ceil(ud-1);
 	int vv = (int) ceil(vd-1);
+
+
 
 	if ( uu < 0 ) uu = 0;
 	if ( uu > (int) nx - 2 ) uu = (int) nx - 2;

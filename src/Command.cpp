@@ -98,6 +98,93 @@ namespace libforefire
     {
 
         size_t n = argCount(arg);
+        if (n == 2)
+        {
+           
+       // if there are 2 ption and it is "pgdNcFile" and a timestamp then it extracts NS, SW and t then calls again createDomain(..) with the 3 options
+            string pgdNcFile = getString("pgdNcFile", arg);
+            string timeStampDomain = getString("ISOdate", arg);
+            cout << "pgdNcFile: " << pgdNcFile << endl;
+            cout << "timeStampDomain: " << timeStampDomain << endl;
+            if (pgdNcFile != stringError)
+            {
+                
+              
+                    int year, yday;
+                    double secs;
+                    std::vector<double> xhatValues, yhatValues;
+                    double deltaY = 0.0, deltaX = 0.0;
+                    SimulationParameters *simParam = SimulationParameters::GetInstance();
+                    if (simParam->ISODateDecomposition(timeStampDomain, secs, year, yday))
+                    {
+                        simParam->setInt("refYear", year);
+                        simParam->setInt("refDay", yday);
+                        //simParam->setInt("refTime", secs);
+                        simParam->setParameter("ISOdate", timeStampDomain);
+                        cout<<"refYear: " << year << " refDay: " << yday << " refTime: " << secs << endl;
+                    }
+                    else
+                    {
+                        cout << "Error: Invalid date format "<< timeStampDomain<<" Expected YYYY-MM-DDTHH:MM:SSZ" << endl;
+                        throw BadOption();
+                    }
+
+                    try
+                    {
+                    NcFile dataFile(pgdNcFile.c_str(), NcFile::read);
+                    if (!dataFile.isNull())
+                    {
+                        // Retrieve and process the "domain" variable attributes.
+                        NcVar XHAT = dataFile.getVar("XHAT");
+                        NcVar YHAT = dataFile.getVar("YHAT");
+                        
+                        
+                        // Assuming XHAT and YHAT are NcVar objects and that you have a way
+                        // to read their data into a C++ container.
+                       
+                        size_t nXElements = XHAT.getDim(0).getSize();
+                        xhatValues.resize(nXElements);
+                        size_t nYElements = YHAT.getDim(0).getSize();
+                        yhatValues.resize(nYElements);
+                        
+                        YHAT.getVar(&yhatValues[0]);
+                        XHAT.getVar(&xhatValues[0]);
+                    }
+                }
+                catch (NcException &e)
+                {
+                    std::cerr << e.what() << std::endl;
+                }
+
+                if (xhatValues.size() >= 2 && yhatValues.size() >= 2) {
+                    deltaX = xhatValues[1] - xhatValues[0];
+                    deltaY = yhatValues[1] - yhatValues[0];
+                } else {
+                    std::cerr << "Error: Not enough data in XHAT or YHAT variable." << std::endl;
+                    throw BadOption();
+                } 
+                 
+                std::ostringstream domStream;
+                if (!xhatValues.empty() && !yhatValues.empty()) {
+                    // Compute the last coordinate values adding the delta.
+                    double neX = xhatValues.back() + deltaX;
+                    double neY = yhatValues.back() + deltaY;
+                    
+                    domStream << "FireDomain[sw=(" << xhatValues.front() << "," << yhatValues.front() 
+                            << ",0);ne=(" << neX << "," << neY << ",0);t=" << secs << "]";
+                    std::string domCommand = domStream.str();
+                    
+                    // Optionally, set or use 'dom' as needed.
+                    cout << "Domain string created: " << domCommand << endl;
+                    ExecuteCommand(domCommand);
+                    return normal;
+                } else {
+                    cout << "Error: Unable to create domain string due to insufficient data." << endl;
+                }
+            
+
+            }
+        }
         if (n >= 3)
         {
             FFPoint SW = getPoint("sw", arg);
@@ -1336,8 +1423,8 @@ namespace libforefire
                         double southLat = getDomain()->getLatFromY(SWY);
                         double northLat = getDomain()->getLatFromY(NEY);
 
-                        std::string projectionPath = argMap["projectionOut"];
-                        if (projectionPath == "json")
+                        std::string projectionFormat = argMap["projectionOut"];
+                        if (projectionFormat == "json")
                         {
                             double minVal = minMax[0];
                             double maxVal = minMax[1];
@@ -1348,7 +1435,52 @@ namespace libforefire
                                                       << ",\"minVal\":" << minVal
                                                       << ",\"maxVal\":" << maxVal
                                                       << "}" << std::endl;
+                        }else if (projectionFormat.size() >= 3 && projectionFormat.substr(projectionFormat.size() - 3) == "kml") {
+                            // Build the KML content using simulation parameters and domain boundaries.
+                            std::ostringstream kmlStream;
+                            std::string isoDate = simParam->getParameter("ISOdate"); // simulation ISO date
+                            // 'parameter' is assumed to contain the name of the parameter (e.g., \"wind\")
+                            kmlStream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                                    << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n"
+                                    << "  <Document>\n"
+                                    << "    <Folder>\n"
+                                    << "      <name>" << parameter << " - " << isoDate << "</name>\n"
+                                    << "      <TimeStamp>\n"
+                                    << "        <when>" << isoDate << "</when>\n"
+                                    << "      </TimeStamp>\n"
+                                    << "      <GroundOverlay>\n"
+                                    << "        <name>" << parameter << "</name>\n"
+                                    << "        <Icon>\n"
+                                    << "           <href>"<< lowerFilename <<"</href>\n"
+                                    << "          <viewBoundScale>1</viewBoundScale>\n"
+                                    << "        </Icon>\n"
+                                    << "        <LatLonBox>\n"
+                                    << "          <north>" << northLat << "</north>\n"
+                                    << "          <south>" << southLat << "</south>\n"
+                                    << "          <east>" << eastLon << "</east>\n"
+                                    << "          <west>" << westLon << "</west>\n"
+                                    << "        </LatLonBox>\n"
+                                    << "      </GroundOverlay>\n"
+                                    << "    </Folder>\n"
+                                    << "  </Document>\n"
+                                    << "</kml>\n";
+                            // Write the KML content to a file with the provided projectionFormat filename.
+                            if (projectionFormat.size() >= 5 && projectionFormat.substr(projectionFormat.size() - 4) == ".kml") {
+                                std::ofstream kmlFile(projectionFormat.c_str());
+                                if (kmlFile.is_open()) {
+                                    kmlFile << kmlStream.str();
+                                    kmlFile.close();
+                                } else {
+                                    std::cerr << "Error: Cannot open file " << projectionFormat << " for writing." << std::endl;
+                                }
+                            }else{
+                                *currentSession.outStream << kmlStream.str() << std::endl;
+                            }
+                           
                         }
+
+
+
                     }
                 }
                 // --------------------------------------------------------------
@@ -1429,40 +1561,50 @@ namespace libforefire
                                                           << ",\"minVal\":" << minVal
                                                           << ",\"maxVal\":" << maxVal
                                                           << "}" << std::endl;
-                            }
-                            else if (projectionPath.size() >= 4 &&
-                                     projectionPath.substr(projectionPath.size() - 4) == ".kml")
-                            {
-                                std::ofstream kmlFile(projectionPath);
-                                if (kmlFile.is_open())
-                                {
-                                    kmlFile << "<Document>\n"
-                                            << "  <TimeStamp><when>"
-                                            << simParam->FormatISODate(simParam->getDouble("refTime"),
-                                                                       simParam->getInt("refYear"),
-                                                                       simParam->getInt("refDay"))
-                                            << "</when></TimeStamp>\n"
-                                            << "  <GroundOverlay>\n"
-                                            << "    <name>" << parameter << "</name>\n"
-                                            << "    <Icon>\n"
-                                            << "      <href>" << filename << "</href>\n"
-                                            << "      <viewBoundScale>1</viewBoundScale>\n"
-                                            << "    </Icon>\n"
-                                            << "    <LatLonBox>\n"
-                                            << "      <north>" << northLat << "</north>\n"
-                                            << "      <south>" << southLat << "</south>\n"
-                                            << "      <east>" << eastLon << "</east>\n"
-                                            << "      <west>" << westLon << "</west>\n"
-                                            << "    </LatLonBox>\n"
-                                            << "  </GroundOverlay>\n"
-                                            << "</Document>\n";
-                                    kmlFile.close();
+                            } else if (projectionPath.size() >= 3 && projectionPath.substr(projectionPath.size() - 3) == "kml") {
+                                // Build the KML content using simulation parameters and domain boundaries.
+                                std::ostringstream kmlStream;
+                                std::string isoDate = simParam->getParameter("ISOdate"); // simulation ISO date
+                                // 'parameter' is assumed to contain the name of the parameter (e.g., \"wind\")
+                                kmlStream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                                        << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n"
+                                        << "  <Document>\n"
+                                        << "    <Folder>\n"
+                                        << "      <name>" << parameter << " - " << isoDate << "</name>\n"
+                                        << "      <TimeStamp>\n"
+                                        << "        <when>" << isoDate << "</when>\n"
+                                        << "      </TimeStamp>\n"
+                                        << "      <GroundOverlay>\n"
+                                        << "        <name>" << parameter << "</name>\n"
+                                        << "        <Icon>\n"
+                                        << "          <href>"<< lowerFilename <<"</href>\n"
+                                        << "          <viewBoundScale>1</viewBoundScale>\n"
+                                        << "        </Icon>\n"
+                                        << "        <LatLonBox>\n"
+                                        << "          <north>" << northLat << "</north>\n"
+                                        << "          <south>" << southLat << "</south>\n"
+                                        << "          <east>" << eastLon << "</east>\n"
+                                        << "          <west>" << westLon << "</west>\n"
+                                        << "        </LatLonBox>\n"
+                                        << "      </GroundOverlay>\n"
+                                        << "    </Folder>\n"
+                                        << "  </Document>\n"
+                                        << "</kml>\n";
+                                // Write the KML content to a file with the provided projectionFormat filename.
+                                if (projectionPath.size() >= 5 && projectionPath.substr(projectionPath.size() - 4) == ".kml") {
+                                    std::ofstream kmlFile(projectionPath.c_str());
+                                    if (kmlFile.is_open()) {
+                                        kmlFile << kmlStream.str();
+                                        kmlFile.close();
+                                    } else {
+                                        std::cerr << "Error: Cannot open file " << projectionPath << " for writing." << std::endl;
+                                    }
+                                }else{
+                                    *currentSession.outStream << kmlStream.str() << std::endl;
                                 }
-                                else
-                                {
-                                    std::cerr << "Error writing KML file to " << projectionPath << std::endl;
-                                }
+                               
                             }
+    
                         }
                     }
                     else
@@ -2673,6 +2815,12 @@ namespace libforefire
                 string atCommand = line.substr(0, line.rfind("]") + 1);
                 string whenCommand = line.substr(line.rfind("]") + 1, -1);
                 double whenDouble = getFloat("@t", whenCommand);
+                double whenNextDouble = getFloat("@nowplus", whenCommand);
+                if(whenDouble == FLOATERROR && whenNextDouble != FLOATERROR)
+                {
+                    whenDouble = getDomain()->getTime()+whenNextDouble;
+                }
+
                 if ((whenCommand)[0] == '@' && whenDouble != FLOATERROR)
                 {
                     currentSession.tt->insert(new FFEvent(new EventCommand(atCommand, whenDouble)));

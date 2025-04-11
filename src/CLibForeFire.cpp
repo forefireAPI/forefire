@@ -201,27 +201,33 @@ void MNHCreateDomain(const int id
 
 
 	ifstream inputInit(initfile.str().c_str());
-	if ( inputInit ) {
-		string line;
-		//size_t numLine = 0;
-		// skip the firest "firedomain" line for // init with multiple files
-		if ( SimulationParameters::GetInstance()->getInt("parallelInit") == 1 ) getline( inputInit, line );
-		while ( getline( inputInit, line ) ) {
-			//numLine++;
-			// checking for comments or newline
-			if((line[0] == '#')||(line[0] == '*')||(line[0] == '\n'))
-				continue;
-			// treating the command of the current line
-			executor.ExecuteCommand(line);
+	#ifdef MPI_COUPLING
+	if (world_rank == 0) {
+	#else
+	if (1) {
+	#endif
+		if ( inputInit ) {
+			
+			string line;
+			//size_t numLine = 0;
+			// skip the firest "firedomain" line for // init with multiple files
+			if ( SimulationParameters::GetInstance()->getInt("parallelInit") == 1 ) getline( inputInit, line );
+			while ( getline( inputInit, line ) ) {
+				//numLine++;
+				// checking for comments or newline
+				if((line[0] == '#')||(line[0] == '*')||(line[0] == '\n'))
+					continue;
+				// treating the command of the current line
+				executor.ExecuteCommand(line);
+			}
+		} else {
+			cout<<"File for ForeFire initialization "<<initfile.str()
+					<<" not found !! No markers will be advected" << endl;
 		}
-	} else {
-		cout<<"File for ForeFire initialization "<<initfile.str()
-				<<" not found !! No markers will be advected" << endl;
-	}
 
-	// completing the last front
-	executor.completeFront(executor.currentSession.ff);
- 
+		// completing the last front
+		executor.completeFront(executor.currentSession.ff);
+	}
 
  
 	// advancing the simulation to the beginning of the atmospheric simulation
