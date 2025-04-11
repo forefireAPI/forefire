@@ -23,6 +23,8 @@ this File is made to replicate the Farsite model in the ForeFire framework
 #include "PropagationModel.h"
 #include "FireDomain.h"
 #include <cstring>
+#include <cmath>
+
 using namespace std;
 
 namespace libforefire
@@ -478,7 +480,7 @@ namespace libforefire
 		
 		double rate_of_spread = 0.6  ;
 
-		if((isnan(phiew)) || (phiew<0)){
+		if((std::isnan(phiew)) || (phiew<0)){
 			rate_of_spread = rateo ;
 		}else{
 			rate_of_spread = rateo * (1 + phiew);
