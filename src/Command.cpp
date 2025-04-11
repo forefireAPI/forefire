@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
-#include <regex>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -379,25 +378,32 @@ namespace libforefire
         if (opt == "geojson")
         {
             // Example input: [[8.81116, 41.96981, 0], [8.81137, 41.96976, 0], ...]
-            // Use a regex to extract all numbers.
-            std::regex number_regex("[-+]?[0-9]*\\.?[0-9]+");
-            auto numbers_begin = std::sregex_iterator(arg.begin(), arg.end(), number_regex);
-            auto numbers_end = std::sregex_iterator();
+            // Remove non-digit characters (except '.', '-' and '+') by replacing them with spaces.
             std::vector<double> coords;
-            for (auto it = numbers_begin; it != numbers_end; ++it)
-            {
-                coords.push_back(std::stod(it->str()));
+            std::string cleaned;
+            for (char c : arg) {
+                if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+')
+                    cleaned.push_back(c);
+                else
+                    cleaned.push_back(' ');
             }
+            
+            // Use istringstream to extract numbers from the cleaned string.
+            std::istringstream iss(cleaned);
+            double num;
+            while (iss >> num) {
+                coords.push_back(num);
+            }
+            
             if (coords.size() % 3 != 0)
                 return points; // Malformed input.
-
+        
             double refLon = getDomain()->getRefLongitude();
             double refLat = getDomain()->getRefLatitude();
             double mPerDegLon = getDomain()->getMetersPerDegreesLon();
             double mPerDegLat = getDomain()->getMetersPerDegreeLat();
-
-            for (size_t i = 0; i < coords.size(); i += 3)
-            {
+        
+            for (size_t i = 0; i < coords.size(); i += 3) {
                 double lon = coords[i];
                 double lat = coords[i + 1];
                 double alt = coords[i + 2];
