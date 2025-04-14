@@ -64,7 +64,9 @@ fi
 
 # copy the data tile
 # Extract the data file path
-DATA_TILE_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
+DATA_DISTANT_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
+RELATIVE_PATH=$(echo "$DATA_DISTANT_FILE" | sed -E 's|.*/tiles/||')
+DATA_TILE_FILE="${FF_TILES}${RELATIVE_PATH}"
 
 # Copy the data file to "$OUTPUT_DIR/ForeFire/"
 echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
@@ -127,10 +129,13 @@ sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/rep
 
 # Compute ignition epoch in a cross-platform way
 if date --version >/dev/null 2>&1; then
+    # GNU date (Linux)
     IGNITION_EPOCH=$(date -u -d "$TIMESTAMP" +%s)
 else
-    IGNITION_EPOCH=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
+    # BSD date (macOS)
+    IGNITION_EPOCH=$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
 fi
+
 
 # Update time markers for figures from 1HAFTERSTARTFIRE to 12HAFTERSTARTFIRE
 for HOUR in {1..12}; do
