@@ -3169,8 +3169,24 @@ namespace libforefire
                 }
                 else
                 {
-                    int colorIndex = static_cast<int>((val - minVal) / (maxVal - minVal) * (mapSize - 1));
-                    colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+
+                    int colorIndex = 0;
+                    double range = maxVal - minVal;
+                    
+                    if (std::isfinite(val) && std::isfinite(minVal) && std::isfinite(maxVal) && range != 0.0) {
+                        double normalized = (val - minVal) / range;
+                        colorIndex = static_cast<int>(normalized * (mapSize - 1));
+                        colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+                    } else {
+                        // Failsafe: set to 0 or 1 depending on mapSize
+                             colorIndex = (mapSize > 1) ? 1 : 0;
+                             }
+                    
+                    //int colorIndex = static_cast<int>((val - minVal) / (maxVal - minVal) * (mapSize - 1));
+                      //                  colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+                                        /*  if ((x % 1000 == 0) && (y % 1000 == 0)) {
+                                              std::cout << val << " : " << colorIndex << std::endl;
+                                          }*/
                     /*  if ((x % 1000 == 0) && (y % 1000 == 0)) {
                           std::cout << val << " : " << colorIndex << std::endl;
                       }*/

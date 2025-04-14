@@ -11,8 +11,8 @@
     ## Optional http links from where to get the data in the 
     BASE_DATA_URL="where to get BC gribs from the web"
     HTTP_PGD="$BASE_DATA_URL/LANDSCAPE/"
-    HTTP_TILES="$BASE_DATA_URL/MARS/"
-    HTTP_BC="$BASE_DATA_URL/ff_tiles/"
+    HTTP_BC="$BASE_DATA_URL/MARS/"
+    HTTP_TILES="$BASE_DATA_URL/ff_tiles/"
 
     ### binaries
     export ECCODES_HOME="ECCODE library path"

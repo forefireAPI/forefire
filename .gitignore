@@ -31,3 +31,4 @@ build.sh
 
 tools/postprocessing/loadInParaview.py
 tests/config_firecast_local.bash
+tools/config_firecast_local.bash

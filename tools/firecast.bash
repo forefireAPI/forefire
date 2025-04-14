@@ -1,3 +1,10 @@
+#!/bin/sh
+#SBATCH -J FC$2
+#SBATCH -n 16
+#SBATCH --partition=intel
+#SBATCH --time=02:00:00
+#SBATCH --mail-user=filippi_j@univ-corse.fr
+
 #First include the config file
 
 # Check number of arguments otherwise print a usage message
@@ -7,10 +14,10 @@ if [ "$#" -lt 2 ]; then
 fi
 source config_firecast_local.bash
 # Detect sed in-place flag for portability
-if sed --version >/dev/null 2>&1; then 
+if sed --version >/dev/null 2>&1; then
     # GNU sed
     SED_INPLACE=(-i)
-else 
+else
     # BSD sed (macOS)
     SED_INPLACE=(-i '')
 fi
@@ -62,7 +69,7 @@ DATA_TILE_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
 # Copy the data file to "$OUTPUT_DIR/ForeFire/"
 echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
 cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
-cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/" 
+cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
 
 # Extract date directory from the timestamp (YYYYMMDD format)
 if date --version >/dev/null 2>&1; then
@@ -71,8 +78,7 @@ else
     DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
 fi
 
-BC_DIR="/Users/filippi_j/data/firecaster/WEATHERBC/$DATEDIR_YYYMMMDD"
-
+BC_DIR="$BC_FILES/$DATEDIR_YYYMMMDD"
 # If the BC directory does not exist or is empty, download the BC files from the web
 if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
     mkdir -p "$BC_DIR" || { echo "Failed to create BC directory: $BC_DIR"; exit 1; }
@@ -115,8 +121,8 @@ done
 
 
 # Update report placeholders with the correct ignition values
-sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "$OUTPUT_DIR/report/report.tex" 
-sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/report.tex" 
+sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "$OUTPUT_DIR/report/report.tex"
+sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/report.tex"
 sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/report.tex"
 
 # Compute ignition epoch in a cross-platform way
@@ -180,10 +186,10 @@ cat ForeFire/Init.ff
 #linking the PGD to infer domain
 ln -s PGD_DFIREmA.nc ForeFire/PGD_DFIREmA.nc
 
-. run_ecmwf2mnh_xyz  
+. run_ecmwf2mnh_xyz
 . run_run_mnh_M1
-. run_spawn_real  
-. run_run_mnh_fire 
+. run_spawn_real
+. run_run_mnh_fire
 $PYTHONEXE BuildReport.py ; pdflatex -interaction=nonstopmode report/report.tex
-#. run_VTK_for_paraview 
-#. run_plots_report 
+#. run_VTK_for_paraview
+#. run_plots_report

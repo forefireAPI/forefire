@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Firecast Visualization</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+    #sidebar {
+      width: 300px;
+      height: 100vh;
+      float: left;
+      overflow-y: auto;
+      background: #f7f7f7;
+      border-right: 1px solid #ccc;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #map {
+      margin-left: 300px;
+      height: 100vh;
+    }
+    .param-button, .step-button {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+      box-sizing: border-box;
+    }
+    .active {
+      background: #e0e0e0;
+    }
+    #controls {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #controls button {
+      padding: 6px 12px;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>Parameters</h3>
+    <div id="parameterList"></div>
+    <h3>Steps</h3>
+    <div id="stepList"></div>
+    <div id="controls">
+      <button id="prevStep">Previous</button>
+      <button id="nextStep">Next</button>
+    </div>
+  </div>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- JSZip for KMZ processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- toGeoJSON for converting KML to GeoJSON -->
+  <script src="https://unpkg.com/togeojson@0.16.0/dist/togeojson.min.js"></script>
+  <script>
+    /* Define available parameters and steps.
+       For "fronts" the filenames follow the pattern fronts_0.kml to fronts_13.kml,
+       while for the others they follow parameter_1.kmz ... parameter_14.kmz. */
+    const parameters = {
+      "fronts": {
+        ext: "kml",
+        steps: Array.from({length: 14}, (v, i) => i)  // 0 to 13
+      },
+      "plumeBottomHeight": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)  // 1 to 14
+      },
+      "plumeTopHeight": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)
+      },
+      "smokeAtGround": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)
+      },
+      "speed": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)
+      },
+      "tke": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)
+      },
+      "wind": {
+        ext: "kmz",
+        steps: Array.from({length: 14}, (v, i) => i + 1)
+      }
+    };
+
+    let currentParameter = "fronts";
+    let currentStepIndex = 0; // index into the steps array of the current parameter
+    let currentLayer = null;
+
+    // Initialize the map with a default view.
+    const map = L.map('map').setView([43.27, 11.17], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const parameterListDiv = document.getElementById("parameterList");
+    const stepListDiv = document.getElementById("stepList");
+    const prevStepButton = document.getElementById("prevStep");
+    const nextStepButton = document.getElementById("nextStep");
+
+    // Build the parameter selection list.
+    function buildParameterList() {
+      parameterListDiv.innerHTML = "";
+      Object.keys(parameters).forEach(param => {
+        const btn = document.createElement("button");
+        btn.textContent = param;
+        btn.className = "param-button" + (param === currentParameter ? " active" : "");
+        btn.onclick = () => {
+          currentParameter = param;
+          currentStepIndex = 0;
+          updateParameterSelection();
+          loadCurrentFile();
+        };
+        parameterListDiv.appendChild(btn);
+      });
+    }
+
+    // Build the steps list for the selected parameter.
+    function buildStepList() {
+      stepListDiv.innerHTML = "";
+      const steps = parameters[currentParameter].steps;
+      steps.forEach((step, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = "Step " + step;
+        btn.className = "step-button" + (index === currentStepIndex ? " active" : "");
+        btn.onclick = () => {
+          currentStepIndex = index;
+          updateStepSelection();
+          loadCurrentFile();
+        };
+        stepListDiv.appendChild(btn);
+      });
+    }
+
+    function updateParameterSelection() {
+      // Update active state for parameter buttons
+      Array.from(parameterListDiv.children).forEach(btn => {
+        btn.classList.toggle("active", btn.textContent === currentParameter);
+      });
+      buildStepList();
+    }
+
+    function updateStepSelection() {
+      Array.from(stepListDiv.children).forEach((btn, index) => {
+        btn.classList.toggle("active", index === currentStepIndex);
+      });
+    }
+
+    prevStepButton.onclick = () => {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        updateStepSelection();
+        loadCurrentFile();
+      }
+    };
+
+    nextStepButton.onclick = () => {
+      if (currentStepIndex < parameters[currentParameter].steps.length - 1) {
+        currentStepIndex++;
+        updateStepSelection();
+        loadCurrentFile();
+      }
+    };
+
+    // Load the file corresponding to the current parameter and step.
+    function loadCurrentFile() {
+      if (currentLayer) {
+        map.removeLayer(currentLayer);
+        currentLayer = null;
+      }
+      const paramInfo = parameters[currentParameter];
+      const step = paramInfo.steps[currentStepIndex];
+      const filename = currentParameter + "_" + step + "." + paramInfo.ext;
+      console.log("Loading file: " + filename);
+
+      if (paramInfo.ext === "kml") {
+        // For fronts: fetch the KML, convert to GeoJSON and display.
+        fetch(filename)
+          .then(response => response.text())
+          .then(text => {
+            const parser = new DOMParser();
+            const kml = parser.parseFromString(text, "application/xml");
+            const geojson = toGeoJSON.kml(kml);
+            currentLayer = L.geoJSON(geojson);
+            currentLayer.addTo(map);
+            if (currentLayer.getBounds && currentLayer.getBounds().isValid()) {
+              map.fitBounds(currentLayer.getBounds());
+            }
+          })
+          .catch(err => console.error("Error loading KML file:", err));
+      } else if (paramInfo.ext === "kmz") {
+        // For KMZ: fetch the file as arrayBuffer, unzip using JSZip, then extract the KML.
+        fetch(filename)
+          .then(response => response.arrayBuffer())
+          .then(data => {
+            JSZip.loadAsync(data).then(zip => {
+              // Look for the first .kml file in the archive.
+              let kmlFileName = null;
+              zip.forEach((relativePath, zipEntry) => {
+                if(relativePath.endsWith(".kml") && !kmlFileName) {
+                  kmlFileName = relativePath;
+                }
+              });
+              if (!kmlFileName) {
+                throw new Error("No KML file found in KMZ.");
+              }
+              return zip.file(kmlFileName).async("text");
+            }).then(kmlText => {
+              const parser = new DOMParser();
+              const kml = parser.parseFromString(kmlText, "application/xml");
+              // Look for the GroundOverlay element.
+              const groundOverlay = kml.getElementsByTagName("GroundOverlay")[0];
+              if (!groundOverlay) throw new Error("No GroundOverlay found.");
+              const latLonBox = groundOverlay.getElementsByTagName("LatLonBox")[0];
+              const north = parseFloat(latLonBox.getElementsByTagName("north")[0].textContent);
+              const south = parseFloat(latLonBox.getElementsByTagName("south")[0].textContent);
+              const east = parseFloat(latLonBox.getElementsByTagName("east")[0].textContent);
+              const west = parseFloat(latLonBox.getElementsByTagName("west")[0].textContent);
+              const icon = groundOverlay.getElementsByTagName("Icon")[0];
+              const href = icon.getElementsByTagName("href")[0].textContent;
+              const bounds = [[south, west], [north, east]];
+              currentLayer = L.imageOverlay(href, bounds);
+              currentLayer.addTo(map);
+              map.fitBounds(bounds);
+            }).catch(err => console.error("Error processing KMZ file:", err));
+          })
+          .catch(err => console.error("Error loading KMZ file:", err));
+      }
+    }
+
+    // Initialize the interface.
+    buildParameterList();
+    buildStepList();
+    loadCurrentFile();
+  </script>
+</body>
+</html>
