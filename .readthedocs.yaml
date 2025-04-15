@@ -1,20 +1,22 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
 version: 2
 
-# Set the OS, Python version, and other tools you might need
 build:
   os: ubuntu-24.04
   tools:
     python: "3.10"
+  apt_packages:
+    - doxygen 
 
-# Build documentation in the "docs/" directory with Sphinx
+  jobs:
+    pre_build: # Run doxygen first, assuming Doxyfile is in docs/doxygen
+      - "doxygen docs/doxygen/Doxyfile"
+
 sphinx:
    configuration: docs/source/conf.py
 
-# declare the Python requirements required to build your documentation
+
 python:
    install:
    - requirements: docs/source/requirements.txt
-        
