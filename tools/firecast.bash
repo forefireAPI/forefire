@@ -23,6 +23,14 @@ else
 fi
 #This scripts takes 3 arguments, first is the template directory, second is the target case, third iis optional, a target case path if it is given it uses that instead
 
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    DATEOPTIONS="-d"
+else
+    DATEOPTIONS="-j -f $DATEFMT"
+fi
+
+
 TEMPLATE_DIR="$1"
 FF_UNCOUPLED_CASE="$UNCOUPLED_CASE_PATH/$2"
 OUTPUT_DIR="$COUPLED_CASE_PATH/$2"
@@ -93,7 +101,7 @@ fi
 echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR"
 
 # Link forecast files around ignition time
-IGNITION_HOUR=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
 IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
@@ -163,12 +171,12 @@ echo "Updating PGD namelist file: $PGD_LARGEST_NAMELIST_FILE with LAT_START = $L
 
 cd "$OUTPUT_DIR"
 # Convert the full timestamp to epoch seconds.
-timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
+timestamp_secs=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
 # Extract the date component (YYYY-MM-DD) from TIMESTAMP.
-DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
+DATE_ONLY=$(date -u $DATEOPTIONS  "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
 # Create a midnight timestamp.
 midnight="${DATE_ONLY}T00:00:00Z"
-midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
+midnight_secs=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
 # Calculate the difference.
 SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
 echo "$SECONDS_SINCE_MIDNIGHT"
