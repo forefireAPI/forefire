@@ -14,7 +14,14 @@ release = '2.0.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+  'breathe'
+]
+
+breathe_projects = {
+  "ForeFire": "../doxygen/xml"
+}
+breathe_default_project = "ForeFire"
 
 templates_path = ['_templates']
 exclude_patterns = []
