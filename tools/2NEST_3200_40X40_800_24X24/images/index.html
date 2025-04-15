@@ -68,7 +68,7 @@
   <!-- JSZip for KMZ processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- toGeoJSON for converting KML to GeoJSON -->
-  <script src="https://unpkg.com/togeojson@0.16.0/dist/togeojson.min.js"></script>
+  <script src="https://unpkg.com/@mapbox/togeojson@0.16.2/togeojson.js"></script>
   <script>
     /* Define available parameters and steps.
        For "fronts" the filenames follow the pattern fronts_0.kml to fronts_13.kml,
@@ -211,42 +211,67 @@
           })
           .catch(err => console.error("Error loading KML file:", err));
       } else if (paramInfo.ext === "kmz") {
-        // For KMZ: fetch the file as arrayBuffer, unzip using JSZip, then extract the KML.
+        // For KMZ: fetch the file as arrayBuffer, unzip using JSZip, then extract the KML and image.
         fetch(filename)
           .then(response => response.arrayBuffer())
-          .then(data => {
-            JSZip.loadAsync(data).then(zip => {
-              // Look for the first .kml file in the archive.
-              let kmlFileName = null;
-              zip.forEach((relativePath, zipEntry) => {
-                if(relativePath.endsWith(".kml") && !kmlFileName) {
-                  kmlFileName = relativePath;
-                }
-              });
-              if (!kmlFileName) {
-                throw new Error("No KML file found in KMZ.");
+          .then(data => JSZip.loadAsync(data))
+          .then(zip => {
+            // Find the first .kml file in the archive.
+            let kmlFileName = null;
+            zip.forEach((relativePath, zipEntry) => {
+              if (relativePath.endsWith(".kml") && !kmlFileName) {
+                kmlFileName = relativePath;
               }
-              return zip.file(kmlFileName).async("text");
-            }).then(kmlText => {
-              const parser = new DOMParser();
-              const kml = parser.parseFromString(kmlText, "application/xml");
-              // Look for the GroundOverlay element.
-              const groundOverlay = kml.getElementsByTagName("GroundOverlay")[0];
-              if (!groundOverlay) throw new Error("No GroundOverlay found.");
-              const latLonBox = groundOverlay.getElementsByTagName("LatLonBox")[0];
-              const north = parseFloat(latLonBox.getElementsByTagName("north")[0].textContent);
-              const south = parseFloat(latLonBox.getElementsByTagName("south")[0].textContent);
-              const east = parseFloat(latLonBox.getElementsByTagName("east")[0].textContent);
-              const west = parseFloat(latLonBox.getElementsByTagName("west")[0].textContent);
-              const icon = groundOverlay.getElementsByTagName("Icon")[0];
-              const href = icon.getElementsByTagName("href")[0].textContent;
-              const bounds = [[south, west], [north, east]];
-              currentLayer = L.imageOverlay(href, bounds);
-              currentLayer.addTo(map);
-              map.fitBounds(bounds);
-            }).catch(err => console.error("Error processing KMZ file:", err));
+            });
+            if (!kmlFileName) {
+              throw new Error("No KML file found in KMZ.");
+            }
+            return Promise.all([
+              zip.file(kmlFileName).async("text"),
+              Promise.resolve(zip)
+            ]);
           })
-          .catch(err => console.error("Error loading KMZ file:", err));
+          .then(([kmlText, zip]) => {
+            const parser = new DOMParser();
+            const kml = parser.parseFromString(kmlText, "application/xml");
+            // Look for the GroundOverlay element.
+            const groundOverlay = kml.getElementsByTagName("GroundOverlay")[0];
+            if (!groundOverlay) throw new Error("No GroundOverlay found.");
+            const latLonBox = groundOverlay.getElementsByTagName("LatLonBox")[0];
+            const north = parseFloat(latLonBox.getElementsByTagName("north")[0].textContent);
+            const south = parseFloat(latLonBox.getElementsByTagName("south")[0].textContent);
+            const east = parseFloat(latLonBox.getElementsByTagName("east")[0].textContent);
+            const west = parseFloat(latLonBox.getElementsByTagName("west")[0].textContent);
+            const bounds = [[south, west], [north, east]];
+            const icon = groundOverlay.getElementsByTagName("Icon")[0];
+            let href = icon.getElementsByTagName("href")[0].textContent;
+
+            // Look for the referenced image in a case-insensitive manner.
+            let fileEntry = zip.file(href);
+            if (!fileEntry) {
+              for (const filename in zip.files) {
+                if (filename.toLowerCase() === href.toLowerCase()) {
+                  fileEntry = zip.file(filename);
+                  break;
+                }
+              }
+            }
+            if (fileEntry) {
+              return fileEntry.async("blob").then(blob => {
+                const imageURL = URL.createObjectURL(blob);
+                return { imageURL, bounds };
+              });
+            } else {
+              // Fallback: use the href directly.
+              return { imageURL: href, bounds };
+            }
+          })
+          .then(({ imageURL, bounds }) => {
+            currentLayer = L.imageOverlay(imageURL, bounds);
+            currentLayer.addTo(map);
+            map.fitBounds(bounds);
+          })
+          .catch(err => console.error("Error processing KMZ file:", err));
       }
     }
 
