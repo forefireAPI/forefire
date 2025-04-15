@@ -9,6 +9,7 @@ Welcome to the official documentation for ForeFire—the open-source wildfire si
 
    introduction
    installation
+   api_reference
 
 .. Indices and tables
 .. ==================
