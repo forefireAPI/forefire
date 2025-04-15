@@ -1,101 +1,46 @@
 # ForeFire
 
-![logo](./docs/images/forefire.jpg)
+![logo](./docs_legacy/images/forefire.jpg)
 
-_Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._
+<!-- _Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._ -->
 
-ForeFire is an [open-source code for wildland fire spread models](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models), developed and maintained by Université de Corse Pascal Paoli.
+ForeFire is an open-source code for wildland fire spread models, developed and maintained by Université de Corse Pascal Paoli.
+- [Website](https://forefire.univ-corse.fr/)
+- [Demo simulator](http://forefire.univ-corse.fr/sim)
+- [Publication](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models)
 
-Access the [demo simulator here](http://forefire.univ-corse.fr/sim/dev/).
-
-![demo](./docs/images/sim-forefire.jpg)
+![demo](./docs_legacy/images/sim-forefire.jpg)
 
 
-It has been designed and runs on Unix systems. Three modules can be built with the source code.
+It has been designed and runs on Unix systems.
+The main binaries that can be built from source (CPP) are :
+- An interpreter (executable)
+- A shared library (with Python and Java bindings)
 
-The main binaries are  
-  - An interpreter (executable)
-  - A shared library (with C/C++/Java Python and Fortran bindings)
+## 1. Building from source
 
-## 1. Requirements
-
-The requirements and ForeFire can be installed by running `install-forefire.sh` (Ubuntu or Debian distributions)
+ForeFire can be built from source by running `install-forefire.sh`
 
 ```
 cd forefire
 
-sudo sh install-forefire.sh
+sudo bash install-forefire.sh
 ```
+
+You can inspect this installer script to understand the linux dependencies and build commands
 
 The program will be built in: `./bin/forefire`
 
-OR run the commands:
+The installer will ask if you wish to make `forefire` command available on the shell, by adding `export PATH="</path/to/bin>:$PATH"` at the end of your `~/.bashrc` file. Alternatively the file can also be manually edited with  `nano ~/.bashrc`
 
-```
-apt-get update
+## 2. Running an example
 
-apt install build-essential -y
+Examples are provided on the `tests` folder. You can inspect `tests/runff/run.bash` to check usage
 
-apt install libnetcdf-c++4-dev -y
+## 3. Running with python
+Go and check [./bindings/python/README.md](./bindings/python/README.md)
 
-apt install cmake -y
-```
-
-To install
-- The C++ compiler
-- [NetCDF Library](https://www.unidata.ucar.edu/software/netcdf/) and [NetCDF-C++ ](https://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/index.jsp)
-- [Cmake](https://cmake.org/) build tool
-
-## 2. Build
-
-### 2.1 Cmake
-
-To build with cmake run the script
-```
-sh cmake-build.sh
-```
-
-To make the program [executable from eveywhere](https://unix.stackexchange.com/questions/3809/how-can-i-make-a-program-executable-from-everywhere) (during the session) Add the bin folder to path
-```
-export PATH=$PATH:`pwd`/bin
-```
-If you want to change it permanently, paste
-```
-export PATH="</path/to/file>:$PATH"
-
-```
-at the end of your `~/.bashrc` file. The file can be edited with
-```
-nano ~/.bashrc
-```
-for example
-```
-export PATH="/mnt/c/gitrepos/forefire/bin:$PATH"
-```
-
-
-## 3. Running an example
-
-An example for the region of aullene in south France is provided. The example contains 3 files
-- fuels.ff
-- aullene.ff
-- landscape.nc:
-
-Run the example with
-
-```
-cd firefront/examples/aullene/
-
-../../bin/forefire -i aullene.ff
-```
-The simulation result will be outputed in JSON format
-
-
-### 4. Running with python
-Go and check [pyForeFire](https://github.com/forefireAPI/pyForeFire)
-It may be included directly in this repo in futire releases
-
-## 5. Building with Docker
+## 4. Building with Docker
 A sample Dockerfile can allow to build a Docker image with
 ```
 docker build . -t forefire
