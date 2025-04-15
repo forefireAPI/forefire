@@ -1,7 +1,7 @@
 <?php
 /*
  * Firecast Status index.php
- * Displays the progress of the simulation phases with a classy design.
+ * Displays the progress of the simulation phases with a refined design.
  */
 
 // Read fire initialization information from ForeFire/Init.ff.
@@ -23,17 +23,31 @@ if (file_exists($initFile)) {
 // Conditioning phase: Files matching "M1.*.nc"
 $conditioningFiles = glob("M1.*.nc");
 $condCount = count($conditioningFiles);
-$condExpected = 7;  // Adjust the expected value as needed
+$condExpected = 7;  // Adjust expected count as needed
 
 // Spinup phase: Files matching "RUN12.1.PRUN*.nc"
 $spinupFiles = glob("RUN12.1.PRUN*.nc");
 $spinupCount = count($spinupFiles);
-$spinupExpected = 4; // Upper bound expected file count
+$spinupExpected = 4; // Upper bound expected count
 
 // Run phase: Files matching "RUN12.2.*.nc"
 $runFiles = glob("RUN12.2.*.nc");
 $runCount = count($runFiles);
 $runExpected = 12;
+
+// Calculate timestamps for the first conditioning file and the last file overall.
+$firstConditioningTime = null;
+if ($condCount > 0) {
+    $times = array_map('filemtime', $conditioningFiles);
+    $firstConditioningTime = min($times);
+}
+
+$allSimFiles = array_merge($conditioningFiles, glob("RUN12.1.PRUN*.nc"), glob("RUN12.2.*.nc"));
+$lastFileTime = null;
+if (count($allSimFiles) > 0) {
+    $allTimes = array_map('filemtime', $allSimFiles);
+    $lastFileTime = max($allTimes);
+}
 
 function displayProgress($phaseName, $current, $expected) {
     $percent = ($expected > 0) ? min(100, round(($current / $expected) * 100)) : 0;
@@ -74,6 +88,15 @@ function displayProgress($phaseName, $current, $expected) {
             color: #FF4500;
             text-decoration: underline;
             font-size: 1.2em;
+        }
+        .timeline {
+            border: 1px solid #FF4500;
+            padding: 10px;
+            margin-bottom: 30px;
+        }
+        .timeline h2 {
+            margin-top: 0;
+            color: #FF4500;
         }
         .progress-section {
             margin-bottom: 30px;
@@ -127,6 +150,22 @@ function displayProgress($phaseName, $current, $expected) {
             <a href="images/index.html">Interactive Map</a>
         </div>
     </header>
+    
+    <section class="timeline">
+        <h2>File Output Timeline</h2>
+        <?php
+            if ($firstConditioningTime) {
+                echo "<p>First conditioning file produced on: " . date("Y-m-d H:i:s", $firstConditioningTime) . "</p>";
+            } else {
+                echo "<p>First conditioning file: Not available</p>";
+            }
+            if ($lastFileTime) {
+                echo "<p>Last simulation file produced on: " . date("Y-m-d H:i:s", $lastFileTime) . "</p>";
+            } else {
+                echo "<p>Last simulation file: Not available</p>";
+            }
+        ?>
+    </section>
     
     <section class="phase">
         <?php displayProgress("Conditioning Phase", $condCount, $condExpected); ?>
