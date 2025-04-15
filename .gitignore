@@ -11,7 +11,7 @@ tools/cmaps
 bindings/python/src/pyforefire.egg-info
 #python
 __pycache__
-
+venv
 # compilation files
 *.dblite
 *.o
