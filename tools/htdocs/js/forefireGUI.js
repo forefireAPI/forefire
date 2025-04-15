@@ -285,11 +285,11 @@ function updateMapWithGeoJSON(geojson, refit = true) {
           if (layer === "fuel") {
             cmd = `plot[parameter=fuel;filename=fuel.png;range=(0,255);cmap=fuel;projectionOut=json${getBBoxParam()}]`;
           } else if (layer === "windU" || layer === "windV") {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;projectionOut=json${getBBoxParam()}]`;
+            cmd = `plot[parameter=${layer};filename=${layer}.png;size=320,320;projectionOut=json${getBBoxParam()}]`;
             if (layer === "windU") hasWindU = true;
             if (layer === "windV") hasWindV = true;
           } else {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;projectionOut=json${getBBoxParam()}]`;
+            cmd = `plot[parameter=${layer};filename=${layer}.png;size=320,320;projectionOut=json${getBBoxParam()}]`;
           }
           sendCommand(cmd).then(responseText => {
             try {

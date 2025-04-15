@@ -170,6 +170,15 @@ void StringRepresentation::visit(FireFront* ff) {
         // KML mode unchanged from your adjustments.
         if (currentLevel == 1) {
             outputstr << "<Placemark>" << endl;
+            outputstr << "<Style>" << endl;
+            outputstr << " <LineStyle>" << endl;
+            outputstr << "  <color>ff0000ff</color>" << endl;
+            outputstr << "  <width>2</width>" << endl;
+            outputstr << "</LineStyle>" << endl;
+            outputstr << "<PolyStyle>" << endl;
+            outputstr << "  <color>22000000</color>" << endl;
+            outputstr << "</PolyStyle>" << endl;
+            outputstr << "</Style>" << endl;
         }
         if (currentLevel % 2 == 1) { // For top-level front (outer boundary)
             outputstr << "<Polygon>" << endl;

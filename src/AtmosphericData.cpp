@@ -61,13 +61,13 @@ void AtmosphericData::setSize(const size_t& nx, const size_t& ny){
 	if ( tke ) delete tke;
 	tke = new FFArray<double>("tke", 0., nx+2, ny+2);
 
-	if ( oldplumeTopHeight ) delete oldplumeTopHeight;
+	//if ( oldplumeTopHeight ) delete oldplumeTopHeight;
 	oldplumeTopHeight = new FFArray<double>("oldplumeTopHeight", 0.,  nx+2, ny+2);
-	if ( oldplumeBottomHeight ) delete oldplumeBottomHeight;
+//	if ( oldplumeBottomHeight ) delete oldplumeBottomHeight;
 	oldplumeBottomHeight = new FFArray<double>("oldplumeBottomHeight", 0.,  nx+2, ny+2);
-	if ( oldsmokeAtGround ) delete oldsmokeAtGround;
+//	if ( oldsmokeAtGround ) delete oldsmokeAtGround;
 	oldsmokeAtGround = new FFArray<double>("oldsmokeAtGround", 0.,  nx+2, ny+2);
-	if ( oldtke ) delete oldtke;
+//	if ( oldtke ) delete oldtke;
 	oldtke = new FFArray<double>("oldtke", 0.,  nx+2, ny+2);
 
 

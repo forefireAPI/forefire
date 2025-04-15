@@ -38,7 +38,7 @@ INTERPOLATION:INTERPOLATED
 162,20,69,249,255,Water bodies
 255,255,255,255,255,No data"""
 
-def parse_fuel_palette(palette_str):
+def parse_specific_palette(palette_str):
     """
     Parse the fuelPalette string into a dictionary mapping pixel values to (r, g, b, a, class_name).
     For pixel values 0 and 255 the alpha is forced to 0.
@@ -66,7 +66,7 @@ def parse_fuel_palette(palette_str):
         palette_dict[pixel] = (r, g, b, a, class_name)
     return palette_dict
 
-def generate_colormap_header_generic(colormaps, num_samples=10, scalemap=[0, 0.9, 1],
+def generate_colormap_header_generic(colormaps, num_samples=10, scalemap=[0, 0.5, 1],
                                      alpha=[0.3, 0.6, 0.8, 1], cbarPath=None, cbarTextRange=[2, 90]):
     """
     Generate a C++ header snippet for a list of matplotlib colormaps.
@@ -97,30 +97,37 @@ def generate_colormap_header_generic(colormaps, num_samples=10, scalemap=[0, 0.9
 
         if cbarPath is not None:
             fig, ax = plt.subplots(figsize=(2, 10))
+            max_ticks = 12
+            # Determine tick indices (evenly spaced) for a maximum of 12 ticks
+            if num_samples + 1 > max_ticks:
+                tick_indices = np.linspace(0, num_samples, max_ticks, dtype=int)
+            else:
+                tick_indices = np.arange(num_samples + 1)
             bounds = np.linspace(0, 1, num_samples + 1)
+            new_ticks = [bounds[i] for i in tick_indices]
             norm = mcolors.BoundaryNorm(bounds, cmap.N)
             sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-            cb = plt.colorbar(sm, cax=ax, ticks=bounds)
             scaled_positions = [np.interp(i/num_samples, scale_input, scalemap) *
                                 (cbarTextRange[1]-cbarTextRange[0]) + cbarTextRange[0]
-                                for i in range(num_samples+1)]
-            cb.set_ticklabels([f"{v:.2f}" for v in scaled_positions])
+                                for i in tick_indices]
+            cb = plt.colorbar(sm, cax=ax, ticks=new_ticks)
+            cb.ax.set_yticklabels([f"{v:.2f}" for v in scaled_positions])
             plt.tight_layout()
             os.makedirs(cbarPath, exist_ok=True)
             plt.savefig(os.path.join(cbarPath, f"{cmap_name}.png"), bbox_inches='tight', dpi=300)
             plt.close()
     return header
 
-def generate_fuel_header(palette_str, cbarPath=None):
+def generate_specific_header(cmap_name, palette_str, cbarPath=None):
     """
     Generate a C++ header snippet for the 'fuel' colormap.
     The fuel colormap is an array of 256 ColorEntry values; for indices not defined
     in the palette the default transparent color {255,255,255,0} is used.
     """
-    palette = parse_fuel_palette(palette_str)
+    palette = parse_specific_palette(palette_str)
     fuel_size = 256
-    header = f"static const size_t fuelColormapSize = {fuel_size};\n\n"
-    header += f"static const ColorEntry fuelColormap[fuelColormapSize] = {{\n"
+    header = f"static const size_t {cmap_name}ColormapSize = {fuel_size};\n\n"
+    header += f"static const ColorEntry {cmap_name}Colormap[{cmap_name}ColormapSize] = {{\n"
     default_color = (255, 255, 255, 0)
     for i in range(fuel_size):
         if i in palette:
@@ -131,32 +138,41 @@ def generate_fuel_header(palette_str, cbarPath=None):
     header += "};\n\n"
     
     if cbarPath is not None:
-        # Build a list of colors and labels for defined indices only
+        # Build a list of colors and tick labels for defined indices only
+        defined_keys = sorted(palette.keys())
         colors = []
         tick_labels = []
-        for i in range(fuel_size):
-            if i in palette:
-                r, g, b, a, class_name = palette[i]
-                colors.append((r/255, g/255, b/255, a/255))
-                tick_labels.append(class_name)
-            else:
-                colors.append((default_color[0]/255, default_color[1]/255, default_color[2]/255, default_color[3]/255))
-                tick_labels.append("")
-        cmap = mcolors.ListedColormap(colors, name="fuel")
-        fig, ax = plt.subplots(figsize=(2, 10))
-        bounds = np.linspace(0, fuel_size, fuel_size+1)
+        for i in defined_keys:
+            r, g, b, a, class_name = palette[i]
+            colors.append((r/255, g/255, b/255, a/255))
+            tick_labels.append(f"{i} - {class_name}")
+        
+        # Create a colormap using only the defined colors
+        cmap = mcolors.ListedColormap(colors, name="fuel_defined")
+        # Adjust figure height based on number of defined colors (at least 4 units tall)
+        fig, ax = plt.subplots(figsize=(2, max(4, len(colors))))
+        bounds = np.linspace(0, len(defined_keys), len(defined_keys)+1)
         norm = mcolors.BoundaryNorm(bounds, cmap.N)
         sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-        cb = plt.colorbar(sm, cax=ax, ticks=np.arange(0.5, fuel_size, 1))
-        cb.ax.set_yticklabels(tick_labels)
+        
+        max_ticks = 150
+        if len(defined_keys) > max_ticks:
+            indices = np.linspace(0, len(defined_keys)-1, max_ticks, dtype=int)
+        else:
+            indices = np.arange(len(defined_keys))
+        new_ticks = [i + 0.5 for i in indices]
+        new_tick_labels = [tick_labels[i] for i in indices]
+        
+        cb = plt.colorbar(sm, cax=ax, ticks=new_ticks)
+        cb.ax.set_yticklabels(new_tick_labels)
         plt.tight_layout()
         os.makedirs(cbarPath, exist_ok=True)
-        plt.savefig(os.path.join(cbarPath, "fuel.png"), bbox_inches='tight', dpi=300)
+        plt.savefig(os.path.join(cbarPath, cmap_name+".png"), bbox_inches='tight', dpi=300)
         plt.close()
     return header
 
 def generate_combined_header(output_file, generic_colormaps, num_samples=50,
-                             scalemap=[0, 0.2, 0.5, 1], alpha=[0.3, 0.5, 0.9, 1],
+                             scalemap=[0,  1], alpha=[0,0,0.5,0.8,0.9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
                              cbarPath="cmaps/"):
     """
     Generate the complete C++ header including generic colormaps and the fuel colormap,
@@ -179,7 +195,7 @@ constexpr size_t colormapSize = %d;
     header_content += generate_colormap_header_generic(generic_colormaps, num_samples, scalemap, alpha, cbarPath)
 
     # Generate fuel colormap (with size fixed to 256)
-    header_content += generate_fuel_header(fuelPalette, cbarPath)
+    header_content += generate_specific_header("fuel",fuelPalette, cbarPath)
 
     # Build the single colormapMap with all entries
     header_content += "static const std::map<std::string, const ColorEntry*> colormapMap = {\n"
@@ -200,5 +216,5 @@ constexpr size_t colormapSize = %d;
 generic_colormaps = ['hot', 'viridis', 'plasma', 'plasma_r', 'coolwarm', 'grey', 'hot_r', 'spring', 'jet', 'turbo']
 output_header_file = os.path.join("..", "src", "colormap.h")
 generate_combined_header(output_header_file, generic_colormaps, num_samples=256,
-                         scalemap=[0, 0.2, 0.5, 1], alpha=[0.3, 0.5, 0.9, 1],
+                         scalemap=[0,  1], alpha=[0,0,0.5,0.8,0.9,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
                          cbarPath="cmaps/")

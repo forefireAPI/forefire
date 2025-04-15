@@ -443,7 +443,7 @@ namespace libforefire
 		}
 
 		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-									   atmoSWCorner.getY() - 1.5 * dy, 0);
+									   atmoSWCorner.getY() - 1 * dy, 0);
 
 		TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time, scalarOrigin, dx, dy);
 		registerLayer("plumeTopHeight", pth);

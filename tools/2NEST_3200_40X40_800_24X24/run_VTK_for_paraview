@@ -1,0 +1,35 @@
+# Script to generate VTK files for Paraview from ForeFire output
+# Author: J.B. Filippi
+
+# Check if PYTHONEXE is set and valid
+if [[ -z "$PYTHONEXE" ]]; then
+    echo "Warning: You need to set the \$PYTHONEXE variable to point to a Python interpreter that can import from pyevtk, numpy, and netCDF4."
+    exit 1
+else
+    # Check if the interpreter can import the required packages
+    if ! "$PYTHONEXE" -c "import pyevtk, numpy, netCDF4" &>/dev/null; then
+        echo "Warning: The Python interpreter set in \$PYTHONEXE cannot import pyevtk, numpy, or netCDF4."
+        exit 1
+    fi
+fi
+
+# Check if FOREFIREHOME is set
+if [[ -z "$FOREFIREHOME" ]]; then
+    echo "Warning: You need to set up your \$FOREFIREHOME variable to the ForeFire root directory."
+    exit 1
+fi
+rm -rf front
+rm -rf outM1
+rm -rf outM2
+mkdir front
+mkdir outM1
+mkdir outM2
+
+sed "s|VTKFILESPATH|$PWD|g" nestedViewPVState.py.pattern > nestedView.py
+
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -front ForeFire/Outputs/output.0. front/
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL1/output PGD_D3200mA.nested.nc outM1/
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL2/output PGD_D800mA.nested.nc outM2/
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -atmap ForeFire/Outputs/ForeFire.0.nc PGD_D800mA.nested.nc map
+
+echo "You can now load python state file nestedView.py in Paraview to visualize the results of the nested simulation."
