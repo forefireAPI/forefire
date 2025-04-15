@@ -26,9 +26,14 @@ venv
 # jupyter notebooks checkpoints
 .ipynb_checkpoints
 
+#docs
+docs/doxygen/xml
+
+# build
 CMakeLists.txt
 build.sh
 
+#other
 tools/postprocessing/loadInParaview.py
 tests/config_firecast_local.bash
 tools/config_firecast_local.bash
