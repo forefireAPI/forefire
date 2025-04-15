@@ -3079,6 +3079,7 @@ namespace libforefire
     {
         if (currentSession.fdp != 0)
         {
+            
             return currentSession.fdp;
         }
         return currentSession.fd;

@@ -12,7 +12,7 @@ if [ "$#" -lt 2 ]; then
     echo "Usage: $0 TEMPLATE_DIR CASE_NAME [OUTPUT_DIR]"
     exit 1
 fi
-source config_firecast_local.bash
+source ./config_firecast_local.bash
 # Detect sed in-place flag for portability
 if sed --version >/dev/null 2>&1; then
     # GNU sed

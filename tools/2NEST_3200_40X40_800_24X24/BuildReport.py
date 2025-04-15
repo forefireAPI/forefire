@@ -751,8 +751,12 @@ def BMAP_to_DataArray(datetime_str,dateFirstDay,smoke_scalefactor,filenameM2,fil
     sqrdiv=np.where(sqrdiv>=100*burning_time,0.0,sqrdiv)
     #10 is the perimeter resolution!
     # fire_velocity=np.divide(perimeterres,sqrdiv)
-    fire_velocity=np.divide(1,sqrdiv)
-
+    # fire_velocity=np.divide(1,sqrdiv)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        fire_velocity = np.divide(1, sqrdiv)
+    
+    fire_velocity[np.isinf(fire_velocity)] = 0.0
+    
     fire_velocity=np.where(fire_velocity==np.nan,0.0,fire_velocity)
     fire_velocity=np.where(fire_velocity==np.inf,0.0,fire_velocity)
     
@@ -774,76 +778,58 @@ def BMAP_to_DataArray(datetime_str,dateFirstDay,smoke_scalefactor,filenameM2,fil
 
     normal_vectors = []
     normal_magnitudes = []
-    
-    
-    # if the fire has already started
-    if slices: 
-    # Extract the boundary of the largest region (if there are multiple regions)
-        largest_region = slices[0]  # Assuming the first region is the largest
-    ## if the fire has noot started yet take the ignition point
-        # if flagfirststep:
-        ignition =np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
-        ignition =np.ma.masked_less_equal(ignition, 0.0)
-    else:
-        ignition =np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
-        ignition =np.ma.masked_less_equal(ignition, 0.0)
-        binary_mask = ~ignition.mask  # Convert masked array to binary mask
-        labeled_array, num_features = ndimage.label(binary_mask)  # Label connected regions
-        slices = ndimage.find_objects(labeled_array)  
-        largest_region = slices[0]  
-        
-    boundary_mask = np.zeros_like(binary_mask)
-    boundary_mask[largest_region] = binary_mask[largest_region]
-########################################################
-    boundary = ndimage.binary_dilation(boundary_mask) ^ boundary_mask  # Get the boundary (fire front)
-    # Find the coordinates of the boundary points
-    boundary_coords = np.argwhere(boundary)
-
-    # Create an array to store the normal gradients
-    
-    # Calculate the magnitude of each normal vector
-
-    for coord in boundary_coords:
-        y, x = coord
-        normal_y, normal_x = compute_normal(gradient_y[y, x], gradient_x[y, x])
-        normal_vectors.append((normal_y, normal_x))
-        normal_magnitudes.append(fire_velocity[y,x])
-        
-    # Initialize lists to store latitude and longitude of boundary points
     lat_boundary = []
     lon_boundary = []
     
-    # Map boundary indices to latitude and longitude
-    for y, x in boundary_coords:
-        lat_boundary.append(lat_high_res_interp[y, x])
-        lon_boundary.append(lon_high_res_interp[y, x])
-    
+    ignition = np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
+    ignition = np.ma.masked_less_equal(ignition, 0.0)
+    # if the fire has already started
+    try:
+        if slices:
+            largest_region = slices[0]
+        else:
+
+            binary_mask = ~ignition.mask
+            labeled_array, num_features = ndimage.label(binary_mask)
+            slices = ndimage.find_objects(labeled_array)
+            if slices:
+                largest_region = slices[0]
+            else:
+                raise ValueError("No valid region found.")
+
+        boundary_mask = np.zeros_like(binary_mask)
+        boundary_mask[largest_region] = binary_mask[largest_region]
+        boundary = ndimage.binary_dilation(boundary_mask) ^ boundary_mask
+        boundary_coords = np.argwhere(boundary)
+
+        for coord in boundary_coords:
+            y, x = coord
+            normal_y, normal_x = compute_normal(gradient_y[y, x], gradient_x[y, x])
+            normal_vectors.append((normal_y, normal_x))
+            normal_magnitudes.append(fire_velocity[y, x])
+            lat_boundary.append(lat_high_res_interp[y, x])
+            lon_boundary.append(lon_high_res_interp[y, x])
+
+    except Exception as e:
+        print(f"[WARNING] Could not compute fire front boundary: {e}, fronts and time of arrival matrix for time {datetime_str} will be empty!")
+
     lat_boundary = np.array(lat_boundary)
     lon_boundary = np.array(lon_boundary)
-        
     normal_vectors = np.array(normal_vectors)
     normal_magnitudes = np.array(normal_magnitudes)
-    
-    # Convert the dictionary to a DataArray
-    # times = list(points.keys())
 
-    
-    # Find the maximum number of points
-    max_points =len(lat_boundary)
-    
-    # Create arrays with NaNs to hold the data
-    lat_data_array = np.full((max_points), np.nan)
-    lon_data_array = np.full((max_points), np.nan)
-    coords_points_ROS=np.full(( max_points,2), np.nan)
-    magnitude_array = np.full((max_points), np.nan)
-    
-    # Fill the data arrays with actual points and magnitudes
     n_points = len(lat_boundary)
-    lat_data_array[ :n_points] = lat_boundary
-    lon_data_array[ :n_points] = lon_boundary
-    coords_points_ROS[:n_points, 0] =lat_boundary
-    coords_points_ROS[:n_points, 1] =lon_boundary
-    magnitude_array[:n_points] = normal_magnitudes
+    lat_data_array = np.full((n_points), np.nan)
+    lon_data_array = np.full((n_points), np.nan)
+    coords_points_ROS = np.full((n_points, 2), np.nan)
+    magnitude_array = np.full((n_points), np.nan)
+
+    if n_points > 0:
+        lat_data_array[:] = lat_boundary
+        lon_data_array[:] = lon_boundary
+        coords_points_ROS[:, 0] = lat_boundary
+        coords_points_ROS[:, 1] = lon_boundary
+        magnitude_array[:] = normal_magnitudes
     
     # Create the DataArray for the points of the fire front
     ta_da = xr.DataArray(
@@ -856,14 +842,14 @@ def BMAP_to_DataArray(datetime_str,dateFirstDay,smoke_scalefactor,filenameM2,fil
     coords_points_da = xr.DataArray(
         coords_points_ROS,
         dims=['points', 'coord_points'],
-        coords={'points': range(max_points), 'coord_points': ['lat_points', 'lon_points']}
+        coords={'points': range(n_points), 'coord_points': ['lat_points', 'lon_points']}
     )
     
     # Create the DataArray for magnitudes
     magnitudes_da = xr.DataArray(
         magnitude_array,
         dims=[ 'points'],
-        coords={'points': range(max_points)}
+        coords={'points': range(n_points)}
     )
     # store velocities of the fire front
     front_velocity_da = xr.DataArray(
@@ -924,7 +910,7 @@ def BuildDSfromAllSources(pathMNH1,pathMNH2,pathBMAP,pathffParams,smoke_scalefac
     return merged_ds
 
 def ExtractBAandROSeveryNmin(N,ignitiondate,enddate,fileBmap,ffsettings):
-    time_range = pd.date_range(start=ignitiondate, end=enddate, freq=f'{N}T')
+    time_range = pd.date_range(start=ignitiondate, end=enddate, freq=f'{N}min')
     first_day=datetime.strptime(ignitiondate, "%Y-%m-%dT%H:%M:%S").day
     # Loop through the generated timestamps
     maxRos=[]
@@ -937,7 +923,7 @@ def ExtractBAandROSeveryNmin(N,ignitiondate,enddate,fileBmap,ffsettings):
         second = timestamp.second
         # Convert to seconds since midnight
         seconds_since_midnight = 24*3600*(day-first_day)+hour * 3600 + minute * 60 + second
-        #print(f'firstday: {first_day},  day : {day}  and secs : {seconds_since_midnight}')
+        # print(f'firstday: {first_day},  day : {day}  and secs : {seconds_since_midnight}')
         pattern_per = 'minimalPropagativeFrontDepth='
         perimeterres = find_first_integer_after_pattern(ffsettings, pattern_per)
         perimeterres = int(perimeterres)
@@ -954,7 +940,7 @@ def ExtractBAandROSeveryNmin(N,ignitiondate,enddate,fileBmap,ffsettings):
         masked_ta = np.where(ta>seconds_since_midnight,np.min(ta),ta)
         # Determine the minimum value (mask reference)
         mask_value = np.min(ta)
-        
+        tasort=np.sort(np.unique(ta))
         # Count valid (unmasked) pixels
         valid_pixel_count = np.sum(masked_ta != mask_value)
         
@@ -975,8 +961,12 @@ def ExtractBAandROSeveryNmin(N,ignitiondate,enddate,fileBmap,ffsettings):
         sqrdiv=np.where(sqrdiv>=100*burning_time,0.0,sqrdiv)
         #10 is the perimeter resolution!
         # fire_velocity=np.divide(perimeterres,sqrdiv)
-        fire_velocity=np.divide(1,sqrdiv)
-
+        # fire_velocity=np.divide(1,sqrdiv)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            fire_velocity = np.divide(1, sqrdiv)
+        
+        fire_velocity[np.isinf(fire_velocity)] = 0.0
+        
         fire_velocity=np.where(fire_velocity==np.nan,0.0,fire_velocity)
         fire_velocity=np.where(fire_velocity==np.inf,0.0,fire_velocity)
         fire_velocity=np.where(fire_velocity>=max_speed_filter,0.0,fire_velocity)
@@ -996,51 +986,50 @@ def ExtractBAandROSeveryNmin(N,ignitiondate,enddate,fileBmap,ffsettings):
         normal_vectors = []
         normal_magnitudes = []
         
+        ignition =np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
+        ignition =np.ma.masked_less_equal(ignition, 0.0)
         
         # if the fire has already started
-        if slices: 
-        # Extract the boundary of the largest region (if there are multiple regions)
-            largest_region = slices[0]  # Assuming the first region is the largest
-        ## if the fire has noot started yet take the ignition point
-            # if flagfirststep:
-            ignition =np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
-            ignition =np.ma.masked_less_equal(ignition, 0.0)
-        else:
-            ignition =np.ma.masked_greater(ta_all, np.unique(ta_all)[2])
-            ignition =np.ma.masked_less_equal(ignition, 0.0)
-            binary_mask = ~ignition.mask  # Convert masked array to binary mask
-            labeled_array, num_features = ndimage.label(binary_mask)  # Label connected regions
-            slices = ndimage.find_objects(labeled_array)  
-            largest_region = slices[0]  
-            
-        boundary_mask = np.zeros_like(binary_mask)
-        boundary_mask[largest_region] = binary_mask[largest_region]
-    ########################################################
-        boundary = ndimage.binary_dilation(boundary_mask) ^ boundary_mask  # Get the boundary (fire front)
-        # Find the coordinates of the boundary points
-        boundary_coords = np.argwhere(boundary)
+        try:
+            if slices:
+                largest_region = slices[0]
+            else:
+                binary_mask = ~ignition.mask
+                labeled_array, num_features = ndimage.label(binary_mask)
+                slices = ndimage.find_objects(labeled_array)
+                if slices:
+                    largest_region = slices[0]
+                else:
+                    raise ValueError("No valid region found.")
 
-        # Create an array to store the normal gradients
-        
-        # Calculate the magnitude of each normal vector
+            boundary_mask = np.zeros_like(binary_mask)
+            boundary_mask[largest_region] = binary_mask[largest_region]
+            boundary = ndimage.binary_dilation(boundary_mask) ^ boundary_mask
+            boundary_coords = np.argwhere(boundary)
 
-        for coord in boundary_coords:
-            y, x = coord
-            normal_y, normal_x = compute_normal(gradient_y[y, x], gradient_x[y, x])
-            normal_vectors.append((normal_y, normal_x))
-            normal_magnitudes.append(fire_velocity[y,x])
-            
-        # Calculate the mean of the 10 largest values in normal_magnitudes
-        if len(normal_magnitudes) >= 10:
-            top_10_magnitudes = sorted(normal_magnitudes, reverse=True)[:10]
-            mean_top_10 = np.mean(top_10_magnitudes)
-        else:
-            mean_top_10 = np.mean(normal_magnitudes)  # Fallback if there are fewer than 10 values
+            for coord in boundary_coords:
+                y, x = coord
+                normal_y, normal_x = compute_normal(gradient_y[y, x], gradient_x[y, x])
+                normal_magnitudes.append(fire_velocity[y, x])
+
+            if len(normal_magnitudes) >= 10:
+                top_10_magnitudes = sorted(normal_magnitudes, reverse=True)[:10]
+                mean_top_10 = np.mean(top_10_magnitudes)
+            elif len(normal_magnitudes) > 0:
+                mean_top_10 = np.mean(normal_magnitudes)
+            else:
+                mean_top_10 = 0.0
+
+        except Exception as e:
+            print(f"[WARNING] timestep: {timestamp} Could not compute fire front boundary: {e}, ROS will be 0!")
+            mean_top_10 = 0.0
+            total_area = 0.0
 
         BurnedA.append(total_area)
         maxRos.append(mean_top_10)
         timestepsN.append(timestamp)
-    return BurnedA,maxRos,timestepsN
+
+    return BurnedA, maxRos, timestepsN
     
     
 def BuildDS4AllTimes(timesteps,casepath,mnfiles,pathBMAP,pathffParams,smoke_scalefactor,ignitiondate,namefire):
@@ -1118,7 +1107,9 @@ def BuildDS4AllTimes(timesteps,casepath,mnfiles,pathBMAP,pathffParams,smoke_scal
     combined_ds = xr.concat(expanded_datasets, dim="timestep")
     combined_ds['WildfireName']=datasets[0]['WildfireName']
     combined_ds['Ignition']=datasets[0]['Ignition']
-    combined_ds['IgnitionTime']=np.datetime64(datetime.strptime(ignitiondate, "%Y-%m-%dT%H:%M:%S").isoformat())
+    # combined_ds['IgnitionTime']=np.datetime64(datetime.strptime(ignitiondate, "%Y-%m-%dT%H:%M:%S").isoformat())
+    combined_ds['IgnitionTime'] = np.datetime64(ignitiondate, 'ns')
+
     ignitionlat=np.mean(combined_ds.Ignition.coords["lat_bmap"].values[~np.isnan(combined_ds.Ignition.values)])
     ignitionlon=np.mean(combined_ds.Ignition.coords["lon_bmap"].values[~np.isnan(combined_ds.Ignition.values)])
     combined_ds['IgnitionCoords']=[ignitionlat,ignitionlon]
@@ -1161,6 +1152,11 @@ def compute_normal(gy, gx):
     norm = np.sqrt(gy**2 + gx**2)
     return gy / norm, -gx / norm
 
+def compute_edges_from_centers(centers):
+    edges = 0.5 * (centers[1:] + centers[:-1])
+    first_edge = centers[0] - (edges[0] - centers[0])
+    last_edge = centers[-1] + (centers[-1] - edges[-1])
+    return np.concatenate([[first_edge], edges, [last_edge]])
 #------------------------------------------------------------------------------
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #------------------------------------------------------------------------------
@@ -1272,7 +1268,9 @@ def Plot_surfaceWind_TKE(timestep,boundarypoints,dsfile,ignitiondate,fireenddate
     lat = dsfile["Wind_U"].coords["latitude"].values
     lon_fine = dsfile["ArrivalTime"].coords["lon_bmap"].values
     lat_fine = dsfile["ArrivalTime"].coords["lat_bmap"].values
-
+# Flatten the 2D arrays for transformation
+    lon_fine_flat = lon_fine.flatten()
+    lat_fine_flat = lat_fine.flatten()
     # lon_fine[np.isnan(lon_fine)] = 0
     # lat_fine[np.isnan(lat_fine)] = 0
     
@@ -1318,10 +1316,13 @@ def Plot_surfaceWind_TKE(timestep,boundarypoints,dsfile,ignitiondate,fireenddate
         hours=np.arange(0,max_colorscale-min_colorscale,1)
 
         cmapt = plt.get_cmap('gist_heat', max_colorscale-min_colorscale)
-        # atime = ax.pcolormesh(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 ,vmin=min_colorscale, vmax=max_colorscale ,cmap=cmapt, alpha=0.5)
-        # atimec = ax.contour(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 ,vmin=min_colorscale, vmax=max_colorscale ,levels=hours, linewidth=2,cmap=cmapt)
-        atime = ax.pcolormesh(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 - min_colorscale,vmin=0, vmax=max_colorscale-min_colorscale ,cmap=cmapt, alpha=0.5)
-        atimec = ax.contour(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 - min_colorscale,vmin=0, vmax=max_colorscale-min_colorscale ,levels=hours, linewidth=2,cmap=cmapt)
+        
+        lon_edges = compute_edges_from_centers(lon_web_mercator_fine)
+        lat_edges = compute_edges_from_centers(lat_web_mercator_fine)
+
+        atime = ax.pcolormesh(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 ,vmin=min_colorscale, vmax=max_colorscale ,cmap=cmapt, alpha=0.5)
+        atimec = ax.contour(lon_web_mercator_fine, lat_web_mercator_fine,firefront/3600 ,vmin=min_colorscale, vmax=max_colorscale ,levels=hours, linewidths=2,cmap=cmapt)
+    
         ###set the colorbar
         cax3 = fig.add_subplot(gs[0, 2]) 
         # cbaatime=plt.colorbar(atime,cax=cax3, ticks=np.arange(min_colorscale,max_colorscale,1),fraction=0.015,aspect=30, pad=0.04)
@@ -1372,7 +1373,7 @@ def Plot_surfaceWind_TKE(timestep,boundarypoints,dsfile,ignitiondate,fireenddate
     # Convert masked array to a regular array for contour detection
     masked_tke2Dfilled = masked_tke2D.filled(fill_value=0)
     # Find contours at a constant value of 0.5 (can be adjusted)
-    tkecontour = ax.contour(lon_web_mercator, lat_web_mercator, masked_tke2Dfilled,levels=[0.5], linewidth=1,linestyles="dashed" ,cmap="viridis")
+    tkecontour = ax.contour(lon_web_mercator, lat_web_mercator, masked_tke2Dfilled,levels=[0.5], linewidths=1,linestyles="dashed" ,cmap="viridis")
     # Add the colorbar
     cax2 = fig.add_subplot(gs[2, 1])
     cbartke = plt.colorbar(cctke,location="bottom", cax=cax2,fraction=0.015,aspect=30, pad=0.04)
@@ -1513,8 +1514,10 @@ def Plot_GroundSmokeConcentration(timestep,boundarypoints,dsfile,ignitiondate,fi
     #------------------------------------------------------------------------------
     # # Adjust the length and width of the arrows based on intensity
     scale_factor = 0.05# 0.025  # Adjust this factor to control the arrow size
-    u_plot = scale_factor*u/windmodule
-    v_plot = scale_factor*v/windmodule
+    with np.errstate(invalid='ignore', divide='ignore'):
+        u_plot = scale_factor * np.divide(u, windmodule, out=np.zeros_like(u), where=windmodule != 0)
+        v_plot = scale_factor * np.divide(v, windmodule, out=np.zeros_like(v), where=windmodule != 0)
+
     
     # # Define a slice to skip drawing some of the quiver arrows to reduce clutter
     skip = (slice(None, None, 2), slice(None, None, 2))
@@ -1766,7 +1769,7 @@ def Plot_LargeScale_Plume(timestep,boundarypoints,dsfile,ignitiondate,fireenddat
         plumebottom_flat_masked=np.ma.masked_equal(z_plumebottom_flat ,0)  
     
         if len(np.unique(dsfile["Z_FirePlumeBottom"]))>1:
-            bottomcontourf = ax1.contourf(lon_Large_web_mercator, lat_Large_web_mercator,plumebottom_flat_masked,vmin=vmin,mvax=vmax,cmap="inferno",alpha=0.8)
+            bottomcontourf = ax1.contourf(lon_Large_web_mercator, lat_Large_web_mercator,plumebottom_flat_masked,vmin=vmin,vmax=vmax,cmap="inferno",alpha=0.8)
             cbplumebot=plt.colorbar(bottomcontourf,ax=ax1,fraction=0.025,aspect=30, pad=0.04)
             cbplumebot.set_label('Smoke altitude of lower fireplume  m',fontsize=0.9*fontitle)
         ax1.contour(lon_Large_web_mercator, lat_Large_web_mercator, smokeground,levels=[0,0.1],linewidths=2,linestyles=["-"],colors=["Red"])
@@ -1929,14 +1932,16 @@ def plot_meteorology(dsfile,boundarypoints, output_image1="windst0",output_image
     #   Surface wind field 
     #------------------------------------------------------------------------------
     ax.axis([boundarypoints[0],boundarypoints[1],boundarypoints[2], boundarypoints[3]])
-    c = ax.contourf(lon_web_mercator, lat_web_mercator, windmodule, levels=20, cmap=plt.cm.nipy_spectral_r , alpha=0.3)
+    c = ax.contourf(lon_web_mercator, lat_web_mercator, windmodule, levels=20, cmap=plt.cm.jet , alpha=0.3)
     # --- Add a colorbar based on the contourf ---
     cbar = plt.colorbar(c, ax=ax, orientation='vertical', pad=0.02)
     cbar.set_label('Wind Speed [ms-1]')  # Update units as needed
     # # Adjust the length and width of the arrows based on intensity
     scale_factor = 0.025  # Adjust this factor to control the arrow size
-    u_plot = scale_factor*u/windmodule
-    v_plot = scale_factor*v/windmodule
+    with np.errstate(invalid='ignore', divide='ignore'):
+        u_plot = scale_factor * np.divide(u, windmodule, out=np.zeros_like(u), where=windmodule != 0)
+        v_plot = scale_factor * np.divide(v, windmodule, out=np.zeros_like(v), where=windmodule != 0)
+
     # --- Add wind arrows ---
     # # Define a slice to skip drawing some of the quiver arrows to reduce clutter
     skip = (slice(None, None, 5), slice(None, None, 5))
@@ -1967,7 +1972,7 @@ def plot_meteorology(dsfile,boundarypoints, output_image1="windst0",output_image
     #                   lat_web_mercator.min(), lat_web_mercator.max()),
     #       origin='lower', cmap='Greys', alpha=0.8)    
     ###########################################################################
-    ax.legend()    
+    # ax.legend()    
     # Save the figure
     plt.savefig(output_image1, dpi=dpi, bbox_inches="tight")
     jpg_filename = output_image1+".jpg"
@@ -2115,6 +2120,10 @@ print(f"date of first day: {datetime_str}")
 ignition=get_ignition_datetime("ForeFire/Init.ff",datetime_str )
 print(f"date of ignition: {ignition}")
 
+
+print(f"datatetime:{datetime_str}   ignition:{ignition}")
+if np.datetime64(ignition) < np.datetime64(datetime_str):
+    raise ValueError(f"[ERROR] Ignition time is earlier than than initialization of MNH!!. PLOTTING STOPPED to avoid inconsistencies")
 current_dir = os.getcwd()
 # casepath=os.path.abspath(os.path.join(current_dir, "..", "005_runFIRE"))
 mnfiles=""
@@ -2210,11 +2219,18 @@ plotboundariesM1=[SW_boundary_pointM1[0],SE_boundary_pointM1[0],SW_boundary_poin
 print(f"**********************************************************************")
 print(f"Creation of the png and jpg plots to be used in report.tex ")
 print(f"**********************************************************************")
-Plot_1D_Plots(combined_ds,fontitle=28,savefig=True,savepath=savedirectory,savename="1DPlot",dpi=200)
 i=0
 font=30
 dpi=80
+
+print("---------------------------------------------------------------")
+print("Starting the creation of 1D plots for ROS, Burned Area and Smoke Altiitude.")
+print("---------------------------------------------------------------")
+Plot_1D_Plots(combined_ds,fontitle=28,savefig=True,savepath=savedirectory,savename="1DPlot",dpi=200)
 print("1D summary plots for Burned area ROS, smoke plume altitude are ready")
+print("---------------------------------------------------------------")
+print("Starting the creation of Summary plots for local Metereology.")
+print("---------------------------------------------------------------")
 plot_meteorology(combined_ds,plotboundariesM1, output_image1="report/windst0",output_image2="report/windst1",provider=provider1,fontitle=28)
 print("2D summary plots of metereological conditions before ignition are ready")
 print("---------------------------------------------------------------")
