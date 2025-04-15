@@ -170,13 +170,21 @@ echo "Updating PGD namelist file: $PGD_LARGEST_NAMELIST_FILE with LAT_START = $L
 
 
 cd "$OUTPUT_DIR"
+
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    timestamp_secs=$(date -u -d "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -d "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -d "$midnight" +%s)
+else
+    timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
+fi
 # Convert the full timestamp to epoch seconds.
-timestamp_secs=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
-# Extract the date component (YYYY-MM-DD) from TIMESTAMP.
-DATE_ONLY=$(date -u $DATEOPTIONS  "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
-# Create a midnight timestamp.
-midnight="${DATE_ONLY}T00:00:00Z"
-midnight_secs=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
+
 # Calculate the difference.
 SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
 echo "$SECONDS_SINCE_MIDNIGHT"
