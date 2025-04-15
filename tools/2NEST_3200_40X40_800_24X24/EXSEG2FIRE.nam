@@ -1,0 +1,43 @@
+&NAM_LUNITn  CINIFILE = "M2.P.00" ,
+	     CINIFILEPGD="PGD_DFIREmA.nested" /
+&NAM_DYNn CPRESOPT = "RICHA", NITR = 8, XRELAX = 1.,
+           LHORELAX_UVWTH = F, LHORELAX_RV = F, LHORELAX_RC= F, LHORELAX_RR= F,
+           LHORELAX_RS= F, LHORELAX_RI= F, LHORELAX_RG= F, LHORELAX_TKE= F,
+           NRIMX = 0, NRIMY = 0, LVE_RELAX = T, XT4DIFU = 800. /
+&NAM_ADVn  CUVW_ADV_SCHEME= "CEN4TH",
+           CTEMP_SCHEME= "RKC4",
+           CMET_ADV_SCHEME= "PPM_01",
+           CSV_ADV_SCHEME= "PPM_01"
+/
+&nam_paramn
+    cturb = 'TKEL'
+    crad = 'ECMW'
+    ccloud = 'ICE3'
+    cdconv = 'NONE'
+    csconv = 'NONE'
+/
+&nam_param_radn
+    xdtrad = 500.0
+    xdtrad_clonly = 500.0
+    lclear_sky = .false.
+    nrad_colnbr = 400
+/
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN", XCPHASE = 20. /
+&nam_turbn
+    ximpl = 1.0
+    cturblen = 'DELT'
+    cturbdim = '3DIM'
+    lturb_flx = .false.
+    lturb_diag = .false.
+!    lsubg_cond = .true.
+/
+&NAM_CH_MNHCn LUSECHEM = F /
+&NAM_DIAG_SURFn  /
+&NAM_SSOn CROUGH='Z01D' /
+&NAM_ISBA  CALBEDO = "DRY" /
+&NAM_ISBAn CSCOND  = "NP89",
+        CC1DRY = 'DEF', CSOILFRZ = 'DEF', CDIFSFCOND = 'DEF', CSNOWRES = 'DEF'  /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /
+&NAM_BLANKn /
+&NAM_NEBn LSUBG_COND = F  /
