@@ -3,7 +3,8 @@ name: Build ForeFire on macOS
 on:
   push:
     branches:
-      - brew-macos
+      - dev
+      - brew
   
   workflow_dispatch:
 
