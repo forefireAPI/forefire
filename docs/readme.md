@@ -62,17 +62,15 @@ This is useful for previewing changes before committing or pushing them.
 
 **Optional**
 
-- View the Documentation: (need to enable html output on Doxygen)
+- **Graphviz (Optional but Recommended for devs):** Doxygen uses Graphviz (specifically the `dot` tool) to generate diagrams (like call graphs, inheritance graphs). If you want these diagrams, install Graphviz (`sudo apt install graphviz` or `brew install graphviz`).
+
+- Doxygen also can generate HTML own documentation, where you can see the inheritance graphs, list os classes, functions, variables, etc
 
     Open the generated HTML documentation in your web browser.
     ```
     # Path is relative to the 'docs' directory
-    open _build/html/index.html
+    open docs/doxygen/html/index.html
     ```
-    (Or use `start _build\html\index.html` on Windows, or navigate via your file explorer).
-
-- **Graphviz (Optional but Recommended):** Doxygen uses Graphviz (specifically the `dot` tool) to generate diagrams (like call graphs, inheritance graphs). If you want these diagrams, install Graphviz (`sudo apt install graphviz` or `brew install graphviz`).
-- **(Optional) C++ Compiler & CMake:** Doxygen parses C++ code. While it might work without a full build environment, having the compiler and CMake setup (needed to build ForeFire itself) can sometimes help Doxygen find system headers if needed.
 
 ## Deployment
 - Deployment needs to be configured via the GUI of readthedocs
