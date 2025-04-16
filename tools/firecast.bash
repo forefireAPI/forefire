@@ -192,6 +192,9 @@ cd "$OUTPUT_DIR"
 echo "FireDomain[pgdNcFile=PGD_DFIREmA.nc;ISOdate=${TIMESTAMP}]" > ForeFire/Init.ff
 echo "startFire[lonlat=($LON_START, $LAT_START,0);t=$SECONDS_SINCE_MIDNIGHT]" >> ForeFire/Init.ff
 echo "include[ForeFire/hourlyPlots.ff]@t=$ROUNDED_HOUR_SECONDS" >> ForeFire/Init.ff
+echo "setParameter[dumpMode=geojson]" >> ForeFire/Init.ff
+echo "print[images/fronts_*count*.geojson]" >> ForeFire/Init.ff
+echo "setParameter[dumpMode=json]" >> ForeFire/Init.ff
 #echo "listenHTTP[host=127.0.0.1:8080]" >> ForeFire/Init.ff
 echo "Created Init file as :"
 cat ForeFire/Init.ff
