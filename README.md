@@ -1,6 +1,13 @@
-# ForeFire
+<!-- ![logo](./docs/source/_static/forefire.svg) -->
+<img src="./docs/source/_static/forefire.svg" alt="Logo" width="400">
 
-![logo](./docs_legacy/images/forefire.jpg)
+
+---
+<!-- [![DOI](https://zenodo.org/badge/DOI/10.14195/978-989-26-0884-6_29.svg)](https://doi.org/10.14195/978-989-26-0884-6_29) -->
+[![DOI](https://zenodo.org/badge/DOI/10.14195/978-989-26-0884-6_29.svg)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![CI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
+![Language](https://img.shields.io/badge/C++-blue) ![Language](https://img.shields.io/badge/Python-yellow)
 
 <!-- _Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._ -->
 
