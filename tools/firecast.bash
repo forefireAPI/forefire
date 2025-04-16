@@ -112,11 +112,11 @@ IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
 
-#ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
+ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
 
 echo "Base step: $BASE_STEP for hour $IGNITION_HOUR"
 
-for OFFSET in -3 0 3 6 9 12 15; do
+for OFFSET in -3 3 6 9 12 15; do
     STEP=$(( BASE_STEP + OFFSET ))
     [ $STEP -lt 0 ] && continue
     printf -v STEP_STR "%02d" $STEP
