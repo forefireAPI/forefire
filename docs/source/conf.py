@@ -39,4 +39,5 @@ html_favicon = "_static/favicon.ico"
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
+    'style_nav_header_background': '#808080',
 }
