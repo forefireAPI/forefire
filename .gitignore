@@ -11,7 +11,7 @@ tools/cmaps
 bindings/python/src/pyforefire.egg-info
 #python
 __pycache__
-
+venv
 # compilation files
 *.dblite
 *.o
@@ -26,9 +26,15 @@ __pycache__
 # jupyter notebooks checkpoints
 .ipynb_checkpoints
 
+#docs
+docs/doxygen/xml
+docs/doxygen/html
+
+# build
 CMakeLists.txt
 build.sh
 
+#other
 tools/postprocessing/loadInParaview.py
 tests/config_firecast_local.bash
 tools/config_firecast_local.bash

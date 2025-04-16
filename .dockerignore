@@ -1,12 +1,43 @@
 # ignore .git and .cache folders
 .git
 .cache
+.gitignore
 
-# ignore build folders
-bin
-build
+# Local build artifacts
+build/
+bin/
+lib/
 
 # ignore test files
 *.json
 *.geojson
 
+# Docker files (usually not needed inside the image)
+Dockerfile
+.dockerignore
+
+# Python virtual environments and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Documentation build output
+docs/build/
+docs/doxygen/html/
+docs/doxygen/xml/
+
+# IDE configuration files
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files / temporary files
+*.log
+*.tmp
