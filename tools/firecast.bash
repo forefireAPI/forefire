@@ -1,6 +1,6 @@
 #!/bin/sh
 #SBATCH -J FCLIVE
-#SBATCH -n 16
+#SBATCH -n 32
 #SBATCH --partition=intel
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=filippi_j@univ-corse.fr
