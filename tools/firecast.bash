@@ -40,18 +40,8 @@ if [ -n "$3" ]; then
 fi
 
 
-if [ ! -d "$OUTPUT_DIR" ]; then
-    mkdir -p "$OUTPUT_DIR" || { echo "Failed to create output directory: $OUTPUT_DIR"; exit 1; }
-fi
-
-# Copy the config directory to the output directory
-#cp -r "$FF_UNCOUPLED_CASE" "$OUTPUT_DIR/ForeFire" || { echo "Failed to copy FF_UNCOUPLED_FILE file to $OUTPUT_DIR"; exit 1; }
-
-# Copy the content of the template directory to the output directory
-cp -r "$TEMPLATE_DIR"/* "$OUTPUT_DIR/" || { echo "Failed to copy template files to $OUTPUT_DIR"; exit 1; }
 
 # now parse the ff file to extract timestamp and latlon of the fire from init
-#expecting lines like :
 #loadData[data.nc;2024-09-16T12:22:50Z]
 #startFire[lonlat=(-8.175970, 39.972564,0);t=0.0]
 
@@ -69,7 +59,12 @@ if [ -z "$TIMESTAMP" ] || [ -z "$LAT_START" ] || [ -z "$LON_START" ] || [ -z "$A
     echo "Error: Failed to extract required values (timestamp or latitude/longitude) from $FF_FILE"
     exit 1
 fi
-
+# Extract date directory from the timestamp (YYYYMMDD format)
+if date --version >/dev/null 2>&1; then
+    DATEDIR_YYYMMMDD=$(date -d "$TIMESTAMP" +%Y%m%d)
+else
+    DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
+fi
 # copy the data tile
 # Extract the data file path
 DATA_DISTANT_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
@@ -90,7 +85,17 @@ if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
     done
 fi
 
-echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR"
+echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR i have all i need"
+
+if [ ! -d "$OUTPUT_DIR" ]; then
+    mkdir -p "$OUTPUT_DIR" || { echo "Failed to create output directory: $OUTPUT_DIR"; exit 1; }
+fi
+
+# Copy the config directory to the output directory
+#cp -r "$FF_UNCOUPLED_CASE" "$OUTPUT_DIR/ForeFire" || { echo "Failed to copy FF_UNCOUPLED_FILE file to $OUTPUT_DIR"; exit 1; }
+
+# Copy the content of the template directory to the output directory
+cp -r "$TEMPLATE_DIR"/* "$OUTPUT_DIR/" || { echo "Failed to copy template files to $OUTPUT_DIR"; exit 1; }
 
 # Copy the data file to "$OUTPUT_DIR/ForeFire/"
 echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
@@ -98,12 +103,7 @@ echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
 cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
 cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
 
-# Extract date directory from the timestamp (YYYYMMDD format)
-if date --version >/dev/null 2>&1; then
-    DATEDIR_YYYMMMDD=$(date -d "$TIMESTAMP" +%Y%m%d)
-else
-    DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
-fi
+
 
 # Link forecast files around ignition time
 IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
