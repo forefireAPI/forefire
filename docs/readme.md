@@ -12,30 +12,23 @@ This project uses a combination of tools to generate comprehensive documentation
 
 ## How to Build the Documentation Locally
 
-These instructions explain how to build the ForeFire documentation on your local machine. This is useful for previewing changes before committing or pushing them.
+This is useful for previewing changes before committing or pushing them.
 
 **Prerequisites:**
 
--   **Python:** Version 3.10 or higher `pip` and `venv` should be included.
--   **Doxygen:** The Doxygen executable must be installed and available in your system's PATH, and can be installed with `sudo apt install doxygen` or `brew install doxygen`
+-   **Python:** Version 3.10 or higher. `pip` and `venv` should be included.
+-   **Doxygen:** The Doxygen executable must be installed and available in your system's PATH (`sudo apt install doxygen` or `brew install doxygen`)
 
 **Steps:**
 
 1.  **Set up Python Virtual Environment:**
 
-    Navigate to the `docs` directory and create/activate a virtual environment. This isolates dependencies.
+    Navigate to the `docs` directory and create/activate a virtual environment to isolate dependencies.
     ```bash
     cd docs
     python -m venv .venv
+    source .venv/bin/activate
     ```
-    -   On Linux/macOS:
-        ```bash
-        source .venv/bin/activate
-        ```
-    -   On Windows (cmd/powershell):
-        ```bash
-        .venv\Scripts\activate
-        ```
     You should see `(.venv)` prepended to your shell prompt.
 
 2.  **Install Python Dependencies:**
@@ -80,22 +73,6 @@ These instructions explain how to build the ForeFire documentation on your local
 
 - **Graphviz (Optional but Recommended):** Doxygen uses Graphviz (specifically the `dot` tool) to generate diagrams (like call graphs, inheritance graphs). If you want these diagrams, install Graphviz (`sudo apt install graphviz` or `brew install graphviz`).
 - **(Optional) C++ Compiler & CMake:** Doxygen parses C++ code. While it might work without a full build environment, having the compiler and CMake setup (needed to build ForeFire itself) can sometimes help Doxygen find system headers if needed.
-
-# Documentation with Read the Docs
-
-## Generate the docs locally
-Python and sphinx
-- Create a venv with `python3 -m venv venv` and activate it with `venv/bin/activate`
-- Install dependencies with `pip3 install -r requirements.txt`
-this also might be necessary
-- `sudo apt-get install python3-sphinx`
-
-Doxygen
-- install doxygen with `sudo apt-get install doxygen`
-- Acess the doxygen folder, it contains the `Doxyfile` which holds the configuration. To convert the CPP code into XML run `doxygen Doxyfile` or simply `doxygen`
-
-To build localy
-- Go back to docs folder and run `make html`
 
 ## Deployment
 - Deployment needs to be configured via the GUI of readthedocs
