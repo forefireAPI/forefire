@@ -88,13 +88,18 @@ else
     DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
 fi
 
+
 BC_DIR="$BC_FILES/$DATEDIR_YYYMMMDD"
 # If the BC directory does not exist or is empty, download the BC files from the web
 if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
+    if [ -z "$HTTP_BC" ]; then
+        echo "Error: HTTP_BC variable is not set. Exiting."
+        exit 1
+    fi
     mkdir -p "$BC_DIR" || { echo "Failed to create BC directory: $BC_DIR"; exit 1; }
     for STEP in 00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48; do
         echo "Downloading cep.FC00Z.$STEP"
-        curl -o "$BC_DIR/cep.FC00Z.$STEP" "https://forefire.univ-corse.fr/saphir/MARS/$DATEDIR_YYYMMMDD/cep.FC00Z.$STEP" || { echo "Failed to download step $STEP"; exit 1; }
+        curl -o "$BC_DIR/cep.FC00Z.$STEP" "$HTTP_BC/$DATEDIR_YYYMMMDD/cep.FC00Z.$STEP" || { echo "Failed to download step $STEP"; exit 1; }
     done
 fi
 
@@ -105,10 +110,6 @@ IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/de
 IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
-
-
-
-
 
 ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
 
