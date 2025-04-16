@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH -J FC$2
+#SBATCH -J FCLIVE
 #SBATCH -n 16
 #SBATCH --partition=intel
 #SBATCH --time=02:00:00
@@ -76,19 +76,6 @@ DATA_DISTANT_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
 RELATIVE_PATH=$(echo "$DATA_DISTANT_FILE" | sed -E 's|.*/tiles/||')
 DATA_TILE_FILE="${FF_TILES}${RELATIVE_PATH}"
 
-# Copy the data file to "$OUTPUT_DIR/ForeFire/"
-echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
-cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
-cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
-
-# Extract date directory from the timestamp (YYYYMMDD format)
-if date --version >/dev/null 2>&1; then
-    DATEDIR_YYYMMMDD=$(date -d "$TIMESTAMP" +%Y%m%d)
-else
-    DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
-fi
-
-
 BC_DIR="$BC_FILES/$DATEDIR_YYYMMMDD"
 # If the BC directory does not exist or is empty, download the BC files from the web
 if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
@@ -104,6 +91,19 @@ if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
 fi
 
 echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR"
+
+# Copy the data file to "$OUTPUT_DIR/ForeFire/"
+echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
+
+cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
+cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
+
+# Extract date directory from the timestamp (YYYYMMDD format)
+if date --version >/dev/null 2>&1; then
+    DATEDIR_YYYMMMDD=$(date -d "$TIMESTAMP" +%Y%m%d)
+else
+    DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
+fi
 
 # Link forecast files around ignition time
 IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
