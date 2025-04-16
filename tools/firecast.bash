@@ -147,9 +147,8 @@ fi
 
 # Calculate the difference.
 SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
-echo "$SECONDS_SINCE_MIDNIGHT"
 ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
-
+echo "Fire starting at $SECONDS_SINCE_MIDNIGHT, first output at $ROUNDED_HOUR_SECONDS"
 
 
 # Update report placeholders with the correct ignition values
@@ -158,7 +157,7 @@ sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/rep
 sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/report.tex"
 
 
-IGNITION_EPOCH=$ROUNDED_HOUR_SECONDS
+IGNITION_EPOCH=$(( ROUNDED_HOUR_SECONDS + midnight_secs ))
 
 # Update time markers for figures from 1HAFTERSTARTFIRE to 12HAFTERSTARTFIRE
 for HOUR in {1..12}; do
@@ -205,7 +204,8 @@ ln -s PGD_DFIREmA.nc ForeFire/PGD_DFIREmA.nc
 . run_run_mnh_M1
 . run_spawn_real
 . run_run_mnh_fire
-$PYTHONEXE BuildReport.py 
+conda activate $PYTHONEXE
+python BuildReport.py 
 pdflatex -interaction=nonstopmode -output-directory=report report/report.tex
 #. run_VTK_for_paraview
 #. run_plots_report

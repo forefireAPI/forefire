@@ -18,7 +18,7 @@
     export ECCODES_HOME="ECCODE library path"
     export NETCDF_HOME="/Netcdf library path"
     export FOREFIREHOME="ForeFire library path"
-    export PYTHONEXE="a capable python interpreter"
+    export PYTHONEXE="a capable conda env interpreter"
     export MESONHROOT="root path of MesoNH"
     source ${MESONHROOT}/conf/profile_mesonh------your profile
 
