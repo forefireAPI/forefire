@@ -28,6 +28,7 @@ venv
 
 #docs
 docs/doxygen/xml
+docs/doxygen/html
 
 # build
 CMakeLists.txt
