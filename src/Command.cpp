@@ -1164,7 +1164,25 @@ namespace libforefire
             }
 
             // Extract arguments of interest.
-            std::string filename = argMap["filename"];
+            std::string filename = "";            
+    
+            if (arg.size() > 0)
+            {
+                vector<string> parts;
+                tokenize(argMap["filename"], parts, "*");
+    
+                unsigned int partToEval = (arg.at(0) == '*') ? 0 : 1;
+    
+                for (auto i = 0u; i < parts.size(); i++)
+                {
+                    filename += (i % 2 == partToEval) ? simParam->getParameter(parts[i]) : parts[i];
+                }
+            }
+    
+            replace(filename.begin(), filename.end(), ':', '-');
+
+
+
             std::string parameter = argMap["parameter"];
             std::string colormap = argMap["cmap"];
 

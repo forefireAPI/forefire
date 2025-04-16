@@ -23,12 +23,7 @@ else
 fi
 #This scripts takes 3 arguments, first is the template directory, second is the target case, third iis optional, a target case path if it is given it uses that instead
 
-# Check if GNU date is available.
-if date --version >/dev/null 2>&1; then
-    DATEOPTIONS="-d"
-else
-    DATEOPTIONS="-j -f $DATEFMT"
-fi
+
 
 
 TEMPLATE_DIR="$1"
@@ -106,14 +101,22 @@ cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
 
 
 # Link forecast files around ignition time
-IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    IGNITION_HOUR=$(date -u -d "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+else
+    IGNITION_HOUR=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+fi
+
 IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
 
-ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
+#ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
 
-for OFFSET in -3 3 6 9 12 15; do
+echo "Base step: $BASE_STEP for hour $IGNITION_HOUR"
+
+for OFFSET in -3 0 3 6 9 12 15; do
     STEP=$(( BASE_STEP + OFFSET ))
     [ $STEP -lt 0 ] && continue
     printf -v STEP_STR "%02d" $STEP

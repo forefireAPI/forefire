@@ -3,8 +3,8 @@
    /
 &NAM_PGDFILE CPGDFILE='PGD_DFIREmA' /
 &NAM_PGD_GRID YINIFILE='PGD_D3200mA' YINIFILETYPE='MESONH' /
-&NAM_INIFILE_CONF_PROJ IXOR=14,
-                       IYOR=14,
+&NAM_INIFILE_CONF_PROJ IXOR=18,
+                       IYOR=18,
                        IXSIZE=12,
                        IYSIZE=12, 
                        IDXRATIO=4, IDYRATIO=4 /
