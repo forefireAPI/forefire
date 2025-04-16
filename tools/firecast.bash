@@ -204,8 +204,7 @@ ln -s PGD_DFIREmA.nc ForeFire/PGD_DFIREmA.nc
 . run_run_mnh_M1
 . run_spawn_real
 . run_run_mnh_fire
-conda activate $PYTHONEXE
-python BuildReport.py 
+$PYTHONEXE BuildReport.py 
 pdflatex -interaction=nonstopmode -output-directory=report report/report.tex
 #. run_VTK_for_paraview
 #. run_plots_report
