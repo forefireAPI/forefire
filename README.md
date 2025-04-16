@@ -32,30 +32,46 @@
 
 ## Quick Start
 
-The easiest way to get started is often using Docker. Alternatively, build from source using the provided script.
+The easiest way to get started is often using Docker and the interactive console. Alternatively, build from source using the provided script.
 
-**1. Using Docker (Recommended)**
+``` bash
+# Clone the repository
+git clone https://github.com/forefireAPI/firefront.git
+cd firefront
+```
+
+### 1. Using Docker (Recommended)
 
 ```bash
 # Build the Docker image
 docker build . -t forefire:latest
 
 # Run the container interactively
-docker run -it forefire:latest bash
+docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
 
-# Inside the container, run an example:
+# Inside the container navigate to test directory:
 cd tests/runff
-bash run.bash
+
+# start forefire console 
+forefire
+
+#inside the console launch an http server with listenHttp[] command
+forefire> listenHTTP[]
+
+# the output should be
+>> HTTP command server listening on port 8000
 ```
-We will soon allow docker to run forefire with the interactive console
 
-**2. From Source (using install script)**
+Now that the server is running, acces the console on your browser at http://localhost:8000/
 
-``` bash
-# Clone the repository
-git clone https://github.com/forefireAPI/firefront.git
-cd firefront
+- Run the command `include[real_case.ff]`
+- Then press Refresh Map
 
+You can interact and simulate events in the region of Corse, south of France
+
+### 2. From Source (using install script)
+
+```bash
 # Prerequisites:
 # You need a C++ compiler, CMake, Make, and libraries like NetCDF.
 # See the Documentation or inspect install-forefire.sh for details.
@@ -72,15 +88,15 @@ bash run.bash
 ```
 (For manual CMake build instructions, see the Full Documentation).
 
-### Python Bindings
+## Python Bindings
 ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
 
 <!-- ### Contributing -->
 
-### License
+## License
 ForeFire is licensed under the GNU General Public License v3.0. 
 
-### Citation
+## Citation
 If you use ForeFire in your work, please cite:
 ```
 Filippi, Jean-Baptiste & Bosseur, Frédéric & Grandi, Damien. (2014). ForeFire: open-source code for wildland fire spread models. 10.14195/978-989-26-0884-6_29. 
