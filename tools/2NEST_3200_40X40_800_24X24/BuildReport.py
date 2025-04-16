@@ -27,6 +27,12 @@ import sys
 from PIL import Image
 
 import glob
+
+import os
+import pyproj
+
+os.environ['PROJ_LIB'] = os.path.join(os.path.dirname(pyproj.__file__), 'proj_data')
+
 #################################################################################
 ###     PRE-PROCESSING ROUTINES
 #################################################################################

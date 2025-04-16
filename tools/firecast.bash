@@ -130,20 +130,34 @@ done
 
 
 
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    timestamp_secs=$(date -u -d "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -d "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -d "$midnight" +%s)
+else
+    timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
+fi
+# Convert the full timestamp to epoch seconds.
+
+# Calculate the difference.
+SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
+echo "$SECONDS_SINCE_MIDNIGHT"
+ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
+
+
+
 # Update report placeholders with the correct ignition values
 sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "$OUTPUT_DIR/report/report.tex"
 sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/report.tex"
 sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/report.tex"
 
-# Compute ignition epoch in a cross-platform way
-if date --version >/dev/null 2>&1; then
-    # GNU date (Linux)
-    IGNITION_EPOCH=$(date -u -d "$TIMESTAMP" +%s)
-else
-    # BSD date (macOS)
-    IGNITION_EPOCH=$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
-fi
 
+IGNITION_EPOCH=$ROUNDED_HOUR_SECONDS
 
 # Update time markers for figures from 1HAFTERSTARTFIRE to 12HAFTERSTARTFIRE
 for HOUR in {1..12}; do
@@ -171,24 +185,6 @@ echo "Updating PGD namelist file: $PGD_LARGEST_NAMELIST_FILE with LAT_START = $L
 
 cd "$OUTPUT_DIR"
 
-# Check if GNU date is available.
-if date --version >/dev/null 2>&1; then
-    timestamp_secs=$(date -u -d "$TIMESTAMP" +%s)
-    DATE_ONLY=$(date -u -d "$TIMESTAMP" "+%Y-%m-%d")
-    midnight="${DATE_ONLY}T00:00:00Z"
-    midnight_secs=$(date -u -d "$midnight" +%s)
-else
-    timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
-    DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
-    midnight="${DATE_ONLY}T00:00:00Z"
-    midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
-fi
-# Convert the full timestamp to epoch seconds.
-
-# Calculate the difference.
-SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
-echo "$SECONDS_SINCE_MIDNIGHT"
-ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
 # now i just have to do the init.ff
 echo "FireDomain[pgdNcFile=PGD_DFIREmA.nc;ISOdate=${TIMESTAMP}]" > ForeFire/Init.ff
 echo "startFire[lonlat=($LON_START, $LAT_START,0);t=$SECONDS_SINCE_MIDNIGHT]" >> ForeFire/Init.ff
@@ -197,10 +193,7 @@ echo "include[ForeFire/hourlyPlots.ff]@t=$ROUNDED_HOUR_SECONDS" >> ForeFire/Init
 echo "Created Init file as :"
 cat ForeFire/Init.ff
 
-
-
-
-
+# and run the simulation
 
 . run_build_pgd_and_nest && echo "PGD OK completed"
 
@@ -212,6 +205,6 @@ ln -s PGD_DFIREmA.nc ForeFire/PGD_DFIREmA.nc
 . run_spawn_real
 . run_run_mnh_fire
 $PYTHONEXE BuildReport.py 
-pdflatex -interaction=nonstopmode report/report.tex
+pdflatex -interaction=nonstopmode -output-directory=report report/report.tex
 #. run_VTK_for_paraview
 #. run_plots_report
