@@ -39,6 +39,7 @@
     .active {
       background: #e0e0e0;
     }
+    /* Next/Previous moved under the colorbar */
     #controls {
       margin-top: 10px;
       text-align: center;
@@ -48,68 +49,100 @@
       margin: 0 5px;
       cursor: pointer;
     }
+    #colorbar-container {
+      margin-top: 20px;
+    }
   </style>
-</head>
-<body>
-  <div id="sidebar">
-    <h3>Parameters</h3>
-    <div id="parameterList"></div>
-    <h3>Steps</h3>
-    <div id="stepList"></div>
-    <div id="controls">
-      <button id="prevStep">Previous</button>
-      <button id="nextStep">Next</button>
-    </div>
-  </div>
-  <div id="map"></div>
-
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- JSZip for KMZ processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- toGeoJSON for converting KML to GeoJSON -->
   <script src="https://unpkg.com/@mapbox/togeojson@0.16.2/togeojson.js"></script>
+  <!-- Leaflet-Velocity for wind overlay (assumed to be in the same directory) -->
+  <script src="leaflet-velocity.js"></script>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>Parameters</h3>
+    <div id="parameterList"></div>
+    <!-- Colorbar container (used when current parameter has a colorbar) -->
+    <div id="colorbar-container"></div>
+    <div id="controls">
+      <button id="prevStep">Previous</button>
+      <button id="nextStep">Next</button>
+    </div>
+    <h3>Steps</h3>
+    <div id="stepList"></div>
+  </div>
+  <div id="map"></div>
+
   <script>
-    /* Define available parameters and steps.
-       For "fronts" the filenames follow the pattern fronts_0.kml to fronts_13.kml,
-       while for the others they follow parameter_1.kmz ... parameter_14.kmz. */
+    /* Parameters object with updated colormap settings.
+       Note: fronts now use geojson files.
+    */
     const parameters = {
       "fronts": {
-        ext: "kml",
+        ext: "geojson",
         steps: Array.from({length: 14}, (v, i) => i)  // 0 to 13
       },
       "plumeBottomHeight": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 5000,
+        unit: "meters",
         steps: Array.from({length: 14}, (v, i) => i + 1)  // 1 to 14
       },
       "plumeTopHeight": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 5000,
+        unit: "meters",
         steps: Array.from({length: 14}, (v, i) => i + 1)
       },
       "smokeAtGround": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 0.01,
+        unit: "relative mass",
         steps: Array.from({length: 14}, (v, i) => i + 1)
       },
       "speed": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 1,
+        unit: "m/s",
         steps: Array.from({length: 14}, (v, i) => i + 1)
       },
       "tke": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 3,
+        unit: "m/s",
         steps: Array.from({length: 14}, (v, i) => i + 1)
       },
       "wind": {
         ext: "kmz",
+        colorbar: "turbo.png",
+        min: 0,
+        max: 10,
+        unit: "m/s",
         steps: Array.from({length: 14}, (v, i) => i + 1)
       }
     };
 
     let currentParameter = "fronts";
-    let currentStepIndex = 0; // index into the steps array of the current parameter
+    let currentStepIndex = 0; // current step index (preserved across parameter changes)
     let currentLayer = null;
+    let velocityLayer = null;
 
-    // Initialize the map with a default view.
-    const map = L.map('map').setView([43.27, 11.17], 10);
+    // Initialize the map with a default view
+    const map = L.map('map').setView([42.17, 9.17], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
@@ -117,8 +150,24 @@
 
     const parameterListDiv = document.getElementById("parameterList");
     const stepListDiv = document.getElementById("stepList");
+    const colorbarContainer = document.getElementById("colorbar-container");
     const prevStepButton = document.getElementById("prevStep");
     const nextStepButton = document.getElementById("nextStep");
+
+    // Update the colorbar display if the current parameter has one.
+    function updateColorbarDisplay() {
+      const paramConfig = parameters[currentParameter];
+      if (paramConfig.colorbar) {
+        colorbarContainer.innerHTML = `
+          <div style="text-align: center; font-size: 12px;">${paramConfig.max}</div>
+          <img src="${paramConfig.colorbar}" width="50" height="400" style="display: block; margin: auto;"/>
+          <div style="text-align: center; font-size: 12px;">${paramConfig.min}</div>
+          <div style="text-align: center; font-size: 12px;">${paramConfig.unit}</div>
+        `;
+      } else {
+        colorbarContainer.innerHTML = "";
+      }
+    }
 
     // Build the parameter selection list.
     function buildParameterList() {
@@ -129,22 +178,37 @@
         btn.className = "param-button" + (param === currentParameter ? " active" : "");
         btn.onclick = () => {
           currentParameter = param;
-          currentStepIndex = 0;
+          // Preserve the current step if possible
+          currentStepIndex = Math.min(currentStepIndex, parameters[currentParameter].steps.length - 1);
           updateParameterSelection();
+          updateColorbarDisplay();
           loadCurrentFile();
         };
         parameterListDiv.appendChild(btn);
       });
     }
 
-    // Build the steps list for the selected parameter.
+    // Build the steps list with labels.
     function buildStepList() {
       stepListDiv.innerHTML = "";
       const steps = parameters[currentParameter].steps;
       steps.forEach((step, index) => {
         const btn = document.createElement("button");
-        btn.textContent = "Step " + step;
         btn.className = "step-button" + (index === currentStepIndex ? " active" : "");
+        // For "speed" and "wind" parameters, fetch timestamp from file.
+        if (currentParameter === "speed" || currentParameter === "wind") {
+          btn.textContent = "Loading...";
+          const filename = currentParameter + "_" + step + "." + parameters[currentParameter].ext;
+          const getTimestamp = (currentParameter === "wind") ? getTimestampFromWindCS : getTimestampFromKMZ;
+          getTimestamp(filename).then(timestamp => {
+            btn.textContent = timestamp;
+          }).catch(err => {
+            console.error("Error loading timestamp for", filename, err);
+            btn.textContent = "Step " + step;
+          });
+        } else {
+          btn.textContent = "Step " + step;
+        }
         btn.onclick = () => {
           currentStepIndex = index;
           updateStepSelection();
@@ -155,7 +219,6 @@
     }
 
     function updateParameterSelection() {
-      // Update active state for parameter buttons
       Array.from(parameterListDiv.children).forEach(btn => {
         btn.classList.toggle("active", btn.textContent === currentParameter);
       });
@@ -184,6 +247,82 @@
       }
     };
 
+    // Function to extract timestamp from a KMZ file (for "speed" parameter).
+    function getTimestampFromKMZ(filename) {
+      return fetch(filename)
+        .then(response => response.arrayBuffer())
+        .then(data => JSZip.loadAsync(data))
+        .then(zip => {
+          let kmlFileName = null;
+          zip.forEach((relativePath, zipEntry) => {
+            if (relativePath.endsWith(".kml") && !kmlFileName) {
+              kmlFileName = relativePath;
+            }
+          });
+          if (!kmlFileName) {
+            throw new Error("No KML file found in KMZ.");
+          }
+          return zip.file(kmlFileName).async("text");
+        })
+        .then(kmlText => {
+          const parser = new DOMParser();
+          const kml = parser.parseFromString(kmlText, "application/xml");
+          const timeStampElem = kml.getElementsByTagName("TimeStamp")[0];
+          if (timeStampElem) {
+            const whenElem = timeStampElem.getElementsByTagName("when")[0];
+            if (whenElem) return whenElem.textContent;
+          }
+          throw new Error("No timestamp found.");
+        });
+    }
+
+    // Function to extract timestamp from a windCS JSON file (for "wind" parameter).
+    function getTimestampFromWindCS(filename) {
+      return fetch(filename)
+        .then(response => response.json())
+        .then(data => {
+          if (data.header && data.header.refTime) {
+            return data.header.refTime;
+          }
+          throw new Error("No refTime in windCS JSON.");
+        });
+    }
+
+    // Load the wind arrow overlay using leaflet-velocity.
+    function loadWindLayer(step) {
+      const windFilename = "windCS_" + step + ".json";
+      fetch(windFilename)
+        .then(resp => resp.json())
+        .then(windData => {
+          if (velocityLayer) {
+            map.removeLayer(velocityLayer);
+          }
+          velocityLayer = L.velocityLayer({
+            displayValues: true,
+            displayOptions: {
+              velocityType: "Wind",
+              position: "bottomleft",
+              emptyString: "No velocity data",
+              angleConvention: "bearingCW",
+              showCardinal: false,
+              useVectors: true,
+              speedUnit: "ms",
+              directionString: "Direction",
+              speedString: "Speed"
+            },
+            data: windData,
+            lineWidth: 3,
+            minVelocity: parameters.wind.min,
+            maxVelocity: parameters.wind.max,
+            velocityScale: 0.005,
+            opacity: 1,
+            paneName: "overlayPane"
+          });
+          velocityLayer.addTo(map);
+        })
+        .catch(e => console.error("Error fetching wind data:", e));
+    }
+
     // Load the file corresponding to the current parameter and step.
     function loadCurrentFile() {
       if (currentLayer) {
@@ -192,31 +331,25 @@
       }
       const paramInfo = parameters[currentParameter];
       const step = paramInfo.steps[currentStepIndex];
-      const filename = currentParameter + "_" + step + "." + paramInfo.ext;
-      console.log("Loading file: " + filename);
-
-      if (paramInfo.ext === "kml") {
-        // For fronts: fetch the KML, convert to GeoJSON and display.
+      let filename = "";
+      if (currentParameter === "fronts") {
+        filename = "fronts_" + step + ".geojson";
         fetch(filename)
-          .then(response => response.text())
-          .then(text => {
-            const parser = new DOMParser();
-            const kml = parser.parseFromString(text, "application/xml");
-            const geojson = toGeoJSON.kml(kml);
+          .then(response => response.json())
+          .then(geojson => {
             currentLayer = L.geoJSON(geojson);
             currentLayer.addTo(map);
             if (currentLayer.getBounds && currentLayer.getBounds().isValid()) {
               map.fitBounds(currentLayer.getBounds());
             }
           })
-          .catch(err => console.error("Error loading KML file:", err));
-      } else if (paramInfo.ext === "kmz") {
-        // For KMZ: fetch the file as arrayBuffer, unzip using JSZip, then extract the KML and image.
+          .catch(err => console.error("Error loading GeoJSON file:", err));
+      } else {
+        filename = currentParameter + "_" + step + "." + paramInfo.ext;
         fetch(filename)
           .then(response => response.arrayBuffer())
           .then(data => JSZip.loadAsync(data))
           .then(zip => {
-            // Find the first .kml file in the archive.
             let kmlFileName = null;
             zip.forEach((relativePath, zipEntry) => {
               if (relativePath.endsWith(".kml") && !kmlFileName) {
@@ -234,7 +367,6 @@
           .then(([kmlText, zip]) => {
             const parser = new DOMParser();
             const kml = parser.parseFromString(kmlText, "application/xml");
-            // Look for the GroundOverlay element.
             const groundOverlay = kml.getElementsByTagName("GroundOverlay")[0];
             if (!groundOverlay) throw new Error("No GroundOverlay found.");
             const latLonBox = groundOverlay.getElementsByTagName("LatLonBox")[0];
@@ -245,13 +377,11 @@
             const bounds = [[south, west], [north, east]];
             const icon = groundOverlay.getElementsByTagName("Icon")[0];
             let href = icon.getElementsByTagName("href")[0].textContent;
-
-            // Look for the referenced image in a case-insensitive manner.
             let fileEntry = zip.file(href);
             if (!fileEntry) {
-              for (const filename in zip.files) {
-                if (filename.toLowerCase() === href.toLowerCase()) {
-                  fileEntry = zip.file(filename);
+              for (const fname in zip.files) {
+                if (fname.toLowerCase() === href.toLowerCase()) {
+                  fileEntry = zip.file(fname);
                   break;
                 }
               }
@@ -262,7 +392,6 @@
                 return { imageURL, bounds };
               });
             } else {
-              // Fallback: use the href directly.
               return { imageURL: href, bounds };
             }
           })
@@ -273,11 +402,14 @@
           })
           .catch(err => console.error("Error processing KMZ file:", err));
       }
+      // Always load the wind arrow overlay for the current step.
+      loadWindLayer(step);
     }
 
     // Initialize the interface.
     buildParameterList();
     buildStepList();
+    updateColorbarDisplay();
     loadCurrentFile();
   </script>
 </body>

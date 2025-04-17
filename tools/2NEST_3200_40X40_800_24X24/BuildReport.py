@@ -27,6 +27,12 @@ import sys
 from PIL import Image
 
 import glob
+
+import os
+import pyproj
+
+os.environ['PROJ_LIB'] = os.path.join(os.path.dirname(pyproj.__file__), 'proj_data')
+
 #################################################################################
 ###     PRE-PROCESSING ROUTINES
 #################################################################################
@@ -2036,74 +2042,6 @@ def plot_meteorology(dsfile,boundarypoints, output_image1="windst0",output_image
     print(f"Meteorology 1 saved as: {output_image2}")
 
     
-def escape_latex(s):
-    # If s is a bytes object, decode it to a string
-    # Ensure s is a str (Unicode) rather than bytes.
-    if hasattr(s, "decode"):
-        s = s.decode("utf-8")
-    else:
-        s = str(s)
-    # Dictionary of LaTeX special characters and their escaped versions
-    replacements = {
-        '\\': r'\textbackslash{}',
-        '{': r'\{',
-        '}': r'\}',
-        '$': r'\$',
-        '&': r'\&',
-        '#': r'\#',
-        '_': r'\_',
-        '%': r'\%',
-        '~': r'\textasciitilde{}',
-        '^': r'\textasciicircum{}',
-    }
-    # Create a regex pattern that matches any of these special characters
-    pattern = re.compile('|'.join(re.escape(key) for key in replacements.keys()))
-    # Replace occurrences with their escaped version
-    return pattern.sub(lambda match: replacements[match.group(0)], s)
-
-def output_itemlist(nc_file,namefile="list_items.txt"):
-    ds = nc_file
-    title_var = "WildfireName" # Take the first variable as title
-    title_value = str(ds[title_var].values) if title_var in ds else "Unknown Title"
-
-    # Extract two variables for the bullet list
-    variables = list(ds.data_vars.keys())
-    bullet_var0 =  ds["WildfireName"].values
-    bullet_var1 =  np.datetime_as_string(ds["IgnitionTime"].values, unit='s')#datetime.strptime(str(ds["IgnitionTime"].values), "%Y-%m-%dT%H:%M:%S")#variables[1] if len(variables) > 1 else "No Variable 1"
-    bullet_var2 =  f"{ds['IgnitionCoords'].values[0]:.3f}"# if len(variables) > 2 else "No Variable 2"
-    bullet_var3 =  f"{ds['IgnitionCoords'].values[1]:.3f}"
-    
-    # Extract and format the ignition time
-    ignition_time = ds["IgnitionTime"].values
-    ignition_time_str = np.datetime_as_string(ignition_time, unit='s')
-    ignition_time_str = escape_latex(ignition_time_str)
-
-    # Extract lat/lon, format to 3 decimals
-    lat_val = ds["IgnitionCoords"].values[0]
-    lon_val = ds["IgnitionCoords"].values[1]
-    lat_str = escape_latex(f"{lat_val:.3f}")
-    lon_str = escape_latex(f"{lon_val:.3f}")
-
-    # Build the LaTeX text
-    latex_text = (
-        "{{\\bf Ignition Time: }}\n"
-        # "\\newline \n"
-        f"{ignition_time_str} \n"
-        "\\newline \n"
-        "\\vspace{1em} \n"
-        "\\newline \n"
-        "{{\\bf Ignition coordinates:}} \n"
-        "\\begin{itemize}\n"
-        f"\\item{{\\bf lat:}} {lat_str}\n"
-        f"\\item {{\\bf lon:}}  {lon_str}\n"
-        "\\end{itemize}\n"
-    )
-    
-    # Write the LaTeX list items to list_items.txt
-    with open(namefile, "w") as file:
-        file.write(latex_text)
-    
-    print("LaTeX list items written to list_items.txt")
 
 ###############################################################################
 

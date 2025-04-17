@@ -1,7 +1,7 @@
 #!/bin/sh
-#SBATCH -J FC$2
-#SBATCH -n 16
-#SBATCH --partition=intel
+#SBATCH -J FCLIVE
+#SBATCH -n 64
+#SBATCH --partition=firecast
 #SBATCH --time=02:00:00
 #SBATCH --mail-user=filippi_j@univ-corse.fr
 
@@ -23,12 +23,7 @@ else
 fi
 #This scripts takes 3 arguments, first is the template directory, second is the target case, third iis optional, a target case path if it is given it uses that instead
 
-# Check if GNU date is available.
-if date --version >/dev/null 2>&1; then
-    DATEOPTIONS="-d"
-else
-    DATEOPTIONS="-j -f $DATEFMT"
-fi
+
 
 
 TEMPLATE_DIR="$1"
@@ -40,18 +35,8 @@ if [ -n "$3" ]; then
 fi
 
 
-if [ ! -d "$OUTPUT_DIR" ]; then
-    mkdir -p "$OUTPUT_DIR" || { echo "Failed to create output directory: $OUTPUT_DIR"; exit 1; }
-fi
-
-# Copy the config directory to the output directory
-#cp -r "$FF_UNCOUPLED_CASE" "$OUTPUT_DIR/ForeFire" || { echo "Failed to copy FF_UNCOUPLED_FILE file to $OUTPUT_DIR"; exit 1; }
-
-# Copy the content of the template directory to the output directory
-cp -r "$TEMPLATE_DIR"/* "$OUTPUT_DIR/" || { echo "Failed to copy template files to $OUTPUT_DIR"; exit 1; }
 
 # now parse the ff file to extract timestamp and latlon of the fire from init
-#expecting lines like :
 #loadData[data.nc;2024-09-16T12:22:50Z]
 #startFire[lonlat=(-8.175970, 39.972564,0);t=0.0]
 
@@ -69,48 +54,67 @@ if [ -z "$TIMESTAMP" ] || [ -z "$LAT_START" ] || [ -z "$LON_START" ] || [ -z "$A
     echo "Error: Failed to extract required values (timestamp or latitude/longitude) from $FF_FILE"
     exit 1
 fi
-
-# copy the data tile
-# Extract the data file path
-DATA_DISTANT_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
-RELATIVE_PATH=$(echo "$DATA_DISTANT_FILE" | sed -E 's|.*/tiles/||')
-DATA_TILE_FILE="${FF_TILES}${RELATIVE_PATH}"
-
-# Copy the data file to "$OUTPUT_DIR/ForeFire/"
-echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
-cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
-cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
-
 # Extract date directory from the timestamp (YYYYMMDD format)
 if date --version >/dev/null 2>&1; then
     DATEDIR_YYYMMMDD=$(date -d "$TIMESTAMP" +%Y%m%d)
 else
     DATEDIR_YYYMMMDD=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%Y%m%d)
 fi
+# copy the data tile
+# Extract the data file path
+DATA_DISTANT_FILE=$(sed -nE 's/.*loadData\[(.*);.*\].*/\1/p' "$FF_FILE")
+RELATIVE_PATH=$(echo "$DATA_DISTANT_FILE" | sed -E 's|.*/tiles/||')
+DATA_TILE_FILE="${FF_TILES}${RELATIVE_PATH}"
 
 BC_DIR="$BC_FILES/$DATEDIR_YYYMMMDD"
 # If the BC directory does not exist or is empty, download the BC files from the web
 if [ ! -d "$BC_DIR" ] || [ -z "$(ls -A "$BC_DIR")" ]; then
+    if [ -z "$HTTP_BC" ]; then
+        echo "Error: HTTP_BC variable is not set. Exiting."
+        exit 1
+    fi
     mkdir -p "$BC_DIR" || { echo "Failed to create BC directory: $BC_DIR"; exit 1; }
     for STEP in 00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48; do
         echo "Downloading cep.FC00Z.$STEP"
-        curl -o "$BC_DIR/cep.FC00Z.$STEP" "https://forefire.univ-corse.fr/saphir/MARS/$DATEDIR_YYYMMMDD/cep.FC00Z.$STEP" || { echo "Failed to download step $STEP"; exit 1; }
+        curl -o "$BC_DIR/cep.FC00Z.$STEP" "$HTTP_BC/$DATEDIR_YYYMMMDD/cep.FC00Z.$STEP" || { echo "Failed to download step $STEP"; exit 1; }
     done
 fi
 
-echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR"
+echo "Date directory: $DATEDIR_YYYMMMDD found in $BC_DIR i have all i need"
+
+if [ ! -d "$OUTPUT_DIR" ]; then
+    mkdir -p "$OUTPUT_DIR" || { echo "Failed to create output directory: $OUTPUT_DIR"; exit 1; }
+fi
+
+# Copy the config directory to the output directory
+#cp -r "$FF_UNCOUPLED_CASE" "$OUTPUT_DIR/ForeFire" || { echo "Failed to copy FF_UNCOUPLED_FILE file to $OUTPUT_DIR"; exit 1; }
+
+# Copy the content of the template directory to the output directory
+cp -r "$TEMPLATE_DIR"/* "$OUTPUT_DIR/" || { echo "Failed to copy template files to $OUTPUT_DIR"; exit 1; }
+
+# Copy the data file to "$OUTPUT_DIR/ForeFire/"
+echo "copying: $DATA_TILE_FILE to $OUTPUT_DIR/ForeFire/"
+
+cp "$DATA_TILE_FILE" "$OUTPUT_DIR/ForeFire/" || { echo "Failed to copy $DATA_FILE"; exit 1; }
+cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
+
+
 
 # Link forecast files around ignition time
-IGNITION_HOUR=$(date -u $DATEOPTIONS "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    IGNITION_HOUR=$(date -u -d "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+else
+    IGNITION_HOUR=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
+fi
+
 IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
 
-
-
-
-
 ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
+
+echo "Base step: $BASE_STEP for hour $IGNITION_HOUR"
 
 for OFFSET in -3 3 6 9 12 15; do
     STEP=$(( BASE_STEP + OFFSET ))
@@ -130,20 +134,33 @@ done
 
 
 
+# Check if GNU date is available.
+if date --version >/dev/null 2>&1; then
+    timestamp_secs=$(date -u -d "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -d "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -d "$midnight" +%s)
+else
+    timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
+    DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
+    midnight="${DATE_ONLY}T00:00:00Z"
+    midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
+fi
+# Convert the full timestamp to epoch seconds.
+
+# Calculate the difference.
+SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
+ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
+echo "Fire starting at $SECONDS_SINCE_MIDNIGHT, first output at $ROUNDED_HOUR_SECONDS"
+
+
 # Update report placeholders with the correct ignition values
 sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "$OUTPUT_DIR/report/report.tex"
 sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/report.tex"
 sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/report.tex"
 
-# Compute ignition epoch in a cross-platform way
-if date --version >/dev/null 2>&1; then
-    # GNU date (Linux)
-    IGNITION_EPOCH=$(date -u -d "$TIMESTAMP" +%s)
-else
-    # BSD date (macOS)
-    IGNITION_EPOCH=$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
-fi
 
+IGNITION_EPOCH=$(( ROUNDED_HOUR_SECONDS + midnight_secs ))
 
 # Update time markers for figures from 1HAFTERSTARTFIRE to 12HAFTERSTARTFIRE
 for HOUR in {1..12}; do
@@ -171,36 +188,18 @@ echo "Updating PGD namelist file: $PGD_LARGEST_NAMELIST_FILE with LAT_START = $L
 
 cd "$OUTPUT_DIR"
 
-# Check if GNU date is available.
-if date --version >/dev/null 2>&1; then
-    timestamp_secs=$(date -u -d "$TIMESTAMP" +%s)
-    DATE_ONLY=$(date -u -d "$TIMESTAMP" "+%Y-%m-%d")
-    midnight="${DATE_ONLY}T00:00:00Z"
-    midnight_secs=$(date -u -d "$midnight" +%s)
-else
-    timestamp_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%s)
-    DATE_ONLY=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" "+%Y-%m-%d")
-    midnight="${DATE_ONLY}T00:00:00Z"
-    midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
-fi
-# Convert the full timestamp to epoch seconds.
-
-# Calculate the difference.
-SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
-echo "$SECONDS_SINCE_MIDNIGHT"
-ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
 # now i just have to do the init.ff
 echo "FireDomain[pgdNcFile=PGD_DFIREmA.nc;ISOdate=${TIMESTAMP}]" > ForeFire/Init.ff
 echo "startFire[lonlat=($LON_START, $LAT_START,0);t=$SECONDS_SINCE_MIDNIGHT]" >> ForeFire/Init.ff
 echo "include[ForeFire/hourlyPlots.ff]@t=$ROUNDED_HOUR_SECONDS" >> ForeFire/Init.ff
+echo "setParameter[dumpMode=geojson]" >> ForeFire/Init.ff
+echo "print[images/fronts_*count*.geojson]" >> ForeFire/Init.ff
+echo "setParameter[dumpMode=json]" >> ForeFire/Init.ff
 #echo "listenHTTP[host=127.0.0.1:8080]" >> ForeFire/Init.ff
 echo "Created Init file as :"
 cat ForeFire/Init.ff
 
-
-
-
-
+# and run the simulation
 
 . run_build_pgd_and_nest && echo "PGD OK completed"
 
@@ -212,6 +211,6 @@ ln -s PGD_DFIREmA.nc ForeFire/PGD_DFIREmA.nc
 . run_spawn_real
 . run_run_mnh_fire
 $PYTHONEXE BuildReport.py 
-pdflatex -interaction=nonstopmode report/report.tex
+pdflatex -interaction=nonstopmode -output-directory=report report/report.tex
 #. run_VTK_for_paraview
 #. run_plots_report

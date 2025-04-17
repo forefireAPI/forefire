@@ -3,10 +3,10 @@
    /
 &NAM_PGDFILE CPGDFILE='PGD_DFIREmA' /
 &NAM_PGD_GRID YINIFILE='PGD_D3200mA' YINIFILETYPE='MESONH' /
-&NAM_INIFILE_CONF_PROJ IXOR=16,
-                       IYOR=16,
-                       IXSIZE=8,
-                       IYSIZE=8, 
+&NAM_INIFILE_CONF_PROJ IXOR=18,
+                       IYOR=18,
+                       IXSIZE=12,
+                       IYSIZE=12, 
                        IDXRATIO=4, IDYRATIO=4 /
 &NAM_COVER     YCOVER='ECOCLIMAP_v2.0', YCOVERFILETYPE='DIRECT' /
 &NAM_ZS        YZS='gtopo30',    YZSFILETYPE='DIRECT' /
