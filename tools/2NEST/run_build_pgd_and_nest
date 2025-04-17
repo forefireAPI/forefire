@@ -2,6 +2,7 @@
 
 ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
 ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
+ln -sf $PREP_PGD_FILES/ffDEMEUROPE.??? .
 ln -sf $PREP_PGD_FILES/gtopo30.??? .
 ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
 

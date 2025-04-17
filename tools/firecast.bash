@@ -2,7 +2,7 @@
 #SBATCH -J FCLIVE
 #SBATCH -n 48
 #SBATCH --partition=firecast
-#SBATCH --time=02:00:00
+#SBATCH --time=02:00:00 
 #SBATCH --mail-user=filippi_j@univ-corse.fr
 
 #First include the config file
