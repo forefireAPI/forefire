@@ -1,3 +1,11 @@
+/**
+ * @file colormap.h
+ * @brief Definitions for colormap used in plotting (generated using python script in tools/directory.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
+
 #ifndef COLORMAP_H
 #define COLORMAP_H
 
