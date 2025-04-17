@@ -10,7 +10,7 @@
 #This scripts takes 2 arguments, first is RESOLUTION kind, second is the target case
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 TEMPLATE_DIR CASE_NAME [OUTPUT_DIR]"
+    echo "Usage: $0 RUN_MODE(HD160, QUICK800) CASE_NAME"
     exit 1
 fi
 source ./config_firecast_local.bash
@@ -26,7 +26,7 @@ fi
 
 
 
-TEMPLATE_DIR="2NEST_3200_40X40_800_24X24"
+TEMPLATE_DIR="2NEST"
 RUNMODE=$1
 # ——— validate RUNMODE ———
 if [[ "$RUNMODE" != "HD160" && "$RUNMODE" != "QUICK800" ]]; then
