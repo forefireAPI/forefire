@@ -6,8 +6,9 @@
 #SBATCH --mail-user=filippi_j@univ-corse.fr
 
 #First include the config file
+# this script to launch a 2 Nest case, with potential different resolution
+#This scripts takes 2 arguments, first is RESOLUTION kind, second is the target case
 
-# Check number of arguments otherwise print a usage message
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 TEMPLATE_DIR CASE_NAME [OUTPUT_DIR]"
     exit 1
@@ -21,20 +22,20 @@ else
     # BSD sed (macOS)
     SED_INPLACE=(-i '')
 fi
-#This scripts takes 3 arguments, first is the template directory, second is the target case, third iis optional, a target case path if it is given it uses that instead
 
 
 
 
-TEMPLATE_DIR="$1"
-FF_UNCOUPLED_CASE="$UNCOUPLED_CASE_PATH/$2"
-OUTPUT_DIR="$COUPLED_CASE_PATH/$2"
-
-if [ -n "$3" ]; then
-    OUTPUT_DIR="$3"
+TEMPLATE_DIR="2NEST_3200_40X40_800_24X24"
+RUNMODE=$1
+# ——— validate RUNMODE ———
+if [[ "$RUNMODE" != "HD160" && "$RUNMODE" != "QUICK800" ]]; then
+    echo "Error: RUNMODE must be either HD160 or QUICK800"
+    exit 1
 fi
 
-
+FF_UNCOUPLED_CASE="$UNCOUPLED_CASE_PATH/$2"
+OUTPUT_DIR="$COUPLED_CASE_PATH/$2"
 
 # now parse the ff file to extract timestamp and latlon of the fire from init
 #loadData[data.nc;2024-09-16T12:22:50Z]
@@ -101,21 +102,18 @@ cp "$FF_UNCOUPLED_CASE/log.ff" "$OUTPUT_DIR/ForeFire/"
 
 
 # Link forecast files around ignition time
+
 # Check if GNU date is available.
 if date --version >/dev/null 2>&1; then
     IGNITION_HOUR=$(date -u -d "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
 else
     IGNITION_HOUR=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$TIMESTAMP" +%H 2>/dev/null || date -d "$TIMESTAMP" +%H)
 fi
-
 IGNITION_HOUR=$((10#$IGNITION_HOUR))
 BASE_STEP=$(( (IGNITION_HOUR / 3) * 3 ))
 printf -v BASE_STEP_STR "%02d" $BASE_STEP
-
 ln -sf "$BC_DIR/cep.FC00Z.$BASE_STEP_STR" "$OUTPUT_DIR/cep.FC00Z.P.00"
-
 echo "Base step: $BASE_STEP for hour $IGNITION_HOUR"
-
 for OFFSET in -3 3 6 9 12 15; do
     STEP=$(( BASE_STEP + OFFSET ))
     [ $STEP -lt 0 ] && continue
@@ -146,23 +144,21 @@ else
     midnight="${DATE_ONLY}T00:00:00Z"
     midnight_secs=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$midnight" +%s)
 fi
-# Convert the full timestamp to epoch seconds.
+
+
 
 # Calculate the difference.
 SECONDS_SINCE_MIDNIGHT=$(( timestamp_secs - midnight_secs ))
 ROUNDED_HOUR_SECONDS=$(( SECONDS_SINCE_MIDNIGHT / 3600 * 3600 + 3600))
 echo "Fire starting at $SECONDS_SINCE_MIDNIGHT, first output at $ROUNDED_HOUR_SECONDS"
 
+cd "$OUTPUT_DIR"
 
-# Update report placeholders with the correct ignition values
-sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "$OUTPUT_DIR/report/report.tex"
-sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "$OUTPUT_DIR/report/report.tex"
-sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "$OUTPUT_DIR/report/report.tex"
-
-
+# Update report tex file placeholders with the correct ignition values
+sed "${SED_INPLACE[@]}" -E "s/IGNITIONTIME/${TIMESTAMP}/" "report/report.tex"
+sed "${SED_INPLACE[@]}" -E "s/LATIGNITION/${LAT_START}/" "report/report.tex"
+sed "${SED_INPLACE[@]}" -E "s/LONIGNITION/${LON_START}/" "report/report.tex"
 IGNITION_EPOCH=$(( ROUNDED_HOUR_SECONDS + midnight_secs ))
-
-# Update time markers for figures from 1HAFTERSTARTFIRE to 12HAFTERSTARTFIRE
 for HOUR in {1..12}; do
     NEW_EPOCH=$(( IGNITION_EPOCH + HOUR * 3600 ))
     if date --version >/dev/null 2>&1; then
@@ -170,23 +166,22 @@ for HOUR in {1..12}; do
     else
         NEW_TIME=$(date -u -r $NEW_EPOCH "+%Y-%m-%dT%H:%M:%SZ")
     fi
-    sed "${SED_INPLACE[@]}" -E "s/${HOUR}HAFTERSTARTFIRE/${NEW_TIME}/g" "$OUTPUT_DIR/report/report.tex" || { echo "Failed to update ${HOUR}HAFTERSTARTFIRE in report.tex"; exit 1; }
+    sed "${SED_INPLACE[@]}" -E "s/${HOUR}HAFTERSTARTFIRE/${NEW_TIME}/g" "report/report.tex" || { echo "Failed to update ${HOUR}HAFTERSTARTFIRE in report.tex"; exit 1; }
 done
 
+#selecting the right runmode and copying the files
+mv $RUNMODE/* .
 
-PGD_LARGEST_NAMELIST_FILE="$OUTPUT_DIR/PRE_PGD1.nam_LARGESTm"
-
+# Update the PGD files
+PGD_LARGEST_NAMELIST_FILE="PRE_PGD1.nam_LARGESTm"
 # Update XLAT0 and XLON0 in NAM_CONF_PROJ using LAT_START and LON_START
 sed "${SED_INPLACE[@]}" -E "s/(XLAT0 *=)[^,]*/\1$LAT_START/" "$PGD_LARGEST_NAMELIST_FILE"
 sed "${SED_INPLACE[@]}" -E "s/(XLON0 *=)[^,]*/\1$LON_START/" "$PGD_LARGEST_NAMELIST_FILE"
-
 # Update XLATCEN and XLONCEN in NAM_CONF_PROJ_GRID using LAT_START and LON_START
 sed "${SED_INPLACE[@]}" -E "s/(XLATCEN *=)[^,]*/\1$LAT_START/" "$PGD_LARGEST_NAMELIST_FILE"
 sed "${SED_INPLACE[@]}" -E "s/(XLONCEN *=)[^,]*/\1$LON_START/" "$PGD_LARGEST_NAMELIST_FILE"
 echo "Updating PGD namelist file: $PGD_LARGEST_NAMELIST_FILE with LAT_START = $LAT_START and LON_START = $LON_START"
 
-
-cd "$OUTPUT_DIR"
 
 # now i just have to do the init.ff
 echo "FireDomain[pgdNcFile=PGD_DFIREmA.nc;ISOdate=${TIMESTAMP}]" > ForeFire/Init.ff

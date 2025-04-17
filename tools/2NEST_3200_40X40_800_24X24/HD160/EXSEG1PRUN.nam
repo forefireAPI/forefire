@@ -1,0 +1,59 @@
+&NAM_CONFIO LCDF4=T LLFIOUT=T LLFIREAD=T 
+/
+
+&NAM_CONFZ
+  !NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8 
+/
+
+&NAM_LUNITn CINIFILE="M1.M.03",
+            CINIFILEPGD="PGD_D3200mA.nested",
+/
+
+&NAM_DYNn  XTSTEP= 10., CPRESOPT="ZRESI", NITR= 4,
+    			lhorelax_uvwth = .false.
+  		  	lhorelax_rv = .false.
+    			lve_relax = .true.
+    			nrimx = 5
+    			nrimy = 5
+   			xrimkmax = 0.004
+   			xt4difu = 1000.0 
+/
+&NAM_ADVn  CUVW_ADV_SCHEME= "CEN4TH",
+           CTEMP_SCHEME= "RKC4",
+           CMET_ADV_SCHEME= "PPM_01",
+           CSV_ADV_SCHEME= "PPM_01"
+/
+
+&nam_param_radn
+    xdtrad = 500.0
+    xdtrad_clonly = 500.0
+    lclear_sky = .false.
+    nrad_colnbr = 400
+/
+
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN", XCPHASE = 20. /
+
+&nam_turbn
+    ximpl = 1.0
+    cturblen = 'DELT'
+    cturbdim = '3DIM'
+    lturb_flx = .false.
+    lturb_diag = .false.
+/
+
+&NAM_PARAMn  CTURB  = "TKEL",
+             CRAD   = "ECMW",
+             CCLOUD = "ICE3",
+             CDCONV = "NONE",
+             CSCONV = "NONE"
+/
+&NAM_NEBn LSUBG_COND=.true., LSIGMAS =.false./
+
+&NAM_CONF CCONF= "START", LFLAT= F, CEQNSYS= "DUR", NHALO= 1,
+          NMODEL= 1, NVERB= 5, CEXP= "RUN12", CSEG= "PRUN1" /
+&NAM_DYN  XSEGLEN = 10800., LCORIO = T, LNUMDIFU = T,
+           XALKTOP = 0.001, XALZBOT = 12000. /
+&NAM_BACKUP XBAK_TIME_FREQ= 3600. XBAK_TIME_FREQ_FIRST=0. /
+&NAM_ISBAn CSCOND="NP89"/ 
+&NAM_SSOn CROUGH='Z01D' /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /

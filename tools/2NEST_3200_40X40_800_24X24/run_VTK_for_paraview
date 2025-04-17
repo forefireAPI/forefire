@@ -28,8 +28,8 @@ mkdir outM2
 sed "s|VTKFILESPATH|$PWD|g" nestedViewPVState.py.pattern > nestedView.py
 
 $PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -front ForeFire/Outputs/output.0. front/
-$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL1/output PGD_D3200mA.nested.nc outM1/
-$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL2/output PGD_D800mA.nested.nc outM2/
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL1/output PGD_DLARGESTmA.nested.nc outM1/
+$PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -fields MODEL2/output PGD_DFIREmA.nested.nc outM2/
 $PYTHONEXE $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py -atmap ForeFire/Outputs/ForeFire.0.nc PGD_D800mA.nested.nc map
 
 echo "You can now load python state file nestedView.py in Paraview to visualize the results of the nested simulation."
