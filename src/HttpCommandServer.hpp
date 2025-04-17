@@ -1,3 +1,11 @@
+/**
+ * @file HttpCommandServer.hpp
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
+
 #ifndef HTTP_COMMAND_SERVER_HPP
 #define HTTP_COMMAND_SERVER_HPP
 

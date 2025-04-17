@@ -1,8 +1,9 @@
-/*
- * LavaCO2FluxModel.cpp
- *
- *  Created on: 30 nov. 2012
- *      Author: jdurand
+/**
+ * @file LavaCO2FluxModel.cpp
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
  */
 
 /*
