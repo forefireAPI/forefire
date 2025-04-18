@@ -8,6 +8,7 @@
 
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
+#include <cmath>
 
 #ifdef MPI_COUPLING
 #include <mpi.h>
@@ -402,7 +403,7 @@ void FFGetDoubleArray(const char* mname, double t
 						MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 					fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
 					}
-					
+				if (std::fmod(t, 60.0) < 1e-6) {
 						std::string opath = SimulationParameters::GetInstance()->getParameter("genRawBytesDir");
 						if (opath != "1234567890") {
 							std::ostringstream fnoss;
@@ -433,7 +434,7 @@ void FFGetDoubleArray(const char* mname, double t
 								}
 								ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint16_t));
 							}
-						
+						}
 					}
 
 				}else{				

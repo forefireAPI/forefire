@@ -34,9 +34,10 @@
 <body>
   <div id="sidebar">
     <h3>Parameters</h3>
-    <div id="parameterList"></div>
-    <div id="colorbar-container"></div>
-    <!-- NEW: container for HTML5 video controls -->
+    <div id="topControls" style="display:flex; align-items:center;">
+      <div id="colorbar-container" style="margin-right:10px;"></div>
+      <div id="parameterList" style="flex:1;"></div>
+    </div>
     <div id="videoController"></div>
     <div id="controls">
       <button id="prevStep">Previous</button>
@@ -50,15 +51,21 @@
       <input type="checkbox" id="windToggle" checked>
       Show Wind Overlay
     </label>
+    <label style="display:block; margin:5px 0;">
+      <input type="checkbox" id="videoToggle" checked>
+      Use Video Overlay
+    </label>
     <h3>Steps</h3>
     <div id="stepList"></div>
   </div>
   <div id="map"></div>
 
   <script>
+    const FRAMERATE = 30; // frames per second for video controls
     /* Parameters object with updated colormap settings.
        Note: fronts now use geojson files.
     */
+ 
     const parameters = {
       "fronts": {
         ext: "geojson",
@@ -120,7 +127,17 @@
     let velocityLayer = null;
     let useVectors = true;
     let showWind = true;
-
+    let useVideo = true;
+    let speedTimestamps = [];
+    let speedTimestampsLoaded = false;
+    // Preload speed timestamps at startup
+    Promise.all(parameters.speed.steps.map(step =>
+      getTimestampFromKMZ(`speed_${step}.kmz`).catch(() => null)
+    )).then(results => {
+      speedTimestamps = results;
+      speedTimestampsLoaded = true;
+      buildStepList();
+    }).catch(e => console.error("Error preloading speed timestamps:", e));
     // Initialize the map with a default view
     const map = L.map('map').setView([42.17, 9.17], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -135,7 +152,7 @@
     const nextStepButton = document.getElementById("nextStep");
     const videoController = document.getElementById("videoController");
     const windToggle = document.getElementById("windToggle");
-
+    const videoToggle = document.getElementById("videoToggle");
     // Update the colorbar display if the current parameter has one.
     function updateColorbarDisplay() {
       const paramConfig = parameters[currentParameter];
@@ -178,19 +195,17 @@
         const btn = document.createElement("button");
         btn.className = "step-button" + (index === currentStepIndex ? " active" : "");
         // For "speed" and "wind" parameters, fetch timestamp from file.
-        if (currentParameter === "speed" || currentParameter === "wind") {
-          btn.textContent = "Loading...";
-          const filename = currentParameter + "_" + step + "." + parameters[currentParameter].ext;
-          const getTimestamp = (currentParameter === "wind") ? getTimestampFromWindCS : getTimestampFromKMZ;
-          getTimestamp(filename).then(timestamp => {
-            btn.textContent = timestamp;
-          }).catch(err => {
-            console.error("Error loading timestamp for", filename, err);
-            btn.textContent = "Step " + step;
-          });
+        let label;
+        if (speedTimestampsLoaded) {
+          const ts = speedTimestamps[index];
+          if (ts === null) return;       // skip if no timestamp
+          label = ts;
         } else {
-          btn.textContent = "Step " + step;
+          label = `Hour ${step}`;
         }
+          btn.textContent = label;
+         // btn.textContent = "Step " + step;
+        
         btn.onclick = () => {
           currentStepIndex = index;
           updateStepSelection();
@@ -198,6 +213,7 @@
         };
         stepListDiv.appendChild(btn);
       });
+   
     }
 
     function updateParameterSelection() {
@@ -240,6 +256,10 @@
         map.removeLayer(velocityLayer);
         velocityLayer = null;
       }
+      loadCurrentFile();
+    });
+    videoToggle.addEventListener("change", () => {
+      useVideo = videoToggle.checked;
       loadCurrentFile();
     });
 
@@ -397,32 +417,59 @@
             }
           })
           .then(({ imageURL, bounds }) => {
-            // Check for a same-named WebM video first
             const videoUrl = `${currentParameter}.webm`;
-            fetch(videoUrl, { method: 'HEAD' })
-              .then(res => {
-                if (res.ok) {
-                  // Video exists: use videoOverlay
-                  if (currentLayer) { map.removeLayer(currentLayer); }
-                  currentLayer = L.videoOverlay(videoUrl, bounds, {
-                    autoplay: true,
-                    loop: true,
-                    muted: true
-                  }).addTo(map);
-                  // Add controls in sidebar
-                  videoController.innerHTML = 
-                    `<video src="${videoUrl}" controls loop muted style="width:100%"></video>`;
-                } else {
-                  // Fallback to static image overlay
-                  currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
-                }
-                map.fitBounds(bounds);
-              })
-              .catch(() => {
-                // On error, fallback to image overlay
-                currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
-                map.fitBounds(bounds);
+      if (useVideo) {
+        fetch(videoUrl, { method: 'HEAD' })
+          .then(res => {
+            if (res.ok) {
+              if (currentLayer) map.removeLayer(currentLayer);
+              currentLayer = L.videoOverlay(videoUrl, bounds, {
+                autoplay: true, loop: true, muted: true
+              }).addTo(map);
+              const vidEl = currentLayer.getElement();
+              videoController.innerHTML = `
+                <button id="playPause">Play</button>
+                <button id="prevFrame">Prev</button>
+                <button id="nextFrame">Next</button>
+                <input type="range" id="timeSlider" min="0" max="0" step="${1/FRAMERATE}" value="0" style="width:100%;"/>
+              `;
+              const playPauseBtn = document.getElementById('playPause');
+              const prevFrameBtn = document.getElementById('prevFrame');
+              const nextFrameBtn = document.getElementById('nextFrame');
+              const timeSlider = document.getElementById('timeSlider');
+              vidEl.addEventListener('loadedmetadata', () => {
+                timeSlider.max = vidEl.duration;
+                playPauseBtn.textContent = vidEl.paused ? 'Play' : 'Pause';
               });
+              playPauseBtn.onclick = () => {
+                if (vidEl.paused) { vidEl.play(); playPauseBtn.textContent = 'Pause'; }
+                else { vidEl.pause(); playPauseBtn.textContent = 'Play'; }
+              };
+              prevFrameBtn.onclick = () => {
+                vidEl.currentTime = Math.max(0, vidEl.currentTime - 1/FRAMERATE);
+                timeSlider.value = vidEl.currentTime;
+              };
+              nextFrameBtn.onclick = () => {
+                vidEl.currentTime = Math.min(vidEl.duration, vidEl.currentTime + 1/FRAMERATE);
+                timeSlider.value = vidEl.currentTime;
+              };
+              timeSlider.oninput = () => {
+                vidEl.currentTime = timeSlider.value;
+              };
+            } else {
+              currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
+            }
+            map.fitBounds(bounds);
+          })
+          .catch(() => {
+            currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
+            map.fitBounds(bounds);
+          });
+      } else {
+        currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
+        map.fitBounds(bounds);
+      }
+
           })
           .catch(err => console.error("Overlay load error:", err));
       }
