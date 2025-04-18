@@ -1,6 +1,6 @@
 /**
  * @file FireDomain.h
- * @brief TODO: add a brief description.
+ * @brief Class describing the "world" of the simulation
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
