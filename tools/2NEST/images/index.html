@@ -6,72 +6,50 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
-    #sidebar {
-      width: 300px;
-      height: 100vh;
-      float: left;
-      overflow-y: auto;
-      background: #f7f7f7;
-      border-right: 1px solid #ccc;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-    #map {
-      margin-left: 300px;
-      height: 100vh;
-    }
-    .param-button, .step-button {
-      display: block;
-      width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-      border: 1px solid #ccc;
-      background: #fff;
-      cursor: pointer;
-      text-align: left;
-      box-sizing: border-box;
-    }
-    .active {
-      background: #e0e0e0;
-    }
-    /* Next/Previous moved under the colorbar */
-    #controls {
-      margin-top: 10px;
-      text-align: center;
-    }
-    #controls button {
-      padding: 6px 12px;
-      margin: 0 5px;
-      cursor: pointer;
-    }
-    #colorbar-container {
-      margin-top: 20px;
-    }
+    body {margin:0;padding:0;font-family:sans-serif;}
+    #sidebar { width:300px; height:100vh; float:left; overflow-y:auto;
+               background:#f7f7f7; border-right:1px solid #ccc;
+               padding:10px; box-sizing:border-box; }
+    #map { margin-left:300px; height:100vh; }
+    .param-button, .step-button { display:block; width:100%;
+      padding:8px; margin:5px 0; border:1px solid #ccc;
+      background:#fff; cursor:pointer; text-align:left;
+      box-sizing:border-box; }
+    .active { background:#e0e0e0; }
+    #controls { margin-top:10px; text-align:center; }
+    #controls button { padding:6px 12px; margin:0 5px; cursor:pointer; }
+    #colorbar-container { margin-top:20px; }
+    /* NEW: Video controller area */
+    #videoController { margin-top:20px; }
+    #videoController video { width:100%; display:block; margin:auto; }
   </style>
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- JSZip for KMZ processing -->
+  <!-- JSZip & toGeoJSON -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <!-- toGeoJSON for converting KML to GeoJSON -->
   <script src="https://unpkg.com/@mapbox/togeojson@0.16.2/togeojson.js"></script>
-  <!-- Leaflet-Velocity for wind overlay (assumed to be in the same directory) -->
+  <!-- Leaflet-Velocity -->
   <script src="leaflet-velocity.js"></script>
 </head>
 <body>
   <div id="sidebar">
     <h3>Parameters</h3>
     <div id="parameterList"></div>
-    <!-- Colorbar container (used when current parameter has a colorbar) -->
     <div id="colorbar-container"></div>
+    <!-- NEW: container for HTML5 video controls -->
+    <div id="videoController"></div>
     <div id="controls">
       <button id="prevStep">Previous</button>
       <button id="nextStep">Next</button>
     </div>
+    <label style="display:block; margin:5px 0;">
+      <input type="checkbox" id="vectorToggle" checked>
+      Use Vectors
+    </label>
+    <label style="display:block; margin:5px 0;">
+      <input type="checkbox" id="windToggle" checked>
+      Show Wind Overlay
+    </label>
     <h3>Steps</h3>
     <div id="stepList"></div>
   </div>
@@ -140,6 +118,8 @@
     let currentStepIndex = 0; // current step index (preserved across parameter changes)
     let currentLayer = null;
     let velocityLayer = null;
+    let useVectors = true;
+    let showWind = true;
 
     // Initialize the map with a default view
     const map = L.map('map').setView([42.17, 9.17], 10);
@@ -153,6 +133,8 @@
     const colorbarContainer = document.getElementById("colorbar-container");
     const prevStepButton = document.getElementById("prevStep");
     const nextStepButton = document.getElementById("nextStep");
+    const videoController = document.getElementById("videoController");
+    const windToggle = document.getElementById("windToggle");
 
     // Update the colorbar display if the current parameter has one.
     function updateColorbarDisplay() {
@@ -246,6 +228,20 @@
         loadCurrentFile();
       }
     };
+    const vectorToggle = document.getElementById("vectorToggle");
+    vectorToggle.addEventListener("change", () => {
+      useVectors = vectorToggle.checked;
+      loadCurrentFile();
+    });
+    windToggle.addEventListener("change", () => {
+      showWind = windToggle.checked;
+      // if disabling, remove any existing wind layer
+      if (!showWind && velocityLayer) {
+        map.removeLayer(velocityLayer);
+        velocityLayer = null;
+      }
+      loadCurrentFile();
+    });
 
     // Function to extract timestamp from a KMZ file (for "speed" parameter).
     function getTimestampFromKMZ(filename) {
@@ -290,6 +286,10 @@
 
     // Load the wind arrow overlay using leaflet-velocity.
     function loadWindLayer(step) {
+      if (!showWind) { 
+        if (velocityLayer) { map.removeLayer(velocityLayer); velocityLayer = null; }
+        return;
+      }
       const windFilename = "windCS_" + step + ".json";
       fetch(windFilename)
         .then(resp => resp.json())
@@ -305,7 +305,7 @@
               emptyString: "No velocity data",
               angleConvention: "bearingCW",
               showCardinal: false,
-              useVectors: true,
+              useVectors: useVectors,
               speedUnit: "ms",
               directionString: "Direction",
               speedString: "Speed"
@@ -329,6 +329,7 @@
         map.removeLayer(currentLayer);
         currentLayer = null;
       }
+      videoController.innerHTML = "";
       const paramInfo = parameters[currentParameter];
       const step = paramInfo.steps[currentStepIndex];
       let filename = "";
@@ -396,11 +397,34 @@
             }
           })
           .then(({ imageURL, bounds }) => {
-            currentLayer = L.imageOverlay(imageURL, bounds);
-            currentLayer.addTo(map);
-            map.fitBounds(bounds);
+            // Check for a same-named WebM video first
+            const videoUrl = `${currentParameter}.webm`;
+            fetch(videoUrl, { method: 'HEAD' })
+              .then(res => {
+                if (res.ok) {
+                  // Video exists: use videoOverlay
+                  if (currentLayer) { map.removeLayer(currentLayer); }
+                  currentLayer = L.videoOverlay(videoUrl, bounds, {
+                    autoplay: true,
+                    loop: true,
+                    muted: true
+                  }).addTo(map);
+                  // Add controls in sidebar
+                  videoController.innerHTML = 
+                    `<video src="${videoUrl}" controls loop muted style="width:100%"></video>`;
+                } else {
+                  // Fallback to static image overlay
+                  currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
+                }
+                map.fitBounds(bounds);
+              })
+              .catch(() => {
+                // On error, fallback to image overlay
+                currentLayer = L.imageOverlay(imageURL, bounds).addTo(map);
+                map.fitBounds(bounds);
+              });
           })
-          .catch(err => console.error("Error processing KMZ file:", err));
+          .catch(err => console.error("Overlay load error:", err));
       }
       // Always load the wind arrow overlay for the current step.
       loadWindLayer(step);

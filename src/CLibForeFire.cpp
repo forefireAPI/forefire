@@ -14,6 +14,8 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
+#include <limits>
+#include <sstream>
 
 #endif
 
@@ -354,15 +356,16 @@ void MNHStep(double dt){
 	cmd << "step[dt=" << dt <<"]";
 	string scmd = cmd.str(); 
 	executor.ExecuteCommand(scmd); 
-	mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
-
+	
+/*
+mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 	while (mnhPause>0) {
 		sleep(static_cast<unsigned int>(mnhPause));
 		mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 		std::cout<<"setParameter[MNHalt=0] to restart, waiting for "<<mnhPause<<std::endl;
 	}
 	SimulationParameters::GetInstance()->setInt("MNHalt",0);
- 
+ */
 	
 	}
 	
@@ -397,8 +400,42 @@ void FFGetDoubleArray(const char* mname, double t
 						size_t dsize = (DR->atmoNX+2)*(DR->atmoNY+2);
 						std::vector<double> data_processed(dsize);
 						MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-						fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
+					fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
 					}
+					
+						std::string opath = SimulationParameters::GetInstance()->getParameter("genRawBytesDir");
+						if (opath != "1234567890") {
+							std::ostringstream fnoss;
+							fnoss << opath << "/" << tmpname
+								<< "_uint16_" << fullMatrix->getDim("x")
+								<< "_" << fullMatrix->getDim("y") << ".dat";
+							std::string filename = fnoss.str();
+							std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::app);
+							if (ofs) {
+								size_t total = fullMatrix->getSize();
+								std::vector<uint16_t> buf(total);
+								for (size_t i = 0; i < total; ++i) {
+									double v = fullMatrix->getData()[i];
+									double vnorm;
+									if (tmpname == "windU" || tmpname == "windV"){
+										vnorm = (v + 20.0) / 40.0;
+									} else if (tmpname == "plumeTopHeight" || tmpname == "plumeBottomHeight") {
+										vnorm = (v) / 4000.0;
+									} else if (tmpname == "smokeAtGround") {
+										vnorm = v / 0.1;
+									} else if (tmpname == "tke") {
+										vnorm = v / 15.0;
+									} else {
+										vnorm = 0.0;
+									}
+									vnorm = std::min(std::max(vnorm, 0.0), 1.0);
+									buf[i] = static_cast<uint16_t>(vnorm * std::numeric_limits<uint16_t>::max());
+								}
+								ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint16_t));
+							}
+						
+					}
+
 				}else{				
 					MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
 				}
