@@ -1,9 +1,0 @@
-&NAM_CONFZ
-   !NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8
-/
-
-&NAM_LUNIT2_SPA  CINIFILE = "RUN12.1.PRUN1.004",
-                 CINIFILEPGD="PGD_D3200mA.nested",
-                 YDOMAIN  = "PGD_DFIREmA.nested",
-                 YSPANBR = '01' /
-

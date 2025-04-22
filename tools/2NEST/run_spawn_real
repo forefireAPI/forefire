@@ -1,4 +1,0 @@
-
-time ${MONORUN} SPAWNING${XYZ}
-cp PRE_REAL1s.nam PRE_REAL1.nam
-time ${MPIRUN} PREP_REAL_CASE${XYZ}
