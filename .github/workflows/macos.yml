@@ -1,4 +1,4 @@
-name: Build ForeFire on macOS
+name: macOS
 
 on:
   push:
