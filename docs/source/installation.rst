@@ -63,28 +63,29 @@ Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't
 
 1.  **Clone the repository:**
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-      git clone https://github.com/forefireAPI/firefront.git
-      cd firefront
+    git clone https://github.com/forefireAPI/firefront.git
+    cd firefront
 
 2.  **Install Prerequisites Manually:**
-    Use your system's package manager to install `cmake`, `make`, a C++ compiler (`build-essential` or equivalent), and the required NetCDF C++ development library (e.g., `libnetcdf-c++4-dev`, `netcdf-cxx-devel`, etc.).
-    Example for Debian/Ubuntu (if not using the script):
-    
-    .. code-block:: bash
 
-      sudo apt update
-      sudo apt install build-essential cmake libnetcdf-c++4-dev # Verify package name!
+  Use your system's package manager to install `cmake`, `make`, a C++ compiler (`build-essential` or equivalent), and the required NetCDF C++ development library (e.g., `libnetcdf-c++4-dev`, `netcdf-cxx-devel`, etc.).
+  Example for Debian/Ubuntu (if not using the script):
+  
+  .. code-block:: bash
+
+    sudo apt update
+    sudo apt install build-essential cmake libnetcdf-c++4-dev # Verify package name!
 
 3.  **Create a build directory and run CMake & Make:**
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-      mkdir build
-      cd build
-      cmake ..
-      make
+    mkdir build
+    cd build
+    cmake ..
+    make
 
 The main executable `forefire` will be located at `../bin/forefire` (relative to the `build` directory).
 

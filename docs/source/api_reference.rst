@@ -3,6 +3,8 @@ C++ API Reference
 
 This section will contain the C++ API reference, automatically generated from source code comments using Doxygen and Breathe.
 
+Key C++ classes providing the core functionality of ForeFire include:
+
 .. doxygenclass:: libforefire::FireDomain
    :project: ForeFire
    :members:
