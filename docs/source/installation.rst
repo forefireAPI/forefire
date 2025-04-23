@@ -31,11 +31,15 @@ This is often the simplest way to get a working ForeFire environment, as it bund
 2: Building from Source
 -------------------------------------------------
 
-This method involves compiling ForeFire directly on your system.
+This guide explains how to install ForeFire by compiling it directly on your Linux/Unix-like system. This gives you a native build, but requires managing dependencies.
+There are two main ways to build from source:
+
+- 2a: Using the provided install script (easiest for Debian/Ubuntu)
+- 2b: Following manual steps (for all systems or finer control).
 
 **Prerequisites:**
 
-Before building, ensure you have the necessary tools and libraries:
+If you choose the **manual build steps** (Option 2b), or if you simply want to understand what tools are needed, you must ensure the following are installed on your system:
 
 - **C++ Compiler:** A modern C++ compiler (like `g++`). Package typically called `build-essential` or similar.
 - **CMake:** Build system generator (`cmake`).
@@ -43,8 +47,8 @@ Before building, ensure you have the necessary tools and libraries:
 - **NetCDF Libraries:** ForeFire requires NetCDF support. The specific package needed is the C++ interface.
 
   - On **Debian/Ubuntu**, the install script uses `libnetcdf-c++4-dev`.
-  - *(Note: Ensure this is the correct/intended library. Older docs might mention `libnetcdf-cxx-legacy-dev`. Verify which one is actually required by the current CMake setup).*
   - On other systems, find the equivalent package (e.g., `netcdf-cxx-devel`, `netcdf-cxx4`).
+  - *Note: Ensure this is the correct/intended library. Older docs might mention `libnetcdf-cxx-legacy-dev`. Verify which one is actually required by the current CMake setup.*
 
 **Option 2a: Using the Install Script (Recommended for Debian/Ubuntu)**
 
@@ -69,14 +73,8 @@ The repository provides a convenience script (`install-forefire.sh`) that automa
 
 **What the Install Script Does:**
 
-- **Updates Package Lists:** Runs `apt-get update`.
-- **Installs Dependencies:** Installs `build-essential`, `libnetcdf-c++4-dev`, and `cmake` using `apt-get install -y`.
-- **Builds ForeFire:**
-
-  - Creates a `build` directory.
-  - Navigates into `build`.
-  - Runs `cmake ..` to configure the build.
-  - Runs `make` to compile the code.
+- **Updates Package Lists and Installs Dependencies:** Runs `apt-get update` and installs prerequisites listed above
+- **Builds ForeFire:** using CMake and Make.
 - **Reports Install Location:** Prints the location of the built binaries (usually `$PROJECT_ROOT/bin`).
 - **(Optional) Updates PATH:**
 
