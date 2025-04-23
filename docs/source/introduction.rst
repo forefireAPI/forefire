@@ -1,15 +1,24 @@
 Introduction
 ============
 
-ForeFire is an open-source code for wildland fire spread models, developed and maintained by Université de Corse Pascal Paoli.
+ForeFire is an open-source wildfire spread simulator designed for research and operational forecasting.
 
-**Useful Links:**
+Key Features
+------------
 
-- **Website:** `https://forefire.univ-corse.fr/ <https://forefire.univ-corse.fr/>`_
-- **Demo Simulator:** `http://forefire.univ-corse.fr/sim <http://forefire.univ-corse.fr/sim>`_
-- **Publication:** `https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models <https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models>`_
+*   **Advanced Simulation:** Core C++ engine for fire propagation using geospatial data (terrain, fuel, weather). Implements various fire behavior models (e.g., based on Rothermel equations).
+*   **Fire-Atmosphere Coupling:** Integrates with atmospheric models like `MesoNH <https://mesonh.aero.obs-mip.fr/mesonh/>`_ for realistic wind-fire interaction modeling.
+*   **High Performance:** Optimized for speed, capable of faster-than-real-time simulations on laptops, with MPI support for parallel computing.
+*   **Multiple Interfaces:** Usable via:
+  *   C++ library
+  *   Python bindings
+  *   Interactive console (ForeFire interpreter)
+  *   Web interface (via ``listenHTTP[]`` command)
+  *   Shell scripts
+*   **Extensible:** Designed to allow adding custom Rate of Spread (ROS) models in C++.
+*   **Applications:** Suitable for research, detailed case reanalysis, and ensemble forecasting.
 
-ForeFire has been designed and runs on Unix systems. The main binaries that can be built from source (CPP) are:
+Supported Platforms
+-------------------
 
-- An interpreter (executable)
-- A shared library (with Python and Java bindings)
+ForeFire is primarily developed and tested on **Unix-like systems (Linux and macOS)**

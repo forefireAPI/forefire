@@ -1,5 +1,7 @@
-API Reference
-=============
+C++ API Reference
+=================
+
+This section will contain the C++ API reference, automatically generated from source code comments using Doxygen and Breathe.
 
 .. doxygenclass:: libforefire::FireDomain
    :project: ForeFire
