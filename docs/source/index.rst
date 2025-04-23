@@ -13,13 +13,13 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    :caption: Getting Started
 
    introduction
-   installation
    quickstart
 
 .. toctree::
    :maxdepth: 2
    :caption: User Guide
 
+   installation
    basic_configuration
 
 .. toctree::

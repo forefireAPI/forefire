@@ -1,45 +1,16 @@
-Installation
-============
-
-ForeFire is primarily designed for Linux environments. Here are the recommended ways to get it running.
-
-1: Using Docker
----------------------------------------------
-
-This is often the simplest way to get a working ForeFire environment, as it bundles all dependencies. It requires Docker to be installed on your system.
-
-1.  **Clone the repository:**
-    
-  .. code-block:: bash
-    
-    git clone https://github.com/forefireAPI/firefront.git
-    cd firefront
-
-2.  **Build the Docker image:**
-
-  The `Dockerfile` in the repository defines the environment. Build the image using:
-
-  .. code-block:: bash
-
-    docker build . -t forefire:latest
-
-3.  **Running the Container:**
-  
-  Instructions for running the container and using ForeFire within it are covered in the :doc:`quickstart` guide.
-
-
-2: Building from Source
--------------------------------------------------
+Installation: Build from Source
+================================
 
 This guide explains how to install ForeFire by compiling it directly on your Linux/Unix-like system. This gives you a native build, but requires managing dependencies.
 There are two main ways to build from source:
 
-- 2a: Using the provided install script (easiest for Debian/Ubuntu)
-- 2b: Following manual steps (for all systems or finer control).
+- Option 1: Using the provided install script (easiest for Debian/Ubuntu)
+- Option 2: Following manual steps (for all systems or finer control).
 
-**Prerequisites:**
+Prerequisites
+-------------
 
-If you choose the **manual build steps** (Option 2b), or if you simply want to understand what tools are needed, you must ensure the following are installed on your system:
+If you choose the **manual build steps** (Option 2), or if you simply want to understand what tools are needed, you must ensure the following are installed on your system:
 
 - **C++ Compiler:** A modern C++ compiler (like `g++`). Package typically called `build-essential` or similar.
 - **CMake:** Build system generator (`cmake`).
@@ -50,7 +21,10 @@ If you choose the **manual build steps** (Option 2b), or if you simply want to u
   - On other systems, find the equivalent package (e.g., `netcdf-cxx-devel`, `netcdf-cxx4`).
   - *Note: Ensure this is the correct/intended library. Older docs might mention `libnetcdf-cxx-legacy-dev`. Verify which one is actually required by the current CMake setup.*
 
-**Option 2a: Using the Install Script (Recommended for Debian/Ubuntu)**
+Build Options
+-------------
+
+**Option 1: Using the Install Script (Recommended for Debian/Ubuntu)**
 
 The repository provides a convenience script (`install-forefire.sh`) that automates the process on Debian-based systems like Ubuntu.
 
@@ -83,7 +57,7 @@ The repository provides a convenience script (`install-forefire.sh`) that automa
   - It tries to detect the correct user's home directory even when run with `sudo` (using `$SUDO_USER`).
   - **Note:** This only modifies `.bashrc`. If you use a different shell (like `zsh` or `fish`), you will need to configure the PATH manually (see below).
 
-**Option 2b: Manual Build Steps (All Linux/Unix-like Systems)**
+**Option 2: Manual Build Steps (All Linux/Unix-like Systems)**
 
 Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't want to use the install script.
 

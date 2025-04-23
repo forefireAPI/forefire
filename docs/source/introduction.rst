@@ -11,9 +11,9 @@ Key Features
 - **High Performance:** Optimized for speed, capable of faster-than-real-time simulations on laptops, with MPI support for parallel computing.
 - **Multiple Interfaces:** Usable via:
 
-  - C++ library
   - Interactive console (ForeFire interpreter)
   - Web interface (via ``listenHTTP[]`` command)
+  - C++ library
   - Shell scripts
   - Python bindings
 - **Extensible:** Designed to allow adding custom Rate of Spread (ROS) models in C++.
