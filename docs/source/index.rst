@@ -2,11 +2,12 @@
 ForeFire Documentation
 ###################
 
-Welcome to the official documentation for ForeFire—the open-source wildfire simulation platform. This documentation provides guidance on installation, usage, and technical details to help both users and developers get started.
+Welcome to the official documentation for ForeFire — the open-source wildfire simulation platform. This documentation provides guidance on installation, usage, and technical details to help both users and developers get started.
 
 **Key Links:**
-* `GitHub Repository <https://github.com/forefireAPI/firefront>`_
-* `Online Demo Simulator <http://forefire.univ-corse.fr/sim/dev/>`_
+
+- `GitHub Repository <https://github.com/forefireAPI/firefront>`_
+- `Online Demo Simulator <http://forefire.univ-corse.fr/sim/dev/>`_
 
 .. toctree::
    :maxdepth: 2
