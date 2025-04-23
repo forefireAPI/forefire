@@ -162,7 +162,8 @@ namespace http_command {
                     complete_response = serveFileOrDirectory(uri);
                 }
             }
-            write(client_fd, complete_response.data(), complete_response.size());
+            ssize_t bytes_written = write(client_fd, complete_response.data(), complete_response.size());
+            (void)bytes_written;
         }
 
         // Check whether a file exists.

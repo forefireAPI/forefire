@@ -48,3 +48,4 @@ tests/runff/httpConnectInfo.txt
 tests/python/log.txt
 tests/python/runROS.bash
 changeLicense.py
+httpConnectInfo.txt
