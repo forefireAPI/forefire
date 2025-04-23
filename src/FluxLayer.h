@@ -1,6 +1,6 @@
 /**
  * @file FluxLayer.h
- * @brief TODO: add a brief description.
+ * @brief FluxLayer gives access to the desired flux model
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
@@ -21,7 +21,6 @@ namespace libforefire {
 /*! \class FluxLayer
  * \brief FluxLayer gives access to the desired flux model
  *
- *  FluxLayer gives access to the desired flux model.
  */
 
 template<typename T> class FluxLayer : public DataLayer<T> {

@@ -1,6 +1,6 @@
 /**
  * @file EventCommand.h
- * @brief  Definitiosn for the class that defines hos to send a specific command to the interpreter at a scheduled time (an time Atom that can be schedueled)
+ * @brief  Definitions for the class that defines hos to send a specific command to the interpreter at a scheduled time (an time Atom that can be schedueled)
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
@@ -17,16 +17,10 @@ using namespace std;
 
 namespace libforefire{
 
-/*! \class Visitor
- * \brief Abstract class for visitors
+/*! \class EventCommand
+ * \brief TODO
  *
- *  The 'Visitor' abstract class conforms to the
- *  Visitor pattern to obtain information on the
- *  simulation through external objects. Visitors
- *  in LibForeFire are also 'ForeFireAtom' objects
- *  so they can be called by the simulator, i.e.
- *  an event encapsulates the visitor and can be
- *  called at different times of the simulation.
+ *  Detail
  */
 class EventCommand: public ForeFireAtom {
 

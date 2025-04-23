@@ -1,6 +1,6 @@
 /**
  * @file Visitor.h
- * @brief TODO: add a brief description.
+ * @brief Defines the Visitor abstract base class for implementing the Visitor design pattern on ForeFire objects.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
