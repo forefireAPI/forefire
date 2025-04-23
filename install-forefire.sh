@@ -2,6 +2,21 @@
 set -e
 IFS=$'\n\t'
 
+# --- parse flags
+AUTO_ANS=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -y|--yes)
+      AUTO_ANS=1
+      shift
+      ;;
+    *)
+      echo "Usage: $0 [-y|--yes]" >&2
+      exit 1
+      ;;
+  esac
+done
+
 echo -e "\n========= FOREFIRE INSTALLER ========"
 
 PROJECT_ROOT="$(pwd)"
@@ -41,7 +56,12 @@ FOREFIREHOME_LINE="export FOREFIREHOME=\"$PROJECT_ROOT\""
 if grep -qF "$BIN_PATH" "$CONFIG_FILE"; then
   echo "ForeFire already appears in your PATH in $CONFIG_FILE."
 else
-  read -p "Do you want to add ForeFire to your PATH permanently in $CONFIG_FILE? (y/n): " ans
+  if (( AUTO_ANS )); then
+    ans=y
+  else
+    read -p "Do you want to add ForeFire to your PATH permanently in $CONFIG_FILE? (y/n): " ans
+  fi
+  
   if echo "$ans" | grep -qi '^y'; then
     # Append a blank line, a comment, and the export line.
     echo "" >> "$CONFIG_FILE"

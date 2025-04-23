@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: ForeFire build
-        run: sudo bash ./install-forefire.sh
+        run: sudo bash ./install-forefire.sh -y
 
       - name: Check version
         run: ./bin/forefire -v
