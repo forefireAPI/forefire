@@ -15,6 +15,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    introduction
    quickstart
    installation
+   running_the_example
 
 .. toctree::
    :maxdepth: 2

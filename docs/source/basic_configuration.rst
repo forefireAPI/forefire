@@ -3,7 +3,7 @@ Basic Configuration
 
 ForeFire simulations typically require three main input files to run:
 
-1.  **Fuels File (`.ff`)**: Defines the classes of fuels and their associated parameters used by the fire spread model (e.g., Rothermel).
+1.  **Fuels File (`.csv`)**: Defines the classes of fuels and their associated parameters used by the fire spread model (e.g., Rothermel).
 2.  **Landscape File (`.nc`)**: A NetCDF file containing geospatial data layers for the simulation domain, typically including:
 
     - Elevation (Digital Elevation Model - DEM)
