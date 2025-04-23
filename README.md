@@ -6,7 +6,8 @@
 ---
 [![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
+[![linuxCI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
+[![macOSCI](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 [![Documentation Status](https://readthedocs.org/projects/your-rtd-project-name/badge/?version=latest)](https://your-rtd-project-name.readthedocs.io/en/latest/?badge=latest) <!-- Add your RTD project name -->
