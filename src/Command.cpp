@@ -10,6 +10,7 @@
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
+#include "../tools/forefire/AdvancedLineEditor.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -2816,6 +2817,54 @@ namespace libforefire
             scmd = removeTabs(line);
         }
 
+        if (scmd == "help[]" || scmd == "help") {
+            std::cout << "Available ForeFire commands:" << std::endl;
+            std::cout << "(Use Tab for completion, second Tab for details on a specific command)" << std::endl;
+
+            // Get the command map from the advanced editor
+            const auto& cmdMan = advanced_editor::LineEditor::getCommandMan();
+            std::vector<std::string> commandNames;
+
+            for (const auto& pair : cmdMan) {
+                std::string name = pair.first;
+                // Trim leading whitespace used for hierarchy display in editor help
+                size_t first_char = name.find_first_not_of(' ');
+                if (first_char != std::string::npos) {
+                    name = name.substr(first_char);
+                } else {
+                    // Handle case where key is all spaces (unlikely but possible)
+                    name = ""; // Or skip adding it
+                }
+
+                // Add only non-empty names
+                if (!name.empty()) {
+                    // Optional check: Only add if not already present (handles potential duplicates after trimming)
+                    bool found = false;
+                    for(const auto& existing_name : commandNames) {
+                        if (existing_name == name) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        commandNames.push_back(name);
+                    }
+                }
+            }
+
+            // Sort alphabetically for better readability
+            std::sort(commandNames.begin(), commandNames.end());
+
+            // Print sorted names
+            for (const auto& name : commandNames) {
+                std::cout << "  " << name << std::endl;
+            }
+            // Explicitly add quit/exit as they are handled outside ExecuteCommand
+            std::cout << "  quit (or exit)" << std::endl;
+
+            return; // Command handled, don't proceed to translator lookup or error
+        }
+        
         // calling the right method using the 'translator'
         if (((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
         {

@@ -13,6 +13,9 @@ public:
     /// syntax coloring, auto‐completion (Tab), and on a second Tab press prints help info.
     static std::string getLine(const std::string &prompt = "");
 
+    // Internal: Returns the built‐in command dictionary mapping command name to help text.
+    static const std::unordered_map<std::string, std::string>& getCommandMan();
+
 private:
     // Applies syntax coloring to the given line.
     // In this example, any occurrence of a recognized command is shown in green.
@@ -26,8 +29,6 @@ private:
     // Returns true if the line was updated.
     static bool processAutoCompletion(std::string &line, const std::string &prompt);
 
-    // Internal: Returns the built‐in command dictionary mapping command name to help text.
-    static const std::unordered_map<std::string, std::string>& getCommandMan();
 };
 
 } // namespace advanced_editor
