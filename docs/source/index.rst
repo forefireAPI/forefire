@@ -34,6 +34,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    :caption: About
 
    about/license
+   about/citation
 
 
 .. Indices and tables (Keep these standard Sphinx features)

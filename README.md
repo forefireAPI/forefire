@@ -4,10 +4,10 @@
 
 
 ---
-[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![linuxCI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
 [![macOSCI](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 [![Documentation Status](https://readthedocs.org/projects/your-rtd-project-name/badge/?version=latest)](https://your-rtd-project-name.readthedocs.io/en/latest/?badge=latest) <!-- Add your RTD project name -->
@@ -19,7 +19,7 @@
 **Key Links:**
 *   🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
 *   🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
-<!-- *   📚 **Full Documentation:** [your-rtd-project-name.readthedocs.io](https://your-rtd-project-name.readthedocs.io/en/latest/)  -->
+*   📚 **Full Documentation:** [forefire.readthedocs.io](https://firefront.readthedocs.io/en/latest/)
 
 ## Features
 
@@ -33,7 +33,7 @@
 
 ## Quick Start
 
-The easiest way to get started is often using Docker and the interactive console. Alternatively, build from source using the provided script.
+The easiest way to get started is often using Docker and the interactive console
 
 ``` bash
 # Clone the repository
@@ -72,6 +72,8 @@ You can interact and simulate events in the region of Corse, south of France
 
 ### 2. From Source (using install script)
 
+Alternatively, build from source using the provided script.
+
 ```bash
 # Prerequisites:
 # You need a C++ compiler, CMake, Make, and libraries like NetCDF.
@@ -87,18 +89,38 @@ cd tests/runff
 bash run.bash
 
 ```
-(For manual CMake build instructions, see the Full Documentation).
+
+See the Full Documentation for more details on building from source
 
 ## Python Bindings
 ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
 
-<!-- ### Contributing -->
+## Contributing
+Contributions are welcome! Whether it's reporting a bug, suggesting an enhancement, or submitting code changes, your help is appreciated.
+
+More specifically we need help for
+- Documentation
+- Python bindings
+
 
 ## License
-ForeFire is licensed under the GNU General Public License v3.0. 
+ForeFire is licensed under the GNU General Public License v3.0. See [LICENSE](./LICENSE) for full details.
 
 ## Citation
 If you use ForeFire in your work, please cite:
+
+**BibTex**
+```bibtex
+@article{article,
+author = {Filippi, Jean-Baptiste and Bosseur, Frédéric and Grandi, Damien},
+year = {2014},
+month = {11},
+pages = {},
+title = {ForeFire: open-source code for wildland fire spread models},
+isbn = {9789892608846},
+doi = {10.14195/978-989-26-0884-6_29}
+}
 ```
-Filippi, Jean-Baptiste & Bosseur, Frédéric & Grandi, Damien. (2014). ForeFire: open-source code for wildland fire spread models. 10.14195/978-989-26-0884-6_29. 
-```
+
+**Plain Text**
+> Filippi, Jean-Baptiste & Bosseur, Frédéric & Grandi, Damien. (2014). ForeFire: open-source code for wildland fire spread models. 10.14195/978-989-26-0884-6_29. 
