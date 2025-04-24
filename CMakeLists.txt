@@ -4,7 +4,7 @@ project(forefire VERSION 1.0)
 # ----------------------------------
 # Set C++ Standard
 # ----------------------------------
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ----------------------------------
