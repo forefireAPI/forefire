@@ -2825,30 +2825,20 @@ namespace libforefire
             const auto& cmdMan = advanced_editor::LineEditor::getCommandMan();
             std::vector<std::string> commandNames;
 
+            // Iterate through the map, trim leading spaces, and collect non-empty names
             for (const auto& pair : cmdMan) {
                 std::string name = pair.first;
                 // Trim leading whitespace used for hierarchy display in editor help
                 size_t first_char = name.find_first_not_of(' ');
                 if (first_char != std::string::npos) {
-                    name = name.substr(first_char);
+                    name = name.substr(first_char); // Get the substring from the first non-space char
                 } else {
-                    // Handle case where key is all spaces (unlikely but possible)
-                    name = ""; // Or skip adding it
+                    name = ""; // If it was all spaces (or empty), set to empty
                 }
 
-                // Add only non-empty names
+                // Add the trimmed name if it's not empty
                 if (!name.empty()) {
-                    // Optional check: Only add if not already present (handles potential duplicates after trimming)
-                    bool found = false;
-                    for(const auto& existing_name : commandNames) {
-                        if (existing_name == name) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        commandNames.push_back(name);
-                    }
+                    commandNames.push_back(name);
                 }
             }
 
@@ -2862,7 +2852,7 @@ namespace libforefire
             // Explicitly add quit/exit as they are handled outside ExecuteCommand
             std::cout << "  quit (or exit)" << std::endl;
 
-            return; // Command handled, don't proceed to translator lookup or error
+            return;
         }
         
         // calling the right method using the 'translator'
