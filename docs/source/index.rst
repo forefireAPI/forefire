@@ -28,7 +28,8 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    :caption: Reference
 
    reference/commands
-   api_reference
+   reference/parameters
+   reference/api_reference
 
 .. toctree::
    :maxdepth: 1
