@@ -350,7 +350,7 @@ std::string LineEditor::getLine(const std::string &prompt) {
                 const auto &cmdMan = LineEditor::getCommandMan();
                 auto it = cmdMan.find(key);
                 if (it != cmdMan.end()) {
-                    std::cout << "\n\033[36m" << it->second << "]\033[0m" << std::endl;
+                    std::cout << "\n\033[36m" << it->second << "\033[0m" << std::endl;
                     std::cout << "\033[38;5;208m" << prompt << "\033[0m" << applySyntaxColoring(line);
                     // After printing help, reposition the cursor.
                     int moveLeft = static_cast<int>(line.size()) - cursorPos;
