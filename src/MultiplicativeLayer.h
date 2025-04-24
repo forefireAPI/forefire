@@ -93,9 +93,9 @@ public:
 	double getOriginX(	){ return baseLayer->getOriginX(); };
 	double getOriginY(){ return baseLayer->getOriginY(); };
 	double getOriginZ(){ return baseLayer->getOriginZ(); };
-	double getWidth(){ baseLayer->getWidth(); };
-	double getHeight(){ baseLayer->getHeight(); };
-	double getDepth(){ baseLayer->getDepth(); };
+	double getWidth(){ return baseLayer->getWidth(); };
+	double getHeight(){ return baseLayer->getHeight(); };
+	double getDepth(){ return baseLayer->getDepth(); };
 
 };
 
