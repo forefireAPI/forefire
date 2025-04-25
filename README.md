@@ -81,30 +81,11 @@ The easiest way to get started is often using Docker and the interactive console
     - Run the command `include[real_case.ff]`
     - Then press Refresh Map
 
-    You can interact and simulate events in the region of Corse, south of France
+    You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
 
 ## Build from source
 
-Alternatively, build from source using the provided script.
-
-```bash
-# Prerequisites:
-# You need a C++ compiler, CMake, Make, and libraries like NetCDF.
-# See the Documentation or inspect install-forefire.sh for details.
-
-sudo bash install-forefire.sh
-
-# The executable will be built in: `./bin/forefire`
-```
-And run the same provided test simulation
-```bash
-# Examples are provided on the `tests` folder. You can inspect `tests/runff/real_case.ff` to check usage
-# example
-cd tests/runff
-forefire -i real_case.ff
-```
-
-See the Full Documentation for more details on building from source
+See the Full Documentation for more details on building from source with the `install-forefire.sh` file
 
 ## Python Bindings
 ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
