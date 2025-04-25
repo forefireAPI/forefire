@@ -193,6 +193,8 @@ namespace http_command {
                 else if (ext == ".jpg" || ext == ".jpeg" ||
                          ext == ".JPG" || ext == ".JPEG")
                     return "image/jpeg";
+                else if (ext == ".svg")
+                    return "image/svg+xml";
                 else if (ext == ".json")
                     return "application/json";
                 else if (ext == ".css")
