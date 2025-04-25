@@ -1,8 +1,7 @@
 Quick Start
 ===========
-**Try ForeFire fast with Docker**
 
-This guide shows the quickest way to see ForeFire in action using its interactive web console, powered by Docker. This method bundles all dependencies, so you don't need to install them on your host system.
+This guide shows the quickest way to **see ForeFire in action** using its interactive web console, powered by **Docker**. This method bundles all dependencies, so you don't need to install them on your host system, and is the only way to run ForeFire on Windows.
 
 Prerequisites
 -------------
@@ -70,7 +69,7 @@ Steps
   *   In the web console's command input box, type: `include[real_case.ff]` and press Enter or click Send.
   *   Click the "Refresh Map" button.
 
-  You should see a simulation running in the Aullène region of Corsica. You can explore other commands or modify parameters via the web console.
+  You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** For other ways to run ForeFire scripts (like directly from the command line), see the :doc:`running_the_example` page.
 
 9.  **Stop the Container:**
 
