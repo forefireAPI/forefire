@@ -13,7 +13,7 @@
 [![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
 
-**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is typically used via the **`forefire` command-line interpreter** for research and operational forecasting. The engine implements various fire behavior models, handles complex geospatial data, and enables high-fidelity coupled fire-atmosphere simulations.
+**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models, handles complex geospatial data, and enables high-fidelity coupled fire-atmosphere simulations.
 
 
 **Key Links:**
@@ -37,7 +37,7 @@
 
 ## Quick Start with Docker
 
-The easiest way to get started is often using Docker and the interactive console
+The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
 
 1. Clone the repository
     
