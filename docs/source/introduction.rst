@@ -10,9 +10,9 @@ What is ForeFire?
 
 ForeFire is a powerful, open-source **wildfire simulation engine** written in C++. Its core purpose is to simulate the spread of wildfires over complex terrain using various physical models and geospatial data inputs.
 
-The engine's logic is compiled into a **reusable shared library (`libforefireL.so`)**. While this library can be directly linked against by other C/C++ or Fortran programs (the primary mechanism for coupling with atmospheric models like MesoNH), the most common way to use ForeFire is through the **`forefire` executable program**.
+The engine's logic is compiled into a **reusable shared library (`libforefireL.so`)**. While this library can be directly linked against by other C/C++ or Fortran programs (the primary mechanism for coupling with atmospheric models like MesoNH), the most common way to use ForeFire is through the ``forefire`` **  executable program**.
 
-This `forefire` program acts as a **command-line interpreter**. It reads and executes commands from:
+This ``forefire`` program acts as a **command-line interpreter**. It reads and executes commands from:
 
 *   Script files (typically `.ff` files)
 *   An interactive console session

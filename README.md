@@ -30,50 +30,60 @@
     *   **`forefire` Interpreter:** The primary way to run simulations using script files (`.ff`), interactive console commands, or the web interface (via `listenHTTP[]`).
     *   **C++ Library (`libforefireL`):** Allows direct integration into other software.
     *   **Python Bindings:** Enable scripting and control from Python (see [./bindings/python/README.md](./bindings/python/README.md)).
+*   **Flexible Output:** Can generate outputs in various formats, including KML for visualization in Google Earth, Geojson, NetCDF, and custom binary/text formats.
 *   **Extensible:** Add custom ROS models in C++; customize web interfaces.
 *   **Applications:** Research, case reanalysis, ensemble forecasting.
 
 
-## Quick Start
+## Quick Start with Docker
 
 The easiest way to get started is often using Docker and the interactive console
 
-``` bash
-# Clone the repository
-git clone https://github.com/forefireAPI/firefront.git
-cd firefront
-```
+1. Clone the repository
+    
+    ``` bash
+    # Clone the repository
+    git clone https://github.com/forefireAPI/firefront.git
+    cd firefront
+    ```
 
-### Docker (Recommended)
+2. Build the Docker image 
 
-```bash
-# Build the Docker image
-docker build . -t forefire:latest
+    ```bash
+    docker build . -t forefire:latest
+    ```
 
-# Run the container interactively
-docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
+3. Run the container interactively
 
-# Inside the container navigate to test directory:
-cd tests/runff
+    ```bash
+    docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
+    ```
+4. Inside the container navigate to test directory and lauch the forefire console:
+    ```bash
+    cd tests/runff
 
-# start forefire console 
-forefire
+    # start the forefire console with the command
+    forefire
+    ```
 
-#inside the console launch an http server with listenHttp[] command
-forefire> listenHTTP[]
+5. Inside the console launch an http server with listenHttp[] command
 
-# the output should be
->> HTTP command server listening on port 8000
-```
+    ```bash
+    forefire> listenHTTP[]
 
-Now that the server is running, acces the console on your browser at http://localhost:8000/
+    # the output should be
+    >> HTTP command server listening on port 8000
+    ```
 
-- Run the command `include[real_case.ff]`
-- Then press Refresh Map
+    This server provides a grafical user interver that you can access on your browser at http://localhost:8000/
 
-You can interact and simulate events in the region of Corse, south of France
+6. Run your first simulation
+    - Run the command `include[real_case.ff]`
+    - Then press Refresh Map
 
-### Build from source
+    You can interact and simulate events in the region of Corse, south of France
+
+## Build from source
 
 Alternatively, build from source using the provided script.
 
@@ -85,12 +95,13 @@ Alternatively, build from source using the provided script.
 sudo bash install-forefire.sh
 
 # The executable will be built in: `./bin/forefire`
-
-# Examples are provided on the `tests` folder. You can inspect `tests/runff/run.bash` to check usage
+```
+And run the same provided test simulation
+```bash
+# Examples are provided on the `tests` folder. You can inspect `tests/runff/real_case.ff` to check usage
 # example
 cd tests/runff
-bash run.bash
-
+forefire -i real_case.ff
 ```
 
 See the Full Documentation for more details on building from source
