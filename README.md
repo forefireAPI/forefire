@@ -39,6 +39,8 @@
 
 The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
 
+![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
+
 1. Clone the repository
     
     ``` bash
