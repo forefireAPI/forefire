@@ -58,7 +58,7 @@ Steps
 
     forefire> listenHTTP[]
 
-  You should see output like: `>> HTTP command server listening on port 8000`
+  You should see output like: `>> HTTP command server listening at http://localhost:8000`
 
 7.  **Access the Web Console:**
 
