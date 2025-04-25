@@ -75,7 +75,7 @@ The easiest way to get started is often using Docker and the interactive console
     >> HTTP command server listening on port 8000
     ```
 
-    This server provides a grafical user interver that you can access on your browser at http://localhost:8000/
+    This server provides a grafical user interface that you can access on your browser at http://localhost:8000/
 
 6. Run your first simulation
     - Run the command `include[real_case.ff]`
