@@ -7,8 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'ForeFire'
-copyright = '2025, Filippi'
-author = 'Filippi'
+copyright = '2014 - 2025, J-B Filippi'
+author = 'Filippi, Jean Baptiste'
 release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
