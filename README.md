@@ -6,29 +6,32 @@
 ---
 [![linuxCI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
 [![macOSCI](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml)
-[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-[![Documentation Status](https://readthedocs.org/projects/your-rtd-project-name/badge/?version=latest)](https://your-rtd-project-name.readthedocs.io/en/latest/?badge=latest) <!-- Add your RTD project name -->
+[![Documentation Status](https://readthedocs.org/projects/firefront/badge/?version=latest)](https://firefront.readthedocs.io/en/latest/?badge=latest) 
+[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
-<!-- _Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._ -->
 
-**ForeFire** is an open-source wildfire spread simulator written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it's designed for research and operational forecasting. ForeFire implements various fire behavior models (e.g., based on Rothermel equations), handles complex geospatial data, and enables high-fidelity coupled fire-atmosphere simulations via integration with atmospheric models like [MesoNH](https://mesonh.aero.obs-mip.fr/mesonh/) (developed by CNRS & Météo-France).
+**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is typically used via the **`forefire` command-line interpreter** for research and operational forecasting. The engine implements various fire behavior models, handles complex geospatial data, and enables high-fidelity coupled fire-atmosphere simulations.
+
 
 **Key Links:**
-*   🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
-*   🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
-*   📚 **Full Documentation:** [forefire.readthedocs.io](https://firefront.readthedocs.io/en/latest/)
+- 📚 **Full Documentation:** [forefire.readthedocs.io](https://firefront.readthedocs.io/en/latest/)
+- 🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
+- 🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
 
 ## Features
 
-*   **Advanced Simulation:** Core C++ engine for fire propagation using geospatial data (terrain, fuel, weather).
-*   **Fire-Atmosphere Coupling:** Integrates with MesoNH for realistic wind-fire interaction modeling.
-*   **High Performance:** Optimized for speed, capable of faster-than-real-time simulations on laptops, with MPI support for parallel computing.
-*   **Multiple Interfaces:** Usable via C++ library, Python bindings, interactive console (IPython-like), web interface (notebook mode), and shell scripts.
-*   **Extensible:** Add custom Rate of Spread (ROS) models in C++; customize web interfaces using HTML/JS.
-*   **Applications:** Suitable for research, detailed case reanalysis, and ensemble forecasting.
+*   **Advanced Simulation Engine:** Core C++ logic for fire propagation using various Rate of Spread (ROS) models and handling complex geospatial data (NetCDF).
+*   **Fire-Atmosphere Coupling:** Designed for two-way coupling by linking the core library with atmospheric models like [MesoNH](https://mesonh.aero.obs-mip.fr/mesonh/) (developed by CNRS & Météo-France).
+*   **High Performance:** Optimized C++ core with MPI support for parallel computing.
+*   **Flexible Interfaces:** Built upon a core **C++ Simulation Engine (Library)**:
+    *   **`forefire` Interpreter:** The primary way to run simulations using script files (`.ff`), interactive console commands, or the web interface (via `listenHTTP[]`).
+    *   **C++ Library (`libforefireL`):** Allows direct integration into other software.
+    *   **Python Bindings:** Enable scripting and control from Python (see [./bindings/python/README.md](./bindings/python/README.md)).
+*   **Extensible:** Add custom ROS models in C++; customize web interfaces.
+*   **Applications:** Research, case reanalysis, ensemble forecasting.
 
 
 ## Quick Start
@@ -41,7 +44,7 @@ git clone https://github.com/forefireAPI/firefront.git
 cd firefront
 ```
 
-### 1. Using Docker (Recommended)
+### Docker (Recommended)
 
 ```bash
 # Build the Docker image
@@ -70,7 +73,7 @@ Now that the server is running, acces the console on your browser at http://loca
 
 You can interact and simulate events in the region of Corse, south of France
 
-### 2. From Source (using install script)
+### Build from source
 
 Alternatively, build from source using the provided script.
 
@@ -96,11 +99,10 @@ See the Full Documentation for more details on building from source
 ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
 
 ## Contributing
-Contributions are welcome! Whether it's reporting a bug, suggesting an enhancement, or submitting code changes, your help is appreciated.
-
-More specifically we need help for
-- Documentation
+Contributions are welcome! Whether it's reporting a bug, suggesting an enhancement, or submitting code changes. We especially appreciate help with:
+- Improving documentation and tutorials.
 - Python bindings
+- Enhancing packaging (Docker, Pip, etc.) and cross-platform compatibility.
 
 
 ## License
