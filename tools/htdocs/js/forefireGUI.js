@@ -49,7 +49,33 @@ const commands = {
   let bboxRect = null;
   let bboxMarkers = [];
   let draggedMarkerIndex = null;
-  
+
+  // Create a div element with your logo
+  L.Control.Logo = L.Control.extend({
+    onAdd: function(map) {
+      const img = L.DomUtil.create('img');
+
+      img.src = 'img/ff_logo.png';
+      img.style.width = '20px';
+      img.style.height = 'auto';
+      img.style.padding = '2px';
+      img.alt = "ForeFire Logo";
+
+      // Prevent map interaction when clicking logo
+      L.DomEvent.disableClickPropagation(img);
+
+      return img;
+    },
+
+  });
+
+  // Helper function to add the control easily
+  L.control.logo = function(opts) {
+      return new L.Control.Logo(opts);
+  }
+
+  L.control.logo({ position: 'bottomleft' }).addTo(map);
+      
   // Create a bounding box from a given bounds object (from JSON response).
   function createBoundingBoxFromResponse(boundsObj) {
     // Expected keys: SWlon, SWlat, NElon, NElat.
