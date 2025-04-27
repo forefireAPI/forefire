@@ -7,19 +7,19 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'ForeFire'
-copyright = '2025, Filippi'
-author = 'Filippi'
+copyright = '2014 - 2025, J-B Filippi'
+author = 'Filippi, Jean Baptiste'
 release = '2.0.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-  'breathe'
+	'breathe'
 ]
 
 breathe_projects = {
-  "ForeFire": "../doxygen/xml"
+	"ForeFire": "../doxygen/xml"
 }
 breathe_default_project = "ForeFire"
 
@@ -37,7 +37,10 @@ html_logo = "_static/forefire.svg"
 html_favicon = "_static/favicon.ico"
 
 html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
-    'style_nav_header_background': '#808080',
+	'logo_only': True,
+	'style_nav_header_background': '#808080',
 }
+
+html_css_files = [
+	"custom.css",
+]

@@ -60,6 +60,8 @@ This is useful for previewing changes before committing or pushing them.
     make html
     ```
 
+    The generated HTML files will be in the build/html directory. Check `docs/build/html/index.html` 
+
 **Optional**
 
 - **Graphviz (Optional but Recommended for devs):** Doxygen uses Graphviz (specifically the `dot` tool) to generate diagrams (like call graphs, inheritance graphs). If you want these diagrams, install Graphviz (`sudo apt install graphviz` or `brew install graphviz`).
@@ -71,6 +73,8 @@ This is useful for previewing changes before committing or pushing them.
     # Path is relative to the 'docs' directory
     open docs/doxygen/html/index.html
     ```
+
+Note: This opens the HTML documentation generated directly by Doxygen, which can be useful for debugging or viewing diagrams. It is separate from the integrated documentation built via make html.
 
 ## Deployment
 - Deployment needs to be configured via the GUI of readthedocs
