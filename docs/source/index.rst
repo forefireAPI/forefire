@@ -25,6 +25,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    user_guide/fuels_file
    user_guide/landscape_file
    user_guide/forefire_script
+   user_guide/core_concepts
 
 .. toctree::
    :maxdepth: 2

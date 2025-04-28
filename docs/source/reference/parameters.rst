@@ -111,6 +111,8 @@ InitTime
 Domain & Discretization
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _param-perimeterResolution:
+
 perimeterResolution
 """""""""""""""""""
 *   **Description:** Target maximum distance (in meters) between adjacent FireNodes discretizing the fire front. The simulation dynamically adds nodes to maintain this resolution.
@@ -164,6 +166,8 @@ frontDepthScheme
 
 Physics & Models
 ~~~~~~~~~~~~~~~~
+
+.. _param-propagationModel:
 
 propagationModel
 """"""""""""""""
