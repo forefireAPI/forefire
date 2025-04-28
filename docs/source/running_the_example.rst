@@ -129,5 +129,5 @@ Next Steps
 Now that you've seen the different ways to *execute* a ForeFire script, you can learn more about:
 
 - How to **write and structure** your own scripts in the :doc:`ForeFire Script File guide <user_guide/forefire_script>`.
-- The specific :doc:`Input Files <basic_configuration>` required (Fuels, Landscape).
+- The specific :doc:`Input Files <user_guide/basic_configuration>` required (Fuels, Landscape).
 - The detailed :doc:`Command <reference/commands>` and :doc:`Parameter <reference/parameters>` references.
