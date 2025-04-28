@@ -47,7 +47,7 @@ ForeFire is suitable for a range of applications, including:
 Supported Platforms
 -------------------
 
-ForeFire is primarily developed and tested on **Unix-like systems (Linux and macOS)**.
+ForeFire is primarily developed and tested on **Unix-like systems (Linux and macOS)**. It can run o Windows via WSL (windows Subsystem for Linux) or Docker.
 
 About This Documentation
 ------------------------

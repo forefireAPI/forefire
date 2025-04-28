@@ -87,7 +87,12 @@ Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't
     cmake ..
     make
 
-The main executable `forefire` will be located at `../bin/forefire` (relative to the `build` directory).
+The main executable `forefire` will be located at `../bin/forefire` (relative to the `build` directory). Check installation with
+  
+  .. code-block:: bash
+
+    cd .. # Go back to the root of the repository
+    ./bin/forefire -v
 
 4. **Making ForeFire Executable System-Wide (Manual PATH setup)**
 
