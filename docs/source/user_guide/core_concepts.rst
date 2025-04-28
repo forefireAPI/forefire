@@ -8,7 +8,7 @@ Understanding the fundamental concepts behind ForeFire can help you use the simu
 Simulation Engine & Interpreter
 -------------------------------
 
-As discussed in the :doc:`/introduction`, ForeFire consists of:
+As discussed in the :doc:`/getting_started/introduction`, ForeFire consists of:
 
 1.  **Simulation Engine** (Library ``libforefireL``): The core C++ code containing the physics, data structures, and algorithms for simulating fire spread.
 2.  **Interpreter** (Executable ``forefire``): The program you typically interact with. It reads commands (from scripts, console, or web UI) and instructs the engine library what to do.

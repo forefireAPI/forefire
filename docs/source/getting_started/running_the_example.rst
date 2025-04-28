@@ -15,7 +15,7 @@ The directory ``tests/runff/`` contains the necessary files for the ``real_case.
 - ``data.nc``: The NetCDF **landscape file** containing geospatial data (elevation, fuel types) for the simulation domain.
 - ``fuels.csv``: The **fuels definition file**, specifying properties for different fuel types referenced in ``data.nc``.
 
-The ``real_case.ff`` file itself contains a sequence of ForeFire commands that set up parameters, load data, define an ignition, run the simulation, and save results. To learn about the syntax, structure, and typical commands used within a ``.ff`` script file, please refer to the :doc:`ForeFire Script File guide <user_guide/forefire_script>`.
+The ``real_case.ff`` file itself contains a sequence of ForeFire commands that set up parameters, load data, define an ignition, run the simulation, and save results. To learn about the syntax, structure, and typical commands used within a ``.ff`` script file, please refer to the :doc:`ForeFire Script File guide </user_guide/forefire_script>`.
 
 Executing the Example Script
 ----------------------------
@@ -128,6 +128,6 @@ Next Steps
 
 Now that you've seen the different ways to *execute* a ForeFire script, you can learn more about:
 
-- How to **write and structure** your own scripts in the :doc:`ForeFire Script File guide <user_guide/forefire_script>`.
-- The specific :doc:`Input Files <user_guide/basic_configuration>` required (Fuels, Landscape).
-- The detailed :doc:`Command <reference/commands>` and :doc:`Parameter <reference/parameters>` references.
+- How to **write and structure** your own scripts in the :doc:`ForeFire Script File guide </user_guide/forefire_script>`.
+- The specific :doc:`Input Files </user_guide/basic_configuration>` required (Fuels, Landscape).
+- The detailed :doc:`Command </reference/commands>` and :doc:`Parameter </reference/parameters>` references.
