@@ -7,9 +7,9 @@
  */
 
 
-#include "FluxModel.h"
-#include "FireDomain.h"
-#include "include/Futils.h"
+#include "../FluxModel.h"
+#include "../FireDomain.h"
+#include "../include/Futils.h"
 using namespace std;
 namespace libforefire {
 

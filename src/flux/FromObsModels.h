@@ -9,7 +9,7 @@
 #ifndef FROMOBSMODEL_H_
 #define FROMOBSMODEL_H_
 
-#include "FireDomain.h"
+#include "../FireDomain.h"
 
 using namespace std;
 

@@ -1,17 +1,19 @@
 /**
- * @file ScalarFluxNominalModel.cpp
+ * @file VaporFluxBasicModel.cpp
  * @brief TODO: add a brief description.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "FluxModel.h"
-#include "FireDomain.h"
+#include "../FluxModel.h"
+#include "../FireDomain.h"
+
+using namespace std;
 
 namespace libforefire {
 
-class ScalarFluxNominalModel: public FluxModel {
+class VaporFluxBasicModel: public FluxModel {
 
 	/*! name the model */
 	static const string name;
@@ -20,11 +22,10 @@ class ScalarFluxNominalModel: public FluxModel {
 	static int isInitialized;
 
 	/*! properties needed by the model */
-	size_t tau0;
-	size_t sd;
 
 	/*! coefficients needed by the model */
-	double nominalScalarFlux;
+	double burningDuration;
+	double nominalVaporFlux;
 
 	/*! local variables */
 
@@ -33,33 +34,31 @@ class ScalarFluxNominalModel: public FluxModel {
 			, const double&, const double&);
 
 public:
-	ScalarFluxNominalModel(const int& = 0, DataBroker* = 0);
-	virtual ~ScalarFluxNominalModel();
+	VaporFluxBasicModel(const int& = 0, DataBroker* = 0);
+	virtual ~VaporFluxBasicModel();
 
 	string getName();
 };
 
-FluxModel* getScalarFluxNominalModel(const int& = 0, DataBroker* = 0);
+FluxModel* getVaporFluxBasicModel(const int& = 0, DataBroker* = 0);
 
 /* name of the model */
-const string ScalarFluxNominalModel::name = "SFMod";
+const string VaporFluxBasicModel::name = "vaporFluxBasic";
 
 /* instantiation */
-FluxModel* getScalarFluxNominalModel(const int& index, DataBroker* db) {
-	return new ScalarFluxNominalModel(index, db);
+FluxModel* getVaporFluxBasicModel(const int& index, DataBroker* db) {
+	return new VaporFluxBasicModel(index, db);
 }
 
 /* registration */
-int ScalarFluxNominalModel::isInitialized =
-        FireDomain::registerFluxModelInstantiator(name, getScalarFluxNominalModel );
+int VaporFluxBasicModel::isInitialized =
+        FireDomain::registerFluxModelInstantiator(name, getVaporFluxBasicModel );
 
 /* constructor */
-ScalarFluxNominalModel::ScalarFluxNominalModel(
+VaporFluxBasicModel::VaporFluxBasicModel(
 		const int & mindex, DataBroker* db) : FluxModel(mindex, db) {
 
 	/* defining the properties needed for the model */
-	tau0 = registerProperty("fuel.Tau0");
-	sd = registerProperty("fuel.sd");
 
 	/* allocating the vector for the values of these properties */
 	if ( numProperties > 0 ) properties =  new double[numProperties];
@@ -68,18 +67,21 @@ ScalarFluxNominalModel::ScalarFluxNominalModel(
 	dataBroker->registerFluxModel(this);
 
 	/* Definition of the coefficients */
-	nominalScalarFlux = 1.;
-	if ( params->isValued("nominalScalarFlux") )
-		nominalScalarFlux = params->getDouble("nominalScalarFlux");
+	burningDuration = 30.;
+	if ( params->isValued("burningDuration") )
+		burningDuration = params->getDouble("burningDuration");
+	nominalVaporFlux = 1.;
+	if ( params->isValued("nominalVaporFlux") )
+		nominalVaporFlux = params->getDouble("nominalVaporFlux");
 }
 
 /* destructor (shoudn't be modified) */
-ScalarFluxNominalModel::~ScalarFluxNominalModel() {
+VaporFluxBasicModel::~VaporFluxBasicModel() {
 	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */
-string ScalarFluxNominalModel::getName(){
+string VaporFluxBasicModel::getName(){
 	return name;
 }
 
@@ -87,19 +89,17 @@ string ScalarFluxNominalModel::getName(){
 /* Model for the flux */
 /* ****************** */
 
-double ScalarFluxNominalModel::getValue(double* valueOf
+double VaporFluxBasicModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
-	/* Mean vapor flux released between the time interval [bt, et] */
-	/* The vapor flux is supposed to be constant from the arrival time (at)
-	 * and for a period of time of given by fuel properties tau0/sd */
-
-	double burningDuration = valueOf[tau0]/valueOf[sd];
+	/* Mean heat flux released between the time interval [bt, et] */
+	/* The heat flux is supposed to be constant from the arrival time (at)
+	 * and for a period of time of 'burningDuration', constant of the model */
 
 	/* Instantaneous flux */
 	/* ------------------ */
 	if ( bt == et ){
 		if ( bt < at ) return 0;
-		if ( bt < at + burningDuration ) return nominalScalarFlux;
+		if ( bt < at + burningDuration ) return nominalVaporFlux;
 		return 0;
 	}
 
@@ -109,13 +109,13 @@ double ScalarFluxNominalModel::getValue(double* valueOf
 	/* looking outside burning interval */
 	if ( et < at or bt > at + burningDuration ) return 0;
 	/* begin time outside interval, end time inside */
-	if ( bt < at and et <= at + burningDuration ) return nominalScalarFlux*(et-at)/(et-bt);
+	if ( bt < at and et <= at + burningDuration ) return nominalVaporFlux*(et-at)/(et-bt);
 	/* begin time outside interval, end time outside */
-	if ( bt < at and et > at + burningDuration ) return nominalScalarFlux*burningDuration/(et-bt);
+	if ( bt < at and et > at + burningDuration ) return nominalVaporFlux*burningDuration/(et-bt);
 	/* begin time inside interval, end time inside */
-	if ( bt >= at and et <= at + burningDuration ) return nominalScalarFlux;
+	if ( bt >= at and et <= at + burningDuration ) return nominalVaporFlux;
 	/* begin time inside interval, end time outside */
-	return nominalScalarFlux*(at+burningDuration-bt)/(et-bt);
+	return nominalVaporFlux*(at+burningDuration-bt)/(et-bt);
 
 }
 

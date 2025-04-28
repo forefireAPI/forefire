@@ -1,17 +1,17 @@
 /**
- * @file VaporFluxNominalModel.cpp
+ * @file ScalarFluxNominalModel.cpp
  * @brief TODO: add a brief description.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "FluxModel.h"
-#include "FireDomain.h"
+#include "../FluxModel.h"
+#include "../FireDomain.h"
 
 namespace libforefire {
 
-class VaporFluxNominalModel: public FluxModel {
+class ScalarFluxNominalModel: public FluxModel {
 
 	/*! name the model */
 	static const string name;
@@ -24,7 +24,7 @@ class VaporFluxNominalModel: public FluxModel {
 	size_t sd;
 
 	/*! coefficients needed by the model */
-	double nominalVaporFlux;
+	double nominalScalarFlux;
 
 	/*! local variables */
 
@@ -33,27 +33,28 @@ class VaporFluxNominalModel: public FluxModel {
 			, const double&, const double&);
 
 public:
-	VaporFluxNominalModel(const int& = 0, DataBroker* = 0);
-	virtual ~VaporFluxNominalModel();
+	ScalarFluxNominalModel(const int& = 0, DataBroker* = 0);
+	virtual ~ScalarFluxNominalModel();
 
 	string getName();
 };
 
-FluxModel* getVaporFluxNominalModel(const int& = 0, DataBroker* = 0);
+FluxModel* getScalarFluxNominalModel(const int& = 0, DataBroker* = 0);
+
 /* name of the model */
-const string VaporFluxNominalModel::name = "vaporFluxNominal";
+const string ScalarFluxNominalModel::name = "SFMod";
 
 /* instantiation */
-FluxModel* getVaporFluxNominalModel(const int& index, DataBroker* db) {
-	return new VaporFluxNominalModel(index, db);
+FluxModel* getScalarFluxNominalModel(const int& index, DataBroker* db) {
+	return new ScalarFluxNominalModel(index, db);
 }
 
 /* registration */
-int VaporFluxNominalModel::isInitialized =
-        FireDomain::registerFluxModelInstantiator(name, getVaporFluxNominalModel );
+int ScalarFluxNominalModel::isInitialized =
+        FireDomain::registerFluxModelInstantiator(name, getScalarFluxNominalModel );
 
 /* constructor */
-VaporFluxNominalModel::VaporFluxNominalModel(
+ScalarFluxNominalModel::ScalarFluxNominalModel(
 		const int & mindex, DataBroker* db) : FluxModel(mindex, db) {
 
 	/* defining the properties needed for the model */
@@ -67,18 +68,18 @@ VaporFluxNominalModel::VaporFluxNominalModel(
 	dataBroker->registerFluxModel(this);
 
 	/* Definition of the coefficients */
-	nominalVaporFlux = 1.;
-	if ( params->isValued("nominalVaporFlux") )
-		nominalVaporFlux = params->getDouble("nominalVaporFlux");
+	nominalScalarFlux = 1.;
+	if ( params->isValued("nominalScalarFlux") )
+		nominalScalarFlux = params->getDouble("nominalScalarFlux");
 }
 
 /* destructor (shoudn't be modified) */
-VaporFluxNominalModel::~VaporFluxNominalModel() {
+ScalarFluxNominalModel::~ScalarFluxNominalModel() {
 	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */
-string VaporFluxNominalModel::getName(){
+string ScalarFluxNominalModel::getName(){
 	return name;
 }
 
@@ -86,7 +87,7 @@ string VaporFluxNominalModel::getName(){
 /* Model for the flux */
 /* ****************** */
 
-double VaporFluxNominalModel::getValue(double* valueOf
+double ScalarFluxNominalModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
 	/* Mean vapor flux released between the time interval [bt, et] */
 	/* The vapor flux is supposed to be constant from the arrival time (at)
@@ -98,7 +99,7 @@ double VaporFluxNominalModel::getValue(double* valueOf
 	/* ------------------ */
 	if ( bt == et ){
 		if ( bt < at ) return 0;
-		if ( bt < at + burningDuration ) return nominalVaporFlux;
+		if ( bt < at + burningDuration ) return nominalScalarFlux;
 		return 0;
 	}
 
@@ -108,13 +109,13 @@ double VaporFluxNominalModel::getValue(double* valueOf
 	/* looking outside burning interval */
 	if ( et < at or bt > at + burningDuration ) return 0;
 	/* begin time outside interval, end time inside */
-	if ( bt < at and et <= at + burningDuration ) return nominalVaporFlux*(et-at)/(et-bt);
+	if ( bt < at and et <= at + burningDuration ) return nominalScalarFlux*(et-at)/(et-bt);
 	/* begin time outside interval, end time outside */
-	if ( bt < at and et > at + burningDuration ) return nominalVaporFlux*burningDuration/(et-bt);
+	if ( bt < at and et > at + burningDuration ) return nominalScalarFlux*burningDuration/(et-bt);
 	/* begin time inside interval, end time inside */
-	if ( bt >= at and et <= at + burningDuration ) return nominalVaporFlux;
+	if ( bt >= at and et <= at + burningDuration ) return nominalScalarFlux;
 	/* begin time inside interval, end time outside */
-	return nominalVaporFlux*(at+burningDuration-bt)/(et-bt);
+	return nominalScalarFlux*(at+burningDuration-bt)/(et-bt);
 
 }
 

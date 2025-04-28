@@ -1,19 +1,17 @@
 /**
- * @file VaporFluxBasicModel.cpp
+ * @file VaporFluxNominalModel.cpp
  * @brief TODO: add a brief description.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "FluxModel.h"
-#include "FireDomain.h"
-
-using namespace std;
+#include "../FluxModel.h"
+#include "../FireDomain.h"
 
 namespace libforefire {
 
-class VaporFluxBasicModel: public FluxModel {
+class VaporFluxNominalModel: public FluxModel {
 
 	/*! name the model */
 	static const string name;
@@ -22,9 +20,10 @@ class VaporFluxBasicModel: public FluxModel {
 	static int isInitialized;
 
 	/*! properties needed by the model */
+	size_t tau0;
+	size_t sd;
 
 	/*! coefficients needed by the model */
-	double burningDuration;
 	double nominalVaporFlux;
 
 	/*! local variables */
@@ -34,31 +33,32 @@ class VaporFluxBasicModel: public FluxModel {
 			, const double&, const double&);
 
 public:
-	VaporFluxBasicModel(const int& = 0, DataBroker* = 0);
-	virtual ~VaporFluxBasicModel();
+	VaporFluxNominalModel(const int& = 0, DataBroker* = 0);
+	virtual ~VaporFluxNominalModel();
 
 	string getName();
 };
 
-FluxModel* getVaporFluxBasicModel(const int& = 0, DataBroker* = 0);
-
+FluxModel* getVaporFluxNominalModel(const int& = 0, DataBroker* = 0);
 /* name of the model */
-const string VaporFluxBasicModel::name = "vaporFluxBasic";
+const string VaporFluxNominalModel::name = "vaporFluxNominal";
 
 /* instantiation */
-FluxModel* getVaporFluxBasicModel(const int& index, DataBroker* db) {
-	return new VaporFluxBasicModel(index, db);
+FluxModel* getVaporFluxNominalModel(const int& index, DataBroker* db) {
+	return new VaporFluxNominalModel(index, db);
 }
 
 /* registration */
-int VaporFluxBasicModel::isInitialized =
-        FireDomain::registerFluxModelInstantiator(name, getVaporFluxBasicModel );
+int VaporFluxNominalModel::isInitialized =
+        FireDomain::registerFluxModelInstantiator(name, getVaporFluxNominalModel );
 
 /* constructor */
-VaporFluxBasicModel::VaporFluxBasicModel(
+VaporFluxNominalModel::VaporFluxNominalModel(
 		const int & mindex, DataBroker* db) : FluxModel(mindex, db) {
 
 	/* defining the properties needed for the model */
+	tau0 = registerProperty("fuel.Tau0");
+	sd = registerProperty("fuel.sd");
 
 	/* allocating the vector for the values of these properties */
 	if ( numProperties > 0 ) properties =  new double[numProperties];
@@ -67,21 +67,18 @@ VaporFluxBasicModel::VaporFluxBasicModel(
 	dataBroker->registerFluxModel(this);
 
 	/* Definition of the coefficients */
-	burningDuration = 30.;
-	if ( params->isValued("burningDuration") )
-		burningDuration = params->getDouble("burningDuration");
 	nominalVaporFlux = 1.;
 	if ( params->isValued("nominalVaporFlux") )
 		nominalVaporFlux = params->getDouble("nominalVaporFlux");
 }
 
 /* destructor (shoudn't be modified) */
-VaporFluxBasicModel::~VaporFluxBasicModel() {
+VaporFluxNominalModel::~VaporFluxNominalModel() {
 	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */
-string VaporFluxBasicModel::getName(){
+string VaporFluxNominalModel::getName(){
 	return name;
 }
 
@@ -89,11 +86,13 @@ string VaporFluxBasicModel::getName(){
 /* Model for the flux */
 /* ****************** */
 
-double VaporFluxBasicModel::getValue(double* valueOf
+double VaporFluxNominalModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
-	/* Mean heat flux released between the time interval [bt, et] */
-	/* The heat flux is supposed to be constant from the arrival time (at)
-	 * and for a period of time of 'burningDuration', constant of the model */
+	/* Mean vapor flux released between the time interval [bt, et] */
+	/* The vapor flux is supposed to be constant from the arrival time (at)
+	 * and for a period of time of given by fuel properties tau0/sd */
+
+	double burningDuration = valueOf[tau0]/valueOf[sd];
 
 	/* Instantaneous flux */
 	/* ------------------ */
