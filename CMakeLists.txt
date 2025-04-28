@@ -116,6 +116,7 @@ message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 # Source Files
 # ----------------------------------
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
+list(APPEND SRC_FILES tools/forefire/AdvancedLineEditor.cpp)
 
 # ----------------------------------
 # Shared Library Target
