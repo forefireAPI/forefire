@@ -6,8 +6,8 @@
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "PropagationModel.h"
-#include "FireDomain.h"
+#include "../PropagationModel.h"
+#include "../FireDomain.h"
 
 namespace libforefire {
 

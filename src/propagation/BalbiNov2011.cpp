@@ -1,19 +1,19 @@
 /**
- * @file BalbiNov2011Curv.cpp
- * @brief Balbi 2011 ROS model with curvature effect
+ * @file BalbiNov2011.cpp
+ * @brief Balbi 2011 ROS model
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "PropagationModel.h"
-#include "FireDomain.h"
+#include "../PropagationModel.h"
+#include "../FireDomain.h"
 
 using namespace std;
 
 namespace libforefire {
 
-class BalbiNov2011Curv : public PropagationModel {
+class BalbiNov2011 : public PropagationModel {
 
 	/*! name the model */
 	static const string name;
@@ -24,7 +24,6 @@ class BalbiNov2011Curv : public PropagationModel {
 	/*! properties needed by the model */
 	size_t slope;
 	size_t normalWind;
-	size_t curvature;
 	size_t Rhod;
 	size_t Rhol;
 	size_t Md;
@@ -49,7 +48,8 @@ class BalbiNov2011Curv : public PropagationModel {
 	/*! coefficients needed by the model */
 	double Cpa;
 	double cooling;
-	double gravity;
+	double adjustementSlope;
+	double adjustementWind;
 
 	/*! local variables */
 
@@ -58,36 +58,35 @@ class BalbiNov2011Curv : public PropagationModel {
 
 public:
 
-	BalbiNov2011Curv(const int& = 0, DataBroker* db=0);
-	virtual ~BalbiNov2011Curv();
+	BalbiNov2011(const int& = 0, DataBroker* db=0);
+	virtual ~BalbiNov2011();
 
 	string getName();
 
 };
 
-PropagationModel* getBalbiNov2011CurvModel(const int& = 0, DataBroker* db=0);
+PropagationModel* getBalbiNov2011Model(const int& = 0, DataBroker* db=0);
 
 
 /* name of the model */
-const string BalbiNov2011Curv::name = "BalbiNov2011Curv";
+const string BalbiNov2011::name = "BalbiNov2011";
 
 /* instantiation */
-PropagationModel* getBalbiNov2011CurvModel(const int & mindex, DataBroker* db) {
-	return new BalbiNov2011Curv(mindex, db);
+PropagationModel* getBalbiNov2011Model(const int & mindex, DataBroker* db) {
+	return new BalbiNov2011(mindex, db);
 }
 
 /* registration */
-int BalbiNov2011Curv::isInitialized =
-        FireDomain::registerPropagationModelInstantiator(name, getBalbiNov2011CurvModel );
+int BalbiNov2011::isInitialized =
+        FireDomain::registerPropagationModelInstantiator(name, getBalbiNov2011Model );
 
 /* constructor */
-BalbiNov2011Curv::BalbiNov2011Curv(const int & mindex, DataBroker* db)
+BalbiNov2011::BalbiNov2011(const int & mindex, DataBroker* db)
 : PropagationModel(mindex, db) {
 
 	/* defining the properties needed for the model */
 	slope = registerProperty("slope");
 	normalWind = registerProperty("normalWind");
-	curvature = registerProperty("frontCurvature");
 	Rhod = registerProperty("fuel.Rhod");
 	Rhol = registerProperty("fuel.Rhol");
 	Md = registerProperty("fuel.Md");
@@ -117,22 +116,28 @@ BalbiNov2011Curv::BalbiNov2011Curv(const int & mindex, DataBroker* db)
 
 	/* Definition of the coefficients */
 	cooling = 0.;
-	if ( params->isValued("BalbiNov2011Curv.cooling") )
+	if ( params->isValued("BalbiNov2011.cooling") )
 		cooling = params->getDouble("BalbiNov2011.cooling");
 	Cpa = 1004.;
-	if ( params->isValued("BalbiNov2011Curv.Cpa") )
-		Cpa = params->getDouble("BalbiNov2011Curv.Cpa");
-	gravity = 9.81;
-	if ( params->isValued("BalbiNov2011Curv.gravity") )
-		gravity = params->getDouble("BalbiNov2011Curv.gravity");
+	if ( params->isValued("BalbiNov2011.Cpa") )
+		Cpa = params->getDouble("BalbiNov2011.Cpa");
+	adjustementSlope = 1.;
+	if ( params->isValued("BalbiNov2011.adjustementSlope") )
+		adjustementSlope = params->getDouble("BalbiNov2011.adjustementSlope");
+	adjustementWind = 1.;
+	if ( params->isValued("BalbiNov2011.adjustementWind") )
+		adjustementWind = params->getDouble("BalbiNov2011.adjustementWind");
+	if (adjustementWind != 1 && adjustementSlope != 1){
+		cout << "Warning, model Balbi Nov 2011 running wih adjustements Slope "<<adjustementSlope<<" Wind "<<adjustementWind<< endl;
+	}
 }
 
 /* destructor (shoudn't be modified) */
-BalbiNov2011Curv::~BalbiNov2011Curv() {
+BalbiNov2011::~BalbiNov2011() {
 }
 
 /* accessor to the name of the model */
-string BalbiNov2011Curv::getName(){
+string BalbiNov2011::getName(){
 	return name;
 }
 
@@ -140,7 +145,7 @@ string BalbiNov2011Curv::getName(){
 /* Model for the propagation velovity of the front */
 /* *********************************************** */
 
-double BalbiNov2011Curv::getSpeed(double* valueOf){
+double BalbiNov2011::getSpeed(double* valueOf){
 
 	double lRhod = valueOf[Rhod];
 	double lRhol = valueOf[Rhol];
@@ -163,20 +168,27 @@ double BalbiNov2011Curv::getSpeed(double* valueOf){
 	double lr00  = valueOf[r00];
 	double lai = valueOf[Blai];
 
+	double cosCurv = 1;
+
 	if(le <= 0 ) return 0;
 
 	double Betad =   lSigmad /(le* lRhod);
 	double Betal =   lSigmal /(le* lRhol);
+        // '--> Ok if Rhod & Rhol are particle densities and if Sigmad,
+        //      Sigmal & e are "bulk" properties.
+        // However, that does not seem consistent with Rothermel.cpp...
 	double Sd = lsd * le * Betad;
 	double Sl = lsl * le * Betal;
 	double nu = min((Sd) / lai, 1.);
-	double normal_wind = valueOf[normalWind];
-	double B = 5.6E-8;
-	double a   = lDeltah/ ((lCp*(lTi-lTa)));
+	double normal_wind = adjustementWind*valueOf[normalWind];
+	/* double B = 5.6E-8; */
+        double B = 5.670373E-8;
+	double a = lDeltah/ ((lCp*(lTi-lTa)));
 	double r0 = lsd * lr00;
 	double A0 = (lX0*lDeltaH)/(4*lCp*(lTi-lTa));
-	double xsi = ((lMl-lMd)*((lSigmal/lSigmad)*(lDeltah/lDeltaH)));
-	double A  = (nu*A0 / (1 + a * lMd)) * (1-xsi);
+	/* double xsi = ((lMl-lMd)*((lSigmal/lSigmad)*(lDeltah/lDeltaH))); */
+        double xsi = ((lMl-lMd)*((Sd/Sl)*(lDeltah/lDeltaH))); // cf. Santoni et al., 2011
+	double A  = cosCurv * (nu*A0 / (1 + a * lMd)) * (1-xsi);
 	double T = lTa + ( lDeltaH*(1-lX0)*(1-xsi) )     / ((lstoch+1)*Cpa);
 	double R00 = (B*T*T*T*T)   / (lCp*(lTi-lTa));
 	double R = 0;
@@ -184,19 +196,20 @@ double BalbiNov2011Curv::getSpeed(double* valueOf){
 	double u00 = (2*lai*(lstoch+1)*T*lRhod)/(lRhoA*lTa*lTau0);
 	double u0 = nu * u00;
 
-	double tanGamma =  valueOf[slope] + (normal_wind/u0);
+	double  tanGamma =  adjustementSlope*valueOf[slope] + (normal_wind/u0);
+
 	double gamma = atan(tanGamma);
 
 	R0 = (le / lSigmad)   * (R00) / (1 + a * lMd) * Sd/(Sd+Sl) * Sd/(Sd+Sl);
-
 	if ( gamma > 0. ) {
-		double curvAdim = valueOf[curvature]*sin(gamma)*u00*u00
-				*(1.+valueOf[slope]*valueOf[slope])/(gravity*(T/lTa-1.));
-		double curvCor = 1. - curvAdim;
+          // cf. Balbi et al., 2009 -> (9) => (11a) & (11b)
+          /* double geomFactor = r0*((1+sin(gamma)-cos(gamma))/(1.+cos(gamma))); */
+          double geomFactor = r0/cos(gamma)*(1 + sin(gamma) - cos(gamma));
+          /* double Rt = R0 + A*geomFactor ; */
+          double Rt = R0 + A*geomFactor - r0/cos(gamma);
+          R = 0.5*( Rt + sqrt( Rt*Rt + 4.*r0*R0/cos(gamma) ) );
 
-		double geomFactor = curvCor*r0*((1+sin(gamma)-cos(gamma))/(1.+cos(gamma)));
-		double Rt = R0 + A*geomFactor;
-		R = 0.5*( Rt + sqrt( Rt*Rt + 4.*r0*R0/cos(gamma) ) );
+
 	} else {
 		R = R0;
 	}

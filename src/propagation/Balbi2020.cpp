@@ -8,8 +8,8 @@
 
 #include <algorithm> 
 
-#include "PropagationModel.h"
-#include "FireDomain.h"
+#include "../PropagationModel.h"
+#include "../FireDomain.h"
 
 using namespace std;
 

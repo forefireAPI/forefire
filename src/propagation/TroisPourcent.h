@@ -9,8 +9,8 @@
 #ifndef TROISPOURCENT_H_
 #define TROISPOURCENT_H_
 
-#include "PropagationModel.h"
-#include "FireDomain.h"
+#include "../PropagationModel.h"
+#include "../FireDomain.h"
 
 namespace libforefire {
 

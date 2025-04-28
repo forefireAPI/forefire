@@ -1,4 +1,4 @@
-#include "../../src/ANN.h"
+#include "../../src/propagation/ANN.h"
 #include <iostream>
 #include <vector>
 #include <fstream>

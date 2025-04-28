@@ -1,19 +1,19 @@
 /**
- * @file Balbi2015.cpp
- * @brief Balbi 2015 ROS model
+ * @file BalbiUnsteady.cpp
+ * @brief Balbi 2011 ROS model with dynamic flame depth
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  * @author Jean‑Baptiste Filippi — 2025
  */
 
-#include "PropagationModel.h"
-#include "FireDomain.h"
+#include "../PropagationModel.h"
+#include "../FireDomain.h"
 
 using namespace std;
 
 namespace libforefire {
 
-class Balbi2015 : public PropagationModel {
+class BalbiUnsteady : public PropagationModel {
 
 	/*! name the model */
 	static const string name;
@@ -26,8 +26,6 @@ class Balbi2015 : public PropagationModel {
 	size_t fdepth;
 	size_t curvature;
 	size_t normalWind;
-	size_t moisture;
-	size_t temperature;
 	size_t Rhod;
 	size_t Rhol;
 	size_t Md;
@@ -60,30 +58,30 @@ class Balbi2015 : public PropagationModel {
 
 public:
 
-	Balbi2015(const int& = 0, DataBroker* db=0);
-	virtual ~Balbi2015();
+	BalbiUnsteady(const int& = 0, DataBroker* db=0);
+	virtual ~BalbiUnsteady();
 
 	string getName();
 
 };
 
-PropagationModel* getBalbi2015Model(const int& = 0, DataBroker* db=0);
- 
+PropagationModel* getBalbiUnsteadyModel(const int& = 0, DataBroker* db=0);
+
 
 /* name of the model */
-const string Balbi2015::name = "Balbi2015";
+const string BalbiUnsteady::name = "BalbiUnsteady";
 
 /* instantiation */
-PropagationModel* getBalbi2015Model(const int & mindex, DataBroker* db) {
-	return new Balbi2015(mindex, db);
+PropagationModel* getBalbiUnsteadyModel(const int & mindex, DataBroker* db) {
+	return new BalbiUnsteady(mindex, db);
 }
 
 /* registration */
-int Balbi2015::isInitialized =
-        FireDomain::registerPropagationModelInstantiator(name, getBalbi2015Model );
+int BalbiUnsteady::isInitialized =
+        FireDomain::registerPropagationModelInstantiator(name, getBalbiUnsteadyModel );
 
 /* constructor */
-Balbi2015::Balbi2015(const int & mindex, DataBroker* db)
+BalbiUnsteady::BalbiUnsteady(const int & mindex, DataBroker* db)
 : PropagationModel(mindex, db) {
 
 	/* defining the properties needed for the model */
@@ -91,8 +89,6 @@ Balbi2015::Balbi2015(const int & mindex, DataBroker* db)
 	fdepth = registerProperty("frontDepth");
 	curvature = registerProperty("frontCurvature");
 	normalWind = registerProperty("normalWind");
-	moisture = registerProperty("moisture");
-	temperature = registerProperty("temperature");
 	Rhod = registerProperty("fuel.Rhod");
 	Rhol = registerProperty("fuel.Rhol");
 	Md = registerProperty("fuel.Md");
@@ -122,19 +118,19 @@ Balbi2015::Balbi2015(const int & mindex, DataBroker* db)
 
 	/* Definition of the coefficients */
 	cooling = 0.;
-	if ( params->isValued("Balbi2015.cooling") )
-		cooling = params->getDouble("Balbi2015.cooling");
+	if ( params->isValued("BalbiUnsteady.cooling") )
+		cooling = params->getDouble("BalbiUnsteady.cooling");
 	Cpa = 1004.;
-	if ( params->isValued("Balbi2015.Cpa") )
-		Cpa = params->getDouble("Balbi2015.Cpa");
+	if ( params->isValued("BalbiUnsteady.Cpa") )
+		Cpa = params->getDouble("BalbiUnsteady.Cpa");
 }
 
 /* destructor (shoudn't be modified) */
-Balbi2015::~Balbi2015() {
+BalbiUnsteady::~BalbiUnsteady() {
 }
 
 /* accessor to the name of the model */
-string Balbi2015::getName(){
+string BalbiUnsteady::getName(){
 	return name;
 }
 
@@ -142,8 +138,7 @@ string Balbi2015::getName(){
 /* Model for the propagation velovity of the front */
 /* *********************************************** */
 
-
-double Balbi2015::getSpeed(double* valueOf){
+double BalbiUnsteady::getSpeed(double* valueOf){
 
 	double lRhod = valueOf[Rhod];
 	double lRhol = valueOf[Rhol];
@@ -188,25 +183,36 @@ double Balbi2015::getSpeed(double* valueOf){
 	double u0 = nu*u00;
 	double opticalDepth = 4./(Betad*lsd);
 	double epsd = 1.-exp(-valueOf[fdepth]/opticalDepth);
+//	cout <<opticalDepth<<" and "<<valueOf[fdepth]<<" here "<<epsd<<endl;
 
 	double tanGamma =  valueOf[slope] + valueOf[normalWind]/u0;
 	double gamma = atan(tanGamma);
+
 	double R0 = (le /lSigmad)*(R00*epsd)/(1+a*lMd)*(Sd/(Sd+Sl))*(Sd/(Sd+Sl));
 
-	double R = 0;
+	double R;
 
 	if ( gamma > 0 ){
-		double curvCor = 1. - valueOf[curvature]/sqrt(1.+valueOf[curvature]*valueOf[curvature]);
-		double geomFactor = curvCor*(valueOf[fdepth]/tau)*((1+sin(gamma)-cos(gamma))
-					/(1.+valueOf[fdepth]*cos(gamma)/(tau*r0)));
-		double Rt = R0 + A*geomFactor;
+		double curvCor = 1. - 1*(valueOf[curvature]/sqrt(1.+valueOf[curvature]*valueOf[curvature]));
 
+		curvCor *= curvCor;
+		curvCor *= curvCor;
+		return curvCor/10;
+		double geomFactor = curvCor*(valueOf[fdepth]/tau)*((1+sin(gamma)-cos(gamma))/(1.+valueOf[fdepth]*cos(gamma)/(tau*r0)));
+	//	double geomFactor2 = (valueOf[fdepth]/tau)*((1+sin(gamma)-cos(gamma))/(1.+valueOf[fdepth]*cos(gamma)/(tau*r0)));
+		double Rt = R0 + A*geomFactor;
+	//	double Rt2 = R0 + A*geomFactor2;
 		R = 0.5*( Rt + sqrt( Rt*Rt + 4.*r0*R0/cos(gamma) ) );
-		//cout << "R "<< R << " R0 "<< R0 << " curv "<<valueOf[curvature]<< " curvCor "<<curvCor <<" geomFactor "<< geomFactor <<" depth "<< valueOf[fdepth] <<endl;
+	//	double R2 = ( 0.5*( Rt2 + sqrt( Rt2*Rt2 + 4.*r0*R0/cos(gamma) ) ));
+	//	cout << curvCor << " and " << valueOf[curvature] <<" R is "<< R << " R2 " << R2 <<endl;
+	//	cout<<"R0="<<R0<<", A="<<A<<", fdepth="<<valueOf[fdepth]<<", tau="<<tau				<<", gamma="<<gamma<<", r0="<<r0<<", geomFactor="<<geomFactor				<<", Rt="<<Rt<<", R="<<R<<endl;
+
 	} else {
-		R = 0;
+		R = R0;
 	}
-	return R + R0;
+
+	return R ;
+
 }
 
 } /* namespace libforefire */
