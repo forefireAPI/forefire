@@ -41,17 +41,17 @@ Certain commands, specifically :ref:`FireFront <cmd-FireFront>` and :ref:`FireNo
 - An inner ``FireFront`` (representing an unburned island within another `FireFront`) would be indented relative to its parent `FireFront`.
 
 .. code-block:: none
-   :caption: Example Indentation for Custom Front
+  :caption: Example Indentation for Custom Front
 
-   # FireDomain defined earlier or implicitly...
+  # FireDomain defined earlier or implicitly...
 
-       # Indented FireFront (e.g., 4 spaces)
-       FireFront[t=0]
-           # Further indented FireNode (e.g., 8 spaces total)
-           FireNode[loc=(100,100,0);t=0]
-           FireNode[loc=(200,100,0);t=0]
-           FireNode[loc=(150,150,0);t=0]
-           # ... potentially more nodes defining the outer perimeter
+      # Indented FireFront (e.g., 4 spaces)
+      FireFront[t=0]
+          # Further indented FireNode (e.g., 8 spaces total)
+          FireNode[loc=(100,100,0);t=0]
+          FireNode[loc=(200,100,0);t=0]
+          FireNode[loc=(150,150,0);t=0]
+          # ... potentially more nodes defining the outer perimeter
 
 
 .. important::
@@ -93,17 +93,17 @@ While the exact commands depend on the simulation, a common workflow within a ``
 
   .. code-block:: none
 
-  # Simple point ignition
-  startFire[lonlat=(9.1, 42.2); t=0] # Using geographic coordinates
+    # Simple point ignition
+    startFire[lonlat=(9.1, 42.2); t=0] # Using geographic coordinates
 
-  # --- OR ---
+    # --- OR ---
 
-  # Custom initial front (using projected coords and indentation)
-  # Ensure FireDomain covers these coordinates
-  #    FireFront[t=0]
-  #        FireNode[loc=(2500,3000,150);t=0]
-  #        FireNode[loc=(2600,3000,150);t=0]
-  #        FireNode[loc=(2550,3100,150);t=0]
+    # Custom initial front (using projected coords and indentation)
+    # Ensure FireDomain covers these coordinates
+    #    FireFront[t=0]
+    #        FireNode[loc=(2500,3000,150);t=0]
+    #        FireNode[loc=(2600,3000,150);t=0]
+    #        FireNode[loc=(2550,3100,150);t=0]
 
 
 5.  **Set Dynamic Conditions (Optional):** Introduce time-varying inputs, like wind changes.
