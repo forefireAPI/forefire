@@ -2818,8 +2818,11 @@ namespace libforefire
         }
 
         if (scmd == "help[]" || scmd == "help") {
-            std::cout << "Available ForeFire commands:" << std::endl;
-            std::cout << "(Use Tab for completion, second Tab for details on a specific command)" << std::endl;
+            std::cout << "\033[36m"
+            << "Available ForeFire commands:" << std::endl
+            << "Use Tab for completion, second Tab for details on a specific command"
+            << "\033[0m"
+            << std::endl;
 
             // Get the command map from the advanced editor
             const auto& cmdMan = advanced_editor::LineEditor::getCommandMan();

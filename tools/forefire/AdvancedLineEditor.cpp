@@ -36,6 +36,16 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
         " - 'ne': Northeast point (x,y,z) in meters\n"
         " - 't': Time associated with the fire domain in seconds or as an absolute ISO GMT date\n"
         " - 'opt:BBoxWSEN': Optional WGS coordinates for the north-oriented bounding box (lonWest,latSouth,lonEast,latNorth)";
+
+        m["    FireFront"] =
+        "FireFront[id=<front_id>;domain=<domain_id>;t=<time>]\n"
+        "Creates a FireFront within a FireDomain or another FireFront. The prefixed spacing defines its hierarchical level.\n"
+        "A FireFront in a FireDomain has 4 spaces before the command; an inner FireFront adds 4 more spaces.\n"
+        "Example: FireFront[id=26;domain=0;t=0]\n"
+        "Arguments:\n"
+        " - 'id': Identifier for the fire front\n"
+        " - 'domain': Domain ID where the front is created\n"
+        " - 't': Time at which the fire front is created";
     
         m["        FireNode"] =
             "FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds]\n"
@@ -51,16 +61,6 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
             " - 'opt:fdepth': Initial fire depth in meters\n"
             " - 'opt:kappa': Initial curvature factor (tan value)\n"
             " - 'opt:state': State of the node (init, moving, splitting, merging, final)";
-        
-        m["    FireFront"] =
-            "FireFront[id=<front_id>;domain=<domain_id>;t=<time>]\n"
-            "Creates a FireFront within a FireDomain or another FireFront. The prefixed spacing defines its hierarchical level.\n"
-            "A FireFront in a FireDomain has 4 spaces before the command; an inner FireFront adds 4 more spaces.\n"
-            "Example: FireFront[id=26;domain=0;t=0]\n"
-            "Arguments:\n"
-            " - 'id': Identifier for the fire front\n"
-            " - 'domain': Domain ID where the front is created\n"
-            " - 't': Time at which the fire front is created";
         
         m["@"] =
             "@t=seconds\n"
@@ -224,6 +224,11 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
             "Arguments:\n"
             " - 'host': Hostname or IP address for the server\n"
             " - 'port': Port number on which the server will listen";
+
+        m["help"] =
+            "help[]\n"
+            "Displays a list of available commands and their brief descriptions.\n"
+            "Use Tab-Tab on a specific command name for full details.";
         
         m["quit"] =
             "quit\n"
