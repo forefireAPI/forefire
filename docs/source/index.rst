@@ -9,7 +9,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
 - `Online Demo Simulator <http://forefire.univ-corse.fr/sim/dev/>`_
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting Started
 
    getting_started/introduction
@@ -18,7 +18,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    getting_started/running_the_example
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: User Guide
 
    user_guide/basic_configuration
@@ -28,7 +28,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    user_guide/core_concepts
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Reference
 
    reference/commands
