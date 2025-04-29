@@ -2,3 +2,7 @@
 .wy-nav-side .wy-menu-vertical p.caption {
   color: #F86C23 !important;
 }
+
+.wy-nav-side .wy-menu-vertical a:active {
+  background-color: rgba(248, 108, 35, 0.4) !important;
+}
