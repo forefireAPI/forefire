@@ -32,7 +32,7 @@ The repository provides a convenience script (`install-forefire.sh`) that automa
 
   .. code-block:: bash
 
-    git clone https://github.com/forefireAPI/firefront.git
+    git clone https://github.com/forefireAPI/forefire.git
     cd firefront
 
 2.  **Run the install script:**
@@ -65,7 +65,7 @@ Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't
 
   .. code-block:: bash
 
-    git clone https://github.com/forefireAPI/firefront.git
+    git clone https://github.com/forefireAPI/forefire.git
     cd firefront
 
 2.  **Install Prerequisites Manually:**

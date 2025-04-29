@@ -115,5 +115,5 @@ This project is licensed under the terms specified in the `LICENSE` file.
 
 ## Project URLs
 
-- **Homepage:** [https://github.com/forefireAPI/firefront](https://github.com/forefireAPI/firefront)
-- **Repository:** [https://github.com/forefireAPI/firefront](https://github.com/forefireAPI/firefront)
+- **Homepage:** [https://github.com/forefireAPI/forefire](https://github.com/forefireAPI/forefire)
+- **Repository:** [https://github.com/forefireAPI/forefire](https://github.com/forefireAPI/forefire)

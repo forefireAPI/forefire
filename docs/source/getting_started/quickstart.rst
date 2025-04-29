@@ -15,7 +15,7 @@ Steps
 
   .. code-block:: bash
 
-    git clone https://github.com/forefireAPI/firefront.git
+    git clone https://github.com/forefireAPI/forefire.git
 
 2.  **Build the Docker image:**
 

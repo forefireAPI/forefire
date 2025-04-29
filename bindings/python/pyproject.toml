@@ -25,5 +25,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/forefireAPI/firefront"
-Repository = "https://github.com/forefireAPI/firefront"
+Homepage = "https://github.com/forefireAPI/forefire"
+Repository = "https://github.com/forefireAPI/forefire"

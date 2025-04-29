@@ -4,8 +4,8 @@
 
 
 ---
-[![linuxCI](https://github.com/forefireAPI/firefront/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/main.yml)
-[![macOSCI](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/firefront/actions/workflows/macos.yml)
+[![linuxCI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
+[![macOSCI](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
@@ -45,7 +45,7 @@ The easiest way to get started is often using Docker and the interactive console
     
     ``` bash
     # Clone the repository
-    git clone https://github.com/forefireAPI/firefront.git
+    git clone https://github.com/forefireAPI/forefire.git
     cd firefront
     ```
 
