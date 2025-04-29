@@ -49,3 +49,4 @@ tests/python/log.txt
 tests/python/runROS.bash
 changeLicense.py
 httpConnectInfo.txt
+compiled_code.txt
