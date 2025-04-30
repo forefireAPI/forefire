@@ -1,7 +1,7 @@
 Quick Start
 ===========
 
-This guide shows the quickest way to **see ForeFire in action** using its interactive web console, powered by **Docker**. This method bundles all dependencies, so you don't need to install them on your host system, and is the only way to run ForeFire on Windows.
+This guide shows the quickest way to get the standard **ForeFire example simulation running** using its interactive web console, powered by Docker. This method bundles all dependencies, so you don't need to install them on your host system, and is the only way to run ForeFire on Windows.
 
 Prerequisites
 -------------
@@ -15,7 +15,7 @@ Steps
 
   .. code-block:: bash
 
-    git clone https://github.com/forefireAPI/firefront.git
+    git clone https://github.com/forefireAPI/forefire.git
 
 2.  **Build the Docker image:**
 
