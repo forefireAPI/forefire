@@ -3,27 +3,42 @@ name: Linux
 on:
   push:
     branches:
-      - "master" 
-      # - "dev-ci"
+      - "master"
+      - "dev-ci"
   pull_request:
     branches: [ "master" ]
 
   workflow_dispatch:
 
 jobs:
-  
   build-native:
-
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies (Build + Test)
+        run: |
+          sudo apt-get update -y
+          # Install essentials, Python, pip, and NetCDF C libs
+          sudo apt-get install -y --no-install-recommends \
+                build-essential \
+                python3 \
+                python3-pip \
+                libnetcdf-dev
+          # Install Python test libraries
+          pip3 install --no-cache-dir \
+                lxml \
+                xarray \
+                netCDF4
 
       - name: ForeFire build
         run: sudo bash ./install-forefire.sh -y
 
-      - name: Check version
+      - name: Check ForeFire version
         run: ./bin/forefire -v
 
-      # - name: Test
-      #   run: cd tests && bash run.bash
+      - name: Run 'runff' Test (KML and NetCDF)
+        run: |
+          cd tests/runff
+          bash ff-run.bash

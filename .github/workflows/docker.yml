@@ -4,14 +4,14 @@ on:
   push:
     branches:
       - "master"
-      - "dev-ci"
+      # - "dev-ci"
   pull_request:
     branches: [ "master" ]
 
   workflow_dispatch:
 
 jobs:
-  
+
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +27,3 @@ jobs:
       - name: Check ForeFire version inside Docker
         run: |
           docker run --rm forefire:latest forefire -v
-
-      # - name: Run KML test inside Docker container
-      #   run: |
-      #     docker run --rm forefire:latest bash -c 'cd /path/to/forefire/tests/runff && bash run.bash'
