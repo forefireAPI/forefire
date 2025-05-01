@@ -14,7 +14,6 @@ jobs:
   
   docker:
     runs-on: ubuntu-latest
-    needs: build-native
     steps:
       - uses: actions/checkout@v3
       
