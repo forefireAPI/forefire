@@ -73,18 +73,15 @@ int ForeFire::startShell(int argc, char* argv[]) {
         }
     }
 
-    end_option_parsing:; // Label for the goto jump
+    end_option_parsing:;
 
-    // --- Execution Logic ---
     if (startListenHttpMode) {
-        // Execute listenHTTP directly with defaults
-        cout << "Starting ForeFire in listenHTTP mode..." << endl;
 
-        // It's good practice to ensure standalone mode
+        cout << "" << endl;
+
         string standAlone = "setParameter[runmode=standalone]";
         executor.ExecuteCommand(standAlone);
 
-        // Execute the default listenHTTP command
         string listenCommand = "listenHTTP[]";
         executor.ExecuteCommand(listenCommand);
 

@@ -73,7 +73,7 @@ namespace http_command {
             server_thread = std::thread(&HttpCommandServer::acceptLoop, this);
             std::cout 
                 << "\033[35m"   // start color
-                << "HTTP command server listening at http://localhost:" << port
+                << "ForeFire HTTP command server listening at http://localhost:" << port
                 << "\033[0m"
                 << std::endl;
 
