@@ -37,7 +37,7 @@ BIN_PATH="$PROJECT_ROOT/bin"
 mkdir -p build
 cd build
 cmake ../
-make
+make -j"$(nproc)"
 
 echo -e "\n=== ForeFire has been installed to $BIN_PATH ===\n"
 
