@@ -1,0 +1,28 @@
+# ForeFire Basic Simulation Example
+# REQUIRES: data.nc and fuels.csv in the current directory.
+
+# --- Parameters ---
+setParameter[fuelsTableFile=fuels.csv]
+setParameter[spatialIncrement=3]
+setParameter[perimeterResolution=10]
+setParameter[propagationModel=Rothermel]
+setParameter[dumpMode=geojson]
+setParameter[ForeFireDataDirectory=.]
+
+# Optional Tuning Params (kept from original for behaviour consistency):
+setParameter[propagationSpeedAdjustmentFactor=0.6]
+setParameter[windReductionFactor=0.4]
+
+# --- Load Data & Domain ---
+loadData[data.nc;2025-02-10T17:35:54Z]
+
+# --- Ignition ---
+startFire[loc=(35881.873264425,28699.674854985,0);t=0] # Single ignition point
+
+# --- Run Simulation ---
+goTo[t=1800]
+
+# --- End ---
+# GUI uses print[] / plot[] to get data. No explicit save/print needed here.
+print[]
+# Omit quit[] if using listenHTTP
