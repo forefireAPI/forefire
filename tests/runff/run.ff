@@ -7,7 +7,7 @@ setParameter[fuelsTableFile=fuels.csv]
 setParameter[propagationModel=Rothermel]
 setParameter[dumpMode=geojson]
 
-# Optional Tuning Params (kept from original for behaviour consistency):
+# Optional Tuning Params
 setParameter[perimeterResolution=10]
 setParameter[spatialIncrement=3]
 setParameter[propagationSpeedAdjustmentFactor=0.6]

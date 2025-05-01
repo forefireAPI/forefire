@@ -131,10 +131,28 @@ void ForeFire::FFShell(ifstream* inputStream) {
             executor.ExecuteCommand(line);
         }
     } else {
-        cout << "Wildfire solver ForeFire Version :" << ff_version << endl;
-        cout << "Copyright (C) 2025 CNRS/Univ.Corsica " << endl;
-        cout << "Comes with ABSOLUTELY NO WARRANTY " << endl;
-        cout << "Type 'help[]' for commands" << endl;
+
+        const char* logoFF = R"(
+            ██████╗ ██████╗
+            ██╔═══╝ ██╔═══╝
+            ██████╗ ██████╗
+            ██╔═══╝ ██╔═══╝
+            ██║     ██║
+            ╚═╝     ╚═╝
+        )";
+        
+        cout << logoFF << endl;
+        cout << "  =================================================" << endl;
+        cout << "      ForeFire - Wildfire Propagation Simulator" << endl;
+        cout << "  =================================================" << endl;
+        cout << "  Version:   " << ff_version << endl;
+        cout << "  License:   See LICENSE file (ABSOLUTELY NO WARRANTY)" << endl;
+        cout << "  Copyright (C) 2025 CNRS/Univ.Corsica" << endl;
+        cout << endl;
+        cout << "  Type 'help[]' for a list of commands." << endl;
+        cout << "  Use Tab for auto-completion." << endl; // Add hint about completion
+        cout << endl;
+
         std::string line;
         while (true) {
             line = advanced_editor::LineEditor::getLine("forefire> ");
