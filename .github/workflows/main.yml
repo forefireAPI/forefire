@@ -54,21 +54,25 @@ jobs:
         # Use && for safer execution flow
         # Check exit code explicitly
         # Wrap ForeFire call in strace
+
+      - name: Run 'runff' Test (Check Files, No strace)
         run: |
           cd tests/runff
-          echo "--- Running ForeFire with strace ---"
-          # Execute ForeFire under strace, logging output to strace_output.txt
-          strace -o strace_output.txt ../../bin/forefire -i real_case.ff
+          echo "--- Running ForeFire ---"
+          # Run ForeFire normally first
+          ../../bin/forefire -i real_case.ff
           FOREFIRE_EXIT_CODE=$?
           echo "--- ForeFire Exited with Code: $FOREFIRE_EXIT_CODE ---"
-          # Display last few lines of strace output
-          echo "--- Last lines of strace output ---"
-          tail -n 50 strace_output.txt || echo "strace output file not found or empty."
-          # Fail explicitly if ForeFire exited with non-zero code
+
+          echo "--- Listing files in $(pwd) ---"
+          ls -la
+
+          # Fail if ForeFire failed
           if [ $FOREFIRE_EXIT_CODE -ne 0 ]; then
             echo "ForeFire failed with exit code $FOREFIRE_EXIT_CODE"
             exit $FOREFIRE_EXIT_CODE
           fi
+
           # Proceed with verification script only if ForeFire succeeded
           echo "--- Running Verification Script ---"
           bash ff-run.bash
