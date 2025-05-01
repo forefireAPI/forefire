@@ -89,11 +89,11 @@ int ForeFire::startShell(int argc, char* argv[]) {
         executor.ExecuteCommand(listenCommand);
 
         // Keep the main thread alive indefinitely
-        cout << "HTTP server started. Process waiting... (Press Ctrl+C to exit)" << endl;
+        cout << "(Press Ctrl+C to exit)" << endl;
         while (true) {
-            sleep(3600); // Wait loop
+            sleep(3600);
         }
-        // This part is effectively unreachable in normal operation
+        
         return 0;
 
     } else {
