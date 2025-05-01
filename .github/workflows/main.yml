@@ -7,7 +7,6 @@ on:
       - "dev-ci"
   pull_request:
     branches: [ "master" ]
-
   workflow_dispatch:
 
 jobs:
@@ -16,17 +15,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Install Dependencies (Build + Test)
         run: |
           sudo apt-get update -y
-          # Install essentials, Python, pip, and NetCDF C libs
+          # Install build tools required by install-forefire.sh and general use
           sudo apt-get install -y --no-install-recommends \
                 build-essential \
+                cmake
+          # Install NetCDF libraries needed for BUILD (C++ legacy) and TEST (C base for Python)
+          sudo apt-get install -y --no-install-recommends \
+                libnetcdf-dev \
+                libnetcdf-c++4-dev
+          # Install Python and pip
+          sudo apt-get install -y --no-install-recommends \
                 python3 \
-                python3-pip \
-                libnetcdf-dev
-          # Install Python test libraries
+                python3-pip
+
+          # --- Install Python TEST dependencies ---
           pip3 install --no-cache-dir \
                 lxml \
                 xarray \
@@ -38,7 +46,17 @@ jobs:
       - name: Check ForeFire version
         run: ./bin/forefire -v
 
+      - name: Add Build/Runtime Diagnostics (Optional but helpful)
+        run: |
+          echo "--- ForeFire Linkage ---"
+          # Check dynamic linkage against NetCDF libraries
+          ldd ./bin/forefire | grep -i 'netcdf' || echo "Warning: NetCDF library not dynamically linked?"
+          echo "--- data.nc Format ---"
+          # Install ncdump tool and check the format kind of the input NetCDF
+          sudo apt-get install -y --no-install-recommends netcdf-bin
+          ncdump -k tests/runff/data.nc || echo "Could not check data.nc format (ncdump failed)"
+
       - name: Run 'runff' Test (KML and NetCDF)
         run: |
           cd tests/runff
-          bash ff-run.bash
+          bash ff-run.bash # Ensure this is the correct name of your test script
