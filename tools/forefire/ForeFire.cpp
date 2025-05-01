@@ -33,33 +33,72 @@ ForeFire::ForeFire() : executor() {}
 ForeFire::~ForeFire() {}
 
 void ForeFire::usage(const char* name) {
-    cout << "usage: " << name << " [-i file] [-o file]" << endl;
-    cout << " -i: input command file" << endl;
-    cout << " -o: output command file" << endl;
+    cout << "usage: " << name << " [-i file] [-l] [-v] [-w file]" << endl;
+    cout << " -i file: input command file" << endl;
+    cout << " -l     : Start directly in listenHTTP mode" << endl;
+    cout << " -v     : print version" << endl;
+    cout << " -w file: web shell mode" << endl;
+
 }
 
 int ForeFire::startShell(int argc, char* argv[]) {
     ifstream* inputStream = nullptr;
     int fileopt;
     int EOO = -1;
-    while ((fileopt = getopt(argc, argv, "w:i:o:v")) != EOO) {
-        if (fileopt == 'v') {
-            cout << ff_version << endl;
-            return 1;
-        }
-        if (fileopt == 'w') {
-            FFWebShell(optarg);
-            return 1;
-        } else if (fileopt == 'i') {
-            inputStream = new ifstream(optarg);
-            if (!inputStream) {
-                cout << "wrong input file, check your settings..." << optarg << endl;
-            }
+    bool startListenHttpMode = false;
+    while ((fileopt = getopt(argc, argv, "w:i:o:vl")) != EOO) {
+        switch (fileopt) {
+            case 'l':
+                startListenHttpMode = true;
+                goto end_option_parsing;
+
+            case 'v':
+                cout << ff_version << endl;
+                return 1;
+            case 'w':
+                FFWebShell(optarg);
+                return 1;
+            case 'i':
+                inputStream = new ifstream(optarg);
+                if (!inputStream || !inputStream->is_open()) {
+                    cerr << "Error: Could not open input file: " << optarg << endl;
+                    delete inputStream;
+                    return 1;
+                }
+                break;
+            case '?': // Handle unknown options or missing args for options requiring one
+            default:
+                usage(argv[0]);
+                return 1;
         }
     }
-    FFShell(inputStream);
-    delete inputStream;
-    return 1;
+
+    end_option_parsing:;
+
+    if (startListenHttpMode) {
+
+        cout << "" << endl;
+
+        string standAlone = "setParameter[runmode=standalone]";
+        executor.ExecuteCommand(standAlone);
+
+        string listenCommand = "listenHTTP[]";
+        executor.ExecuteCommand(listenCommand);
+
+        // Keep the main thread alive indefinitely
+        cout << "(Press Ctrl+C to exit)" << endl;
+        while (true) {
+            sleep(3600);
+        }
+        
+        return 0;
+
+    } else {
+
+        FFShell(inputStream);
+        delete inputStream;
+        return 0; // Normal exit for non-server mode
+    }
 }
 
 void ForeFire::FFWebShell(char* path) {
@@ -89,10 +128,28 @@ void ForeFire::FFShell(ifstream* inputStream) {
             executor.ExecuteCommand(line);
         }
     } else {
-        cout << "Wildfire solver ForeFire Version :" << ff_version << endl;
-        cout << "Copyright (C) 2025 CNRS/Univ.Corsica " << endl;
-        cout << "Comes with ABSOLUTELY NO WARRANTY " << endl;
-        cout << "Type 'help[]' for commands" << endl;
+
+        const char* logoFF = R"(
+            ██████╗ ██████╗
+            ██╔═══╝ ██╔═══╝
+            ██████╗ ██████╗
+            ██╔═══╝ ██╔═══╝
+            ██║     ██║
+            ╚═╝     ╚═╝
+        )";
+        
+        cout << logoFF << endl;
+        cout << "  =================================================" << endl;
+        cout << "      ForeFire - Wildfire Propagation Simulator" << endl;
+        cout << "  =================================================" << endl;
+        cout << "  Version:   " << ff_version << endl;
+        cout << "  License:   See LICENSE file (ABSOLUTELY NO WARRANTY)" << endl;
+        cout << "  Copyright (C) 2025 CNRS/Univ.Corsica" << endl;
+        cout << endl;
+        cout << "  Type 'help[]' for a list of commands." << endl;
+        cout << "  Use Tab for auto-completion." << endl; // Add hint about completion
+        cout << endl;
+
         std::string line;
         while (true) {
             line = advanced_editor::LineEditor::getLine("forefire> ");
