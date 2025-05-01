@@ -50,10 +50,6 @@ jobs:
           sudo apt-get install -y --no-install-recommends netcdf-bin
           ncdump -k tests/runff/data.nc || echo "Could not check data.nc format"
 
-      - name: Run 'runff' Test (with strace Debugging)
-        # Use && for safer execution flow
-        # Check exit code explicitly
-        # Wrap ForeFire call in strace
 
       - name: Run 'runff' Test (Check Files, No strace)
         run: |
