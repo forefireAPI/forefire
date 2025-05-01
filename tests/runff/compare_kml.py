@@ -1,6 +1,3 @@
-# tests/runff/compare_kml.py
-# (Use the exact script provided in the previous response - it parses KML and compares coordinates with tolerance)
-# Make sure it's saved in tests/runff/
 import sys
 import math
 import xml.etree.ElementTree as ET
