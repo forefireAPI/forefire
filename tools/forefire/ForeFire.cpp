@@ -33,33 +33,75 @@ ForeFire::ForeFire() : executor() {}
 ForeFire::~ForeFire() {}
 
 void ForeFire::usage(const char* name) {
-    cout << "usage: " << name << " [-i file] [-o file]" << endl;
-    cout << " -i: input command file" << endl;
-    cout << " -o: output command file" << endl;
+    cout << "usage: " << name << " [-i file] [-l] [-v] [-w file]" << endl;
+    cout << " -i file: input command file" << endl;
+    cout << " -l     : Start directly in listenHTTP mode" << endl;
+    cout << " -v     : print version" << endl;
+    cout << " -w file: web shell mode" << endl;
+
 }
 
 int ForeFire::startShell(int argc, char* argv[]) {
     ifstream* inputStream = nullptr;
     int fileopt;
     int EOO = -1;
-    while ((fileopt = getopt(argc, argv, "w:i:o:v")) != EOO) {
-        if (fileopt == 'v') {
-            cout << ff_version << endl;
-            return 1;
-        }
-        if (fileopt == 'w') {
-            FFWebShell(optarg);
-            return 1;
-        } else if (fileopt == 'i') {
-            inputStream = new ifstream(optarg);
-            if (!inputStream) {
-                cout << "wrong input file, check your settings..." << optarg << endl;
-            }
+    bool startListenHttpMode = false;
+    while ((fileopt = getopt(argc, argv, "w:i:o:vl")) != EOO) {
+        switch (fileopt) {
+            case 'l':
+                startListenHttpMode = true;
+                goto end_option_parsing;
+
+            case 'v':
+                cout << ff_version << endl;
+                return 1;
+            case 'w':
+                FFWebShell(optarg);
+                return 1;
+            case 'i':
+                inputStream = new ifstream(optarg);
+                if (!inputStream || !inputStream->is_open()) {
+                    cerr << "Error: Could not open input file: " << optarg << endl;
+                    delete inputStream;
+                    return 1;
+                }
+                break;
+            case '?': // Handle unknown options or missing args for options requiring one
+            default:
+                usage(argv[0]);
+                return 1;
         }
     }
-    FFShell(inputStream);
-    delete inputStream;
-    return 1;
+
+    end_option_parsing:; // Label for the goto jump
+
+    // --- Execution Logic ---
+    if (startListenHttpMode) {
+        // Execute listenHTTP directly with defaults
+        cout << "Starting ForeFire in listenHTTP mode..." << endl;
+
+        // It's good practice to ensure standalone mode
+        string standAlone = "setParameter[runmode=standalone]";
+        executor.ExecuteCommand(standAlone);
+
+        // Execute the default listenHTTP command
+        string listenCommand = "listenHTTP[]";
+        executor.ExecuteCommand(listenCommand);
+
+        // Keep the main thread alive indefinitely
+        cout << "HTTP server started. Process waiting... (Press Ctrl+C to exit)" << endl;
+        while (true) {
+            sleep(3600); // Wait loop
+        }
+        // This part is effectively unreachable in normal operation
+        return 0;
+
+    } else {
+
+        FFShell(inputStream);
+        delete inputStream;
+        return 0; // Normal exit for non-server mode
+    }
 }
 
 void ForeFire::FFWebShell(char* path) {
