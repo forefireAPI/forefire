@@ -15,9 +15,8 @@ setParameter[windReductionFactor=0.4]
 
 # --- Load Data & Domain ---
 loadData[data.nc;2025-02-10T17:35:54Z]
-
 # --- Ignition ---
-startFire[loc=(35882.873264425,28698.674854985,0);t=0]
+startFire[lonlat=(8.70, 41.952, 0);t=0]
 
 # --- Run Simulation ---
 goTo[t=3600]
