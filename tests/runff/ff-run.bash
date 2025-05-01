@@ -4,9 +4,10 @@ set -e
 
 GENERATED_KML="real_case.kml"
 REFERENCE_KML="real_case.kml.ref"
-# GENERATED_NC="ForeFire.0.nc"  # Not checked yet
-# REFERENCE_NC="ForeFire.0.nc.ref" # Not checked yet
+GENERATED_NC="ForeFire.0.nc"
+REFERENCE_NC="ForeFire.0.nc.ref"
 
+# --- Simulation ---
 FOREFIRE_EXE="../../bin/forefire"
 
 echo "Running ForeFire simulation (real_case)..."
@@ -14,25 +15,20 @@ $FOREFIRE_EXE -i real_case.ff
 
 # --- Verification ---
 echo "Verifying KML output..."
-
-if ! command -v python3 &> /dev/null
-then
-    echo "Error: python3 command not found. Please install Python 3."
-    exit 1
-fi
-
-if [ ! -f compare_kml.py ]; then
-    echo "Error: compare_kml.py script not found in current directory."
-    exit 1
-fi
+# Make sure python3 is available and comparison script exists
+if ! command -v python3 &> /dev/null; then echo "Error: python3 required."; exit 1; fi
+if [ ! -f compare_kml.py ]; then echo "Error: compare_kml.py not found."; exit 1; fi
 
 python3 compare_kml.py "$GENERATED_KML" "$REFERENCE_KML"
 echo "KML verification passed."
 
-# --- NetCDF Check (Commented Out) ---
-# echo "Verifying NetCDF output... (SKIPPED)"
-# python3 compare_nc.py "$GENERATED_NC" "$REFERENCE_NC"
-# echo "NetCDF verification passed."
+echo "Verifying NetCDF output..."
+if [ ! -f compare_nc.py ]; then echo "Error: compare_nc.py not found."; exit 1; fi
+# Check if the expected output NetCDF file was actually created
+if [ ! -f "$GENERATED_NC" ]; then echo "Error: Expected NetCDF output file '$GENERATED_NC' not found."; exit 1; fi
 
-echo "Minimal KML test passed for runff."
+python3 compare_nc.py "$GENERATED_NC" "$REFERENCE_NC"
+echo "NetCDF verification passed."
+
+echo "All KML and NetCDF verifications passed for runff test."
 exit 0
