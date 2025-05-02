@@ -1,0 +1,29 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - "master"
+      # - "dev-ci"
+  pull_request:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+jobs:
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: docker build -t forefire:latest .
+
+      - name: Check ForeFire version inside Docker
+        run: |
+          docker run --rm forefire:latest forefire -v
