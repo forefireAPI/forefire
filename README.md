@@ -13,7 +13,7 @@
 [![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
 
-**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models, handles complex geospatial data, and enables high-fidelity coupled fire-atmosphere simulations.
+**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models and enables high-fidelity coupled fire-atmosphere simulations, aiming to improve wildfire prediction and understanding for complex environments.
 
 
 **Key Links:**
@@ -46,7 +46,7 @@ The easiest way to get started is often using Docker and the interactive console
     ``` bash
     # Clone the repository
     git clone https://github.com/forefireAPI/forefire.git
-    cd firefront
+    cd forefire
     ```
 
 2. Build the Docker image 
@@ -93,10 +93,16 @@ See the Full Documentation for more details on building from source with the `in
 ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
 
 ## Contributing
-Contributions are welcome! Whether it's reporting a bug, suggesting an enhancement, or submitting code changes. We especially appreciate help with:
+
+We welcome contributions to ForeFire! We especially appreciate help with:
+
 - Improving documentation and tutorials.
 - Python bindings
 - Enhancing packaging (Docker, Pip, etc.) and cross-platform compatibility.
+
+ Please read our **[Contributing Guidelines](CONTRIBUTING.md)** to learn how you can help, including how to report bugs, suggest features, and submit code changes.
+
+All contributors are expected to adhere to our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
 
 
 ## License
