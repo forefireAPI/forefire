@@ -29,7 +29,7 @@ This is the simplest way to run a simulation non-interactively by feeding the en
 
 1.  **Navigate to the test directory:**
   
-  Ensure your terminal's current directory is the root of the cloned `firefront` repository. Then navigate:
+  Ensure your terminal's current directory is the root of the cloned `forefire` repository. Then navigate:
 
   .. code-block:: bash
 

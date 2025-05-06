@@ -33,7 +33,7 @@ The repository provides a convenience script (`install-forefire.sh`) that automa
   .. code-block:: bash
 
     git clone https://github.com/forefireAPI/forefire.git
-    cd firefront
+    cd forefire
 
 2.  **Run the install script:**
 
@@ -66,7 +66,7 @@ Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't
   .. code-block:: bash
 
     git clone https://github.com/forefireAPI/forefire.git
-    cd firefront
+    cd forefire
 
 2.  **Install Prerequisites Manually:**
 
@@ -102,21 +102,21 @@ The main executable `forefire` will be located at `../bin/forefire` (relative to
 
   .. code-block:: bash
 
-    # Execute this from the root of the firefront repository
+    # Execute this from the root of the forefire repository
     export PATH=$PATH:`pwd`/bin
 
   **Permanently:**
 
-  Add the following line to your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`, or `~/.config/fish/config.fish`). Replace `/path/to/firefront` with the actual absolute path to the cloned repository.
+  Add the following line to your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`, or `~/.config/fish/config.fish`). Replace `/path/to/forefire` with the actual absolute path to the cloned repository.
 
   .. code-block:: bash
 
-    export PATH="/path/to/firefront/bin:$PATH"
+    export PATH="/path/to/forefire/bin:$PATH"
 
-  *Optional:* The install script also sets `export FOREFIREHOME="/path/to/firefront"`. You may want to add this line as well, as some scripts or components might potentially use it.
+  *Optional:* The install script also sets `export FOREFIREHOME="/path/to/forefire"`. You may want to add this line as well, as some scripts or components might potentially use it.
 
   .. code-block:: bash
 
-    export FOREFIREHOME="/path/to/firefront"
+    export FOREFIREHOME="/path/to/forefire"
 
   After editing your configuration file, either restart your terminal or reload the configuration (e.g., `source ~/.bashrc`).
