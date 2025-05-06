@@ -10,15 +10,15 @@ These classes represent the primary entities in a wildfire simulation.
 
 .. doxygenclass:: libforefire::FireDomain
    :project: ForeFire
-   :members: getDomainFront, addFireFront, addFireNode, getDataBroker, getPropagationSpeed, setTimeTable, getSimulationTime, SWCorner, NECorner
+   :members:
 
 .. doxygenclass:: libforefire::FireFront
    :project: ForeFire
-   :members: getHead, addFireNode, split, merge, getNumFN, isExpanding, getTime
+   :members:
 
 .. doxygenclass:: libforefire::FireNode
    :project: ForeFire
-   :members: getLoc, getVel, getNormal, getSpeed, getFrontDepth, getCurvature, setFront, getTime, getState
+   :members:
 
 Data Management
 ---------------
@@ -27,12 +27,11 @@ These classes are central to how ForeFire handles environmental and simulation d
 
 .. doxygenclass:: libforefire::DataBroker
    :project: ForeFire
-   :members: getLayer, getFluxLayer, registerPropagationModel, registerFluxModel, getPropagationData, getFluxData
+   :members:
 
 .. doxygenclass:: libforefire::DataLayer
    :project: ForeFire
-   :members: getKey, getValueAt, getMatrix
-   :outline:
+   :members:
 
 .. rubric:: Note
    ForeFire provides various specializations of ``DataLayer`` (e.g., for 2D/3D arrays, NetCDF files, fuel properties, atmospheric data) to handle different data sources and types. Refer to the full Doxygen documentation for details on specific implementations like ``Array2DdataLayer``, ``NCXYZTDataLayer``, ``FuelDataLayer``, etc.
@@ -44,11 +43,11 @@ These abstract base classes define how new scientific models for fire spread and
 
 .. doxygenclass:: libforefire::PropagationModel
    :project: ForeFire
-   :members: getName, getSpeedForNode, getSpeed
+   :members:
 
 .. doxygenclass:: libforefire::FluxModel
    :project: ForeFire
-   :members: getName, getValueAt, getValue
+   :members:
 
 User Interaction & Configuration
 --------------------------------
@@ -57,11 +56,11 @@ These components manage user commands and simulation parameters.
 
 .. doxygenclass:: libforefire::Command
    :project: ForeFire
-   :members: ExecuteCommand, getDomain, setParameter, getParameter
+   :members:
 
 .. doxygenclass:: libforefire::SimulationParameters
    :project: ForeFire
-   :members: GetInstance, setParameter, getParameter, getDouble, getInt
+   :members:
 
 Fundamental Utilities
 ---------------------
