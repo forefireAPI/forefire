@@ -9,7 +9,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-[![Documentation Status](https://readthedocs.org/projects/firefront/badge/?version=latest)](https://firefront.readthedocs.io/en/latest/?badge=latest) 
+[![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest) 
 [![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
 
@@ -17,7 +17,7 @@
 
 
 **Key Links:**
-- 📚 **Full Documentation:** [forefire.readthedocs.io](https://firefront.readthedocs.io/en/latest/)
+- 📚 **Full Documentation:** [forefire.readthedocs.io](https://forefire.readthedocs.io/en/latest/)
 - 🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
 - 🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
 
