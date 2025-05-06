@@ -58,7 +58,7 @@ Steps
 
     forefire> listenHTTP[]
 
-  You should see output like: `>> HTTP command server listening at http://localhost:8000`
+  You should see the output : `>> ForeFire HTTP command server listening at http://localhost:8000`
 
 7.  **Access the Web Console:**
 

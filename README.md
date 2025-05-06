@@ -74,7 +74,7 @@ The easiest way to get started is often using Docker and the interactive console
     forefire> listenHTTP[]
 
     # the output should be
-    >> HTTP command server listening at http://localhost:8000
+    >> ForeFire HTTP command server listening at http://localhost:8000
     ```
 
     This server provides a grafical user interface that you can access on your browser at http://localhost:8000/
