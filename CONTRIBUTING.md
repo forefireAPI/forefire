@@ -47,7 +47,7 @@ We welcome code contributions, from bug fixes to new features.
 
 2.  **Set Up Development Environment:**
 
-    Follow the instructions in the [Installation Guide](https://firefront.readthedocs.io/en/latest/getting_started/installation.html) to build ForeFire from source. *(Update link if RTD URL changes)*
+    Follow the instructions in the [Installation Guide](https://forefire.readthedocs.io/en/latest/getting_started/installation.html) to build ForeFire from source. *(Update link if RTD URL changes)*
 
 3.  **Fork the Repository:**
 
@@ -64,7 +64,7 @@ We welcome code contributions, from bug fixes to new features.
     Implement your code changes, following existing coding style and conventions where possible.
 6.  **Add Tests (if applicable):**
 
-    For new features or significant bug fixes, please add corresponding tests or update existing ones. See the [Testing Documentation](https://firefront.readthedocs.io/en/latest/developer_guide/testing.html) *(Placeholder: Link to testing section once created)* for details on how to run tests. Ensure all tests pass locally.
+    For new features or significant bug fixes, please add corresponding tests or update existing ones. See the [Testing Documentation](https://forefire.readthedocs.io/en/latest/developer_guide/testing.html) *(Placeholder: Link to testing section once created)* for details on how to run tests. Ensure all tests pass locally.
     ```bash
     # Example command to run tests (adjust as needed)
     cd tests && bash run.bash
