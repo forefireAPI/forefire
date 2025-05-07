@@ -6,7 +6,7 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 # Determine current directory (where setup.py resides)
 this_dir = os.path.abspath(os.path.dirname(__file__))
-# Compute the top-level ForeFire directory (two levels up: bindings/python -> bindings -> firefront)
+# Compute the top-level ForeFire directory (two levels up: bindings/python -> bindings -> forefire)
 FOREFIRE_DIR = os.path.abspath(os.path.join(this_dir, "..", ".."))
 FOREFIRE_LIB = "forefireL"  # as used in lib/libforefireL.dylib (or .so/.dll)
 

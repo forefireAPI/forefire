@@ -29,7 +29,7 @@ This is the simplest way to run a simulation non-interactively by feeding the en
 
 1.  **Navigate to the test directory:**
   
-  Ensure your terminal's current directory is the root of the cloned `firefront` repository. Then navigate:
+  Ensure your terminal's current directory is the root of the cloned `forefire` repository. Then navigate:
 
   .. code-block:: bash
 
@@ -100,15 +100,29 @@ This method uses the built-in HTTP server to provide a web-based console and map
 
     cd tests/runff
 
-2.  **Start the ForeFire interpreter** (as shown in Method 2, ensuring you start it from *within* the `tests/runff` directory for simplicity with file paths in the next steps).
+2.  **Start the ForeFire interpreter and launch the HTTP server:**
 
-3.  **Launch the HTTP server:**
+  Assuming ``forefire`` is in your PATH:
+  
+  .. code-block:: bash
+
+    forefire
   
   At the ``forefire>`` prompt, type:
 
   .. code-block:: none
 
     forefire> listenHTTP[]
+
+  You should see the output: `>> ForeFire HTTP command server listening at http://localhost:8000`.
+
+  **Alternative Shortcut** using ``-l`` (listen) flag:
+
+  Alternatively, to launch the HTTP server directly without entering the interactive console first, you can use the `-l` command-line option. This is convenient if you primarily want to use the web interface.
+
+  .. code-block:: none
+
+    forefire -l
 
 4.  **Use the Web Interface:**
 
