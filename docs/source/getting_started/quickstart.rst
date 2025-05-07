@@ -23,7 +23,7 @@ Steps
   
   .. code-block:: bash
 
-    cd firefront
+    cd forefire
     docker build . -t forefire:latest
 
   This might take a few minutes the first time as it downloads base images and installs dependencies inside the Docker build environment.
@@ -58,7 +58,7 @@ Steps
 
     forefire> listenHTTP[]
 
-  You should see output like: `>> HTTP command server listening at http://localhost:8000`
+  You should see the output : `>> ForeFire HTTP command server listening at http://localhost:8000`
 
 7.  **Access the Web Console:**
 

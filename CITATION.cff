@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+message: "If you use ForeFire in your work, please cite it using the metadata below."
+
+authors:
+  - given-names: Jean-Baptiste
+    family-names: Filippi
+    # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX # TODO: Add J-B's ORCID (use the full URL format)
+    affiliation: "SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France" # TODO: Verify exact affiliation name
+
+  # TODO: Add any other major contributors who should be listed as authors of the software
+
+title: "ForeFire: An Open-Source C++ Engine for High-Performance Wildfire Simulation"
+
+# version: Use the version number that is being submitted/reviewed.
+version: "2.0.0"
+
+# doi: Uncomment and add the software DOI after archiving the reviewed version on Zenodo/Figshare.
+# Do NOT use the DOI of the 2014 paper here.
+# doi: 10.5281/zenodo.XXXXXXX
+
+# date-released: Set this to the date of the release corresponding to the 'version'.
+date-released: 2025-04-29
+
+url: "https://github.com/forefireAPI/forefire"
+license: GPL-3.0-only
+
+keywords:
+  - C++
+  - Python
+  - wildfire simulation
+  - fire behavior modeling
+  - high-performance computing
+  - fire-atmosphere coupling
+  - numerical modeling
+
+# Optional: Add preferred-citation once the JOSS paper is accepted/published
+# preferred-citation:
+#   type: article
+#   authors:
+#     # List authors of the JOSS paper here, matching paper.md
+#     - given-names: Jean-Baptiste
+#       family-names: Filippi
+#       # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX
+#       affiliation: "SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France"
+#   title: "ForeFire: An Open-Source C++ Engine for High-Performance Wildfire Simulation" # Title of the JOSS paper
+#   journal: "Journal of Open Source Software"
+#   # volume: X # JOSS will assign
+#   # issue: Y # JOSS will assign
+#   # year: ZZZZ # Year JOSS paper published
+#   doi: "10.21105/joss.XXXXX" # TODO: Add the JOSS paper DOI once assigned

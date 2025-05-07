@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "master"
-      - "dev-ci"
+      - "dev"
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true # Keep enabled as you use LFS
+          lfs: true # we use LFS to store large files (e.g. data.nc)
 
       - name: Install Dependencies (Build + Test)
         run: |
@@ -39,7 +39,6 @@ jobs:
       - name: Check ForeFire version
         run: ./bin/forefire -v
 
-      # --- KEEPING DIAGNOSTIC STEPS ---
       - name: Add Build/Runtime Diagnostics
         run: |
           echo "--- ForeFire Linkage ---"
@@ -49,7 +48,6 @@ jobs:
           # Install ncdump tool and check the format kind
           sudo apt-get install -y --no-install-recommends netcdf-bin
           ncdump -k tests/runff/data.nc || echo "Could not check data.nc format"
-      # --- END DIAGNOSTIC STEPS ---
 
       - name: Run 'runff' Test Script
         run: |
