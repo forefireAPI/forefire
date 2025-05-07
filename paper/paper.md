@@ -63,49 +63,29 @@ authors:
     affiliation: 1
     corresponding: false
   - name: Antonio Leblanc
-    orcid: XXXX-XXXX-XXXX-XXXX 
     affiliation: 4
     corresponding: false
   - name: Alberto Alonso-Pinar
     orcid: 0009-0009-2051-9700
-    affiliation: 1
+    affiliation: "1,2"
     corresponding: false
 
 affiliations:
  - name: SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France # TODO: Verify exact affiliation wording and add ROR if available
    index: 1
    ror: 016nwev19 # Example ROR for University of Corsica
-
-authors:
-* name: Jean-Baptiste Filippi
-  affiliation: 1
-  corresponding: true
-* name: Roberta Baggio
-
-  affiliation: 1
-* name: Antonio Leblanc
-  affiliation: 1
-* name: Alberto Alonso-Pinar
-  affiliation: 1
-
-
+ - name: SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France # TODO: Verify exact affiliation wording and add ROR if available
+   index: 1
+   ror: 016nwev19 # Example ROR for University of Corsica
+ - name: SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France # TODO: Verify exact affiliation wording and add ROR if available
+   index: 
+   ror: 016nwev19 # Example ROR for University of Corsica
+   
 
 date: DD Month YYYY 
 bibliography: paper.bib
 
 # Summary
-
-<!--
-Instructions for this section:
-- Write a short summary (approx. 1-2 paragraphs) describing the high-level functionality and purpose of ForeFire.
-- Target audience: A diverse, non-specialist reader from any scientific/research background.
-- AVOID jargon specific to wildfire modeling here. Focus on what the software *does* in general terms.
-- Example points: Simulates wildfire spread, uses C++ for performance, takes geospatial data, models fire physics, can couple with weather models, has different interfaces (interpreter, library, python), used for research/forecasting.
--->
-
-*TODO: J-B Filippi to write the Summary section.*
-
-<!-- ForeFire is an open-source simulation engine written in C++ designed for modeling wildland fire behavior. It allows researchers and operational users to simulate fire spread across complex landscapes using various physical models. The software takes geospatial inputs (like terrain, fuel types, and weather data) and computes the fire's progression over time. Key features include a high-performance parallel core suitable for large-scale simulations, the capability to couple with atmospheric models for studying fire-weather interactions, and multiple interfaces including a command-line interpreter, a C++ library, and Python bindings. ForeFire serves as a tool for wildfire research, risk assessment, and potentially operational forecasting support. -->
 
 **ForeFire** is a modular, high-performance wildland fire simulation engine implemented in C++. It is designed to model the spread of wildfire perimeters over large landscapes at meter scale resolution, serving both as a research platform and an operational forecasting tool. ForeFire can be used to forecast wildfires spanning thousands of hectares within seconds, supporting wildfire management operations, while also providing an open testbed for experimenting with new fire behavior, power, and fluxes models in a scientific context.
 
@@ -115,19 +95,6 @@ Eventually ForeFire is also capable of two-way coupling with the MesoNH [Cite ME
 
 # Statement of need
 
-<!--
-Instructions for this section:
-- Clearly state the research problem ForeFire addresses (e.g., need for accurate/fast wildfire prediction, understanding complex fire behaviors like coupling).
-- Place ForeFire in the context of existing software. Briefly mention limitations of other tools or gaps that ForeFire fills (e.g., performance on large scales, specific coupling features, open-source C++ core for extensibility). Cite 1-2 key alternatives (e.g., FARSITE, WRF-Fire).
-- Highlight ForeFire's unique contributions or advantages (e.g., MPI parallelism, specific coupling design, model flexibility, open-source nature).
-- Mention the intended audience/research applications.
-- This section should closely align with the 'Statement of Need' added to the main documentation but be tailored for the paper format.
-- Reference relevant papers using [@citekey] format, corresponding to entries in paper.bib.
--->
-
-*TODO: J-B Filippi to write the Statement of Need section, citing relevant literature and alternative software.*
-
-<!-- Wildfire modeling is critical for understanding fire dynamics, assessing risk, and supporting operational decisions. While several tools exist (e.g., FARSITE [@Finney1998], WRF-Fire [...]), challenges remain in simulating large, long-duration fires efficiently and accurately capturing complex phenomena like fire-atmosphere feedback [...]. ForeFire addresses these needs by providing a high-performance, open-source C++ engine built with parallelism (MPI) and direct atmospheric coupling in mind. Its architecture allows for [... specific advantages ...], enabling research into [... specific research areas ...] and providing a flexible platform for [... specific applications ...]. Compared to [...], ForeFire offers [...]. The availability of an open-source C++ core facilitates community contributions and the integration of novel physical models. -->
 
 Wildfire modeling tools have historically been split between **complex combustion research models** and **streamlined operational tools**, each with distinct limitations. On one end of the spectrum, computational combustion and fluid dynamics (CFD) based models (e.g., **FIRETEC** \[@linn\_2002] or WFDS [CITE WFDS]) provide detailed physics at flame scale but are highly computationally intensive and yet unable to provide faster than real time large wildfire forecasting. On the other end, operational wildfire simulators prioritize speed and simplicity at the expense of flexibility – they often use fixed empirical formulas and are distributed as closed-source software, making it difficult for researchers to try new modeling approaches and streamline integration in experimental frameworks. This gap between highly complex models and rigid operational tools creates a need for an intermediate solution: a wildfire simulator that is both **adaptable** and **high-performance**. **ForeFire** was developed to fill this need by bridging the flexibility of research-oriented code with the efficiency and user-friendliness of operational systems \[@filippi\_2018].
 
@@ -141,26 +108,7 @@ Many existing fire spread simulation systems illustrate the aforementioned trade
 Each of the above systems addresses certain needs (e.g., operational use, physical fidelity, or coupling) but none provides a **unified solution** that is open, modular, and performant. ForeFire distinguishes itself by combining the strengths of these approaches without their drawbacks. It uses an **event-driven, front-tracking simulation kernel** \[@filippi\_2009] that represents the fire perimeter as a set of moving markers, focusing computational effort on the active fire front. This asynchronous time-stepping method (constant-CFL discrete event simulation) yields efficient scaling to large fires while maintaining high resolution where the fire is fastest. At the same time, ForeFire’s **modular physics engine** and scripting interface allow users to *easily swap or implement new fire spread models* (from simple empirical rules to advanced semi-physical models) without changing the core code. The software can run in a standalone mode (for purely surface fire simulations) or be **coupled** with atmospheric models under a consistent interface, using similar initialization and data inputs for either mode. ForeFire’s support for **multiple language bindings** (C++ API, Python/NumPy, Fortran interface for coupling, and even a Java wrapper for GUI integration) further expands its usability across different domains. These capabilities enable **rapid prototyping** and experimentation with fire behavior algorithms – researchers can test novel modeling ideas or incorporate machine-learning-based fire spread predictions within the ForeFire framework – and also support operational needs by allowing integration into decision support pipelines and coupling with weather forecasts. In summary, ForeFire provides a unique platform that merges the flexibility of research models with the practicality of operational tools, addressing a critical need in the wildland fire modeling community \[@filippi\_2018].
 
 # Acknowledgements
-
-<!--
-Instructions for this section:
-- Acknowledge any individuals who contributed significantly but are not authors (e.g., testing, initial ideas).
-- Acknowledge any funding sources (grants, agencies) that supported the development of ForeFire. Include grant numbers if applicable.
-- Mention if sponsors had any role in the study design, data collection/analysis, decision to publish, or preparation of the manuscript. (JOSS requires disclosure).
--->
-
-*TODO: Add acknowledgements for funding, significant non-author contributions, etc.*
-<!-- 
-We acknowledge contributions from [...] during the genesis of this project. This work was supported by [Funding Agency name, Grant Number XXX] and [Other funding sources]. The sponsors had no role in [... state involvement or lack thereof ...]. We thank the anonymous reviewers for their constructive feedback. -->
-
-
-This work has been supported by the French National Research Agency under grants **ANR-09-COSI-006-01 (IDEA)** and **ANR-16-CE04-0006 (FIRECASTER)**. The authors thank all contributors and collaborators who have assisted in the development and testing of the ForeFire software.
-
+This work has been supported by the CNRS and French National Research Agency under grants **ANR-09-COSI-006-01 (IDEA)** and **ANR-16-CE04-0006 (FIRECASTER)**. The authors thank all contributors and collaborators who have assisted in the development and testing of the ForeFire software.
 
 # References
 
-<!--
-- This heading is required.
-- Pandoc (the tool JOSS uses) will automatically generate the reference list here based on the citations used in the text above (e.g., [@Filippi2014]) and the entries in paper.bib.
-- You don't write the reference list manually here.
--->
