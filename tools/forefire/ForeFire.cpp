@@ -146,7 +146,7 @@ void ForeFire::FFShell(ifstream* inputStream) {
         cout << "  License:   See LICENSE file (ABSOLUTELY NO WARRANTY)" << endl;
         cout << "  Copyright (C) 2025 CNRS/Univ.Corsica" << endl;
         cout << endl;
-        cout << "  Type 'help[]' for a list of commands." << endl;
+        cout << "  Type 'help' for a list of commands." << endl;
         cout << "  Use Tab for auto-completion." << endl; // Add hint about completion
         cout << endl;
 

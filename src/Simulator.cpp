@@ -19,6 +19,7 @@ Simulator::Simulator(TimeTable* tt, bool outs) : schedule(tt) {
 }
 
 Simulator::~Simulator() {
+	schedule->clear();
 }
 
 void Simulator::setTimeTable(TimeTable* tt){
