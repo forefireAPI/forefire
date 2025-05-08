@@ -2490,9 +2490,10 @@ namespace libforefire
     int Command::clear(const string &arg, size_t &numTabs)
     {
         delete currentSession.fd;
-        delete currentSession.outStrRep;
-        delete currentSession.sim;
-        delete currentSession.params;
+        currentSession.fd =nullptr;
+       //delete currentSession.outStrRep;
+        currentSession.sim->getSchedule()->clear();
+       // delete currentSession.params;
         return normal;
     }
 

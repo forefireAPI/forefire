@@ -13,22 +13,23 @@ namespace libforefire {
 
 TimeTable::TimeTable() {
 	commonInitialization();
+
 }
 
 TimeTable::TimeTable(FFEvent* ev) {
+	head = nullptr;
 	commonInitialization();
 	insert(ev);
 }
 
 TimeTable::~TimeTable() {
 	while ( size() > 0 ) dropEvent(head);
-	delete rbin;
+	
 }
 
 void TimeTable::commonInitialization(){
 	incr = 0;
-	decr = 0;
-	rbin = new FFEvent;
+	decr = 0; 
 }
 
 void TimeTable::setHead(FFEvent* newHead){
@@ -42,7 +43,12 @@ FFEvent* TimeTable::getHead(){
 }
 
 double TimeTable::getTime(){
-	if ( !head or size()==0 ) return -numeric_limits<double>::infinity();
+	if ( !head ){
+		return -numeric_limits<double>::infinity();
+	}
+	if(size()==0 ) {
+		return -numeric_limits<double>::infinity();
+	}
 	return head->getTime();
 }
 
@@ -193,6 +199,19 @@ string TimeTable::print(){
 	}
 	oss << "END TIMETABLE" << endl;
 	return oss.str();
+}
+
+void TimeTable::clear() {
+    while (head != nullptr) {
+        FFEvent* ev = head;
+        // dropEvent sets head = nullptr if it's the last element
+        dropEvent(ev);
+    }
+	
+	commonInitialization();
+	if(head ) {
+		cout << "Error: head is not null after clearing the timetable." << endl;
+	}
 }
 
 }
