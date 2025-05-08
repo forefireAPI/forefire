@@ -64,10 +64,12 @@ static const std::unordered_map<std::string, std::string>& buildCommandMan() {
         
         m["@"] =
             "@t=seconds\n"
-            "Schedule operator to trigger the command at time t=seconds\n"
-            "Example: print[]@t=1200\n"
+            "Schedule operator to trigger the command at time t=seconds or nowplus=seconds\n"
+            "Example: print[]@t=1200\n will print the current simulation state at sim time 1200 seconds\n"
+            "Example: save[]@nowplus=1200\n will save the current map at current sim time plus 1200 \n"
             "Arguments:\n"
-            " - 't': Time in seconds when the scheduled command should execute";
+            " - 't': Time in seconds when the scheduled command should execute\n"
+            " - 'nowplus': Delta duration in seconds for the scheduled command to execute";
         
         m["startFire"] =
             "startFire[loc=(x,y,z)|lonlat=(lon,lat);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]\n"
