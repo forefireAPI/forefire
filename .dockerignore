@@ -19,6 +19,7 @@ Dockerfile
 # Python virtual environments and cache
 .venv/
 venv/
+docs
 __pycache__/
 *.pyc
 *.pyo
