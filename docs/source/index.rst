@@ -6,7 +6,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
 **Key Links:**
 
 - `GitHub Repository <https://github.com/forefireAPI/forefire>`_
-- `Online Demo Simulator <http://forefire.univ-corse.fr/sim/dev/>`_
+- `Online Demo Simulator <http://forefire.univ-corse.fr/sim>`_
 
 .. toctree::
    :maxdepth: 1
