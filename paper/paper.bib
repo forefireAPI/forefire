@@ -1,19 +1,28 @@
- @article{PrezRamirez2024,
-  title = {Wildland fire fuels database for Corsican - Mediterranean Forest stand types},
-  volume = {565},
-  ISSN = {0378-1127},
-  url = {http://dx.doi.org/10.1016/j.foreco.2024.122002},
-  DOI = {10.1016/j.foreco.2024.122002},
-  journal = {Forest Ecology and Management},
+
+@article{Lautenberger2013,
+  title = {Wildland fire modeling with an Eulerian level set method and automated calibration},
+  volume = {62},
+  ISSN = {0379-7112},
+  url = {https://github.com/lautenberger/elmfire/},
+  DOI = {10.1016/j.firesaf.2013.08.014},
+  journal = {Fire Safety Journal},
   publisher = {Elsevier BV},
-  author = {Pérez-Ramirez,  Y. and Ferrat,  L. and Filippi,  J.B.},
-  year = {2024},
-       keywords = {pub},
-  month = aug,
-  pages = {122002}
+  author = {Lautenberger,  Chris},
+  year = {2013},
+  month = nov,
+  pages = {289–298}
 }
-
-
+@techreport{finney04farsite,
+author = {Finney, Mark A},
+howpublished = {Res. Pap. RMRS-RP-4, Revised 2004, Ogden, UT: U.S. Department of Agriculture, Forest Service, Rocky Mountain Research Station. 47 p.},
+institution = {U.S Department of Agriculture, Forest Service},
+keywords = {Fire growth Modeling Fire behavior models Fire simulation},
+number = {RMRS-RP-4},
+DOI = {10.2737/rmrs-rp-4},
+title = {{FARSITE: Fire Area Simulator-model development and evaluation}},
+url = {http://www.treesearch.fs.fed.us/pubs/4617},
+year = {1998}
+}
 
 @Article{atmos12040507,
 	AUTHOR = {Filippi, Jean-Baptiste and Durand, Jonathan and Tulet, Pierre and Bielli, Soline},
@@ -28,8 +37,6 @@
 	ISSN = {2073-4433},
 	DOI = {10.3390/atmos12040507}
 }
-
-
 
 @article{Allaire2021Deepfire,
 	title = {Emulation of wildland fire spread simulation using deep learning},
@@ -58,7 +65,6 @@
   journal = {International Journal of Wildland Fire}
 }
  
-
 @article{Lac2018,
   keywords = {pub},
   doi = {10.5194/gmd-11-1929-2018},
@@ -74,52 +80,22 @@
   journal = {Geoscientific Model Development}
 }
 
-
-@article{filippi:hal-00903862,
-    hal_id = {hal-00903862},
-    url = {http://hal.inria.fr/hal-00903862},
-    title = {Representation and evaluation of wildfire propagation simulations},
-    author = {Filippi, Jean-Baptiste and Mallet, Vivien and Nader, Bahaa},
-    abstract = {{This paper provides a formal mathematical representation of a wildfire simulation, reviews the most common scoring methods using this formalism, and proposes new methods that are explicitly designed to evaluate a forest fire simulation from ignition to extinction. These scoring or agreement methods are tested with synthetic cases in order to expose strengths and weaknesses, and with more complex fire simulations using real observations. An implementation of the methods is provided as well as an overview of the software package. The paper stresses the importance of scores that can evaluate the dynamics of a simulation, as opposed to methods relying on snapshots of the burned surfaces computed by the model. The two new methods, arrival time agreement and shape agreement, take into account the dynamics of the simulation between observation times. Although no scoring method is able to perfectly synthesise a simulation error in a single number, the analysis of the scores obtained on idealised and real simulations provides insights into the advantages of these methods for the evaluation of fire dynamics.}},
-    keywords = {pub},
-   
-    affiliation = {Sciences pour l'environnement - SPE , Centre d'Enseignement et de Recherche en Environnement Atmosph{\'e}rique - CEREA , CLIME - INRIA Paris-Rocquencourt},
-    publisher = {CSIRO Publishing},
-    journal = {International Journal of Wildland Fire},
-    audience = {international },
-    doi = {10.1071/WF12202 },
-    year = {2014},
+@inbook{Filippi2014,
+  title = {ForeFire: open-source code for wildland fire spread models},
+  url = {http://dx.doi.org/10.14195/978-989-26-0884-6_29},
+  DOI = {10.14195/978-989-26-0884-6_29},
+  booktitle = {Advances in forest fire research},
+  publisher = {Imprensa da Universidade de Coimbra},
+  author = {Filippi,  Jean-Baptiste and Bosseur,  Frédéric and Grandi,  Damien},
+  year = {2014},
+  pages = {275–282}
 }
 
-
-
-@inproceedings{filippi:hal-01108620,
-  TITLE = {{ForeFire: open-source code for wildland fire spread models}},
-  AUTHOR = {Filippi, Jean Baptiste and Bosseur, Fr{\'e}d{\'e}ric and Grandi, Damien},
-  URL = {https://hal.archives-ouvertes.fr/hal-01108620},
-  BOOKTITLE = {{VII International Conference on Forest Fire Research}},
-  ADDRESS = {Coimbra, Portugal},
-  ORGANIZATION = {{Domingos X. Viegas}},
-  EDITOR = {Domingos X. Viegas},
-  PUBLISHER = {{Imprensa da Universidade de Coimbra}},
-  SERIES = {Advances in Forest Fire Research},
-  PAGES = {1920},
-  YEAR = {2014},
-  MONTH = Nov,
-  KEYWORDS = {symp},
-  HAL_ID = {hal-01108620},
-  HAL_VERSION = {v1},
-}
-
-%% http://hal.archives-ouvertes.fr/hal-00687655
 @article{filippi:hal-00687655,
-    hal_id = {hal-00687655},
-    url = {http://hal.archives-ouvertes.fr/hal-00687655},
-    title = {{Assessment of FOREFIRE/MESONH for wildland fire/atmosphere coupled simulation of the FireFlux experiment}},
+    title = {Assessment of FOREFIRE/MESONH for wildland fire/atmosphere coupled simulation of the FireFlux experiment},
     author = {Filippi, Jean-Baptiste and Pialat, Xavier and Clements, Craig},
     abstract = {{Numerical simulations using a coupled approach between Meso-NH (Non-Hydrostatic) LES (Large Eddy Simulation) mesoscale atmospheric model and ForeFire wildland fire area simulator are compared to experimental data to assess the performance of the proposed coupled approach in predicting fine-scale properties of the dynamics of wildland fires. Meso-NH is a non-hydrostatic, large eddy simulation capable, atmospheric research model. ForeFire insures a front tracking of the fire front by means of Lagrangian markers evolving on the earth's surface according to a physical rate-ofspread model. The atmospheric model forces the fire behaviour through the surface wind field, whereas the fire forces the atmosphere simulation through surface boundary conditions of heat and vapour fluxes. The FireFlux experiment, an experimental 32Ha burn of tall grass instrumented with wind profilers and thermocouples, was designed specifically to estimate the atmospheric perturbation introduced by wildland fire. Comparisons of the simulations at different resolutions with the largescale experiment validate the chosen coupling methodology and the choice of a coupled approach with a meso-scale atmospheric model for the prediction of wildland fire propagation. Distinct fire propagation behaviour is simulated between coupled and non-coupled simulation. While the simulations did not reproduce high frequency perturbations, it is shown that the atmospheric model captures well atmospheric perturbations induced by combustion at the ground level in terms of behaviour and amplitude.}},
     keywords = {pub},
-   
     affiliation = {Sciences pour l'environnement - SPE , Department of Meteorology and Climate Science -},
     pages = {2633-2640},
     journal = {PROCEEDINGS OF THE COMBUSTION INSTITUTE},
@@ -130,31 +106,18 @@
     year = {2013},
 }
 
-
-@article{filippi:hal-00438619,
-    hal_id = {hal-00438619},
-    url = {http://hal.archives-ouvertes.fr/hal-00438619},
-    title = {Discrete event front tracking simulator of a physical fire spread model},
-    author = {Filippi, Jean-Baptiste and Morandini, F. and Balbi, Jacques-Henri and Hill, David, R.C.},
-    keywords = {pub},
-    affiliation = {Sciences pour l'environnement - SPE , Laboratoire d'Informatique, de Mod{\'e}lisation et d'optimisation des Syst{\`e}mes - LIMOS},
-    pages = {629-644},
-    journal = {SIMULATION},
-    volume = {86},
-    number = {10 },
-    audience = {international },
-    doi = {10.1177/0037549709343117 },
-    year = {2009},
-    month = {8}
+@article{Filippi2009,
+  title = {Discrete Event Front-tracking Simulation of a Physical Fire-spread Model},
+  volume = {86},
+  ISSN = {1741-3133},
+  url = {http://dx.doi.org/10.1177/0037549709343117},
+  DOI = {10.1177/0037549709343117},
+  number = {10},
+  journal = {SIMULATION},
+  publisher = {SAGE Publications},
+  author = {Filippi,  Jean-Baptiste and Morandini,  Frédéric and Balbi,  Jacques Henri and Hill,  David RC},
+  year = {2009},
+  month = aug,
+  pages = {629–646}
 }
 
-@techreport{finney04farsite,
-author = {Finney, Mark A},
-howpublished = {Res. Pap. RMRS-RP-4, Revised 2004, Ogden, UT: U.S. Department of Agriculture, Forest Service, Rocky Mountain Research Station. 47 p.},
-institution = {U.S Department of Agriculture, Forest Service},
-keywords = {,Fire growth Modeling Fire behavior models Fire simulation},
-number = {RMRS-RP-4},
-title = {{FARSITE: Fire Area Simulator-model development and evaluation}},
-url = {http://www.treesearch.fs.fed.us/pubs/4617},
-year = {1998}
-}
