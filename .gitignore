@@ -34,12 +34,16 @@ docs/doxygen/html
 CMakeLists.txt
 build.sh
 
-#other
+#tools
 tools/postprocessing/loadInParaview.py
 tests/config_firecast_local.bash
 tools/config_firecast_local.bash
+tools/ai
+changeLicense.py
+httpConnectInfo.txt
+
+#tests
 tests/python/FF_FS4roslog.csv
-.gitignore
 tests/python/ros_computation.py
 tests/python/ros_sampling.py
 tests/python/test_logdb.csv
@@ -47,6 +51,4 @@ tests/runff/altitude.png
 tests/runff/httpConnectInfo.txt
 tests/python/log.txt
 tests/python/runROS.bash
-changeLicense.py
-httpConnectInfo.txt
-tools/ai
+simulation_result.geojson
