@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raw Data Stream Player </title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+    #button-container {
+      margin: 20px 0;
+    }
+    #button-container button {
+      margin: 0 5px;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #button-container button.active {
+      background-color: #e0e0e0;
+    }
+    #video-container {
+      width: 66%;
+      position: relative;
+    }
+    #video-canvas {
+      width: 100%;
+      height: auto;
+      background-color: #000;
+      display: block;
+    }
+    #controls {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    #seek {
+      flex: 1;
+      margin: 0 10px;
+    }
+    #timestamp {
+      font-size: 14px;
+      color: #333;
+      width: 90px;
+      text-align: right;
+    }
+    #play {
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="button-container"></div>
+  <div id="video-container">
+    <canvas id="video-canvas"></canvas>
+    <div id="controls">
+      <button id="play">Play</button>
+      <input type="range" id="seek" min="0" step="1" value="0">
+      <div id="timestamp">00:00:00</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Configuration =====
+    const W = 24;             // Original frame width in pixels
+    const H = 34;             // Original frame height in pixels
+    const FRAMERATE = 10;     // Frames per second (adjust as needed)
+
+    // Mapping labels to raw data filenames
+    const videos = {
+      'Plume Bottom Height': 'plumeBottomHeight_uint16_34_24.dat',
+      'Plume Top Height':    'plumeTopHeight_uint16_34_24.dat',
+      'Smoke At Ground':     'smokeAtGround_uint16_34_24.dat',
+      'TKE':                 'tke_uint16_34_24.dat',
+      'Wind U':              'windU_uint16_34_24.dat',
+      'Wind V':              'windV_uint16_34_24.dat'
+    };
+
+    const buttonContainer = document.getElementById('button-container');
+    const canvas = document.getElementById('video-canvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('play');
+    const seekBar = document.getElementById('seek');
+    const timestampDisplay = document.getElementById('timestamp');
+
+    let buffer, numFrames, currentFrame = 0;
+    let playing = false;
+    let playInterval;
+
+    // Set canvas to transposed dimensions
+    canvas.width = H;
+    canvas.height = W;
+
+    // Create control buttons
+    Object.entries(videos).forEach(([label, filename], idx) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.dataset.file = filename;
+      if (idx === 0) btn.classList.add('active');
+      btn.addEventListener('click', () => loadVideo(filename, btn));
+      buttonContainer.appendChild(btn);
+    });
+
+    // Load first video on init
+    loadVideo(Object.values(videos)[0], document.querySelector('#button-container button'));
+
+    function loadVideo(file, btn) {
+      // Update active button
+      document.querySelectorAll('#button-container button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      fetch(file)
+        .then(res => res.arrayBuffer())
+        .then(buf => {
+          buffer = buf;
+          numFrames = buffer.byteLength / (W * H * 2);
+          seekBar.max = numFrames - 1;
+          currentFrame = 0;
+          updateFrame();
+        });
+      stop();
+    }
+
+    function updateFrame() {
+      if (!buffer) return;
+      const frameSize = W * H;
+      const frameOffset = currentFrame * frameSize * 2;
+      const view = new DataView(buffer, frameOffset, frameSize * 2);
+      // Create transposed image data
+      const imgData = ctx.createImageData(canvas.width, canvas.height);
+      const pixels = imgData.data;
+      for (let i = 0; i < frameSize; i++) {
+        const val = view.getUint16(i * 2, true);
+        const gray = val >> 8;
+        // Compute original row & col
+        const row = Math.floor(i / W);
+        const col = i % W;
+        // Transpose: x becomes row, y becomes col
+        const x = row;
+        const y = col;
+        const idx = (y * canvas.width + x) * 4;
+        pixels[idx] = pixels[idx+1] = pixels[idx+2] = gray;
+        pixels[idx+3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      seekBar.value = currentFrame;
+      timestampDisplay.textContent = formatTime(currentFrame / FRAMERATE);
+    }
+
+    function formatTime(sec) {
+      const s = Math.floor(sec);
+      const hrs = Math.floor(s / 3600);
+      const mins = Math.floor((s % 3600) / 60);
+      const secs = s % 60;
+      return [hrs, mins, secs].map(v => v.toString().padStart(2, '0')).join(':');
+    }
+
+    function play() {
+      if (playing) return;
+      playing = true;
+      playBtn.textContent = 'Pause';
+      playInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % numFrames;
+        updateFrame();
+      }, 1000 / FRAMERATE);
+    }
+
+    function stop() {
+      playing = false;
+      playBtn.textContent = 'Play';
+      clearInterval(playInterval);
+    }
+
+    playBtn.addEventListener('click', () => playing ? stop() : play());
+
+    seekBar.addEventListener('input', () => {
+      currentFrame = parseInt(seekBar.value, 10);
+      updateFrame();
+    });
+  </script>
+</body>
+</html>
