@@ -135,7 +135,7 @@ Creates the smallest possible triangular fire front (an ignition point) at the s
 **Arguments:**
 
 *   ``loc=(x,y,z)``: Starting location using Cartesian coordinates (x,y,z) in meters.
-*   ``lonlat=(lon,lat)``: Starting location using WGS84 coordinates (longitude, latitude). *Use either ``loc`` or ``lonlat``.*
+*   ``lonlat=(lon,lat)``: Starting location using WGS84 coordinates (longitude, latitude). *Use either loc or lonlat.*
 *   ``t=seconds|date=YYYY-MM-DDTHH:MM:SSZ``: Time when the fire is started, either in seconds since simulation start or as an absolute ISO 8601 GMT date/time.
 
 **Example:**
@@ -344,7 +344,7 @@ Triggers a change in simulation data at a specific time and location. Can be use
 
 Prints a representation of the current simulation state (primarily the fire front location) to the console or to a specified file. The output format is determined by the `dumpMode` parameter (set via `setParameter`).
 
-**Output Formats (`dumpMode`):**
+**Output Formats (dumpMode):**
 
 *   `ff`: Native format, potentially re-parsable by ForeFire.
 *   `json`: Compact Cartesian JSON format.
