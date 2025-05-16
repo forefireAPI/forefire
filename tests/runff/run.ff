@@ -12,15 +12,17 @@ setParameter[perimeterResolution=10]
 setParameter[spatialIncrement=3]
 setParameter[propagationSpeedAdjustmentFactor=0.6]
 setParameter[windReductionFactor=0.4]
+setParameter[dumpMode=geojson]
 
 # --- Load Data & Domain ---
 loadData[data.nc;2025-02-10T17:35:54Z]
 # --- Ignition ---
 startFire[lonlat=(8.70, 41.952, 0);t=0]
+trigger[wind;loc=(0.,0.,0.);vel=(10,5,0.)]
 
 # --- Run Simulation ---
 goTo[t=3600]
 
 # --- End ---
-print[]
+print[simulation_result.geojson]
 # Omit quit[] if using listenHTTP
