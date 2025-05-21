@@ -19,7 +19,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 */
 
 
-
 #include "../FluxModel.h"
 #include "../FireDomain.h"
 
@@ -42,7 +41,7 @@ class SpottingFluxBasicModel: public FluxModel {
 	/*! coefficients needed by the model */
 	double spottingDuration;
 	double nominalSpottingFlux;
-	double startSpotting;
+	double lagSpot;
 
 	/*! local variables */
 
@@ -93,9 +92,9 @@ SpottingFluxBasicModel::SpottingFluxBasicModel(
 	nominalSpottingFlux = 1.0;
 	if ( params->isValued("nominalSpottingFlux") )
 		nominalSpottingFlux = params->getDouble("nominalSpottingFlux");
-	startSpotting = 0.0;
-	if ( params->isValued("startSpotting") )
-		startSpotting = params->getDouble("startSpotting");
+	lagSpot = 0.0;
+	if ( params->isValued("lagSpotting") )
+		lagSpot = params->getDouble("lagSpotting");
 }
 
 /* destructor (shoudn't be modified) */
@@ -114,36 +113,18 @@ string SpottingFluxBasicModel::getName(){
 
 double SpottingFluxBasicModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
-	/* Mean heat flux released between the time interval [bt, et] */
-	/* The heat flux is supposed to be constant from the arrival time (at)
-	 * and for a period of time of 'burningDuration', constant of the model */
-	//if (valueOf[sigmad] > 0){
-	//	return nominalSpottingFlux * valueOf[spot0];
-	//}
-	//else {
-	//	return 0;
-	//}
-	//cout<<"AT "<<at<<endl;
-	//cout<<"BT "<<bt<<endl;
-	//cout<<"StartSpotting "<<startSpotting<<endl;
-	//cout<<"spotDuration "<<spottingDuration<<endl;
-	//cout<<"nominalSpottingFlux "<<nominalSpottingFlux<<endl;
+	/* Mean spotting flux released between the time interval [bt, et] */
+	/* The spotting flux is supposed to be constant from the arrival time (at)
+	 * and equal to 'spottingDuration * spot0', where 'spottingDuration' is a constant
+	 * of the model and spot0 is a coefficient between 0 and 1 specific to each fuel class
+	 * The spotting flux is in kg m-2 s-1.  */
 	
-	if ( startSpotting >= bt ){
-		//cout<<"ok start before at"<<endl;
-		return 0.;
-	}
-	else {
-		/* Instantaneous flux */
-		/* ------------------ */
-		if (bt <= startSpotting + spottingDuration) {
-			//cout<<"nominalSpottingFlux "<<nominalSpottingFlux<<endl;
-			return nominalSpottingFlux; //* valueOf[spot0] ;
-		}
-		else {
-			return 0.;
-		}
+	if (bt >= (at + lagSpot) and et <= (at + lagSpot + spottingDuration)) {
 
+			return nominalSpottingFlux * valueOf[spot0] ;
+		}
+	else {
+		return 0.;
 	}
 }
 
