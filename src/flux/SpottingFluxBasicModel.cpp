@@ -123,9 +123,7 @@ double SpottingFluxBasicModel::getValue(double* valueOf
 
 			return nominalSpottingFlux * valueOf[spot0] ;
 		}
-	else {
-		return 0.;
+	
+	return 0.;
 	}
-}
-
 } /* namespace libforefire */
