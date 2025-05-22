@@ -388,6 +388,7 @@ std::string landCoverIndexedCSV = R"(Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal
 	parameters.insert(make_pair("bmapOutputUpdate","0"));
 	parameters.insert(make_pair("numAtmoIterations","1000000"));
 	parameters.insert(make_pair("numberOfAtmoStepPerParallelCom","1"));
+	parameters.insert(make_pair("MNHExchangeScalarLayersNames","plumeTopHeight,plumeBottomHeight,smokeAtGround,tke"));	
 	parameters.insert(make_pair("max_inner_front_nodes_filter","50"));
 	parameters.insert(make_pair("heatFluxDefaultModel","heatFluxBasic"));
 	parameters.insert(make_pair("vaporFluxDefaultModel","vaporFluxBasic"));

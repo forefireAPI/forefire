@@ -43,6 +43,8 @@ class SpottingFluxBasicModel: public FluxModel {
 	double spottingDuration;
 	double nominalSpottingFlux;
 	double startSpotting;
+	double spottingShootsFrequency;
+	double spottingLag;
 
 	/*! local variables */
 
@@ -90,6 +92,15 @@ SpottingFluxBasicModel::SpottingFluxBasicModel(
 	spottingDuration = 100.0;
 	if ( params->isValued("spottingDuration") )
 		spottingDuration = params->getDouble("spottingDuration");
+	
+	spottingLag = 100.0;
+	if ( params->isValued("spottingLag") )
+		spottingLag = params->getDouble("spottingLag");
+
+	spottingShootsFrequency = 0.0;
+	if ( params->isValued("spottingShootsFrequency") )
+		spottingShootsFrequency = params->getDouble("spottingShootsFrequency");	
+
 	nominalSpottingFlux = 1.0;
 	if ( params->isValued("nominalSpottingFlux") )
 		nominalSpottingFlux = params->getDouble("nominalSpottingFlux");
@@ -114,37 +125,25 @@ string SpottingFluxBasicModel::getName(){
 
 double SpottingFluxBasicModel::getValue(double* valueOf
 		, const double& bt, const double& et, const double& at){
-	/* Mean heat flux released between the time interval [bt, et] */
-	/* The heat flux is supposed to be constant from the arrival time (at)
-	 * and for a period of time of 'burningDuration', constant of the model */
-	//if (valueOf[sigmad] > 0){
-	//	return nominalSpottingFlux * valueOf[spot0];
-	//}
-	//else {
-	//	return 0;
-	//}
-	//cout<<"AT "<<at<<endl;
-	//cout<<"BT "<<bt<<endl;
-	//cout<<"StartSpotting "<<startSpotting<<endl;
-	//cout<<"spotDuration "<<spottingDuration<<endl;
-	//cout<<"nominalSpottingFlux "<<nominalSpottingFlux<<endl;
-	
-	if ( startSpotting >= bt ){
-		//cout<<"ok start before at"<<endl;
-		return 0.;
-	}
-	else {
-		/* Instantaneous flux */
-		/* ------------------ */
-		if (bt <= startSpotting + spottingDuration) {
-			//cout<<"nominalSpottingFlux "<<nominalSpottingFlux<<endl;
-			return nominalSpottingFlux; //* valueOf[spot0] ;
-		}
-		else {
-			return 0.;
-		}
+	/* Mean  flux released between the time interval [bt, et] */
+	/* The  flux is supposed to be constant from the arrival time (at)
+	 * and for a period of time Duration */
+	double cyclicLag = at;
+	if (spottingShootsFrequency > 0.0) {
+		cyclicLag =  (std::trunc(bt / spottingShootsFrequency))*spottingShootsFrequency - spottingLag;
 
+//Cyclic arrival time: 610 100 55 bt 95.5
+		//cout << "Cyclic arrival time: " << at+cyclicLag+spottingLag << " cl" <<cyclicLag << " at " <<at<<" bt " <<bt<< endl;
 	}
+	/* The flux is supposed to be constant from the arrival time (at)
+	 * and for a period of time Duration */
+
+	if ( bt >= at+cyclicLag+spottingLag and et <= at + spottingDuration+cyclicLag+spottingLag ) return nominalSpottingFlux;
+ 
+	return 0.;
+		
+
+	
 }
 
 } /* namespace libforefire */

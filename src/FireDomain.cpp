@@ -193,66 +193,6 @@
 		 // Common initialization for all constructors
 		 commonInitialization(cellsMeshX,cellsMeshY , year, yday);
  
-		/* if ((params->getParameter("runmode") == "masterMNH")&&(readRes>0)){
- 
-				 double dx = readRes;
-				 double dy = readRes;
- 
-				 // Loading the atmospheric layers
-				 FFPoint windUOrigin = FFPoint(SWCorner.getX() - dx,
-						 SWCorner.getY() - 0.5 * dy,0);
-				 FFArray<double>* GwindU = new FFArray<double>("WindU", 0., atmoNX+2, atmoNY+2);
-				 FFArray<double>* GoldWindU = new FFArray<double>("oldWindU", 0., atmoNX+2, atmoNY+2);
-
-				 FFArray<double>* GwindV = new FFArray<double>("WindV", 0., atmoNX+2, atmoNY+2);
-				 FFArray<double>* GoldWindV = new FFArray<double>("oldWindV", 0., atmoNX+2, atmoNY+2);
- 
-				 TwoTimeArrayLayer<double>* wul = new TwoTimeArrayLayer<double>("windU",
-						 GwindU, getTime(), GoldWindU, getTime(),
-						 windUOrigin, dx, dy);
-				 dataBroker->registerLayer("windU", wul);
-				 cout<<"creating big wind data atmo resolution is "<<readRes<<" size "<< atmoNX+2<<":"<< atmoNY+2 <<endl;
-				 FFPoint windVOrigin = FFPoint(SWCorner.getX() - 0.5 * dx,
-						 SWCorner.getY() - dy,0.);
-				 TwoTimeArrayLayer<double>* wvl = new TwoTimeArrayLayer<double>("windV",
-						 GwindV, getTime(), GoldWindV, getTime(),
-						 windVOrigin, dx, dy);
-				 dataBroker->registerLayer("windV", wvl);
-				 
-				 FFPoint scalarOrigin = FFPoint(SWCorner.getX() - 0.5 * dx,
-				 SWCorner.getY() - 0.5 * dy,0.);
-
-				 FFArray<double>* plumeTopHeight = new FFArray<double>("plumeTopHeight", 0.,  atmoNX+2, atmoNY+2); 
-				 FFArray<double>* plumeBottomHeight = new FFArray<double>("plumeBottomHeight", 0.,  atmoNX+2, atmoNY+2); 
-				 FFArray<double>* smokeAtGround = new FFArray<double>("smokeAtGround", 0.,  atmoNX+2, atmoNY+2); 
-				 FFArray<double>* tke = new FFArray<double>("tke", 0.,  atmoNX+2, atmoNY+2);
-
-				 FFArray<double>* oldplumeTopHeight = new FFArray<double>("oldplumeTopHeight", 0.,atmoNX+2, atmoNY+2); 
-				 FFArray<double>* oldplumeBottomHeight = new FFArray<double>("oldplumeBottomHeight", 0., atmoNX+2, atmoNY+2); 
-				 FFArray<double>* oldsmokeAtGround = new FFArray<double>("oldsmokeAtGround", 0., atmoNX+2, atmoNY+2); 
-				 FFArray<double>* oldtke = new FFArray<double>("oldtke", 0., atmoNX+2, atmoNY+2); 
-
-		
-				 TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", plumeTopHeight, getTime(), oldplumeTopHeight, getTime(),  scalarOrigin, dx,dy);
-				dataBroker->registerLayer("plumeTopHeight", pth);
-
-				// Loading the plume bottom height layer
-				TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", plumeBottomHeight, getTime(), oldplumeBottomHeight, getTime(),  scalarOrigin, dx,dy);
-				dataBroker->registerLayer("plumeBottomHeight", pbh);
-
-				// Loading the smoke at ground layer
-				TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", smokeAtGround, getTime(), oldsmokeAtGround, getTime(),  scalarOrigin, dx,dy);
-				dataBroker->registerLayer("smokeAtGround", sag);
-
-				// Loading the TKE layer
-				TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", tke,getTime(), oldtke, getTime(),  scalarOrigin, dx,dy);
-				dataBroker->registerLayer("tke", tkeLayer);
-
-
-
-				 ///////////////////
-		 }*/
- 
 	 }
  
 	 FireDomain::FireDomain(const int& mpirank
@@ -2848,8 +2788,8 @@
  
 		 /* loading the layers for atmospheric variables and coupling variables */
 		 if ( atmosphericCoupling ) {
-			 dataBroker->initializeAtmosphericLayers(getTime()
-													 , globalBMapSizeX, globalBMapSizeY);
+			 dataBroker->initializeAtmosphericLayers(getTime());
+
 		 }
 
 		 dataBroker->loadFromNCFile(infile.str());

@@ -135,6 +135,9 @@ void BurningRatioLayer<T>::getMatrix(
 		for ( size_t i=0; i < nx; i++ ){
 			for ( size_t j=0; j < ny; j++ ){
 				(*ratioMap)(i,j) = cells[i][j].getBurningRatio(t);
+				if( (*ratioMap)(i,j) > 0.0 ){
+				//	cout<<"Burning ratio in cell "<<i<<":"<<j<<" = "<<(*ratioMap)(i,j)<<" at time "<<t<<endl;
+				}
 			}
 		}
 		latestCall = t;

@@ -20,7 +20,6 @@
 #include "PropagativeLayer.h"
 #include "FluxLayer.h"
 #include "FFArrays.h"
-#include "AtmosphericData.h"
 #include "ParallelData.h"
 #include "SimulationParameters.h"
 #include <netcdf>
@@ -55,8 +54,7 @@ class DataBroker {
 
 	// Information concerning the atmospheric model
 	FFPoint atmoSWCorner, atmoNECorner; /*!< spatial limit of the domain */
-	size_t atmosphericNx, atmosphericNy; /*!< size of the atmospheric matrices */
-	AtmosphericData* atmosphericData; /*!< pointer to the atmospheric-related data */
+	size_t atmosphericNx, atmosphericNy; /*!< size of the atmospheric matrices */ 
 
 
 	// map of the data layers
@@ -260,7 +258,7 @@ public:
 	/*! \brief initializing the atmospheric layers */
 	void setAtmosphericDomain(const FFPoint&, const FFPoint&
 			, const size_t&, const size_t&);
-	void initializeAtmosphericLayers(const double&, const size_t&, const size_t&);
+	void initializeAtmosphericLayers(const double&);
 
 	/*! \brief insuring the presence of all needed layers */
 	void insureLayersExistence();
@@ -271,6 +269,9 @@ public:
 	/*! \brief default constant layer constructor */
 	void addConstantLayer(const string& ,const string& ,const string& , double ,const FFPoint&S ,const FFPoint& );
 
+	void createEmpty2DLayer(const string &,  FFPoint &,  FFPoint &, const size_t , const size_t  );
+	void createEmptyTwoTimeArrayLayer(const string &name,  FFPoint &Forigin,  double addTime, const double dx, const double dy );
+    void createEmptyScalarLayer(const string &name,   double addTime );
 	/*! \brief typical double layer constructor */
 	//void addLayer(string name, double &x0 , double &y0, double& t0, double& width , double& height, double& timespan, size_t& nnx, size_t& nny, size_t& nnz,  double* values);
 
