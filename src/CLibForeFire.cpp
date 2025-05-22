@@ -9,6 +9,7 @@
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
 #include <cmath>
+#include <random>
 
 #ifdef MPI_COUPLING
 #include <mpi.h>
@@ -36,6 +37,7 @@ static Command::Session* session = &(executor.currentSession);
 int world_rank;
 int world_size;
 size_t mnhPause;
+double updateBinStreamFrequency = 10;
 
 
 Command* getLauncher(){
@@ -255,13 +257,13 @@ void MNHStep(double dt){
 
 	#ifdef MPI_COUPLING
 		size_t sizeofcell = session->fd->getlocalBMapSize();
-	
+		updateBinStreamFrequency = SimulationParameters::GetInstance()->getDouble("updateBinStreamFrequency");
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
 		if (world_rank == 0) {
 
-
+			
 			FDCell** mycells = session->fdp->getCells();
 			size_t domainID =  1;
 			FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
@@ -425,65 +427,105 @@ void FFGetDoubleArray(const char* mname, double t
 						MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 					    fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
 					}
-					if (tmpname == "plumeBottomHeight"){
+					if (tmpname == "injectedAtGround"){
 						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
-						double sumSedimented = SimulationParameters::GetInstance()->getDouble("sumSedimented");
+						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
+						double sumInjected = SimulationParameters::GetInstance()->getDouble("sumInjected");
+
+						
+						sumInjected = sumInjected + ((fullMatrix->sum()) * atmosphericTimeStep );;
+						SimulationParameters::GetInstance()->setDouble("sumInjected", sumInjected);
+
+					}
+
+					if (tmpname == "spotAtGround"){
+						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
 						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
 				
+						double sumSedimented = SimulationParameters::GetInstance()->getDouble("sumSedimented");
+						sumSedimented = sumSedimented + ((fullMatrix->sum()) * atmosphericTimeStep );;
 
-					
-						sumSedimented = sumSedimented + ((fullMatrix->sum()/atmoSurf) * atmosphericTimeStep );;
 						SimulationParameters::GetInstance()->setDouble("sumSedimented", sumSedimented);
-
-						DataLayer<double>* brLayer = session->fd->getDataLayer("BRatio");
-						FFArray<double>* brMatrix;
-						brLayer->getMatrix(&brMatrix, ct);
-					
-						double sumBRatio = SimulationParameters::GetInstance()->getDouble("sumInjected") + (brMatrix->sum() * atmosphericTimeStep );
-						//sumBRatio = brMatrix->sum();
-						SimulationParameters::GetInstance()->setDouble("sumInjected", sumBRatio);
 
 
 					}
-					if (std::fmod(t, 10.0) < 1e-6) {
-					//if (true) {
-						
-						if (tmpname == "plumeBottomHeight"){
-							cout <<"Time: "<< t<< " DT:"<< SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep")<< " sumInjected: " << SimulationParameters::GetInstance()->getDouble("sumInjected") << " sumSedimented: " << SimulationParameters::GetInstance()->getDouble("sumSedimented") << endl;
-						}
 
+
+					//cout << updateBinStreamFrequency<<endl;
+					if (std::fmod(t, updateBinStreamFrequency) < 1e-6) {
+
+					 	if(tmpname == "spotAtGround"){
+						//	cout <<"Time: "<< t<< " DT:"<< SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep")<< " sumInjected: " << SimulationParameters::GetInstance()->getDouble("sumInjected") << " sumSedimented: " << SimulationParameters::GetInstance()->getDouble("sumSedimented") << endl;
+						
+							if (SimulationParameters::GetInstance()->isValued("reignitionThresholdFromSpotting")){
+								double reignitionThreshold = SimulationParameters::GetInstance()->getDouble("reignitionThresholdFromSpotting");
+								double reignitionMaxProbalilityValueFromSpotting = SimulationParameters::GetInstance()->getDouble("reignitionMaxProbalilityValueFromSpotting");
+								 
+								// --- Re‑ignition logic ---
+								size_t nx = fullMatrix->getDim("x");
+								size_t ny = fullMatrix->getDim("y");
+								double* matrixData = fullMatrix->getData();
+
+								// Random number generator (static so it is created only once)
+								static std::mt19937 rng(std::random_device{}());
+								std::uniform_real_distribution<double> unif(0.0, 1.0);
+								
+								for (size_t i = 2; i < nx-2; ++i) {
+									for (size_t j = 2; j < ny-2; ++j) {
+										const size_t idx = i * ny + j;
+										double excess = matrixData[idx] - reignitionThreshold;
+
+										if (excess <= 0.0)
+											continue;                          // nothing to ignite here
+
+										double prob = std::min(excess / reignitionMaxProbalilityValueFromSpotting, 1.0);
+
+										if (unif(rng) < prob) {
+											double igX = myMasterLayer->getOriginX()+
+													(i * myMasterLayer->getDx());
+											double igY = myMasterLayer->getOriginY()+
+													((j-1) * myMasterLayer->getDy());
+					
+
+											std::ostringstream fireCmd;
+										//	cout <<" nx << " << nx << " ny "<< ny << " i "<< i << " j "<< j << " idx "<< idx << " excess "<< idx << " DX "<<igX<<"  "<<igY<< endl;
+											fireCmd << "startFire[loc=(" << igX << ", " << igY << ",0)]";
+											//cout <<"Time: "<<t << "Re-ignition command: " << fireCmd.str() << std::endl;
+											string scmd = fireCmd.str();
+											executor.ExecuteCommand(scmd);
+										}
+									}
+								}
+								// --- End re‑ignition logic ---
+							}
+						}					
 						std::string opath = SimulationParameters::GetInstance()->getParameter("genRawBytesDir");
 						if (opath != "1234567890") {
-							std::ostringstream fnoss;
-							fnoss << opath << "/" << tmpname
-								<< "_uint16_" << fullMatrix->getDim("x")
-								<< "_" << fullMatrix->getDim("y") << ".dat";
-							std::string filename = fnoss.str();
-							std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::app);
-							if (ofs) {
-								size_t total = fullMatrix->getSize();
-								std::vector<uint16_t> buf(total);
-								for (size_t i = 0; i < total; ++i) {
-									double v = fullMatrix->getData()[i];
-									double vnorm;
-									if (tmpname == "windU" || tmpname == "windV"){
-										vnorm = (v + 20.0) / 40.0;
-									} else if (tmpname == "plumeTopHeight") {
-										vnorm = (v) / 4000.0;
-									} else if (tmpname == "smokeAtGround") {
-										vnorm = v / 0.1;
-									} else if (tmpname == "plumeBottomHeight") {
-										vnorm = v / 0.01;
-									} else if (tmpname == "tke") {
-										vnorm = v / 15.0;
-									} else {
-										vnorm = v ;
+							SimulationParameters::GetInstance()->isValued(tmpname+"Range");
+							vector<double> range = SimulationParameters::GetInstance()->getDoubleArray(tmpname+"Range");
+							if (range.size() == 2) {
+								double vmin = range[0];
+								double vmax = range[1];
+								std::ostringstream fnoss;
+								fnoss << opath << "/" << tmpname
+									<< "_uint8_" << fullMatrix->getDim("x")
+									<< "_" << fullMatrix->getDim("y") << ".dat";
+								 
+								std::string filename = fnoss.str();
+								std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::app);
+								if (ofs) {
+									size_t total = fullMatrix->getSize();
+									std::vector<uint8_t> buf(total);
+									for (size_t i = 0; i < total; ++i) {
+										double v = fullMatrix->getData()[i];
+										double vnorm= (v - vmin) / (vmax - vmin);
+										vnorm = std::min(std::max(vnorm, 0.0), 1.0);
+										buf[i] = static_cast<uint8_t>(vnorm * std::numeric_limits<uint8_t>::max());
 									}
-									vnorm = std::min(std::max(vnorm, 0.0), 1.0);
-									buf[i] = static_cast<uint16_t>(vnorm * std::numeric_limits<uint16_t>::max());
-								}
-								ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint16_t));
+									ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint8_t));
+								}		
 							}
+				
 						}
 					}
 

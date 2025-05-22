@@ -304,7 +304,7 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 			copyDomainInformation(tmpMatrix, arrayt2);
 
 	} else {
-		cout<<"Error while trying to retrieve data for two times array data layer "	<<this->getKey()<<", matrix size "<< tmpMatrix->getSize() <<" not matching "<<sizein  <<endl;
+		//cout<<"Error while trying to retrieve data for two times array data layer "	<<this->getKey()<<", matrix size "<< tmpMatrix->getSize() <<" not matching "<<sizein  <<endl;
 	}
 }
 
