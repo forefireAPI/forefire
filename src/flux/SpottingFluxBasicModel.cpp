@@ -128,7 +128,7 @@ double SpottingFluxBasicModel::getValue(double* valueOf
 	/* Mean  flux released between the time interval [bt, et] */
 	/* The  flux is supposed to be constant from the arrival time (at)
 	 * and for a period of time Duration */
-	double cyclicLag = at;
+	double cyclicLag = 0;
 	if (spottingShootsFrequency > 0.0) {
 		cyclicLag =  (std::trunc(bt / spottingShootsFrequency))*spottingShootsFrequency - spottingLag;
 

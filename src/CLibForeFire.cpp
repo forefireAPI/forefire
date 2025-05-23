@@ -477,19 +477,22 @@ void FFGetDoubleArray(const char* mname, double t
 
 										if (excess <= 0.0)
 											continue;                          // nothing to ignite here
+										if (excess > 2*reignitionThreshold)
+											continue;                          // nothing to ignite here
+										
 
-										double prob = std::min(excess / reignitionMaxProbalilityValueFromSpotting, 1.0);
-
-										if (unif(rng) < prob) {
+										
+										if (unif(rng) < reignitionMaxProbalilityValueFromSpotting) {
 											double igX = myMasterLayer->getOriginX()+
-													(i * myMasterLayer->getDx());
+													((i+unif(rng)) * myMasterLayer->getDx()) ;
 											double igY = myMasterLayer->getOriginY()+
-													((j-1) * myMasterLayer->getDy());
+													((j+unif(rng)) * myMasterLayer->getDy());
 					
 
 											std::ostringstream fireCmd;
 										//	cout <<" nx << " << nx << " ny "<< ny << " i "<< i << " j "<< j << " idx "<< idx << " excess "<< idx << " DX "<<igX<<"  "<<igY<< endl;
 											fireCmd << "startFire[loc=(" << igX << ", " << igY << ",0)]";
+										//	cout << "Re-ignition command: " << fireCmd.str() << std::endl;
 											//cout <<"Time: "<<t << "Re-ignition command: " << fireCmd.str() << std::endl;
 											string scmd = fireCmd.str();
 											executor.ExecuteCommand(scmd);
