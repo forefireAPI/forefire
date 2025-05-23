@@ -370,9 +370,9 @@ void MNHStep(double dt){
 				double* instantData = instantMatrix->getData();
 
 				for (size_t i = 0; i < nx; ++i) {
-					for (size_t j = 0; j < ny; ++j) {
+					for (size_t j = 0; j < ny; ++j) {Ò
 						size_t index = i * ny + j;
-						matrixData[index] += instantData[index];
+						matrixData[index] += instantData[index]*dt;
 					}
 				}
 				if(timeForDump){
