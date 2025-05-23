@@ -38,6 +38,7 @@ int world_rank;
 int world_size;
 size_t mnhPause;
 double updateBinStreamFrequency = 10;
+double updateOutputFrequency = 0;
 
 
 Command* getLauncher(){
@@ -177,7 +178,12 @@ void MNHCreateDomain(const int id
 
 	session->outStrRep = new StringRepresentation(executor.getDomain());
 	if ( SimulationParameters::GetInstance()->getInt("outputsUpdate") != 0 ){
+
 		session->tt->insert(new FFEvent(session->outStrRep));
+
+		updateOutputFrequency = SimulationParameters::GetInstance()->getDouble("outputsUpdate");
+		// handle bynary updates
+
 	}
   
 	// Reading all the information on the initialization of ForeFire
@@ -332,19 +338,57 @@ void MNHStep(double dt){
 				}	
 			}
 				// mark as dumped the cells in the subdomain for rank 1
-				domainInfo = session->fdp->getParallelDomainInfo(1);
-				 anx = domainInfo->atmoNX;
-				 any = domainInfo->atmoNY;
-				 rnx = domainInfo->refNX;
-				 rny = domainInfo->refNY;
-				// Iterate over the cells within the specified domain
-				for (size_t i = rnx; i < rnx + anx; ++i) {
-					for (size_t j = rny; j < rny + any; ++j) {
-						if (mycells[i][j].isActiveForDump()) {
-							//mycells[i][j].setIfAllDumped();
-						}
+			domainInfo = session->fdp->getParallelDomainInfo(1);
+				anx = domainInfo->atmoNX;
+				any = domainInfo->atmoNY;
+				rnx = domainInfo->refNX;
+				rny = domainInfo->refNY;
+			// Iterate over the cells within the specified domain
+			for (size_t i = rnx; i < rnx + anx; ++i) {
+				for (size_t j = rny; j < rny + any; ++j) {
+					if (mycells[i][j].isActiveForDump()) {
+						//mycells[i][j].setIfAllDumped();
 					}
 				}
+			}
+			bool timeForDump = (std::fmod(session->fdp->getTime(), updateOutputFrequency) < 1e-6);
+			vector<string> optLayers =	SimulationParameters::GetInstance()->getParameterArray("accumulatedDiagnosticScalarLayersNames");
+			for (size_t i = 0; i < optLayers.size(); i++)
+			{
+				DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(optLayers[i]+"Accumulated");
+				FFArray<double>* fullMatrix;
+				myMasterLayer->getMatrix(&fullMatrix,0);
+
+				DataLayer<double>* myInstantLayer = session->fdp->getDataLayer(optLayers[i]);
+				FFArray<double>* instantMatrix;
+				myInstantLayer->getMatrix(&instantMatrix,0);
+
+
+				size_t nx = fullMatrix->getDim("x");
+				size_t ny = fullMatrix->getDim("y");
+				double* matrixData = fullMatrix->getData();
+				double* instantData = instantMatrix->getData();
+
+				for (size_t i = 0; i < nx; ++i) {
+					for (size_t j = 0; j < ny; ++j) {
+						size_t index = i * ny + j;
+						matrixData[index] += instantData[index];
+					}
+				}
+				if(timeForDump){
+					cout<< session->fdp->getTime()<< " Layer " << optLayers[i] << " total: " << fullMatrix->sum() << endl;
+					std::ostringstream fnoss;
+					fnoss  << optLayers[i] << "Accumulated_fp64_"<<nx<<"_"<<ny<<".dat";
+					std::string filename = fnoss.str();
+					std::ofstream ofs(filename, std::ios::binary | std::ios::app);
+					if (ofs) {
+						ofs.write(reinterpret_cast<const char*>(matrixData), nx * ny * sizeof(double));
+						ofs.close();
+					}
+					fullMatrix->fill(0.0);
+				}
+			}
+			
 
 		}else {
 			int32_t numberOfActiveCellsInDomain = 0;

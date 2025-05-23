@@ -350,7 +350,7 @@ namespace libforefire
                 lastnode = refDomain->addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
                 refDomain->addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
                 completeFront(currentSession.ff);
-                cout << "Fire started at " << pos.x << ", " << pos.y << endl;
+                cout << "Fire started at " << pos.x << ", " << pos.y << " Time: "<<t<< endl;
             }
         }
         else

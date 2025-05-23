@@ -451,6 +451,11 @@ namespace libforefire
 		{
 			createEmptyScalarLayer(optLayers[i], time);
 		}
+		optLayers =	params->getParameterArray("accumulatedDiagnosticScalarLayersNames");
+		for (size_t i = 0; i < optLayers.size(); i++)
+		{
+			createEmptyScalarLayer(optLayers[i]+"Accumulated", time);
+		}
 
 	}
 

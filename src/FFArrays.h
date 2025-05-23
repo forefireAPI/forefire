@@ -96,6 +96,7 @@ public:
 	T sum() const;
 	T min() const;
 	T max() const;
+	void fill(const T val) const;
 };
 
 template<typename T>
@@ -126,6 +127,12 @@ T FFArray<T>::sum() const {
 		total += data[i];
 	}
 	return total;
+} 
+template<typename T>
+void FFArray<T>::fill(const T val) const {
+	for (size_t i = 0; i < size; ++i) {
+		data[i] = val;
+	}
 } 
 template<typename T>
 T FFArray<T>::min() const {
