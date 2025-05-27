@@ -106,7 +106,7 @@ Other open source libraries for wildland fire spread do exist as for example Elm
 Another family of wildland fire spread solvers such as WRF/SFire [@mandel2011] can resolve coupled front propagation and local meteorology but must be run within an atmospheric model that requires a large amount of processing power and data.
 
 Each of the above systems addresses certain needs (e.g., operational use, physical accuracy, or atmospheric coupling) but in order not to multiply development efforts on multiple code and validation bases, there was a need for a **unified solution** that could be open, modular, and performant. 
-ForeFire’s modular architechture and scripting interface allow users to easily swap or implement new fire models without changing the core code and test multiple simulation scenarions with same input files. It can also run fast in a standalone mode (for purely surface fire simulations) or be coupled with atmospheric models, all under a consistent interface and parameterization.
+ForeFire’s modular architecture and scripting interface allow users to easily swap or implement new fire models without changing the core code and test multiple simulation scenarions with same input files. It can also run fast in a standalone mode (for purely surface fire simulations) or be coupled with atmospheric models, all under a consistent interface and parameterization.
 
 ForeFire’s support for **multiple language bindings** (HTTP, C++ API, Python/NumPy, Fortran) is also unique and further expands its usability across different domains. These capabilities enable rapid prototyping and experimentation on large datesets, and also support operational needs by allowing integration into decision support pipelines including coupled with atmospheric models.
 
@@ -118,7 +118,7 @@ Researchers who wish to experiment with alternative formulations can add a new m
 Internally these quantities are handled as *layers* that can come from Python NumPy array, supplied from input NetCDF files or generated on the fly by ForeFire (e.g. slope derived from the elevation layer). 
 Once compiled, the new model is available in the scripting interface and in the C++/Python APIs without additional changes.
 
-Developping wildfire Rate Of Spread model was the original purpose of this simulation code and helped to iterate versions the Balbi Rate Of Spread formulation on real-cases studies in [@balbi2009] and [@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption in [@filippi2021], wildfire plume chemical compounds in [@strada2012] or industrial fires in [@baggio2022]. 
+Developping a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions the Balbi Rate Of Spread formulation on real-cases studies in [@balbi2009] and [@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption in [@filippi2021], wildfire plume chemical compounds in [@strada2012] or industrial fires in [@baggio2022]. 
 There is also a generic `ANNPropagationModel` that expects a trained graph input file that will be used in place of these functions. 
 
 ## Batch simulations with the ForeFire scripting
