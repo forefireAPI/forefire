@@ -90,14 +90,19 @@ void StringRepresentation::output() {
 
 // Visit the domain: outputs the header and resets GEOJSON flags.
 void StringRepresentation::visit(FireDomain* fd) {
+    SimulationParameters *simParam = SimulationParameters::GetInstance();
     if (dumpMode == JSON_MODE) {
         outputstr << '{' << endl << "\t\"fronts\": [";
         lastLevel = 0;
     }
     else if (dumpMode == GEOJSON_MODE) {
         firstGeoFeature = true;  // reset before outputting features
+        double t = simParam->getInt("refTime") + fd->getSimulationTime();
+        int d = simParam->getInt("refDay");
+        int y = simParam->getInt("refYear");
         outputstr << "{" << endl;
         outputstr << "\t\"type\": \"FeatureCollection\"," << endl;
+        outputstr << "\t\"valid_at\": \""<< SimulationParameters::FormatISODate(t, y, d) << "\"," << endl;
         outputstr << "\t\"features\": [" << endl;
     }
     else if (dumpMode == KML_MODE) {
