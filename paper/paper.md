@@ -114,7 +114,7 @@ Custom FF language allows to easily generate multiple scenarios, including fire-
 
 Each of these commands (such as,`goTo[t=42]`, `print[state.ff]`, `include[state.ff]`, or `plot[parameter=speed;filename=ROS.png]`) of ForeFire is bound or can directly be called from HTTP, C++, Fortran or Python, and are the core logic of the library. Help messages and autocompletion are directly available from the shell interpreter that can be run interactively, with several examples provided in the repository.
 
-A typical script that loads data at a date and time, starts a fire, schedules a wind shift and prints outputs as:
+A typical script that loads data at a date and time, starts a fire, schedules a wind shift and prints outputs is written :
 ```text
 setParameter[propagationModel=Rothermel]
 loadData[data.nc;2025-02-10T17:35:54Z]
@@ -125,7 +125,7 @@ print[]
 ```
 But the interface can also be run with a highly customizable web‑based graphical interface with command `listenHTTP[host:port]`, that starts a local HTTP service with ForeFire bindings and serves standard or user‑defined web pages such as in Figure 1.
 
-![Default web interface accessed trough ForeFire internal HTTP sevice and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds](gui.jpg)
+![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds](gui.jpg)
 
 With pre-compiled datasets over a large area, it enables simulation services of continent‑wide operational forecasting, to find the best escape routes [@kamilaris2023] or in the French public national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), in the [FireCaster demonstration platform](https://forefire.univ-corse.fr/) while also of use in several commercial companies. 
 
