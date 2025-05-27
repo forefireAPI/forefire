@@ -77,6 +77,9 @@ public:
     /*! \brief Removing an event */
     void dropEvent(FFEvent*);
     /*! \brief Removing all the events associated to a ForeFireAtom */
+    void clear();
+    /*! \brief Removing all the events associated to a ForeFireAtom */
+
     void dropAtomEvents(ForeFireAtom*);
 
     /*! \brief Getting the current time of the timetable */

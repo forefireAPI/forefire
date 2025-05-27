@@ -337,49 +337,68 @@
 	 }
  
 	 FireDomain::~FireDomain() {
- 
-		 // Deleting nodes
-		 while( !createdNodes.empty() ){
-			 delete createdNodes.back();
-			 createdNodes.pop_back();
-		 }
-		 // Deleting fronts
-		 delete domainFront;
-		 while( !trashFronts.empty() ){
-			 delete trashFronts.back();
-			 trashFronts.pop_back();
-		 }
-		 // Deleting cells
-		 for ( size_t i = 0; i < atmoNX; ++i ) {
-			 delete [] cells[i];
-		 }
-		 delete [] cells;
-		 delete trashCell;
-		 // Deleting frontiers
-		 while( !frontiers.empty() ){
-			 delete frontiers.back();
-			 frontiers.pop_back();
-		 }
-		 while( !infrontiers.empty() ){
-			 delete infrontiers.back();
-			 infrontiers.pop_back();
-		 }
-		 // Deleting halos
-	 /*	while( !innerHalos.empty() ){
-			 delete innerHalos.back();
-			 innerHalos.pop_back();
-		 }
-		 while( !outerHalos.empty() ){
-			 delete outerHalos.back();
-			 outerHalos.pop_back();
-		 }*/
-		 // Deleting data broker related objects
-		 delete dataBroker;
-		 delete propagativeLayer;
-		 // Deleting time table
-		 delete schedule;
- 
-	 }
+		// Deleting nodes
+		while (!createdNodes.empty()) {
+			if (createdNodes.back()) {
+				delete createdNodes.back();
+			}
+			createdNodes.pop_back();
+		}
+	
+		// Deleting fronts
+		if (domainFront) {
+			delete domainFront;
+			domainFront = nullptr;
+		}
+		while (!trashFronts.empty()) {
+			if (trashFronts.back()) {
+				delete trashFronts.back();
+			}
+			trashFronts.pop_back();
+		}
+	
+		// Deleting cells
+		if (cells) {
+			for (size_t i = 0; i < atmoNX; ++i) {
+				if (cells[i]) {
+					delete[] cells[i];
+				}
+			}
+			delete[] cells;
+			cells = nullptr;
+		}
+	
+		if (trashCell) {
+			delete trashCell;
+			trashCell = nullptr;
+		}
+	
+		// Deleting frontiers
+		while (!frontiers.empty()) {
+			if (frontiers.back()) {
+				delete frontiers.back();
+			}
+			frontiers.pop_back();
+		}
+		while (!infrontiers.empty()) {
+			if (infrontiers.back()) {
+				delete infrontiers.back();
+			}
+			infrontiers.pop_back();
+		}
+	
+		// Deleting data broker and layers
+		if (dataBroker) {
+			delete dataBroker;
+			dataBroker = nullptr;
+		}
+		if (propagativeLayer) {
+			//delete propagativeLayer;
+			propagativeLayer = nullptr;
+		}
+	
+		if ( mainFrontBackup != 0 ) delete mainFrontBackup;
+	}
  
 	 void FireDomain::backupState(){
 		 /* Backup of the simulation */
@@ -2817,7 +2836,7 @@
 		 dataBroker->setAtmosphericDomain(SWCorner, NECorner, atmoNX, atmoNY);
  
 		 /* initializations for the propagation model */
-		 propagativeLayer = 0;
+		 propagativeLayer = nullptr;
 		 for ( size_t i = 0; i < NUM_MAX_PROPMODELS; i++ ) propModelsTable[i] = 0;
  
 		 ostringstream infile;
