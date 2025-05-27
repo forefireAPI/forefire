@@ -9,6 +9,7 @@ local
 tools/cache
 tools/cmaps
 bindings/python/src/pyforefire.egg-info
+paper/jats
 #python
 __pycache__
 venv
@@ -50,3 +51,4 @@ tests/python/runROS.bash
 changeLicense.py
 httpConnectInfo.txt
 tools/ai
+paper/paper.pdf
