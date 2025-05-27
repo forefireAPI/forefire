@@ -85,9 +85,9 @@ bibliography: paper.bib
 
 # Summary
 
-**ForeFire** is a modular, high-performance wildland fire simulation engine implemented in C++. It is designed to model the spread of wildfire perimeters over large landscapes at meter scale resolution, serving both as a research platform and an operational forecasting tool. ForeFire can be used to forecast wildfires spanning thousands of hectares within seconds, supporting wildfire management operations, while also providing an open testbed for experimenting with new fire behavior, power, and flux models in a scientific context.
+**ForeFire** is a modular, high-performance wildland fire simulation engine implemented in C++. It is designed to model the spread of wildfire perimeters over large landscapes at meter scale resolution, serving both as a research platform and an operational forecasting tool. ForeFire can be used to forecast wildfires spanning thousands of hectares within seconds, supporting wildfire management operations, while also providing an open testbed for experimenting with new fire behavior, fire intensity, and fire flux models in a scientific context.
 
-ForeFire offers multiple interfaces and utilities to maximize usability and integration. The core C++ library has Fortran and Python bindings and is accompanied by a lightweight scriptable interpreter, a local HTTP service that enables a customizable graphical user interface and ability to load, save and export data in NetCDF, GeoJson, KML, png and jpg. ForeFire is discrete‑event‑driven [@filippi2009], focusing computational effort on the active region of the fire front defined as a dynamic mesh or multipolygons of fire markers. 
+ForeFire offers multiple interfaces and utilities to maximize usability and integration. The core C++ library has Fortran and Python bindings and is accompanied by a lightweight scriptable interpreter (in custom FF language), a local HTTP service that enables a customizable graphical user interface and ability to load, save and export data in NetCDF, GeoJson, KML, png and jpg. ForeFire is discrete‑event‑driven [@filippi2009], focusing computational effort on the active region of the fire front defined as a dynamic mesh or multipolygons of fire markers. 
 
 Eventually ForeFire is also capable of two-way coupling with the MesoNH [@lac2018] atmospheric model to account for fire-atmosphere interaction [@filippi2013].
 
@@ -127,7 +127,7 @@ But the interface can also be run interactively using a highly customizable web�
 
 ![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds](gui.jpg)
 
-With pre-compiled datasets over a large area, it enables simulation services of continent‑wide operational forecasting, to find the best escape routes [@kamilaris2023] or in the French public national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), in the [FireCaster demonstration platform](https://forefire.univ-corse.fr/) while also of use in several commercial companies. 
+By utilizing pre-compiled datasets over extensive regions, this approach supports continent-wide operational forecasting services. It is applied in identifying optimal escape routes [@kamilaris2023], integrated into the French national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), showcased on the [FireCaster demonstration platform](https://forefire.univ-corse.fr/), and adopted by various commercial companies.
 
 But the ability to run as batch also means it can be used to perform systematic model evaluation [@filippi2014] generate simulation ensembles [@allaire2020] or large simulation databases for deep learning [@allaire2021],[@allaire2022]
 
