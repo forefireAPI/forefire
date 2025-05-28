@@ -1,13 +1,11 @@
 # PyForeFire
 
-<div style="display: flex; align-items: center;">
-  <img src="./pyforefire.svg" alt="PyForeFire Logo" width="300" />
-  <div style="padding-left: 1rem; max-width: 50%;">
-    <p>
-      <strong>PyForeFire</strong> provides Python bindings for the ForeFire library, enabling users to access ForeFire’s functionality directly from Python. The bindings link against the precompiled ForeFire library and include support for NetCDF and other dependencies.
-    </p>
-  </div>
-</div>
+<p align="center">
+  <img src="./pyforefire.svg" alt="PyForeFire Logo" width="300">
+</p>
+
+
+**PyForeFire** provides Python bindings for the ForeFire library, enabling users to access ForeFire’s functionality directly from Python. The bindings link against the precompiled ForeFire library and include support for NetCDF and other dependencies.
 
 ## Overview
 
