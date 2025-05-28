@@ -94,7 +94,7 @@ std::string commandHelp = R"(
 
 ## save
     save[opt:filename=landscape_file.nc;opt:fields=(altitude,wind,fuel)]]
-    without argument saves the current simulation arrival time state in netcdf format with standard name ForeFire.'domainID'.nc
+    without argument saves the current simulation arrival time state in netcdf format with default name ForeFire.'domainID'.nc
     Example: save[]
     Arguments:
      - opt:filename if given, landscape file is saved instead
@@ -150,7 +150,7 @@ std::string commandHelp = R"(
      - Uses the active propagation model to calculate simulation speeds;
 
 ## setParameter
-    setParameter[param=<value>]
+    setParameter[param=value]
     Sets a single simulation parameter to a given value
     Example: setParameter[kappa=0.05]
     Arguments:
@@ -172,30 +172,30 @@ std::string commandHelp = R"(
      - 'key': The name of the parameter to retrieve;
 
 ## include
-    include[input=<filename>]
-    Executes commands from the specified file
-    Example: include[input=commands.txt]
+    include[filename.ff]
+    Executes FF commands from the specified file
+    Example: include[commands.ff]
     Arguments:
-     - 'input': Filename containing simulation commands to execute;
+     - 'filename.ff': Filename containing simulation commands to execute
 
 ## clear
     clear
     Clears all simulation data
     Example: clear
     Arguments:
-     - Clears the simulation data to reset the state;
+     - Clears the simulation data to reset the state
 
 ## systemExec
     systemExec[command=<system_command>]
     Executes a system command
     Example: systemExec[command=ls -la]
     Arguments:
-     - 'command': The system command to execute;
+     - 'command': The system command to execute
 
 ## listenHTTP
-    listenHTTP[host=<hostname>;port=<port>]
+    listenHTTP[host:port]
     Launches an HTTP server to listen for simulation commands
-    Example: listenHTTP[host=127.0.0.1;port=8080]
+    Example: listenHTTP[localhost:8080]
     Arguments:
      - 'host': Hostname or IP address for the server
      - 'port': Port number on which the server will listen;
@@ -204,6 +204,10 @@ std::string commandHelp = R"(
     help[]
     Displays a list of available commands and their brief descriptions.
     Use Tab-Tab on a specific command name for full details.;
+
+## clear
+    clear[]
+    clears-up memory except parameters, no more schedueled events or fire domain.
 
 ## quit
     quit[]
