@@ -3,7 +3,7 @@
 Command Reference
 =================
 
-This page lists the commands available in the ForeFire interpreter. Commands are typically followed by arguments enclosed in square brackets `[...]`, often using a `key=value` format separated by semicolons `;`.
+This page lists the commands available in the ForeFire interpreter. Commands are typically followed by arguments enclosed in square brackets `[...]`, often using a `key=value` format separated by semicolons `;`. Some commands may accept positional arguments.
 
 .. note::
    Some commands like ``FireFront`` and ``FireNode`` rely on **indentation** (spaces) when used in a script file to define their hierarchical relationship (e.g., a ``FireNode`` belongs to a ``FireFront``, which belongs to a ``FireDomain``). This is indicated in their descriptions.
@@ -27,7 +27,7 @@ Create the main FireDomain. Fronts and nodes will be created within this FireDom
 *   ``sw=(x,y,z)``: Southwest corner coordinates (x,y,z) in meters.
 *   ``ne=(x,y,z)``: Northeast corner coordinates (x,y,z) in meters.
 *   ``t=seconds|date=YYYY-MM-DDTHH:MM:SSZ``: Time associated with the fire domain, either in seconds since simulation start or as an absolute ISO 8601 GMT date/time.
-*   ``opt:BBoxWSEN=(lonWest,latSouth,lonEast,latNorth)``: (Optional) WGS84 coordinates for the bounding box (west longitude, south latitude, east longitude, north latitude).
+*   ``opt:BBoxWSEN=(lonWest,latSouth,lonEast,latNorth)``: (Optional) WGS84 coordinates for the north-oriented bounding box (west longitude, south latitude, east longitude, north latitude).
 
 **Example:**
 
@@ -71,7 +71,7 @@ Creates a FireFront within a FireDomain or another FireFront.
 
 .. code-block:: none
 
-           FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds;opt:domain=...;opt:id=...;opt:fdepth=...;opt:kappa=...;opt:state=...;opt:frontId=...] # Example indentation
+           FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds;opt:domain=<domain_id>;opt:id=<node_id>;opt:fdepth=<meters>;opt:kappa=<factor>;opt:state=<state_name>;opt:frontId=<front_id>] # Example indentation
 
 Creates a FireNode (a point marker on the fire line) within a FireFront.
 
@@ -107,18 +107,21 @@ Creates a FireNode (a point marker on the fire line) within a FireFront.
 .. code-block:: none
 
    command[arguments]@t=seconds
+   command[arguments]@nowplus=seconds
 
-Schedule operator to trigger the preceding command at a specific time `t`.
+Schedule operator to trigger the preceding command at a specific time `t` or after a duration `nowplus`.
 
 **Arguments:**
 
 *   ``t=seconds``: Time in seconds when the scheduled command should execute.
+*   ``nowplus=seconds``: Delta duration in seconds from the current simulation time when the scheduled command should execute.
 
 **Example:**
 
 .. code-block:: none
 
-   print[]@t=1200  # Schedule a print command to run at t=1200 seconds
+   print[]@t=1200          # Schedule a print command to run at sim time t=1200 seconds
+   save[]@nowplus=600     # Schedule a save command to run at current sim time + 600 seconds
 
 
 .. _cmd-startFire:
@@ -143,7 +146,7 @@ Creates the smallest possible triangular fire front (an ignition point) at the s
 .. code-block:: none
 
    startFire[loc=(0.0,0.0,0.0);t=0.]
-   startFire[lonlat=(9.0, 42.0);date=2024-07-15T10:00:00Z]
+   startFire[lonlat=(9.0,42.0);date=2024-07-15T10:00:00Z]
 
 
 .. _cmd-step:
@@ -267,7 +270,7 @@ Retrieves and prints the current value of a specified simulation parameter.
 
    loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
 
-Loads environmental data from a NetCDF landscape file into the simulation, associating it with a specific UTC date/time.
+Loads environmental data from a NetCDF landscape file into the simulation, associating it with a specific UTC date/time. Arguments are positional.
 
 **Arguments:**
 
@@ -330,7 +333,7 @@ Triggers a change in simulation data at a specific time and location. Can be use
 
 .. code-block:: none
 
-   trigger[fuelType=wind;vel=(5.0, 2.0, 0.0);t=1800] # Trigger new wind at t=1800s
+   trigger[fuelType=wind;vel=(5.0,2.0,0.0);t=1800] # Trigger new wind at t=1800s
 
 
 .. _cmd-print:
@@ -372,12 +375,13 @@ Prints a representation of the current simulation state (primarily the fire fron
 .. code-block:: none
 
    save[opt:filename=<fname.nc>;opt:fields=(field1,field2,...)]
+   save[]
 
 Saves simulation state or landscape data to a NetCDF file.
 
 **Modes:**
 
-1.  **Save Arrival Time Map (Default):** If no arguments are given, saves the computed fire arrival time map for the current domain to a standard filename like `ForeFire.<domainID>.nc`.
+1.  **Save Arrival Time Map (Default):** If no arguments are given (`save[]`), saves the computed fire arrival time map for the current domain to a standard filename like `ForeFire.<domainID>.nc`.
 2.  **Save Landscape Data:** If `filename` and `fields` are provided, saves specified data layers (e.g., altitude, fuel, wind) from the DataBroker to the given NetCDF filename.
 
 **Arguments:**
@@ -400,7 +404,7 @@ Saves simulation state or landscape data to a NetCDF file.
 
 .. code-block:: none
 
-   plot[parameter=(param_name);filename=<fname.png/jpg/nc/asc>;opt:range=(min,max);opt:area=(area_spec);opt:size=(w,h);opt:cmap=<map_name>;opt:histbins=<N>;opt:projectionOut=(json|<fname.kml>)]
+   plot[parameter=(param_name);filename=<fname.png/jpg/nc/asc>;opt:range=(min,max);opt:area=(area_spec);opt:size=(eni,enj);opt:cmap=<map_name>;opt:histbins=<N>;opt:projectionOut=(json|<fname.kml>)]
 
 Generates a plot or data export of a specified simulation parameter. Output format depends on the `filename` extension.
 
@@ -416,7 +420,7 @@ Generates a plot or data export of a specified simulation parameter. Output form
     *   `BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)`: Geographic WGS84 bounding box.
     *   `BBoxLBRT=(leftX,bottomY,rightX,topY)`: Cartesian coordinate bounding box.
     *   `active`: Only the active (computationally relevant) part of the domain.
-*   ``opt:size=(width,height)``: (Optional) Output matrix dimensions (pixels/grid cells). Uses default resolution if omitted.
+*   ``opt:size=(eni,enj)``: (Optional) Output matrix dimensions (pixels/grid cells), where `eni` is width and `enj` is height. Uses default resolution if omitted.
 *   ``opt:cmap=<map_name>``: (Optional) Colormap name (e.g., `viridis`, `turbo`, `jet`, `fuel`).
 *   ``opt:histbins=<N>``: (Optional) Number of bins for histogram (if applicable to output format).
 *   ``opt:projectionOut=(json|<fname.kml>)``: (Optional) Output projection info:
@@ -438,15 +442,16 @@ Generates a plot or data export of a specified simulation parameter. Output form
 
 .. code-block:: none
 
-   computeSpeed
+   computeSpeed[]
 
-Computes and returns an array of speed values using the currently active propagation model (defined by `setParameter[propagationModel=...]`). *Note: The exact format/use of the returned array might need further clarification based on interpreter behavior.*
+Computes and returns an array of speed values using the first registered propagation model.
+*Note: The exact format/use of the returned array within the interpreter might need further user clarification.*
 
 **Example:**
 
 .. code-block:: none
 
-   computeSpeed
+   computeSpeed[]
 
 
 .. _cmd-include:
@@ -456,19 +461,20 @@ Computes and returns an array of speed values using the currently active propaga
 
 .. code-block:: none
 
-   include[input=<filename>]
+   include[filename.ff]
 
-Executes ForeFire commands contained within the specified script file.
+Executes ForeFire commands contained within the specified script file. The filename is provided as a positional argument.
 
 **Arguments:**
 
-*   ``input=<filename>``: Path to the ForeFire script file (.ff or .txt) containing commands to execute.
+*   Positional 1: Path to the ForeFire script file (e.g., `.ff` or `.txt`) containing commands to execute.
 
 **Example:**
 
 .. code-block:: none
 
-   include[input=real_case.ff]
+   include[real_case.ff]
+   include[commands.txt]
 
 
 .. _cmd-clear:
@@ -480,7 +486,7 @@ Executes ForeFire commands contained within the specified script file.
 
    clear[]
 
-Clears all simulation data (domain, fronts, nodes, loaded data), resetting the simulation state. Parameters are generally kept.
+Clears all simulation data (domain, fronts, nodes, loaded data) and scheduled events, resetting the simulation state. Parameters are generally kept.
 
 **Example:**
 
@@ -509,6 +515,7 @@ Executes a command in the underlying operating system shell.
 .. code-block:: none
 
    systemExec[command=ls -l output_files/]
+   systemExec[command=echo "Simulation step done" >> sim.log]
 
 
 .. _cmd-listenHTTP:
@@ -518,20 +525,39 @@ Executes a command in the underlying operating system shell.
 
 .. code-block:: none
 
-   listenHTTP[host=<hostname>;port=<port>]
+   listenHTTP[host:port]
 
-Launches an HTTP server (on the machine running ForeFire) that listens for simulation commands via HTTP requests. Used by the web interface.
+Launches an HTTP server (on the machine running ForeFire) that listens for simulation commands via HTTP requests. The host and port are provided as positional arguments separated by a colon. Used by the web interface.
 
 **Arguments:**
 
-*   ``host=<hostname>``: Hostname or IP address to bind the server to (e.g., `127.0.0.1`, `0.0.0.0`).
-*   ``port=<port>``: Port number for the server to listen on (e.g., `8000`, `8080`).
+*   Positional 1: Hostname or IP address to bind the server to, followed by a colon, followed by the port number (e.g., `127.0.0.1:8000`, `0.0.0.0:8080`).
 
 **Example:**
 
 .. code-block:: none
 
-   listenHTTP[host=0.0.0.0;port=8000]
+   listenHTTP[0.0.0.0:8000]
+   listenHTTP[localhost:8080]
+
+
+.. _cmd-help:
+
+``help``
+~~~~~~~~
+
+.. code-block:: none
+
+   help[]
+
+Displays a list of available commands and their brief descriptions.
+*Note: For more detailed help on a specific command within the ForeFire interpreter, "Tab-Tab" completion or similar interactive features might be available if supported by the interpreter environment.*
+
+**Example:**
+
+.. code-block:: none
+
+   help[]
 
 
 .. _cmd-quit:
