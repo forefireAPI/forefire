@@ -1,8 +1,13 @@
 # PyForeFire
 
-PyForeFire provides Python bindings for the ForeFire library, enabling users to access ForeFire’s functionality directly from Python. The bindings link against the precompiled ForeFire library and include support for NetCDF and other dependencies.
-
----
+<div style="display: flex; align-items: center;">
+  <img src="./pyforefire.svg" alt="PyForeFire Logo" width="300" />
+  <div style="padding-left: 1rem; max-width: 50%;">
+    <p>
+      <strong>PyForeFire</strong> provides Python bindings for the ForeFire library, enabling users to access ForeFire’s functionality directly from Python. The bindings link against the precompiled ForeFire library and include support for NetCDF and other dependencies.
+    </p>
+  </div>
+</div>
 
 ## Overview
 
@@ -116,4 +121,4 @@ This project is licensed under the terms specified in the `LICENSE` file.
 ## Project URLs
 
 - **Homepage:** [https://github.com/forefireAPI/forefire](https://github.com/forefireAPI/forefire)
-- **Repository:** [https://github.com/forefireAPI/forefire](https://github.com/forefireAPI/forefire)
+- **Documentation:** [https://forefire.readthedocs.io/en/latest/](https://forefire.readthedocs.io/en/latest/)
