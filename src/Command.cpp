@@ -281,6 +281,7 @@ namespace libforefire
         if (getString("loc",arg) != stringError)type="loc";
         if (getString("lonlat",arg) != stringError) type="lonlat";
 
+        
         FireDomain *refDomain = getDomain();
         
         if (type == "polyencoded" || type == "geojson" ||
@@ -312,8 +313,9 @@ namespace libforefire
             FFPoint pos = getPoint("lonlat", arg);
             if (pos == pointError)
                 pos = getPoint("loc", arg);
+            
     
-            if (refDomain->striclyWithinDomain(pos))
+            if (refDomain->striclyWithinDomain(pos) & !refDomain->isBurnt(pos,t))
             {
                 // Optional: If a current fire front exists, finalize it.
                 if (currentSession.ff != 0)
@@ -348,7 +350,7 @@ namespace libforefire
                 lastnode = refDomain->addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
                 refDomain->addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
                 completeFront(currentSession.ff);
-                cout << "Fire started at " << pos.x << ", " << pos.y << endl;
+                cout << "Fire started at " << pos.x << ", " << pos.y << " Time: "<<t<< endl;
             }
         }
         else

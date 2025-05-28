@@ -291,6 +291,7 @@ namespace http_command {
                 return buildResponse("200 OK", "text/html; charset=UTF-8", body);
             } else {
                 if (!fileExists(path)) {
+                    cout << "File not found: " << path << std::endl;
                     if (const char* ffHome = std::getenv("FOREFIREHOME")) {
                         
                         std::string altPath = std::string(ffHome) +"/tools/htdocs/"+ path;
@@ -309,7 +310,7 @@ namespace http_command {
                     std::string contentType = determineContentType(path);
                     return buildResponse("200 OK", contentType, body);
                 }
-                return buildSimpleResponse("404 Not Found", "File not found: " + path);
+                return buildSimpleResponse("404 Not Found", "No index.html found in run directory : " + path + " for default interface set environment variable FOREFIREHOME to forefire directory  ( export FOREFIREHOME=/path/to/forefire/ ) before launching ForeFire" );
                 }
             }
 

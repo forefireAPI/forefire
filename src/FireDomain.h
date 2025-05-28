@@ -515,6 +515,9 @@ public:
 	/*! \brief checking if a location is burning */
 	bool isBurning(FFPoint&, const double&);
 
+	/*! \brief checking if a location is burnt */
+	bool isBurnt(FFPoint&, const double&);
+
 	/*! \brief Computing the front depth a given firenode */
 	double computeFrontDepth(FireNode*);
 

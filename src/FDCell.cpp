@@ -194,6 +194,7 @@ double FDCell::getBurningRatio(const double& t){
 		}
 		center.setX(center.getX()+dx);
 	}
+//	cout<<"Burning ratio in cell "<<globalI<<":"<<globalJ	<<" = "<<numBurningCells<<" size :"<<mapSize<<" result "<<numBurningCells/mapSize<<endl;
 /*	if ( numBurningCells == 0 ) delete arrivalTimes;*/
 	return numBurningCells/mapSize;
 }

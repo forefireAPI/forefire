@@ -9,6 +9,7 @@
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
 #include <cmath>
+#include <random>
 
 #ifdef MPI_COUPLING
 #include <mpi.h>
@@ -36,7 +37,8 @@ static Command::Session* session = &(executor.currentSession);
 int world_rank;
 int world_size;
 size_t mnhPause;
-
+double updateBinStreamFrequency = 10;
+double updateOutputFrequency = 0;
 
 
 Command* getLauncher(){
@@ -85,8 +87,13 @@ void MNHCreateDomain(const int id
 	/* Defining the Fire Domain */
 	if (session->fd) delete session->fd;
 
-	//std::cout<<"Initing Parallel MNH"<<id<< std::endl;
-	
+	SimulationParameters::GetInstance()->setDouble("atmosphericTimeStep", dt);
+	SimulationParameters::GetInstance()->setDouble("atmosphericCellLength", (meshx[1] - meshx[0]));
+	SimulationParameters::GetInstance()->setDouble("atmosphericCellWidth", (meshy[1] - meshy[0]));
+
+
+	SimulationParameters::GetInstance()->setDouble("sumInjected", 0.0);
+	SimulationParameters::GetInstance()->setDouble("sumSedimented", 0.0);
 
 	session->fd = new FireDomain(id, year, month, day, t, lat, lon
 			, mdimx, meshx, mdimy, meshy, mdimz, dt);
@@ -171,7 +178,12 @@ void MNHCreateDomain(const int id
 
 	session->outStrRep = new StringRepresentation(executor.getDomain());
 	if ( SimulationParameters::GetInstance()->getInt("outputsUpdate") != 0 ){
+
 		session->tt->insert(new FFEvent(session->outStrRep));
+
+		updateOutputFrequency = SimulationParameters::GetInstance()->getDouble("outputsUpdate");
+		// handle bynary updates
+
 	}
   
 	// Reading all the information on the initialization of ForeFire
@@ -250,18 +262,14 @@ void CheckLayer(const char* lname){
 void MNHStep(double dt){
 
 	#ifdef MPI_COUPLING
-
-
-	 
-
 		size_t sizeofcell = session->fd->getlocalBMapSize();
-	
+		updateBinStreamFrequency = SimulationParameters::GetInstance()->getDouble("updateBinStreamFrequency");
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
 		if (world_rank == 0) {
 
-
+			
 			FDCell** mycells = session->fdp->getCells();
 			size_t domainID =  1;
 			FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
@@ -269,18 +277,20 @@ void MNHStep(double dt){
 			size_t any = domainInfo->atmoNY;
 			size_t rnx = domainInfo->refNX;
 			size_t rny = domainInfo->refNY;
+			// counting all active cells to be sent
 			for(size_t i = rnx; i < rnx + anx; ++i){
 				for(size_t j = rny; j < rny + any; ++j){
 					if(mycells[i][j].isActiveForDump()){
 						FFArray<double>* SRCburningMap = mycells[i][j].getBurningMap()->getMap();
 						session->fd->getCells()[i - rnx][j - rny].setBMapValues(SRCburningMap->getData());
-						mycells[i][j].setIfAllDumped();
+					//	cout << "sending Active cell found at (" << i << ", " << j << ")" << std::endl;
+						//mycells[i][j].setIfAllDumped();
 					}
 				}
 			}
 		
 			for (int nr = 1; nr < world_size; ++nr) {
-			
+				// Send the number of active cells to each rank depending on which subdomain they are, first the number of active cells per domain
 				domainID = nr + 1;
 				int32_t numberOfActiveCells = 0;//session->fdp->countActiveCellsInDispatchDomain(domainID);
 				FireDomain::distributedDomainInfo* domainInfo = session->fdp->getParallelDomainInfo(domainID);
@@ -296,8 +306,9 @@ void MNHStep(double dt){
 						}
 					}
 				}
+			
 				MPI_Send(&numberOfActiveCells, 1, MPI_INT32_T, nr, 0, MPI_COMM_WORLD);
-				
+				// Send the data of the active cells
 				if (numberOfActiveCells>0){
 					size_t totalBytes = numberOfActiveCells * (2 * sizeof(int32_t) + sizeofcell * sizeof(double));
 					std::vector<char> BMAP_DATA_to_send(totalBytes);
@@ -318,18 +329,71 @@ void MNHStep(double dt){
 									offset += sizeof(int32_t);
 									memcpy(BMAP_DATA_to_send.data() + offset, burningMap->getData(), sizeofcell * sizeof(double));
 									offset += sizeofcell * sizeof(double);
-									mycells[i][j].setIfAllDumped();
+									// marked it dumped
+									//mycells[i][j].setIfAllDumped();
 								}
 							}
 						}
 					MPI_Send(BMAP_DATA_to_send.data(), totalBytes, MPI_CHAR, nr, 1, MPI_COMM_WORLD);
 				}	
 			}
+				// mark as dumped the cells in the subdomain for rank 1
+			domainInfo = session->fdp->getParallelDomainInfo(1);
+				anx = domainInfo->atmoNX;
+				any = domainInfo->atmoNY;
+				rnx = domainInfo->refNX;
+				rny = domainInfo->refNY;
+			// Iterate over the cells within the specified domain
+			for (size_t i = rnx; i < rnx + anx; ++i) {
+				for (size_t j = rny; j < rny + any; ++j) {
+					if (mycells[i][j].isActiveForDump()) {
+						//mycells[i][j].setIfAllDumped();
+					}
+				}
+			}
+			bool timeForDump = (std::fmod(session->fdp->getTime(), updateOutputFrequency) < 1e-6);
+			vector<string> optLayers =	SimulationParameters::GetInstance()->getParameterArray("accumulatedDiagnosticScalarLayersNames");
+			for (size_t i = 0; i < optLayers.size(); i++)
+			{
+				DataLayer<double>* myMasterLayer = session->fdp->getDataLayer(optLayers[i]+"Accumulated");
+				FFArray<double>* fullMatrix;
+				myMasterLayer->getMatrix(&fullMatrix,0);
+
+				DataLayer<double>* myInstantLayer = session->fdp->getDataLayer(optLayers[i]);
+				FFArray<double>* instantMatrix;
+				myInstantLayer->getMatrix(&instantMatrix,0);
+
+
+				size_t nx = fullMatrix->getDim("x");
+				size_t ny = fullMatrix->getDim("y");
+				double* matrixData = fullMatrix->getData();
+				double* instantData = instantMatrix->getData();
+
+				for (size_t i = 0; i < nx; ++i) {
+					for (size_t j = 0; j < ny; ++j) {
+						size_t index = i * ny + j;
+						matrixData[index] += instantData[index]*dt;
+					}
+				}
+				if(timeForDump){
+					cout<< session->fdp->getTime()<< " Layer " << optLayers[i] << " total: " << fullMatrix->sum() << endl;
+					std::ostringstream fnoss;
+					fnoss  << optLayers[i] << "Accumulated_fp64_"<<nx<<"_"<<ny<<".dat";
+					std::string filename = fnoss.str();
+					std::ofstream ofs(filename, std::ios::binary | std::ios::app);
+					if (ofs) {
+						ofs.write(reinterpret_cast<const char*>(matrixData), nx * ny * sizeof(double));
+						ofs.close();
+					}
+					fullMatrix->fill(0.0);
+				}
+			}
+			
 
 		}else {
 			int32_t numberOfActiveCellsInDomain = 0;
 			MPI_Recv(&numberOfActiveCellsInDomain, 1, MPI_INT32_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			
+		
 			if (numberOfActiveCellsInDomain>0){	
 				size_t totalBytes = numberOfActiveCellsInDomain * (2 * sizeof(int32_t) + sizeofcell * sizeof(double));
 				std::vector<char> BMAP_DATA_received(totalBytes);
@@ -362,7 +426,8 @@ void MNHStep(double dt){
 mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
 	while (mnhPause>0) {
 		sleep(static_cast<unsigned int>(mnhPause));
-		mnhPause = SimulationParameters::GetInstance()->getInt("MNHalt");
+		mnhPause = SimulationParameters::GetInstance()->g/has
+		etInt("MNHalt");
 		std::cout<<"setParameter[MNHalt=0] to restart, waiting for "<<mnhPause<<std::endl;
 	}
 	SimulationParameters::GetInstance()->setInt("MNHalt",0);
@@ -379,13 +444,16 @@ void FFGetDoubleArray(const char* mname, double t
 	double ct = executor.refTime + t;
 	// searching for the layer to put data 
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname); 
+
 	if ( myLayer ){
-		myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
+			myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
 		
 	
 			#ifdef MPI_COUPLING
 			
-			if ( tmpname == "windU" or tmpname == "windV" or tmpname == "plumeTopHeight" or tmpname == "plumeBottomHeight" or tmpname == "smokeAtGround" or tmpname == "tke"  ){
+		 	// Special case for altitude.. not to be sent
+			if ( tmpname != "altitude"   ){
+				
 				FFArray<double>* t2;
 				myLayer->getMatrix(&t2,0);
 				MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -401,52 +469,124 @@ void FFGetDoubleArray(const char* mname, double t
 						size_t dsize = (DR->atmoNX+2)*(DR->atmoNY+2);
 						std::vector<double> data_processed(dsize);
 						MPI_Recv(data_processed.data(),dsize, MPI_DOUBLE, nr, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
+					    fullMatrix->setDataAtLoc(data_processed.data(),DR->atmoNX+2,DR->atmoNY+2,DR->refNX,DR->refNY,DR->ID);				
 					}
-				if (std::fmod(t, 60.0) < 1e-6) {
+					if (tmpname == "injectedAtGround"){
+						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
+						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
+						double sumInjected = SimulationParameters::GetInstance()->getDouble("sumInjected");
+
+						
+						sumInjected = sumInjected + ((fullMatrix->sum()) * atmosphericTimeStep );;
+						SimulationParameters::GetInstance()->setDouble("sumInjected", sumInjected);
+
+					}
+
+					if (tmpname == "spotAtGround"){
+						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
+						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
+				
+						double sumSedimented = SimulationParameters::GetInstance()->getDouble("sumSedimented");
+						sumSedimented = sumSedimented + ((fullMatrix->sum()) * atmosphericTimeStep );;
+
+						SimulationParameters::GetInstance()->setDouble("sumSedimented", sumSedimented);
+
+
+					}
+
+
+					//cout << updateBinStreamFrequency<<endl;
+					if (std::fmod(t, updateBinStreamFrequency) < 1e-6) {
+
+					 	if(tmpname == "spotAtGround"){
+						//	cout <<"Time: "<< t<< " DT:"<< SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep")<< " sumInjected: " << SimulationParameters::GetInstance()->getDouble("sumInjected") << " sumSedimented: " << SimulationParameters::GetInstance()->getDouble("sumSedimented") << endl;
+						
+							if (SimulationParameters::GetInstance()->isValued("reignitionThresholdFromSpotting")){
+								double reignitionThreshold = SimulationParameters::GetInstance()->getDouble("reignitionThresholdFromSpotting");
+								double reignitionMaxProbalilityValueFromSpotting = SimulationParameters::GetInstance()->getDouble("reignitionMaxProbalilityValueFromSpotting");
+								 
+								// --- Re‑ignition logic ---
+								size_t nx = fullMatrix->getDim("x");
+								size_t ny = fullMatrix->getDim("y");
+								double* matrixData = fullMatrix->getData();
+
+								// Random number generator (static so it is created only once)
+								static std::mt19937 rng(std::random_device{}());
+								std::uniform_real_distribution<double> unif(0.0, 1.0);
+								
+								for (size_t i = 2; i < nx-2; ++i) {
+									for (size_t j = 2; j < ny-2; ++j) {
+										const size_t idx = i * ny + j;
+										double excess = matrixData[idx] - reignitionThreshold;
+
+										if (excess <= 0.0)
+											continue;                          // nothing to ignite here
+										if (excess > 2*reignitionThreshold)
+											continue;                          // nothing to ignite here
+										
+
+										
+										if (unif(rng) < reignitionMaxProbalilityValueFromSpotting) {
+											double igX = myMasterLayer->getOriginX()+
+													((i+unif(rng)) * myMasterLayer->getDx()) ;
+											double igY = myMasterLayer->getOriginY()+
+													((j+unif(rng)) * myMasterLayer->getDy());
+					
+
+											std::ostringstream fireCmd;
+										//	cout <<" nx << " << nx << " ny "<< ny << " i "<< i << " j "<< j << " idx "<< idx << " excess "<< idx << " DX "<<igX<<"  "<<igY<< endl;
+											fireCmd << "startFire[loc=(" << igX << ", " << igY << ",0)]";
+										//	cout << "Re-ignition command: " << fireCmd.str() << std::endl;
+											//cout <<"Time: "<<t << "Re-ignition command: " << fireCmd.str() << std::endl;
+											string scmd = fireCmd.str();
+											executor.ExecuteCommand(scmd);
+										}
+									}
+								}
+								// --- End re‑ignition logic ---
+							}
+						}					
 						std::string opath = SimulationParameters::GetInstance()->getParameter("genRawBytesDir");
 						if (opath != "1234567890") {
-							std::ostringstream fnoss;
-							fnoss << opath << "/" << tmpname
-								<< "_uint16_" << fullMatrix->getDim("x")
-								<< "_" << fullMatrix->getDim("y") << ".dat";
-							std::string filename = fnoss.str();
-							std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::app);
-							if (ofs) {
-								size_t total = fullMatrix->getSize();
-								std::vector<uint16_t> buf(total);
-								for (size_t i = 0; i < total; ++i) {
-									double v = fullMatrix->getData()[i];
-									double vnorm;
-									if (tmpname == "windU" || tmpname == "windV"){
-										vnorm = (v + 20.0) / 40.0;
-									} else if (tmpname == "plumeTopHeight" || tmpname == "plumeBottomHeight") {
-										vnorm = (v) / 4000.0;
-									} else if (tmpname == "smokeAtGround") {
-										vnorm = v / 0.1;
-									} else if (tmpname == "tke") {
-										vnorm = v / 15.0;
-									} else {
-										vnorm = 0.0;
+							SimulationParameters::GetInstance()->isValued(tmpname+"Range");
+							vector<double> range = SimulationParameters::GetInstance()->getDoubleArray(tmpname+"Range");
+							if (range.size() == 2) {
+								double vmin = range[0];
+								double vmax = range[1];
+								std::ostringstream fnoss;
+								fnoss << opath << "/" << tmpname
+									<< "_uint8_" << fullMatrix->getDim("x")
+									<< "_" << fullMatrix->getDim("y") << ".dat";
+								 
+								std::string filename = fnoss.str();
+								std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::app);
+								if (ofs) {
+									size_t total = fullMatrix->getSize();
+									std::vector<uint8_t> buf(total);
+									for (size_t i = 0; i < total; ++i) {
+										double v = fullMatrix->getData()[i];
+										double vnorm= (v - vmin) / (vmax - vmin);
+										vnorm = std::min(std::max(vnorm, 0.0), 1.0);
+										buf[i] = static_cast<uint8_t>(vnorm * std::numeric_limits<uint8_t>::max());
 									}
-									vnorm = std::min(std::max(vnorm, 0.0), 1.0);
-									buf[i] = static_cast<uint16_t>(vnorm * std::numeric_limits<uint16_t>::max());
-								}
-								ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint16_t));
+									ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size() * sizeof(uint8_t));
+								}		
 							}
+				
 						}
 					}
 
 				}else{				
 					MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
 				}
+			}else{
+				cout << "Setting Initial Altitude layer" << tmpname << endl;
 			}
 			#endif 
-	
 
 	} 
 	else {
-		cout<<"Error trying to get data for unknown layer "<<tmpname<<endl;
+		cout<<"MesoNH trying to set data for unknown layer :"<<tmpname<<endl;
 	}
 }
 
@@ -498,7 +638,7 @@ void FFPutDouble(const char* mname, double* x){
 }
 
 void FFGetDouble(const char* mname, double* x){
-	string name(mname);
+	string name(mname); 
 	SimulationParameters::GetInstance()->setDouble(name, *x);
 }
 
@@ -510,10 +650,26 @@ void FFPutDoubleArray(const char* mname, double* x,
  
 	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
 
+
+
 	if ( myLayer ){
 		FFArray<double>* myMatrix;
 		// getting the pointer
 		myLayer->getMatrix(&myMatrix, executor.getTime());
+
+		#ifdef MPI_COUPLING
+			
+		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		
+		if (tmpname == "BRatio"){
+			double sumBR = myMatrix->sum();
+			if (sumBR > 0.0){
+				//	cout << world_rank <<" has "<< myMatrix->sum()<<" size M " <<myMatrix->getSize()<<" sizein "<< sizein << " sizeout "<< sizeout << endl;
+			}
+		
+		}
+		#endif
 
 		myMatrix->copyDataToFortran(x);
 	} else {

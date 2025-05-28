@@ -196,7 +196,7 @@ size_t FuelDataLayer<T>::getValuesAt(FFPoint loc, const double& t
 		, FluxModel* model, size_t curPosition){
 	/* Getting the fuel at the given location */
 	int fuelIndex = getFuelAtLocation(loc, t);
-	cout << "getting Not Prop "<< fuelIndex <<" at location "<< loc.x <<";"<< loc.y<<endl;
+	//cout << "Getting not Prop "<< fuelIndex <<" at location "<< loc.x <<";"<< loc.y<<endl;
 	/* writing the parameters' values in the desired array at desired location */
 	for ( size_t param = 0; param < model->numFuelProperties; param++ ){
 		(model->properties)[curPosition+param] = (*(model->fuelPropertiesTable))(fuelIndex, param);

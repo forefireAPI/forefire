@@ -92,6 +92,11 @@ public:
 	void dumpBin(std::ofstream&  );
 	// Printing functions
 	string print2D(size_t = 0, size_t = 0);
+	/*! \brief Sum all elements in the array */
+	T sum() const;
+	T min() const;
+	T max() const;
+	void fill(const T val) const;
 };
 
 template<typename T>
@@ -112,8 +117,51 @@ T FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l) const {
 	     return data[im*ny*nz*nt + jm*nz*nt + km*nt + lm];
 	}
 	return data[i*ny*nz*nt + j*nz*nt + k*nt + l];
-}
+ 
 
+}
+template<typename T>
+T FFArray<T>::sum() const {
+	T total = T();
+	for (size_t i = 0; i < size; ++i) {
+		total += data[i];
+	}
+	return total;
+} 
+template<typename T>
+void FFArray<T>::fill(const T val) const {
+	for (size_t i = 0; i < size; ++i) {
+		data[i] = val;
+	}
+} 
+template<typename T>
+T FFArray<T>::min() const {
+    if (size == 0) {
+        // No elements: return default-constructed T or handle as needed
+        return T();
+    }
+    T m = data[0];
+    for (size_t i = 1; i < size; ++i) {
+        if (data[i] < m) {
+            m = data[i];
+        }
+    }
+    return m;
+}
+template<typename T>
+T FFArray<T>::max() const {
+    if (size == 0) {
+        // No elements: return default-constructed T or handle as needed
+        return T();
+    }
+    T m = data[0];
+    for (size_t i = 1; i < size; ++i) {
+        if (data[i] > m) {
+            m = data[i];
+        }
+    }
+    return m;
+}
 template<typename T>
 T& FFArray<T>::operator ()(size_t i, size_t j, size_t k, size_t l){
 	if ( i >= nx or j >= ny or k >=nz or l >= nt ){

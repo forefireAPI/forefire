@@ -291,9 +291,6 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 		, const size_t& sizein, size_t& sizeout, const double& newTime){
 				
 	if ( tmpMatrix->getSize() == sizein ){
-		if ( mname == "windU" or mname == "windV" or mname == "plumeTopHeight" or mname == "plumeBottomHeight" or mname == "smokeAtGround" or mname == "tke"  ){
-			
-			
 			/* Information concerning the whole domain */
 			// pointing the current array to the future one
 			FFArray<double>* tmpArray = arrayt1;
@@ -305,36 +302,9 @@ void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
 			// copying data from atmospheric matrix
 			tmpMatrix->copyDataFromFortran(inMatrix);
 			copyDomainInformation(tmpMatrix, arrayt2);
-			#ifdef MPI_COUPLING
 
-			#else
-				size_t atmoIterNumber = params->getInt("atmoIterNumber");
-				string domInName(params->getParameter("caseDirectory")+'/'+params->getParameter("PPath")+'/'+to_string((atmoIterNumber+1)%2)+"/"+params->getParameter("mpirank")+"."+this->getKey());
-				ofstream FileOut(domInName.c_str(), ios_base::binary);
-				arrayt2->dumpBin(FileOut);
-				FileOut.flush();   
-				FileOut.rdbuf()->pubsync(); 
-				FileOut.close();
-			#endif
-
-		} else {
-			cout<<"Argument in setMatrix for "<<this->getKey()
-					<<" not recognized: "<<mname<<endl;
-		}
-		if ( params->getInt("surfaceOutputs") != 0 ) {
-			// dumping in a binary file for output
-			size_t nnx = nx-2;
-			size_t nny = ny-2;
-			FFPoint plotSW = FFPoint(params->getDouble("massOriginX")
-					, params->getDouble("massOriginY"),0);
-			FFPoint plotNE = FFPoint(params->getDouble("massOriginX")+(nnx-1)*dx
-					, params->getDouble("massOriginY")+(nny-1)*dy,0);
-			dumpAsBinary(params->getParameter("ffOutputsPattern"), time2
-					, plotSW, plotNE, nnx, nny);
-		}
 	} else {
-		cout<<"Error while trying to retrieve data for two times array data layer "
-				<<this->getKey()<<", matrix size "<< tmpMatrix->getSize() <<" not matching "<<sizein  <<endl;
+		//cout<<"Error while trying to retrieve data for two times array data layer "	<<this->getKey()<<", matrix size "<< tmpMatrix->getSize() <<" not matching "<<sizein  <<endl;
 	}
 }
 

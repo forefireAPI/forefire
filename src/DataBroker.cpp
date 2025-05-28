@@ -49,8 +49,7 @@ namespace libforefire
 			layers.pop_back();
 		}
 		// Deleting atmospheric and parallel data
-		if (atmosphericData)
-			delete atmosphericData;
+ 
 
 		// Deleting optimized data brokers
 		delete[] optimizedPropDataBroker;
@@ -59,9 +58,7 @@ namespace libforefire
 
 	void DataBroker::commonInitialization()
 	{
-		/* atmospheric data */
-		atmosphericData = new AtmosphericData();
-		/* parallel data */
+ 
 
 		/* data brokers for propagation models */
 		propDataGetters.resize(FireDomain::NUM_MAX_PROPMODELS);
@@ -399,56 +396,72 @@ namespace libforefire
 		atmosphericNy = ny;
 	}
 
-	void DataBroker::initializeAtmosphericLayers(const double &time,
-												 const size_t &bnx, const size_t &bny)
+
+	void DataBroker::createEmpty2DLayer(const string &name,  FFPoint &swC,  FFPoint &neC, const size_t nx, const size_t ny )
+	{
+		    FFArray<double>* xARR  = new FFArray<double>(name, 0., nx, ny);
+			Array2DdataLayer<double> *xLAY = new Array2DdataLayer<double>(name, xARR, swC, neC);
+			registerLayer(name, xLAY);
+	}
+
+	void DataBroker::createEmptyTwoTimeArrayLayer(const string &name,  FFPoint &Forigin,  double addTime, const double dx, const double dy )
 	{
 
-		atmosphericData->setSize(atmosphericNx, atmosphericNy);
-
+		FFArray<double>* xARR  = new FFArray<double>(name, 0., atmosphericNy, atmosphericNy);
+		FFArray<double>*  xARRDT = new FFArray<double>(name, 0., atmosphericNx+2, atmosphericNy+2);
+		FFArray<double>*  xARRT = new FFArray<double>("Old"+name, 0., atmosphericNx+2, atmosphericNy+2);
+		TwoTimeArrayLayer<double> *xLAY = new TwoTimeArrayLayer<double>(name,
+																	   xARRDT, addTime, xARRT, addTime,
+																	   Forigin, dx, dy);
+	
+		registerLayer(name, xLAY);
+	}
+	void DataBroker::createEmptyScalarLayer(const string &name,   double addTime )
+	{
 		double dx = (atmoNECorner.getX() - atmoSWCorner.getX()) / atmosphericNx;
 		double dy = (atmoNECorner.getY() - atmoSWCorner.getY()) / atmosphericNy;
 
-		// Loading the atmospheric layers
-		FFPoint windUOrigin = FFPoint(atmoSWCorner.getX() - dx,
-									  atmoSWCorner.getY() - 0.5 * dy, 0);
-		TwoTimeArrayLayer<double> *wul = new TwoTimeArrayLayer<double>("windU",
-																	   atmosphericData->windU, time, atmosphericData->oldWindU, time,
-																	   windUOrigin, dx, dy);
-		registerLayer("windU", wul);
 
-		FFPoint windVOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-									  atmoSWCorner.getY() - dy, 0);
-		TwoTimeArrayLayer<double> *wvl = new TwoTimeArrayLayer<double>("windV",
-																	   atmosphericData->windV, time, atmosphericData->oldWindV, time,
-																	   windVOrigin, dx, dy);
-		registerLayer("windV", wvl);
+		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx, atmoSWCorner.getY() - 1 * dy, 0);
+		createEmptyTwoTimeArrayLayer(name,  scalarOrigin,  addTime,  dx, dy );
 
-		// Loading the topography
-		if (domain->getDomainID() != 0)
-		{
-			Array2DdataLayer<double> *alt = new Array2DdataLayer<double>("altitude", atmosphericData->topography, atmoSWCorner, atmoNECorner);
-			registerLayer("altitude", alt);
-		}
-
-		FFPoint scalarOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx,
-									   atmoSWCorner.getY() - 1 * dy, 0);
-
-		TwoTimeArrayLayer<double> *pth = new TwoTimeArrayLayer<double>("plumeTopHeight", atmosphericData->plumeTopHeight, time, atmosphericData->oldplumeTopHeight, time, scalarOrigin, dx, dy);
-		registerLayer("plumeTopHeight", pth);
-
-		// Loading the plume bottom height layer
-		TwoTimeArrayLayer<double> *pbh = new TwoTimeArrayLayer<double>("plumeBottomHeight", atmosphericData->plumeBottomHeight, time, atmosphericData->oldplumeBottomHeight, time, scalarOrigin, dx, dy);
-		registerLayer("plumeBottomHeight", pbh);
-
-		// Loading the smoke at ground layer
-		TwoTimeArrayLayer<double> *sag = new TwoTimeArrayLayer<double>("smokeAtGround", atmosphericData->smokeAtGround, time, atmosphericData->oldsmokeAtGround, time, scalarOrigin, dx, dy);
-		registerLayer("smokeAtGround", sag);
-
-		// Loading the TKE layer
-		TwoTimeArrayLayer<double> *tkeLayer = new TwoTimeArrayLayer<double>("tke", atmosphericData->tke, time, atmosphericData->oldtke, time, scalarOrigin, dx, dy);
-		registerLayer("tke", tkeLayer);
 	}
 
+
+	void DataBroker::initializeAtmosphericLayers(const double &time)
+	{
+ 
+		double dx = (atmoNECorner.getX() - atmoSWCorner.getX()) / atmosphericNx;
+		double dy = (atmoNECorner.getY() - atmoSWCorner.getY()) / atmosphericNy;
+
+		if (domain->getDomainID() != 0)
+		{
+			createEmpty2DLayer("altitude", atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy);
+		}
+
+				// Loading the atmospheric layers
+		FFPoint windUOrigin = FFPoint(atmoSWCorner.getX() - dx,  atmoSWCorner.getY() - 0.5 * dy, 0);
+        createEmptyTwoTimeArrayLayer("windU",  windUOrigin,  time,  dx, dy );
+
+		FFPoint windVOrigin = FFPoint(atmoSWCorner.getX() - 0.5 * dx, atmoSWCorner.getY() - dy, 0);
+        createEmptyTwoTimeArrayLayer("windV",  windVOrigin,  time,  dx, dy );
+		
+		vector<string> optLayers =	params->getParameterArray("MNHExchangeScalarLayersNames");
+		for (size_t i = 0; i < optLayers.size(); i++)
+		{
+			createEmptyScalarLayer(optLayers[i], time);
+		}
+		optLayers =	params->getParameterArray("accumulatedDiagnosticScalarLayersNames");
+		for (size_t i = 0; i < optLayers.size(); i++)
+		{
+			createEmptyScalarLayer(optLayers[i]+"Accumulated", time);
+		}
+
+	}
+
+    /*
+	@brief Load the atmospheric data from binary files
+	*/
 	void DataBroker::loadMultiWindBin(double refTime, size_t numberOfDomains, size_t *startI, size_t *startJ)
 	{
 		string windFileName(params->getParameter("caseDirectory") + '/' + params->getParameter("PPath") + '/' + to_string(FireDomain::atmoIterNumber % 2) + "/");
@@ -481,17 +494,7 @@ namespace libforefire
 			{
 				if (neededProperties.back().find("normalWind") != string::npos)
 				{
-					/*
-					if (domain->getDomainID()==0) {
-						cout<<"looking for  "<<neededProperties.back()<<endl;
-						if (windULayer != 0)
-							cout<<"windULayer is  "<<windULayer->getKey()<<endl;
-						}
-					if (windULayer == 0 or windVLayer == 0)
-						cout<<windULayer << "layer for normal wind doesn't rely on existing"
-								<< " windU and windV layers, creating them if needed"
-								<< endl;*/
-					/* special treatment for normal wind */
+
 					if (windULayer == 0)
 					{
 						double val = 0.;
