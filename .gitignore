@@ -9,6 +9,7 @@ local
 tools/cache
 tools/cmaps
 bindings/python/src/pyforefire.egg-info
+paper/jats
 #python
 __pycache__
 venv
@@ -52,3 +53,4 @@ tests/runff/httpConnectInfo.txt
 tests/python/log.txt
 tests/python/runROS.bash
 simulation_result.geojson
+paper/paper.pdf
