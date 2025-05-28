@@ -90,14 +90,6 @@ SpottingFluxBasicModel::SpottingFluxBasicModel(
 	if ( params->isValued("spottingDuration") )
 		spottingDuration = params->getDouble("spottingDuration");
 	
-	spottingLag = 100.0;
-	if ( params->isValued("spottingLag") )
-		spottingLag = params->getDouble("spottingLag");
-
-	spottingShootsFrequency = 0.0;
-	if ( params->isValued("spottingShootsFrequency") )
-		spottingShootsFrequency = params->getDouble("spottingShootsFrequency");	
-
 	nominalSpottingFlux = 1.0;
 	if ( params->isValued("nominalSpottingFlux") )
 		nominalSpottingFlux = params->getDouble("nominalSpottingFlux");
