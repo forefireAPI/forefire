@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <sstream>
+#include "commands.md"
 
 namespace advanced_editor {
 
@@ -23,228 +24,39 @@ static void restoreMode(const termios &oldt) {
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
-// --- Build the command dictionary (commandMan) ---
-static const std::unordered_map<std::string, std::string>& buildCommandMan() {
-    static std::unordered_map<std::string, std::string> cmdMan = []() -> std::unordered_map<std::string, std::string> {
-        std::unordered_map<std::string, std::string> m;
-        m["FireDomain"] =
-        "FireDomain[sw=(x,y,z);ne=(x,y,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ;opt:BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667)]\n"
-        "Create the main FireDomain; fronts and nodes will be created within this FireDomain\n"
-        "Example: FireDomain[sw=(0,0,0);ne=(64000,64000,0);BBoxWSEN=(lonWest,latSouth,lonEast,latNorth);t=2400]\n"
-        "Arguments:\n"
-        " - 'sw': Southwest point (x,y,z) in meters\n"
-        " - 'ne': Northeast point (x,y,z) in meters\n"
-        " - 't': Time associated with the fire domain in seconds or as an absolute ISO GMT date\n"
-        " - 'opt:BBoxWSEN': Optional WGS coordinates for the north-oriented bounding box (lonWest,latSouth,lonEast,latNorth)";
-
-        m["    FireFront"] =
-        "FireFront[id=<front_id>;domain=<domain_id>;t=<time>]\n"
-        "Creates a FireFront within a FireDomain or another FireFront. The prefixed spacing defines its hierarchical level.\n"
-        "A FireFront in a FireDomain has 4 spaces before the command; an inner FireFront adds 4 more spaces.\n"
-        "Example: FireFront[id=26;domain=0;t=0]\n"
-        "Arguments:\n"
-        " - 'id': Identifier for the fire front\n"
-        " - 'domain': Domain ID where the front is created\n"
-        " - 't': Time at which the fire front is created";
-    
-        m["        FireNode"] =
-            "FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds]\n"
-            "Creates a FireNode within a FireFront. The prefixed spacing defines the hierarchical level of the element.\n"
-            "A FireNode inside a FireFront is defined with 4 additional spaces relative to its parent.\n"
-            "Example: FireNode[domain=0;id=1;fdepth=2;kappa=0.1;loc=(3.5,2.6,1.1);vel=(-0.1,-0.03,0.01);t=2.1;state=moving;frontId=2]\n"
-            "Arguments:\n"
-            " - 'loc': Spatial coordinates (x,y,z) where the node is created\n"
-            " - 'vel': Initial velocity (x,y,z) of the node\n"
-            " - 't': Time associated with the fire node in seconds\n"
-            " - 'opt:domain': Domain ID where the node is created\n"
-            " - 'opt:id': Identifier for the fire node\n"
-            " - 'opt:fdepth': Initial fire depth in meters\n"
-            " - 'opt:kappa': Initial curvature factor (tan value)\n"
-            " - 'opt:state': State of the node (init, moving, splitting, merging, final)";
-        
-        m["@"] =
-            "@t=seconds\n"
-            "Schedule operator to trigger the command at time t=seconds or nowplus=seconds\n"
-            "Example: print[]@t=1200\n will print the current simulation state at sim time 1200 seconds\n"
-            "Example: save[]@nowplus=1200\n will save the current map at current sim time plus 1200 \n"
-            "Arguments:\n"
-            " - 't': Time in seconds when the scheduled command should execute\n"
-            " - 'nowplus': Delta duration in seconds for the scheduled command to execute";
-        
-        m["startFire"] =
-            "startFire[loc=(x,y,z)|lonlat=(lon,lat);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]\n"
-            "Creates the smallest possible triangular fire front at the specified location and time\n"
-            "Example: startFire[loc=(0.0,0.0,0.0),t=0.]\n"
-            "Arguments:\n"
-            " - 'loc': Starting location of the fire (coordinates x,y,z)\n"
-            " - 'lonlat': WGS coordinates of the ignition point\n"
-            " - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date)";
-        
-        m["step"] =
-            "step[dt=seconds]\n"
-            "Advances the simulation by the specified time duration\n"
-            "Example: step[dt=5.]\n"
-            "Arguments:\n"
-            " - 'dt': Duration (in seconds) for which the simulation will run";
-
-        m["addLayer"] =
-            "addLayer[name=]\n"
-            "add a constant layer of type type (default data) with name and value V (default search for parameter of same name, then 0), optional modelName = with bounds matching the FireDomain \n"
-            "Example: addLayer[name=heatFlux;type=flux;modelName=heatFluxBasic;value=3]\n";
-
-
-        m["trigger"] =
-            "trigger[fuelIndice=<value>;loc=(x,y,z);fuelType=<int|wind>;vel=(vx,vy,vz);t=<time>]\n"
-            "Triggers a change in simulation data, such as fuel or dynamic wind conditions\n"
-            "Example: trigger[fuelIndice=3;loc=(10,20,0);fuelType=1;vel=(0.5,0.5,0);t=10]\n"
-            "Arguments:\n"
-            " - 'fuelIndice': Fuel index value\n"
-            " - 'loc': Location (x,y,z) where the trigger is applied\n"
-            " - 'fuelType': Fuel type as an integer, or 'wind' for dynamic wind trigger\n"
-            " - 'vel': Velocity vector (vx,vy,vz) associated with the trigger\n"
-            " - 't': Time at which the trigger is activated";
-        
-        m["goTo"] =
-            "goTo[t=seconds]\n"
-            "Advances the simulation to the specified time\n"
-            "Example: goTo[t=56.2]\n"
-            "Arguments:\n"
-            " - 't': The desired simulation time to advance to";
-        
-        m["print"] =
-            "print[opt:filename]\n"
-            "Prints a representation of the current simulation state to console or in file un the current dumpMode\n"
-            "dumpMode 'ff' is the native that could be reparsed by forefire, json is a compact cartesian json, geojson and kml are projected\n"
-            "Example: print[front_state.ff]\n"
-            "Arguments:\n"
-            " - opt: the filename for output";
-        
-        m["save"] =
-            "save[opt:filename=landscape_file.nc;opt:fields=(altitude,wind,fuel)]]\n"
-            "without argument saves the current simulation arrival time state in netcdf format with standard name ForeFire.'domainID'.nc\n"
-            "Example: save[]\n"
-            "Arguments:\n"
-            " - opt:filename if given, landscape file is saved instead"
-            " - opt:fields fields to save in landscape file in (altitude,wind,fuel)";
-        
-        m["loadData"] =
-            "loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]\n"
-            "Loads a NetCDF data file into the simulation at a certain UTC date\n"
-            "Example: loadData[data.nc;2020-02-10T17:35:54Z]\n"
-            "Arguments:\n"
-            " - a netcdf landscape file"
-            " - the UTC date";
-        
-        m["plot"] =
-        "plot[parameter=(speed|arrival_time_of_front|fuel|altitude|slope|windU|windV|Rothermel);"
-        "filename=<fname.png/jpg/nc/asc>; "
-        "opt:range=(min,max); "
-        "opt:area=(BBoxWSEN=(w_lon,s_lat,e_lon,n_lat) | BBoxLBRT=(leftX,bottomY,rightX,topY | active)); "
-        "opt:size=(eni,enj); "
-        "opt:cmap=<colormap>; "
-        "opt:histbins=<integer>; "
-        "opt:projectionOut=(json|<fname.kml>)]\n"
-        "\n"
-        "Generates a plot of the simulation parameter. The output file format is determined by the filename extension:\n"
-        " - PNG/JPG: Creates an image file.\n"
-        " - NC: Creates a NetCDF file containing the data matrix and latitude/longitude arrays.\n"
-        " - ASC: Creates an ASCII file suitable for GIS applications.\n"
-        "\n"
-        "Optional projection output:\n"
-        " - 'projectionOut=json': Outputs the bounding box as a JSON formatted string.\n"
-        " - 'projectionOut=<fname.kml>': Saves a KML file with a GroundOverlay referencing the generated image.\n"
-        "\n"
-        "Example:\n"
-        " plot[parameter=speed;filename=out.png;opt:range=(0,0.1);opt:area=(BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667));opt:cmap=viridis;opt:histbins=50]\n"
-        "\n"
-        "Arguments:\n"
-        " - 'parameter': Simulation parameter to plot (speed | arrival_time_of_front | fuel | altitude | slope | windU | windV | Rothermel)\n"
-        " - 'filename': Output file name. The extension (.png, .jpg, .nc, .asc) selects the output format.\n"
-        " - 'opt:range': Optional data range for the plot in the format (min,max).\n"
-        " - 'opt:area': Optional area specification. Use 'BBoxWSEN' for geographic coordinates (west_lon, south_lat, east_lon, north_lat) or\n"
-        "               'BBoxLBRT' for Cartesian coordinates (leftX, bottomY, rightX, topY), or use 'active' for the active domain subset.\n"
-        " - 'opt:size': Optional matrix size as a comma-separated pair (eni,enj). If not provided, default resolution is used.\n"
-        " - 'opt:cmap': Optional colormap (e.g., viridis, turbo, fuel).\n"
-        " - 'opt:histbins': Optional integer specifying the number of histogram bins between min and max.\n"
-        " - 'opt:projectionOut': Optional projection output. Use 'json' for a JSON string of domain boundaries, or a filename ending in .kml\n"
-        "                        to generate a KML file with a GroundOverlay referencing the output image.";
-        
-        m["computeSpeed"] =
-            "computeSpeed\n"
-            "Computes and returns an array of speed values using the first registered propagation model\n"
-            "Example: computeSpeed\n"
-            "Arguments:\n"
-            " - Uses the active propagation model to calculate simulation speeds";
-        
-        m["setParameter"] =
-            "setParameter[param=<value>]\n"
-            "Sets a single simulation parameter to a given value\n"
-            "Example: setParameter[kappa=0.05]\n"
-            "Arguments:\n"
-            " - 'param': Name of the parameter to set\n"
-            " - 'value': Value to assign to the parameter";
-        
-        m["setParameters"] =
-            "setParameters[param1=val1;param2=val2;...;paramn=valn]\n"
-            "Sets multiple simulation parameters at once\n"
-            "Example: setParameters[kappa=0.05;fdepth=20]\n"
-            "Arguments:\n"
-            " - Sets each parameter to its specified value; separate parameters with semicolons";
-        
-        m["getParameter"] =
-            "getParameter[key]\n"
-            "Retrieves the value of a specified simulation parameter\n"
-            "Example: getParameter[dumpMode]\n"
-            "Arguments:\n"
-            " - 'key': The name of the parameter to retrieve";
-        
-        m["include"] =
-            "include[input=<filename>]\n"
-            "Executes commands from the specified file\n"
-            "Example: include[input=commands.txt]\n"
-            "Arguments:\n"
-            " - 'input': Filename containing simulation commands to execute";
-        
-        m["clear"] =
-            "clear\n"
-            "Clears all simulation data\n"
-            "Example: clear\n"
-            "Arguments:\n"
-            " - Clears the simulation data to reset the state";
-        
-        m["systemExec"] =
-            "systemExec[command=<system_command>]\n"
-            "Executes a system command\n"
-            "Example: systemExec[command=ls -la]\n"
-            "Arguments:\n"
-            " - 'command': The system command to execute";
-        
-        m["listenHTTP"] =
-            "listenHTTP[host=<hostname>;port=<port>]\n"
-            "Launches an HTTP server to listen for simulation commands\n"
-            "Example: listenHTTP[host=127.0.0.1;port=8080]\n"
-            "Arguments:\n"
-            " - 'host': Hostname or IP address for the server\n"
-            " - 'port': Port number on which the server will listen";
-
-        m["help"] =
-            "help[]\n"
-            "Displays a list of available commands and their brief descriptions.\n"
-            "Use Tab-Tab on a specific command name for full details.";
-        
-        m["quit"] =
-            "quit\n"
-            "Terminates the simulation\n"
-            "Example: quit\n"
-            "Arguments:\n"
-            " - Ends the simulation execution";
-        return m;
-    }();
-    return cmdMan;
-}
-
 const std::unordered_map<std::string, std::string>& LineEditor::getCommandMan() {
-    return buildCommandMan();
+    static std::unordered_map<std::string, std::string> cmdMan;
+    static bool initialized = false;
+
+    if (!initialized) {
+        std::istringstream stream(commandHelp);
+        std::string line;
+        std::string currentKey;
+        std::ostringstream currentHelp;
+
+        while (std::getline(stream, line)) {
+            if (line.rfind("##", 0) == 0) { // line starts with ##
+                if (!currentKey.empty()) {
+                    cmdMan[currentKey] = currentHelp.str();
+                    currentHelp.str("");
+                    currentHelp.clear();
+                }
+                currentKey = line.substr(2);
+                while (!currentKey.empty() && (currentKey.front() == ' ' || currentKey.front() == '\t'))
+                    currentKey.erase(currentKey.begin());
+            } else if (!currentKey.empty()) {
+                currentHelp << line << "\n";
+            }
+        }
+
+        if (!currentKey.empty()) {
+            cmdMan[currentKey] = currentHelp.str();
+        }
+
+        initialized = true;
+    }
+
+    return cmdMan;
 }
 
 // --- Syntax coloring ---
