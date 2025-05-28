@@ -99,6 +99,8 @@ if(MPI_FOUND)
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -DMPI_COUPLING")
 else()
+    # uncoment if want to debug
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -march=native -funroll-loops -ftree-vectorize -fno-strict-aliasing")
 endif()
 
@@ -158,7 +160,7 @@ endif()
 # ----------------------------------
 # Main Project Executable
 # ----------------------------------
-set(INTERPRETER tools/forefire/ForeFire.cpp tools/forefire/AdvancedLineEditor.cpp)
+set(INTERPRETER tools/forefire/ForeFire.cpp)
 add_executable(forefire ${INTERPRETER})
 if(DEFINED NETCDF_STATIC_LIBS)
     if(MPI_FOUND)
