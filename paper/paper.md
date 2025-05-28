@@ -68,14 +68,14 @@ authors:
 affiliations:
  - name: SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France
    index: 1
-   ror: 016nwev19 # Example ROR for University of Corsica
+   ror: 016nwev19
  - name: Centre for Technological Risk Studies, Department of Chemical Engineering, Universitat Politécnica de Catalunya 
    index: 2
-   ror: 03mb6wj31 # Example ROR for University of Corsica
+   ror: 03mb6wj31
  - name: Faculty of Science, The University of Melbourne, 4 Water St., Creswick, Australia 
    index: 3
-   ror: 01ej9dk98 # Example ROR for University of Corsica
- - name: Um Grau e Meio, Brazil
+   ror: 01ej9dk98
+ - name: umgrauemeio 1.5°C, Brazil
    index: 4   
 
 date: 25 May 2025 
@@ -106,7 +106,7 @@ Other open source libraries for wildland fire spread do exist as for example Elm
 Another family of wildland fire spread solvers such as WRF/SFire [@mandel2011] can resolve coupled front propagation and local meteorology but must be run within an atmospheric model that requires a large amount of processing power and data.
 
 Each of the above systems addresses certain needs (e.g., operational use, physical accuracy, or atmospheric coupling) but in order not to multiply development efforts on multiple code and validation bases, there was a need for a **unified solution** that could be open, modular, and performant. 
-ForeFire’s modular architechture and scripting interface allow users to easily swap or implement new fire models without changing the core code and test multiple simulation scenarions with same input files. It can also run fast in a standalone mode (for purely surface fire simulations) or be coupled with atmospheric models, all under a consistent interface and parameterization.
+ForeFire’s modular architecture and scripting interface allow users to easily swap or implement new fire models without changing the core code and test multiple simulation scenarions with same input files. It can also run fast in a standalone mode (for purely surface fire simulations) or be coupled with atmospheric models, all under a consistent interface and parameterization.
 
 ForeFire’s support for **multiple language bindings** (HTTP, C++ API, Python/NumPy, Fortran) is also unique and further expands its usability across different domains. These capabilities enable rapid prototyping and experimentation on large datesets, and also support operational needs by allowing integration into decision support pipelines including coupled with atmospheric models.
 
@@ -118,13 +118,13 @@ Researchers who wish to experiment with alternative formulations can add a new m
 Internally these quantities are handled as *layers* that can come from Python NumPy array, supplied from input NetCDF files or generated on the fly by ForeFire (e.g. slope derived from the elevation layer). 
 Once compiled, the new model is available in the scripting interface and in the C++/Python APIs without additional changes.
 
-Developping wildfire Rate Of Spread model was the original purpose of this simulation code and helped to iterate versions the Balbi Rate Of Spread formulation on real-cases studies in [@balbi2009] and [@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption in [@filippi2021], wildfire plume chemical compounds in [@strada2012] or industrial fires in [@baggio2022]. 
+Developping a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions the Balbi Rate Of Spread formulation on real-cases studies in [@balbi2009] and [@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption in [@filippi2021], wildfire plume chemical compounds in [@strada2012] or industrial fires in [@baggio2022]. 
 There is also a generic `ANNPropagationModel` that expects a trained graph input file that will be used in place of these functions. 
 
 ## Batch simulations with the ForeFire scripting
 Custom FF language allows to easily generate multiple scenarios, including fire-fighting strategies or ensemble forecasts, with light scripting efforts. The interpreter run these scripts either from a file or from another process (piped trough the shell). A FF script is a set of instructions that are interpreted at a specific date (starting at a run date, with 0 defined as `00:00` and updated with a `step`or a `goTo` commands) or if the command is post-fixed by a `@t=` operator that schedules the execution of a command. 
 
-Each of these commands (such as,`goTo[t=42]`, `print[state.ff]`, `include[state.ff]`, or `plot[parameter=speed;filename=ROS.png]`) of ForeFire is bound or can directly be called from HTTP, C++, Fortran or Python, and are the core logic of the library. Help messages and autocompletion are directly available from the shell interpreter that can be run interactively, with several examples provided in the repository.
+Each of these commands (such as, `goTo[t=42]`, `print[state.ff]`, `include[state.ff]`, or `plot[parameter=speed;filename=ROS.png]`) of ForeFire is bound or can directly be called from HTTP, C++, Fortran or Python, and are the core logic of the library. Help messages and autocompletion are directly available from the shell interpreter that can be run interactively, with several examples provided in the repository.
 
 A typical script that loads data at a date and time, starts a fire, schedules a wind shift and prints outputs is written :
 ```text
@@ -135,9 +135,9 @@ trigger[wind;vel=(10.0,0.0,0.)]@t=75000
 step[dt=36000]
 print[]
 ```
-But the interface can also be run interactively using a highly customizable web‑based graphical interface (command `listenHTTP[host:port]`), that starts a local HTTP service with ForeFire bindings and serves standard or user‑defined web pages as shown in Figure 1.
+But the interface can also be run interactively using a highly customizable web‑based graphical interface (command `listenHTTP[host:port]`), that starts a local HTTP service with ForeFire bindings and serves standard or user‑defined web pages as shown in \autoref{fig:gui}.
 
-![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds](gui.jpg)
+![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds\label{fig:gui}](gui.jpg)
 
 By utilizing pre-compiled datasets over extensive regions, this approach supports continent-wide operational forecasting services. 
 It is applied in identifying optimal escape routes [@kamilaris2023], integrated into the French national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), showcased on the [FireCaster demonstration platform](https://forefire.univ-corse.fr/), and adopted by various commercial companies.
@@ -149,9 +149,9 @@ The same scripts and input data can be executed in coupled mode with Open-Source
 In this configuration MesoNH launches ForeFire (FORTRAN Bindings) as an MPI enabled sub-process, a master process integrates the fire perimeter using surface fields from the atmospheric model and distributes fluxes fields to the atmosphic model. Coupled simulation can be run on a laptop at field scale to evaluate model ability on prescribed well instrumented experiments [@filippi2013], but also on more than 400 processors to perform faster than real-time high resolution simulation of fire induced winds on a large wildfire [@filippi2018], fire induces convection during an extreme wildfire event [@couto2024],[@campos2023] or even to estimate wildfire spotting (firebrands) with a resolved fire plume [@alonsopinar2025].
 
 While simulations in coupled mode can take significantly more time and generate much larger output files, they are designed to run efficiently on a supercomputing cluster with some specific routines to generate 3D output files through ForeFire. 
-Python helper scripts available in the ForeFire repository convert these simulation outputs to VTK/VTU files, allowing three-dimensional rendering of fire-atmosphere variables in Open-Source [ParaView](https://www.paraview.org/) as shown in Figure 2. 
+Python helper scripts available in the ForeFire repository convert these simulation outputs to VTK/VTU files, allowing three-dimensional rendering of fire-atmosphere variables in Open-Source [ParaView](https://www.paraview.org/) as shown in \autoref{fig:coupled}. 
 
-![Coupled simulation of the Pedrogao Grande wildfire [@couto2024], rendered in Paraview. On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyrocu clouds in blue](coupled.jpg)
+![Coupled simulation of the Pedrogao Grande wildfire [@couto2024], rendered in Paraview. On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyrocu clouds in blue\label{fig:coupled}](coupled.jpg)
 
 # Acknowledgements
 This work has been supported by the Centre National de la Recherche Scientifique and French National Research Agency under grants **ANR-09-COSI-006-01 (IDEA)** and **ANR-16-CE04-0006 (FIRECASTER)**. The authors thank all contributors and collaborators who have assisted in the development and testing of the ForeFire software.
