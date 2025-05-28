@@ -68,14 +68,14 @@ authors:
 affiliations:
  - name: SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France
    index: 1
-   ror: 016nwev19 # Example ROR for University of Corsica
+   ror: 016nwev19
  - name: Centre for Technological Risk Studies, Department of Chemical Engineering, Universitat Politécnica de Catalunya 
    index: 2
-   ror: 03mb6wj31 # Example ROR for University of Corsica
+   ror: 03mb6wj31
  - name: Faculty of Science, The University of Melbourne, 4 Water St., Creswick, Australia 
    index: 3
-   ror: 01ej9dk98 # Example ROR for University of Corsica
- - name: Um Grau e Meio, Brazil
+   ror: 01ej9dk98
+ - name: umgrauemeio 1.5°C, Brazil
    index: 4   
 
 date: 25 May 2025 
@@ -124,7 +124,7 @@ There is also a generic `ANNPropagationModel` that expects a trained graph input
 ## Batch simulations with the ForeFire scripting
 Custom FF language allows to easily generate multiple scenarios, including fire-fighting strategies or ensemble forecasts, with light scripting efforts. The interpreter run these scripts either from a file or from another process (piped trough the shell). A FF script is a set of instructions that are interpreted at a specific date (starting at a run date, with 0 defined as `00:00` and updated with a `step`or a `goTo` commands) or if the command is post-fixed by a `@t=` operator that schedules the execution of a command. 
 
-Each of these commands (such as,`goTo[t=42]`, `print[state.ff]`, `include[state.ff]`, or `plot[parameter=speed;filename=ROS.png]`) of ForeFire is bound or can directly be called from HTTP, C++, Fortran or Python, and are the core logic of the library. Help messages and autocompletion are directly available from the shell interpreter that can be run interactively, with several examples provided in the repository.
+Each of these commands (such as, `goTo[t=42]`, `print[state.ff]`, `include[state.ff]`, or `plot[parameter=speed;filename=ROS.png]`) of ForeFire is bound or can directly be called from HTTP, C++, Fortran or Python, and are the core logic of the library. Help messages and autocompletion are directly available from the shell interpreter that can be run interactively, with several examples provided in the repository.
 
 A typical script that loads data at a date and time, starts a fire, schedules a wind shift and prints outputs is written :
 ```text
