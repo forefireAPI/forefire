@@ -2843,7 +2843,7 @@ namespace libforefire
                 }
                 else
                 {
-                    cout << whenDouble << "unknown post operator  >" << whenCommand << "< , try 'help[]'." << endl;
+                    cout << whenDouble << "unknown post operator  >" << whenCommand << "< , press 'Tab' for command list." << endl;
                 }
             }
             else
@@ -2852,7 +2852,7 @@ namespace libforefire
                 if (curcmd == translator.end())
                 {
                     if (scmd.at(0) != '!')
-                        cout << "unknown command  >" << scmd << "< , try 'help[]'." << endl;
+                        cout << "unknown command  >" << scmd << "< , press 'Tab' for command list." << endl;
                 }
                 else
                 {

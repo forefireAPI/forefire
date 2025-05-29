@@ -541,25 +541,6 @@ Launches an HTTP server (on the machine running ForeFire) that listens for simul
    listenHTTP[localhost:8080]
 
 
-.. _cmd-help:
-
-``help``
-~~~~~~~~
-
-.. code-block:: none
-
-   help[]
-
-Displays a list of available commands and their brief descriptions.
-*Note: For more detailed help on a specific command within the ForeFire interpreter, "Tab-Tab" completion or similar interactive features might be available if supported by the interpreter environment.*
-
-**Example:**
-
-.. code-block:: none
-
-   help[]
-
-
 .. _cmd-quit:
 
 ``quit``
