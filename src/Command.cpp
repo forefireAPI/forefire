@@ -10,7 +10,6 @@
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
-#include "../tools/forefire/AdvancedLineEditor.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -2820,47 +2819,6 @@ namespace libforefire
             scmd = removeTabs(line);
         }
 
-        if (scmd == "help[]" || scmd == "help") {
-            std::cout << "\033[36m"
-            << "Available ForeFire commands:" << std::endl
-            << "Use Tab for completion, second Tab for details on a specific command"
-            << "\033[0m"
-            << std::endl;
-
-            // Get the command map from the advanced editor
-            const auto& cmdMan = advanced_editor::LineEditor::getCommandMan();
-            std::vector<std::string> commandNames;
-
-            // Iterate through the map, trim leading spaces, and collect non-empty names
-            for (const auto& pair : cmdMan) {
-                std::string name = pair.first;
-                // Trim leading whitespace used for hierarchy display in editor help
-                size_t first_char = name.find_first_not_of(' ');
-                if (first_char != std::string::npos) {
-                    name = name.substr(first_char); // Get the substring from the first non-space char
-                } else {
-                    name = ""; // If it was all spaces (or empty), set to empty
-                }
-
-                // Add the trimmed name if it's not empty
-                if (!name.empty()) {
-                    commandNames.push_back(name);
-                }
-            }
-
-            // Sort alphabetically for better readability
-            std::sort(commandNames.begin(), commandNames.end());
-
-            // Print sorted names
-            for (const auto& name : commandNames) {
-                std::cout << "  " << name << std::endl;
-            }
-            // Explicitly add quit/exit as they are handled outside ExecuteCommand
-            std::cout << "  quit (or exit)" << std::endl;
-
-            return;
-        }
-        
         // calling the right method using the 'translator'
         if (((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
         {
