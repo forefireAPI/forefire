@@ -118,7 +118,6 @@ message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 # Source Files
 # ----------------------------------
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
-list(APPEND SRC_FILES tools/forefire/AdvancedLineEditor.cpp)
 
 # ----------------------------------
 # Shared Library Target
@@ -160,7 +159,7 @@ endif()
 # ----------------------------------
 # Main Project Executable
 # ----------------------------------
-set(INTERPRETER tools/forefire/ForeFire.cpp)
+set(INTERPRETER tools/forefire/ForeFire.cpp tools/forefire/AdvancedLineEditor.cpp)
 add_executable(forefire ${INTERPRETER})
 if(DEFINED NETCDF_STATIC_LIBS)
     if(MPI_FOUND)

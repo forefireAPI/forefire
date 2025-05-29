@@ -16,7 +16,6 @@ const commands = {
     "setParameters": "setParameters[param1=val1;param2=val2]",
     "getParameter": "getParameter[paramNames]",
     "include": "include[run.ff]",
-    "help": "help",
     "loadData": "loadData[data.nc;2024-12-13T15:41:33Z]",
     "clear": "clear[]",
     "systemExec": "systemExec[ls]",
