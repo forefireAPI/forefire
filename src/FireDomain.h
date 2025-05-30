@@ -326,6 +326,9 @@ public:
 
 	size_t getFreeFluxModelIndex();
 
+	void setPerimeterResolution(double res);
+	void setSpatialIncrement(double inc);
+
     // Getter for the reference latitude.
     double getRefLatitude()  ;
 
