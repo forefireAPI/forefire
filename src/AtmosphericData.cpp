@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file AtmosphericData.cpp
+ * @brief Class for data exchange in atmospheric coupling
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "AtmosphericData.h"
 
@@ -30,6 +18,10 @@ AtmosphericData::AtmosphericData() {
 	topography = 0;
 	oldTime = 0;
 	currentTime=0;
+	plumeTopHeight= 0; 
+	plumeBottomHeight= 0; 
+	smokeAtGround= 0; 
+	tke = 0; 
 }
 
 AtmosphericData::~AtmosphericData() {
@@ -47,6 +39,26 @@ void AtmosphericData::setSize(const size_t& nx, const size_t& ny){
 	oldWindV = new FFArray<double>("OldWindV", 0., nx+2, ny+2);
 	if ( topography ) delete topography;
 	topography = new FFArray<double>("Topography", 0., nx, ny);
+	
+	if ( plumeTopHeight ) delete plumeTopHeight;
+	plumeTopHeight = new FFArray<double>("plumeTopHeight", 0., nx+2, ny+2);
+	if ( plumeBottomHeight ) delete plumeBottomHeight;
+	plumeBottomHeight = new FFArray<double>("plumeBottomHeight", 0., nx+2, ny+2);
+	if ( smokeAtGround ) delete smokeAtGround;
+	smokeAtGround = new FFArray<double>("smokeAtGround", 0.,nx+2, ny+2);
+	if ( tke ) delete tke;
+	tke = new FFArray<double>("tke", 0., nx+2, ny+2);
+
+	//if ( oldplumeTopHeight ) delete oldplumeTopHeight;
+	oldplumeTopHeight = new FFArray<double>("oldplumeTopHeight", 0.,  nx+2, ny+2);
+//	if ( oldplumeBottomHeight ) delete oldplumeBottomHeight;
+	oldplumeBottomHeight = new FFArray<double>("oldplumeBottomHeight", 0.,  nx+2, ny+2);
+//	if ( oldsmokeAtGround ) delete oldsmokeAtGround;
+	oldsmokeAtGround = new FFArray<double>("oldsmokeAtGround", 0.,  nx+2, ny+2);
+//	if ( oldtke ) delete oldtke;
+	oldtke = new FFArray<double>("oldtke", 0.,  nx+2, ny+2);
+
+
 }
 
 size_t AtmosphericData::getSize(){

@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FDCell.cpp
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "FDCell.h"
 #include "Visitor.h"
@@ -103,6 +91,16 @@ void FDCell::loadBin(std::ifstream&  FileIn){
 				
 	arrivalTimes->loadBin(FileIn);
 }
+
+void FDCell::setBMapValues(const double* newVals){
+	if ( !allocated ){
+		arrivalTimes = new BurningMap(SWCorner, NECorner, mapSizeX, mapSizeY);
+		allocated = true;
+	}
+				
+	arrivalTimes->getMap()->setVal(newVals);
+}
+
 FireDomain* FDCell::getDomain(){
 	return domain;
 }
@@ -134,11 +132,17 @@ bool FDCell::isActive(){
 bool FDCell::isActiveForDump(){
 	if (!allocated) return false;
 	if (allDumped) return false;
+	return true;
+}
+void FDCell::setIfAllDumped(){
+	if (!allocated) return ;
+	if (allDumped) return ;
 	if(arrivalTimes->maxTime()<numeric_limits<double>::infinity()){
 		allDumped = true;
 	}
-	return true;
 }
+
+
 
 size_t FDCell::getJ(){
 	return globalJ;
@@ -253,10 +257,14 @@ int FDCell::activeModelsOnBmap(string layername,const double& t, int* modelCount
 
 double FDCell::applyModelsOnBmap(string layername, const double& bt, const double& et,int* modelCount){
 	/* if the burning map is not allocated */
-	if ( arrivalTimes == 0 ) return 0.;
+	if ( arrivalTimes == 0 ){ 
+		return 0.;
+	}
+	 
 	/* loading the flux layer */
 	FluxLayer<double>* layer = domain->getFluxLayer(layername);
 
+	 
 	/* else getting the ratio and checking
 	 * that there is still something burning*/
 	double cellFlux = 0.;
@@ -264,6 +272,7 @@ double FDCell::applyModelsOnBmap(string layername, const double& bt, const doubl
 	int modelIndex;
 	center.setX(SWCorner.getX()+0.5*dx);
 	double arrivalTime, value;
+	 
 	for ( size_t i = 0; i < mapSizeX; i++ ){
 		center.setY(SWCorner.getY()+0.5*dy);
 		for ( size_t j = 0; j < mapSizeY; j++ ){

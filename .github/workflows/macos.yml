@@ -1,0 +1,25 @@
+name: macOS
+
+on:
+  push:
+    branches:
+      - dev
+      - brew
+  
+  workflow_dispatch:
+
+jobs:
+  build-native-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Make install script executable
+        run: chmod +x ./install-forefire-osx.sh
+
+      - name: Build ForeFire using macOS install script
+        run: ./install-forefire-osx.sh
+
+      - name: Check ForeFire version
+        run: ./bin/forefire -v

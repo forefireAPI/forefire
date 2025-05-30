@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file TimeTable.cpp
+ * @brief Implements the methods of the TimeTable class.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "TimeTable.h"
 using namespace std;
@@ -25,22 +13,23 @@ namespace libforefire {
 
 TimeTable::TimeTable() {
 	commonInitialization();
+
 }
 
 TimeTable::TimeTable(FFEvent* ev) {
+	head = nullptr;
 	commonInitialization();
 	insert(ev);
 }
 
 TimeTable::~TimeTable() {
 	while ( size() > 0 ) dropEvent(head);
-	delete rbin;
+	
 }
 
 void TimeTable::commonInitialization(){
 	incr = 0;
-	decr = 0;
-	rbin = new FFEvent;
+	decr = 0; 
 }
 
 void TimeTable::setHead(FFEvent* newHead){
@@ -54,7 +43,12 @@ FFEvent* TimeTable::getHead(){
 }
 
 double TimeTable::getTime(){
-	if ( !head or size()==0 ) return -numeric_limits<double>::infinity();
+	if ( !head ){
+		return -numeric_limits<double>::infinity();
+	}
+	if(size()==0 ) {
+		return -numeric_limits<double>::infinity();
+	}
 	return head->getTime();
 }
 
@@ -205,6 +199,19 @@ string TimeTable::print(){
 	}
 	oss << "END TIMETABLE" << endl;
 	return oss.str();
+}
+
+void TimeTable::clear() {
+    while (head != nullptr) {
+        FFEvent* ev = head;
+        // dropEvent sets head = nullptr if it's the last element
+        dropEvent(ev);
+    }
+	
+	commonInitialization();
+	if(head ) {
+		cout << "Error: head is not null after clearing the timetable." << endl;
+	}
 }
 
 }

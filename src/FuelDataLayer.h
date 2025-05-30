@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FuelDataLayer.h
+ * @brief Defines the FuelDataLayer template class for fuel parameters stored in NetCDF format.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef FUELDATALAYER_H_
 #define FUELDATALAYER_H_
@@ -39,6 +27,7 @@ template<typename T> class FuelDataLayer : public DataLayer<T> {
 
 	/* Defining the map of fuels */
 	int* fuelMap;
+	FFArray<int>* myFuelMap; /*!< pointer to the FFArray containing the data */
 
 	double SWCornerX; /*!< origin in the X direction */
 	double SWCornerY; /*!< origin in the Y direction */
@@ -138,11 +127,23 @@ public:
 	/*! \brief stores data from a given array (should not be used) */
 	void setMatrix(string&, double*, const size_t&, size_t&, const double&);
 
+	int* getFuelMap(){return fuelMap;}
+	size_t getDim(string = "total");
 	/*! \brief print the related data (should not be used) */
 	string print();
 	string print2D(size_t, size_t);
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return SWCornerX; };
+	double getOriginY(){ return SWCornerY; };
+	double getOriginZ(){ return SWCornerZ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
 
 };
 
@@ -163,14 +164,13 @@ int FuelDataLayer<T>::getFuel(size_t i, size_t j, size_t k, size_t t){
 
 template<typename T>
 T FuelDataLayer<T>::getValueAt(FireNode* fn){
-	cout<<"WARNING: getValueAt shouldn't be called for layer "<<this->getKey()<<endl;
-	T zero = (T) 0;
-	return zero;
+	FFPoint loc = fn->getLoc();
+	T retval = (T) fuelMap[getPos(loc, fn->getTime())];
+   return retval;
 }
 
 template<typename T>
 T FuelDataLayer<T>::getValueAt(FFPoint loc, const double& time){
-	cout<<"WARNING: getValueAt shouldn't be called for layer fuel, returning indice"<<this->getKey()<<endl;
 	double mytime = time;
 	T retval = (T) fuelMap[getPos(loc, mytime)];
    return retval;
@@ -181,7 +181,8 @@ size_t FuelDataLayer<T>::getValuesAt(
 		FireNode* fn, PropagationModel* model, size_t curPosition){
 	/* Getting the fuel at the given location */
 	int fuelIndex = getFuelAtLocation(fn->getLoc(), fn->getTime());
-	//cout << "getting indice "<< fuelIndex <<" at location "<< fn->getLoc().x <<";"<< fn->getLoc().y<<endl;
+
+//	cout << "getting indice "<< fuelIndex <<" at location "<< fn->getLoc().x <<";"<< fn->getLoc().y<<endl;
         /* writing the parameters' values in the desired array at desired location */
 	for ( size_t param = 0; param < model->numFuelProperties; param++ ){
 		(model->properties)[curPosition+param] = (*(model->fuelPropertiesTable))(fuelIndex, param);
@@ -195,7 +196,7 @@ size_t FuelDataLayer<T>::getValuesAt(FFPoint loc, const double& t
 		, FluxModel* model, size_t curPosition){
 	/* Getting the fuel at the given location */
 	int fuelIndex = getFuelAtLocation(loc, t);
-	//cout << "getting Not Prop "<< fuelIndex <<" at location "<< loc.x <<";"<< loc.y<<endl;
+	cout << "getting Not Prop "<< fuelIndex <<" at location "<< loc.x <<";"<< loc.y<<endl;
 	/* writing the parameters' values in the desired array at desired location */
 	for ( size_t param = 0; param < model->numFuelProperties; param++ ){
 		(model->properties)[curPosition+param] = (*(model->fuelPropertiesTable))(fuelIndex, param);
@@ -213,6 +214,14 @@ int FuelDataLayer<T>::getFuelAtLocation(FFPoint loc, double time){
 template<typename T>
 void FuelDataLayer<T>::setValueAt(FFPoint loc,  double timeV, T value){
 	fuelMap[getPos(loc, timeV)] = (int)value;
+}
+template<typename T>
+size_t FuelDataLayer<T>::getDim(string dim){
+	if ( dim == "x" ) return nx;
+	if ( dim == "y" ) return ny;
+	if ( dim == "z" ) return nz;
+	if ( dim == "t" ) return nt;
+	return size;
 }
 
 template<typename T>
@@ -234,45 +243,31 @@ size_t FuelDataLayer<T>::getPos(FFPoint& loc, double& t){
 template<typename T>
 void FuelDataLayer<T>::getMatrix(
 		FFArray<T>** lmatrix, const double& time){
-
-		double res = 500;
-
-
-		double ddx = res;
-		int nnx = (NECornerX-SWCornerX)/res;
-		double ddy = res;
-		int nny = (NECornerY-SWCornerY)/res;
-
-
-
-		if(nny*nnx < 100*100 ){
-
-			nnx = nx;
-			nny = ny;
-			ddx = (NECornerX-SWCornerX)/nnx;
-			ddy = (NECornerY-SWCornerY)/nny;
-		}
-
-		int nnz = 1;
-		int nnt = 1;
-
-
-		double vals[nnx*nny];
-
-		FFPoint loc;
-		loc.setX(SWCornerX+0.5*ddx);
-
-		for ( int i = 0; i < nnx; i++ ) {
-			loc.setY(SWCornerY+0.5*ddy);
-			for ( int j = 0; j < nny; j++ ) {
-				vals[i*nny+j] = (double) getFuelAtLocation(loc, startTime);
-				loc.setY(loc.getY()+ddy);
+			double res = 10;
+			double ddx = res;
+			int nnx = (NECornerX - SWCornerX) / res;
+			double ddy = res;
+			int nny = (NECornerY - SWCornerY) / res;
+			int nnz = 1;
+			int nnt = 1;
+		
+			// Use a std::vector to allocate the array dynamically on the heap.
+			std::vector<double> vals(nnx * nny);
+		
+			FFPoint loc;
+			loc.setX(SWCornerX + 0.5 * ddx);
+		
+			for (int i = 0; i < nnx; i++) {
+				loc.setY(SWCornerY + 0.5 * ddy);
+				for (int j = 0; j < nny; j++) {
+					vals[i * nny + j] = static_cast<double>(getFuelAtLocation(loc, startTime));
+					loc.setY(loc.getY() + ddy);
+				}
+				loc.setX(loc.getX() + ddx);
 			}
-			loc.setX(loc.getX()+ddx);
-		}
-		*lmatrix = new FFArray<double>("fuel", 1, nnx, nny, nnz, nnt);
-		(*lmatrix)->setVal(&vals[0]);
-
+			
+			*lmatrix = new FFArray<double>("fuel", 1, nnx, nny, nnz, nnt);
+			(*lmatrix)->setVal(vals.data());
 
 
 	// TODO extracting the data at the given time

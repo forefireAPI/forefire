@@ -307,7 +307,32 @@ def formatBinS(fname, offset = 0):
     nzt = ((fsize-8-8)/(nxt*nyt))/8
     
   #  print fname, nxt, nyt, nzt
+
+def numberOfFields(fname):
+    fsize = os.path.getsize(fname)
+ 
+    c_file = open(fname,"rb")
+   
+    sizeofOfI4 = struct.calcsize("i")
+    sizeofOfF8 = struct.calcsize("d")
     
+    nxt = struct.unpack("i",c_file.read(sizeofOfI4))[0]
+    c_file.read(sizeofOfI4)
+    nyt= struct.unpack("i",c_file.read(sizeofOfI4))[0]
+    c_file.read(sizeofOfI4)
+    nzt = struct.unpack("i",c_file.read(sizeofOfI4))[0] 
+    c_file.read(sizeofOfI4)
+    tstep = struct.unpack("d",c_file.read(sizeofOfF8))[0]
+    
+    #3 ints plus padding plus tstep
+    sizeOfHeader =  sizeofOfI4*3 + sizeofOfI4*3 + sizeofOfF8
+    sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
+    sizeOfRecord = sizeOfHeader + sizeOfData
+    
+    numrec = fsize/sizeOfRecord
+    
+    return int(numrec)
+
 def readAllSteps(fname, offset = 0, bestshape=None):
     fsize = os.path.getsize(fname)
  
@@ -410,22 +435,14 @@ def readBinNS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=No
     return D    
 
 def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=None):
-
     fname =  "%s.%d.%s"%(inpattern,domnum,vkey)
     if (appendedDict == None):
         fname =  "%s.%d.%d.%s"%(inpattern,domnum,int(stepV),vkey)
-        
-    
     nxt = 0
     nyt= 0
     nzt = 0
     c_file = None
-    
-     
     sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
-  
-    
-    
     if (appendedDict == None):
         fsize = os.path.getsize(fname)
         c_file = open(fname,"rb")
@@ -433,7 +450,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         items = struct.unpack(formatBin,c_file.read(struct.calcsize(formatBin)))
         nxt = items[0]
         nyt= items[1]
-    
         if (nyt > 1000) :
             if(bestshape == None):
                 nyt = nxt
@@ -443,7 +459,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
                 
         nzt = ((fsize-8-8)/(nxt*nyt))/8
         sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
-       
     else:
         sizeofOfI4 = struct.calcsize("i")
         sizeofOfF8 = struct.calcsize("d")
@@ -462,8 +477,6 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         sizeOfData = struct.calcsize("d") * (nxt*nyt*nzt)
         sizeOfRecord = sizeOfHeader + sizeOfData
         
-    
-        
         if nzt> 1000: 
             nzt=66
             print("no good nz for ", fname)
@@ -473,28 +486,27 @@ def readBinS(inpattern,domnum,stepV,vkey, appendedDict, zkey=None, bestshape=Non
         if(zkey != None) :
             recordNum = 0;
      #   print nxt,nyt,nzt, sizeOfData, " record ", recordNum  
-        
         c_file.seek(recordNum*sizeOfRecord+sizeOfHeader)
 
-   
-    
     nx =  nxt-2
     ny = nyt-2
     nz =  nzt-2 
 
-    D = np.zeros((nx + 1, ny + 1, nz + 1), dtype=np.float32)
-        
- 
-    items = struct.unpack("%dd" % (nxt*nyt*nzt) , c_file.read(sizeOfData))
- 
-    for j in range(1,nyt):
-        for i in range(1,nxt):
-            for k in range(1,nzt): 
-                indice =  (k*nyt*nxt)+(j*nxt)+i
-                D[i-1,j-1,k-1]=items[indice]
-    
+    #D = np.zeros((nx + 1, ny + 1, nz + 1), dtype=np.float32)
+    #items = struct.unpack("%dd" % (nxt*nyt*nzt) , c_file.read(sizeOfData))
+    #for j in range(1,nyt):
+    #    for i in range(1,nxt):
+    #        for k in range(1,nzt): 
+    #            indice =  (k*nyt*nxt)+(j*nxt)+i
+    #            D[i-1,j-1,k-1]=items[indice]
+    #c_file.close()
+    #return D
+
+    rawDoublesInFloats = np.frombuffer(c_file.read(sizeOfData), dtype=np.float64).astype(np.float32)
     c_file.close()
-    return D
+    data_reshaped_and_ordered = rawDoublesInFloats.reshape((nzt, nyt, nxt)).transpose(2, 1, 0)
+    return data_reshaped_and_ordered[1:nxt, 1:nyt, 1:nzt]
+
 
 
 def read2DBinS(fname, offset = 0, fatherDom = (0,0,0)):
@@ -640,33 +652,29 @@ def getProbeValue(varArray,ploc):
     val += varArray[ploc[0]-1,ploc[1]-1,ploc[2]-1]*(1-ploc[3])*(1-ploc[4])*(ploc[5])
     return val
 
-def readNcField(fname, varname):
-    from scipy.io import netcdf
-  
-    ncz = netcdf.netcdf_file(fname, 'r') 
-    return ncz.variables[varname][:]
 
-def genATMapImage(fname,pdgFile, outFile):
-    from scipy.io import netcdf
+def genATMapImage(fname, pdgFile, outFile):
     from scipy import interpolate
+    with nc4.Dataset(fname, 'r') as nc_file:
+        at = nc_file.variables['arrival_time_of_front'][:]
+        shpAT = at.shape
+        nx, ny, nz = shpAT[1], shpAT[0], 1 
+
+    with nc4.Dataset(pdgFile, 'r') as nc_file:
+        zgrid = np.transpose(nc_file.variables['ZS'][:, :])
+        
+        zgridres = (nc_file.variables['XHAT'][-1]-nc_file.variables['XHAT'][0])/(len(nc_file.variables['XHAT'][:])-1)
+  
+        ox = nc_file.variables['XHAT'][0]
+        oy = nc_file.variables['YHAT'][0]
+        
+        ex = nc_file.variables['XHAT'][-1]+zgridres
+        ey = nc_file.variables['YHAT'][-1]+zgridres
+        
     
-    nc = netcdf.netcdf_file(fname, 'r') 
-    at = nc.variables['arrival_time_of_front'][:]
-    shpAT =  at.shape
-    nx, ny, nz = shpAT[1], shpAT[0], 1 
+    res = (ex - ox) / (nx)
     
-    ncz = netcdf.netcdf_file(pdgFile, 'r') 
-    zgrid = np.transpose(ncz.variables['ZS'][:,:])
-    
-    ox = ncz.variables['XHAT'][0]
-    oy = ncz.variables['YHAT'][0] 
-    
-    ex = ncz.variables['XHAT'][-1]
-    ey = ncz.variables['YHAT'][-1]+1000
-    
-    res= (ex-ox)/(nx+1)
-    
-    shpZ =  zgrid.shape
+    shpZ = zgrid.shape
     znx, zny = shpZ[0], shpZ[1] 
     
     kernelIn = zgrid
@@ -685,19 +693,19 @@ def genATMapImage(fname,pdgFile, outFile):
     
     kernelOut = newKernel(xx,yy)
     
-    from evtk.hl import imageToVTK 
-    # Dimensions 
+ 
     
-    X = np.arange(ox-50, 50+ox+(res*(nx+1)), res, dtype='float64') 
-    Y = np.arange(oy-50, 50+oy+(res*(ny+1)), res, dtype='float64') 
+    X = np.arange(ox, ex+res, res, dtype='float64') 
+    Y = np.arange(oy, ey+res, res, dtype='float64') 
     
-    x = np.zeros(( nx + 1,ny + 1, nz + 1)) 
-    y = np.zeros(( nx + 1,ny + 1, nz + 1)) 
-    z = np.zeros(( nx + 1,ny + 1, nz + 1)) 
     
-    for k in range(nz + 1): 
-        for j in range(ny + 1):
-            for i in range(nx + 1): 
+    x = np.zeros(( nx+1 ,ny +1, nz )) 
+    y = np.zeros(( nx +1,ny +1, nz )) 
+    z = np.zeros(( nx +1,ny +1, nz )) 
+    
+    for k in range(nz ): 
+        for j in range(ny+1 ):
+            for i in range(nx+1): 
                 x[i,j,k] = X[i]
                 y[i,j,k] = Y[j]
                 z[i,j,k] = kernelOut[i,j]
@@ -710,7 +718,7 @@ def genATMapImage(fname,pdgFile, outFile):
 
 def ffFrontsToVtk(inFFpattern = "", outPath = ""):
 
-    timedContourFiles = sorted(glob.glob(inFFpattern))
+    timedContourFiles = sorted(glob.glob(inFFpattern+"*"))
     
     gp = VtkGroup(f"{outPath}/fronts")
    
@@ -787,22 +795,49 @@ def ffFrontsToVtk(inFFpattern = "", outPath = ""):
     gp.save()
  
 
-def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,lidarIn = None,lidarOut = None,startStep = -1,endStep = -1,genDomainOrigin = None,genDomainExtent = None,norecompute=False,quitAfterCompute=False,xcfdName = None, vect_vars = ("U","V","W") ,scal_vars = ("T","P","BRatio","moist", "TKE")):
+def ffmnhFileToVtk(inpattern="", pgdFile="", outPath="", cleanFile=False, lidarIn=None, lidarOut=None,
+                   startStep=-1, endStep=-1, genDomainOrigin=None, genDomainExtent=None, norecompute=False,
+                   quitAfterCompute=False, xcfdName=None, inputcdfvars=(), vect_vars=("U", "V", "W")):
+    
+    # Obtenir le préfixe du fichier
+    fprefix = inpattern.split("/")[-1]
 
-    fprefix=inpattern.split("/")[-1]
-    
-    gridKey  ="ZGRID"
-    bmapKey="bmap"
-    
-    scals={}
+    # Clés de grille et bmap
+    gridKey = "ZGRID"
+    bmapKey = "bmap"
+
+    # Variables scalaires et vectorielles
+    scals = {}
     scals["cells"] = ()
-    scals["points"] = scal_vars
-    
-    inputcdfvars = ()
-    
+    scals["points"] = []
+
+    # Liste des fichiers dans le répertoire de sortie correspondant au motif output.*
+    file_pattern =  f"{inpattern}.1.*"
+    files = glob.glob(file_pattern)
+
+    # Variables scalaires à exclure (vect_vars et gridKey)
+    exclude_vars = set(vect_vars + (gridKey,))
+    surface_vars = []
+    # Parcourir les fichiers et déterminer les variables scalaires
+    for file in files:
+        # Extraire le nom de la variable du fichier
+        variable = file.split(".")[-1]
+        if variable not in exclude_vars:
+            if variable.startswith("surf"):
+                surface_vars.append(variable)
+            else:
+                scals["points"].append(variable)
+
+    # Convertir en tuple (facultatif selon les besoins)
+    scals["points"] = tuple(scals["points"])
+
     Vects={}
     Vects["Wind"] =vect_vars
-    
+    if quitAfterCompute:
+        navail = numberOfFields(f"{inpattern}.1.{vect_vars[0]}")
+        print(navail)
+        return navail
+     
     appendedSteps=None;
     
     domains=list(range(1,2)) 
@@ -827,13 +862,20 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
     appendedSteps=readAllSteps("%s.1.%s"%(inpattern,varsDataIn[0]))
     tsteps = list(appendedSteps.keys())
     stepzgrid = tsteps[0]
+    
+    if quitAfterCompute:
+        print(len(appendedSteps))
+        return len(appendedSteps)
+    
     print(len(appendedSteps), "step found")
     
     Allsteps = np.sort(tsteps)
     
     
     steps = []
-    gf = VtkGroup("%s/%sgroupsfields"%(outPath,fprefix))
+    
+    
+    gf = VtkGroup("%s/%s_all_fields"%(outPath,fprefix))
     for stepV in Allsteps[:]:
         outname = "%s/%s.full.%d.vts"%(outPath,fprefix,stepV) 
         if (cleanFile and os.path.isfile(outname)  ):
@@ -847,24 +889,26 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
                 #os.system(delCmd)
             
         if ((norecompute or cleanFile) and os.path.isfile(outname)):
-            
-            print(outname,"%d, "%stepV, end = '') 
+            print(outname,"at %d, "%stepV, end = '') 
             gf.addFile(filepath = "%s"%outname, sim_time = stepV)
             
         else:
-            steps.append(stepV) 
+            if not os.path.isfile(outname):
+                steps.append(stepV)
+            else:
+                print("Step %d already post-processed"%stepV)
+                gf.addFile(filepath = "%s"%outname, sim_time = stepV)
         
     gf.save()
     
     if (norecompute or cleanFile) :
-    	print("Quit because not recomputing", norecompute, cleanFile)
-    	return
+        print("Quit because not recomputing", norecompute, cleanFile)
+        return
+    
     if len(steps) < 1:
         print("nothing more to be done")
         return
         
-    
-    
     selectedSteps = steps[:]
     
     MNHSteptoLidarStep={}
@@ -884,44 +928,65 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
     numOfDomains = len(list(glob.glob(f"{inpattern}.*.{gridKey}")))
     print(f"Found {numOfDomains} domains")
     domains = np.zeros(shape=(4,numOfDomains),dtype=float)
+    pgdInfo = pgdFile
 
-    print(f"opening PGD nc file {pgdFile} for domains")
-    with nc4.Dataset(pgdFile, 'r') as nc_file:
-        
-    # Récupérer les données pour XHAT et YHAT et les convertir en tableaux NumPy
-        xhat = list(nc_file.variables['XHAT'][:])
-        yhat = list(nc_file.variables['YHAT'][:])
+    print(f"handling PGD info {pgdInfo} for domains")
+    xhat=None
+    yhat=None
     
-        dx = xhat[1]-xhat[0]
-        dy = xhat[1]-xhat[0]
-        xhat.extend([xhat[-1]+dx, xhat[-1]+2*dx, xhat[-1]+3*dx])
-        yhat.extend([yhat[-1]+dy, yhat[-1]+2*dy, yhat[-1]+3*dy])
+    if pgdInfo.endswith(".nc"):
+        with nc4.Dataset(pgdInfo, 'r') as nc_file:
+            xhat = list(nc_file.variables['XHAT'][:])
+            yhat = list(nc_file.variables['YHAT'][:])
+        
+            dx = xhat[1]-xhat[0]
+            dy = xhat[1]-xhat[0]
+            xhat.extend([xhat[-1]+dx, xhat[-1]+2*dx, xhat[-1]+3*dx])
+            yhat.extend([yhat[-1]+dy, yhat[-1]+2*dy, yhat[-1]+3*dy])
+
+    else:
+        parts = pgdInfo.split(',')
+        if len(parts) != 5:
+            raise ValueError("Expected pgdInfo with 5 comma-separated values: 'res,ni,nj,x0,y0'")
+
+        res = int(parts[0].strip())
+        ni = int(parts[1].strip())
+        nj = int(parts[2].strip())
+        x0 = float(parts[3].strip())
+        y0 = float(parts[4].strip())
+
+        x_end = x0 + res * (ni - 1)
+        y_end = y0 + res * (nj - 1)
+
+        xhat = np.linspace(x0, x_end, ni)
+        yhat = np.linspace(y0, y_end, nj)
+
     
 
-        nit = len(yhat)
-        njt = len(xhat)
-    
-        xhati=0
-        yhati=0
-        for i in range(1,numOfDomains+1):
-            nii,nji,z= readBinShape(f"{inpattern}.{i}.{gridKey}")
-       #     str0 = "FireDomain[sw=(%s,%s,0);ne=(%s,%s,0);t=50400]\n"%(xhat[xhati],yhat[yhati],xhat[xhati+nii],yhat[yhati+nji])
-        
-            domains[0][i-1] = float(xhat[xhati])
-            domains[1][i-1] = float(yhat[yhati])
-            domains[2][i-1] = float(xhat[xhati+nii])
-            domains[3][i-1] = float(yhat[yhati+nji])
-            xhati = xhati+nii-2
-            if (xhati > (njt-nii)):
-                yhati = yhati+nji-2
-                xhati=0
+    print(np.shape(xhat),xhat[0],xhat[-1])
+    print(np.shape(yhat),yhat[0],yhat[-1])
+
+    njt = len(xhat)
+
+    xhati=0
+    yhati=0
+    for i in range(1,numOfDomains+1):
+        nii,nji,z= readBinShape(f"{inpattern}.{i}.{gridKey}")  
+        domains[0][i-1] = float(xhat[xhati])
+        domains[1][i-1] = float(yhat[yhati])
+        domains[2][i-1] = float(xhat[xhati+nii])
+        domains[3][i-1] = float(yhat[yhati+nji])
+        xhati = xhati+nii-2
+        if (xhati > (njt-nii)):
+            yhati = yhati+nji-2
+            xhati=0
 
     
     
     if startStep > -1 and endStep > -1:
         selectedSteps=selectedSteps[startStep:endStep]
     
-    print(len(selectedSteps), " time steps to be computed on ", len(Allsteps) , " list :", selectedSteps, " ")
+    print(scals["points"], surface_vars, " on ",len(selectedSteps), " time steps to be computed on ", len(Allsteps) , " list :", selectedSteps, " ")
     
     largCell = 0;
     
@@ -979,16 +1044,12 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
      
     for inddom in range(0,numOfDomains):
         localZ = readBinS(inpattern,inddom+1,stepzgrid,gridKey,appendedSteps,zkey=gridKey)
-        
         shZ = np.shape(localZ)
-       
         nx =  shZ[0]-1
         ny = shZ[1]-1
         nz =  shZ[2]-1 
-           
         domainshapesInPoint[inddom] = (nx,ny,nz)
         tz = nz
-        
         if (zzd is None):
             zzd = np.zeros((tx+1, ty+1, tz+1), dtype=np.float32)
         datatop =int((domains[3][inddom] - domains[1][0])/dy -1)
@@ -1002,11 +1063,7 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
         isdataright = dataright == (tx+1)
         
         dLocalShape[inddom] =((databottom if isdatabottom else databottom) ,(datatop if isdatatop else datatop-4), (dataleft if isdataleft else dataleft) ,(dataright if isdataright else dataright-4))
-        thisdatashape = (dLocalShape[inddom][3]-dLocalShape[inddom][2], dLocalShape[inddom][1]-dLocalShape[inddom][0])
-        thisdatashape = (dLocalShape[inddom][3]-dLocalShape[inddom][2], dLocalShape[inddom][1]-dLocalShape[inddom][0])
-        globalshape = (0, ty+1, 0, tx+1 )
         
-    
         for k in range(nz+1):
             for j in range(dLocalShape[inddom][0],dLocalShape[inddom][0]+shZ[1]):
         	    for i in range(dLocalShape[inddom][2],dLocalShape[inddom][2]+shZ[0]):
@@ -1033,7 +1090,7 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
                 if myshot.getValues()[iShot] > 0.1:
                     smokeLocList.append(getLocationAndCoeffsInGridPoints(shotLoc,(xxd[0,0,0],yyd[0,0,0]),tx,ty,tz, largCell, zzd))
         print(len(smokeLocList), "sample smoke point selected")
-
+    midUVW = True # put the flow point at mass point
    
     for stepV in selectedSteps:
         paralPiecesVtkStr = ""
@@ -1050,11 +1107,33 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
                 print("processing sub-domains %d to %d at step %d"%(indom,indom+100, stepV))
 
             nx,ny,nz =     domainshapesInPoint[indom]
+            i0 = dLocalShape[indom][2]
+            i1 = i0 + nx + 1   # +1 because you store up to index nx
+            j0 = dLocalShape[indom][0]
+            j1 = j0 + ny + 1
             
-            for keycount, vkey in enumerate(varsDataIn):
-                    fname =  "%s.%d.%d.%s"%(inpattern,indom+1,stepV,vkey)
-                    varmapAll[vkey][dLocalShape[indom][2]:dLocalShape[indom][2]+nx+1,dLocalShape[indom][0]:dLocalShape[indom][0]+ny+1,:nz+1] = readBinS(inpattern,indom+1,stepV,vkey,appendedSteps) 
-      
+            if (midUVW):
+                for vkey in varsDataIn:
+                    feed_data = readBinS(inpattern, indom+1, stepV, vkey, appendedSteps)
+                    if vkey == "U":
+                        u_mass = 0.5 * (feed_data[:-1, :, :] + feed_data[1:, :, :])
+                        varmapAll[vkey][i0:i1-1, j0:j1, :nz+1] = u_mass
+
+                    elif vkey == "V":
+                        v_mass = 0.5 * (feed_data[:, :-1, :] + feed_data[:, 1:, :])
+                        varmapAll[vkey][i0:i1, j0:j1-1, :nz+1] = v_mass
+
+                    elif vkey == "W":
+                        w_mass = 0.5 * (feed_data[:, :, :-1] + feed_data[:, :, 1:])
+                        varmapAll[vkey][i0:i1, j0:j1, :nz] = w_mass
+
+                    else:
+                        varmapAll[vkey][i0:i1, j0:j1, :nz+1] = feed_data
+            else:
+                for keycount, vkey in enumerate(varsDataIn):
+                        fname =  "%s.%d.%d.%s"%(inpattern,indom+1,stepV,vkey)
+                        varmapAll[vkey][dLocalShape[indom][2]:dLocalShape[indom][2]+nx+1,dLocalShape[indom][0]:dLocalShape[indom][0]+ny+1,:nz+1] = readBinS(inpattern,indom+1,stepV,vkey,appendedSteps) 
+        
         outname = "%s/%s.full.%d"%(outPath,fprefix,stepV) 
      
         ptsAll = {}
@@ -1106,6 +1185,7 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
             
         else:
             gridToVTK(outname, xxd, yyd, zzd,  cellData = None, pointData = ptsAll)  
+            
             if(xcfdName is not None):
                 gridToCdf("%s.%d"%(xcfdName,stepV) , xxd, yyd, zzd, varmapAll)  
                 
@@ -1119,40 +1199,52 @@ def ffmnhFileToVtk(inpattern = "", pgdFile = "", outPath = "",cleanFile = False,
 import argparse
 
 def main():
-    parser = argparse.ArgumentParser(description='Convert ffmnh files to VTK format.')
-  #  parser.add_argument('bmapNC', help='Input file pattern for multi procs MNH runs. Example: "MODEL/output"')
-  #  parser.add_argument('mnhDumps', help='Input file pattern for multi procs MNH runs. Example: "MODEL/output"')
-  #  parser.add_argument('mnhDumps', help='Input file pattern for multi procs MNH runs. Example: "MODEL/output"')
-    parser.add_argument('mnhDumps', help='Input file pattern for multi procs MNH runs. Example: "MODEL/output"')
-    parser.add_argument('pgdFile', help='PGD physiographic file for the model (required).')
-    parser.add_argument('outPath', help='Output path for VTK files (required).')
+    parser = argparse.ArgumentParser(
+    description="Convert ffmnh files to VTK format.\n\n"
+                "Examples:\n"
+                "  For field conversion:\n"
+                "    python pMNHFF2VTK.py -fields MODEL1/output PGD_D2000mA.nested.nc vtkout1 -steps 20 21\n"
+                "  For front processing:\n"
+                "    python pMNHFF2VTK.py -front ForeFire/Outputs/output.0. vtkFront/\n"
+                "  For ATMap generation:\n"
+                "    python pMNHFF2VTK.py -atmap ForeFire/Outputs/ForeFire.0.nc PGD_D80mA.nested.nc vtkmap",
+    formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument('-fields', nargs=3, help='Input : mnhdump file pattern. PGD nc file, VTK Output directory ')
     parser.add_argument('-clean', action='store_true', help='Enable this flag to clean the output files before processing.')
-    parser.add_argument('-lidar', nargs=2, help='Lidar emulator input and output files. Provide two file paths.')
-    parser.add_argument('-steps', nargs=2, type=int, help='Start and end generation steps for processing. Provide two integers.')
-    parser.add_argument('-norecompute', action='store_true', help='Enable this flag to skip recompute phase.')
-    parser.add_argument('-quit', action='store_true', help='Enable this flag to quit after computation without further processing.')
+    parser.add_argument('-lidar', nargs=2, help='Lidar emulator input and output files. Provide two file paths, in and out csv.')
+    parser.add_argument('-steps', nargs=2, type=int, help='Start and end generation steps for processing. Provide two integers, start and end')
+    parser.add_argument('-norecompute', action='store_true', help='Enable this flag to skip recompute phase but make the index vtk file')
+    parser.add_argument('-quit', action='store_true', help='Enable this flag to quit after computation without further processing but display number of steps in data')
     parser.add_argument('-cdf', help='Provide a prefix for CDF output (one file per step). Example: "CDFOUT/step"')
+    parser.add_argument('-front', nargs=2, help='Input and output patterns for front processing. Provide two file paths, input ff front file pattern and VTK output directory.')
+    parser.add_argument('-atmap', nargs=3, help='ATMap input file, pgd file, and output file. Provide three file paths, BMap nc file, PGD file and vtk file.')
 
     args = parser.parse_args()
-
-    ffmnhFileToVtk(
-        inpattern=args.mnhDumps, 
-        pgdFile=args.pgdFile,
-        outPath=args.outPath,
-        cleanFile=args.clean,
-        lidarIn=args.lidar[0] if args.lidar else None,
-        lidarOut=args.lidar[1] if args.lidar else None,
-        startStep=args.steps[0] if args.steps else -1,
-        endStep=args.steps[1] if args.steps else -1,
-        norecompute=args.norecompute,
-        quitAfterCompute=args.quit,
-        xcfdName=args.cdf
-    )
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+        
+    if args.fields:
+        ffmnhFileToVtk(
+            inpattern=args.fields[0],
+            pgdFile=args.fields[1],
+            outPath=args.fields[2],
+            cleanFile=args.clean,
+            lidarIn=args.lidar[0] if args.lidar else None,
+            lidarOut=args.lidar[1] if args.lidar else None,
+            startStep=args.steps[0] if args.steps else -1,
+            endStep=args.steps[1] if args.steps else -1,
+            norecompute=args.norecompute,
+            quitAfterCompute=args.quit,
+            xcfdName=args.cdf
+        )
     
-    #fFrontsToVtk(inFFpattern = "", outPath = ""):
-    #genATMapImage(fname,pdgFile, outFile):
+    if args.front:
+        ffFrontsToVtk(inFFpattern=args.front[0], outPath=args.front[1])
+    
+    if args.atmap:
+        genATMapImage(fname=args.atmap[0], pdgFile=args.atmap[1], outFile=args.atmap[2])
 
 if __name__ == "__main__":
     main()
-
-#fFrontsToVtk(inFFpattern = "ForeFire/Outputs/output.0.", outPath = "")

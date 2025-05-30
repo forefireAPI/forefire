@@ -578,7 +578,7 @@ def create_kml(west, south, east, north, Name, pngfile, outkml_path, pngcbarfile
             <overlayXY x="0" y="0" xunits="fraction" yunits="fraction"/>
             <screenXY x="0.05" y="0.05" xunits="fraction" yunits="fraction"/>
             <rotationXY x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
-            <size x="60" y="300" xunits="pixels" yunits="pixels"/>
+            <size x="150" y="400" xunits="pixels" yunits="pixels"/>
         </ScreenOverlay>'''
     
     kml_template += '''
@@ -721,13 +721,15 @@ def normalize_rgb(rgb_tuple):
     """
     return tuple(np.array(rgb_tuple) / 255.0)
 
-def generate_indexed_png_and_legend(legend_file_path, tif_file_path, output_indexed_png_path, output_legend_png_path):
- 
+def generate_indexed_png_and_legend(legend_file_path, tif_file_path, output_indexed_png_path, output_legend_png_path=None):
     import matplotlib.pyplot as plt
     import rasterio
-    """
-    Generate an indexed PNG and a legend PNG based on a legend text file and a TIFF file.
-    """
+    from PIL import Image
+    import numpy as np
+    
+    def normalize_rgb(color):
+        return [c / 255.0 for c in color]
+
     # Read the legend file
     color_palette = {}
     class_names = {}
@@ -741,57 +743,68 @@ def generate_indexed_png_and_legend(legend_file_path, tif_file_path, output_inde
             class_name = parts[-1]  # Class name
             color_palette[index] = color
             class_names[index] = class_name
-            
-        normalized_colors = [normalize_rgb(color_palette[val]) for val in sorted(color_palette.keys())]
-        all_labels = [f"{val}:{class_names[val]}" for val in sorted(class_names.keys())]
-         
-        # Create the colorbar figure
-        fig, ax = plt.subplots(figsize=(2, 10))
-         
-        # Hide axis and set transparent background
-        ax.axis('off')
-        fig.patch.set_visible(False)
-        ax.axis('off')
-         
-        # Draw rectangles and text labels
-        for i, (idx, color, label) in enumerate(zip(sorted(color_palette.keys()), normalized_colors, all_labels)):
-            rect = plt.Rectangle((0, i), 1, 1, facecolor=color)
-            ax.add_patch(rect)
-            ax.text(1.2, i + 0.5, label, va='center', backgroundcolor=(1, 1, 1, 0))  # Last tuple element sets alpha to 0
-         
-        # Set limits and aspect ratio
-        ax.set_xlim(0, 3)
-        ax.set_ylim(0, len(all_labels))
-        ax.set_aspect('auto')
-         
-        # Save the figure as PNG
-        plt.savefig(output_legend_png_path, transparent=True)
 
     # Read the TIFF file
     with rasterio.open(tif_file_path) as src:
         tif_data = src.read(1)  # Reading the first band
 
     # Generate the indexed PNG
-        img_shape = (tif_data.shape[1], tif_data.shape[0])
-        img = Image.new('P', img_shape)
-        
-        # Prepare the palette
-        palette = [0] * 768  # 256 colors * 3 (R, G, B)
-        for idx, (r, g, b) in color_palette.items():
-            palette[idx*3 : idx*3+3] = [r, g, b]
-        
-        img.putpalette(palette)
-        
-        # Convert the 2D NumPy array to a 1D array with values in the same order as the image's pixels
-        img_data_1d = tif_data.flatten().tolist()
-        
-        # Populate the image with the 1D array
-        img.putdata(img_data_1d)
-        
-        # Save the image
-        img.save(output_indexed_png_path, compress_level=9) 
+    img_shape = (tif_data.shape[1], tif_data.shape[0])
+    img = Image.new('P', img_shape)
     
+    # Prepare the palette
+    palette = [0] * 768  # 256 colors * 3 (R, G, B)
+    for idx, (r, g, b) in color_palette.items():
+        palette[idx*3 : idx*3+3] = [r, g, b]
+    
+    img.putpalette(palette)
+    
+    # Convert the 2D NumPy array to a 1D array with values in the same order as the image's pixels
+    img_data_1d = tif_data.flatten().tolist()
+    
+    # Populate the image with the 1D array
+    img.putdata(img_data_1d)
+    
+    # Save the image
+    img.save(output_indexed_png_path, compress_level=9)
 
+    if output_legend_png_path is None:
+        return
+
+    # Find unique values in the TIFF data
+    unique_values = np.unique(tif_data)
+    if len(unique_values) < 2:
+        print("WARNING ::: Found ",len(unique_values), " in fuel data")
+    
+    # Filter color_palette and class_names to include only unique values
+    filtered_color_palette = {key: color_palette[key] for key in unique_values if key in color_palette}
+    filtered_class_names = {key: class_names[key] for key in unique_values if key in class_names}
+    
+    normalized_colors = [normalize_rgb(filtered_color_palette[val]) for val in sorted(filtered_color_palette.keys())]
+    all_labels = [f"{val}:{filtered_class_names[val]}" for val in sorted(filtered_class_names.keys())]
+    
+    # Create the colorbar figure
+    fig, ax = plt.subplots(figsize=(4, 10))  # Increase the figure width
+    
+    # Hide axis and set transparent background
+    ax.axis('off')
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    
+    # Draw rectangles and text labels
+    for i, (idx, color, label) in enumerate(zip(sorted(filtered_color_palette.keys()), normalized_colors, all_labels)):
+        rect = plt.Rectangle((0, i), 1, 1, facecolor=color)
+        ax.add_patch(rect)
+        ax.text(1.2, i + 0.5, label, va='center', fontsize=18, backgroundcolor=(1, 1, 1, 0))  # Increase fontsize
+    
+    # Set limits and aspect ratio
+    ax.set_xlim(0, 4)  # Adjust limits to prevent clipping
+    ax.set_ylim(0, len(all_labels))
+    ax.set_aspect('auto')
+    plt.tight_layout()
+    plt.savefig(output_legend_png_path, transparent=True,bbox_inches='tight')
+
+ 
 
 def plotRos(PGDFILE, BMAPFILE,max_speed_filter=1.0):
     import matplotlib.pyplot as plt
@@ -911,7 +924,7 @@ def genKMLFiles(PGDFILE, BMAPFILE, FFINPUTPATTERN, BMAPKMLOUT,frontsKMLOUT, ever
     
    
     fdat.setATimeMatrix(dBmap.arrival_time_of_front.values)
-    ros = fdat.getROSMatrix(max_speed_filter=0.3)
+    ros = fdat.getROSMatrix(max_speed_filter=3)
 
     arrayToPng(ros, BMAPKMLOUT+"ROS.png", output_cbar_png=BMAPKMLOUT+"ROSCBAR.png",tickRatio=tickRatio)
     
@@ -932,7 +945,9 @@ def ffFromPgd(PGDFILE,domainDate=None,ignitions = None, fuel_test = None):
     if ignitions is not None :   
         for ig in ignitions:
             igT = datetime.fromisoformat(ig["when"])
-            igSecs =  (igT - igT.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+            print("ignition at ",igT)
+            igSecs =  (igT - domainDate.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+            print("ignition at ",igT,igSecs)
             ix,iy,iz = fdat.lalo2xy((ig["latitude"],ig["longitude"],0))
             dom+=f"\nstartFire[loc=({ix},{iy},0.);t={igSecs}]"
             

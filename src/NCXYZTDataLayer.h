@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file NCXYZTDataLayer.h
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef NCXYZTDATALAYER_H_
 #define NCXYZTDATALAYER_H_
@@ -65,8 +53,8 @@ template<typename T> class XYZTDataLayer : public DataLayer<T> {
 	double dz; /*!< increment in the Z direction */
 	double dt; /*!< increment in the T direction */
 
-	int interDirID0 ;
-	int interDirID1;
+	size_t interDirID0 ;
+	size_t interDirID1;
 	double interDirRatio ;
 	double interDirScaler ;
 	string nameOf;
@@ -187,7 +175,7 @@ public:
 			interp = InterpolationBilinearDir;
 		}
 
-		if(	interp == InterpolationBilinear){
+	/*	if(	interp == InterpolationBilinear){
 			cout<<"layer "<<name<<" is mode InterpolationBilinear"<<endl;
 		}
 		if(	interp == InterpolationBilinearT){
@@ -198,7 +186,7 @@ public:
 		}
 		if(	interp == InterpolationBilinearDir){
 			cout<<"layer "<<name<<" is mode InterpolationBilinear Scalar Dir (8 directions)"<<endl;
-		}
+		}*/
 
 	}
 	/*! \brief destructor */
@@ -245,6 +233,17 @@ public:
 			, FFPoint&, FFPoint&, size_t&, size_t&);
 
 	void setProjectionDirVector(FFVector& ,FFPoint& );
+		
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return 		SWCornerX ; };
+	double getOriginY(){ return SWCornerX ; };
+	double getOriginZ(){ return SWCornerZ ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
+
 
 };
 
@@ -252,8 +251,6 @@ template<typename T>
 XYZTDataLayer<T>::~XYZTDataLayer() {
 	delete array;
 }
-
-
 
 template<typename T>
 T XYZTDataLayer<T>::getVal(size_t pos){
@@ -328,11 +325,16 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 
 		int uu = (int) ceil(ud-1);
 		int vv = (int) ceil(vd-1);
-
+/*
 		if ( uu < 0 ) uu = 0;
 		if ( uu > ((int) nx) - 2 ) uu = ((int) nx) - 2;
 		if ( vv < 0 ) vv = 0;
 		if ( vv > ((int) ny) - 2 ) vv = ((int) ny) - 2;
+		*/
+		if (uu < 0) return NAN;
+		if (uu > ((int) nx) - 2) return NAN;
+		if (vv < 0) return NAN;
+		if (vv > ((int) ny) - 2) return	NAN;
 
 		double udif = ud - ((double) uu);
 		double vdif = vd - ((double) vv);
@@ -355,7 +357,6 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 
 		if ( interp == InterpolationBilinearT ){
 					int it = (int) (t-startTime)/dt;
-
 
 					T tsw1 = getVal(uu,vv,0,it);
 					T tnw1 = getVal(uu,vv+1,0,it);

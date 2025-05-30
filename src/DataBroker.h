@@ -1,28 +1,17 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file DataBroker.h
+ * @brief Definitions for DataBroker class is a static class that manages spatial data access and uses layers as data elements, it is the one loading data files
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef DATABROKER_H_
 #define DATABROKER_H_
 
 #include "DataLayer.h"
 #include "GradientDataLayer.h"
+#include "TimeGradientDataLayer.h"
 #include "NCXYZTDataLayer.h"
 #include "FuelDataLayer.h"
 #include "ArrayDataLayer.h"
@@ -34,13 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "AtmosphericData.h"
 #include "ParallelData.h"
 #include "SimulationParameters.h"
-#ifdef NETCDF_LEGACY
-#include <netcdfcpp.h>
-#else
 #include <netcdf>
 using namespace netCDF;
 using namespace netCDF::exceptions;
-#endif
 
 using namespace std;
 
@@ -73,15 +58,13 @@ class DataBroker {
 	size_t atmosphericNx, atmosphericNy; /*!< size of the atmospheric matrices */
 	AtmosphericData* atmosphericData; /*!< pointer to the atmospheric-related data */
 
-	// Information concerning the embedded parallelism
-	ParallelData* parallelData; /*!< pointer to the parallel-related data */
 
 	// map of the data layers
 	map<string, DataLayer<double>* > layersMap; /*!< map of the different scalar layers stored in the data broker */
 	map<string, DataLayer<double>* >::iterator ilayer; /*!< iterator of the list of layers */
 	map<string, FluxLayer<double>* > fluxLayersMap; /*!< map of the different flux layers stored in the data broker */
 	map<string, FluxLayer<double>* >::iterator flayer; /*!< iterator of the list of layers */
-
+	
 	// List of the data layers
 	list<DataLayer<double>* > layers; /*!< list of the different layers stored in the data broker */
 	list<FluxLayer<double>* > fluxLayers; /*!< list of the different flux layers stored in the data broker */
@@ -90,6 +73,8 @@ class DataBroker {
 	static DataLayer<double>* fuelLayer; /*!< predefined layer for fuel parameters */
 	static DataLayer<double>* dummyLayer; /*!< predefined layer for a dummy variable (optimization) */
 	static DataLayer<double>* altitudeLayer; /*!< predefined layer for the altitude (optimization) */
+
+	static DataLayer<double>* forcedArrivalTimeLayer;
 	static DataLayer<double>* slopeLayer; /*!< predefined layer for the slope (optimization) */
 	static DataLayer<double>* moistureLayer; /*!< predefined layer for moisture (optimization) */
 	static DataLayer<double>* temperatureLayer; /*!< predefined layer for temperature (optimization) */
@@ -109,6 +94,7 @@ class DataBroker {
 		propGetterMap pgM;
 		pgM["fieldSpeed"] = &getDummy;
 		pgM["altitude"] = &getAltitude;
+		pgM["arrival_time_gradient"] = &getArrival_time_gradient;
 		pgM["slope"] = &getSlope;
 		pgM["windU"] = &getWindU;
 		pgM["windV"] = &getWindV;
@@ -119,6 +105,11 @@ class DataBroker {
 		pgM["frontDepth"] = &getFrontDepth;
 		pgM["frontCurvature"] = &getFrontCurvature;
 		pgM["frontFastestInSection"] = &getFrontFastestInSection;
+		pgM["nodeLocationX"] = &getFirenodeLocX;
+		pgM["nodeLocationY"] = &getFirenodeLocY;
+		pgM["nodeID"] = &getFirenodeID,
+		pgM["nodeState"] = &getFirenodeState,
+		pgM["nodeTime"] = &getFirenodeTime;
 		return pgM;
 	}
 	static const propGetterMap propPropertiesGetters; /*!< map to predefined functors to compute properties */
@@ -150,9 +141,7 @@ class DataBroker {
 	/*! \brief getting the desired property for given firenode */
 	double getProperty(FireNode*, string);
 
-	/*! \brief getting the desired property for given location */
-	double getProperty(FFPoint, string);
-
+	
 	/* Pre-defined function for propagation models */
 
 	/*! \brief predefined function for getting the value of a dummy variable for given firenode */
@@ -160,12 +149,25 @@ class DataBroker {
 	/*! \brief predefined function for getting the fuel parameters at firenode location */
 	static int getFuelProperties(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the moisture at firenode location */
+
+	static int getMoisturesProperties(FireNode *, PropagationModel *, int );
 	static int getMoisture(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the temperature at firenode location */
 	static int getTemperature(FireNode*, PropagationModel*, int);
 
 	/*! \brief predefined function for getting the altitude for given firenode */
 	static int getAltitude(FireNode*, PropagationModel*, int);
+
+    static int getFirenodeLocX(FireNode *fn, PropagationModel *model, int keynum);
+
+    static int getFirenodeLocY(FireNode *fn, PropagationModel *model, int keynum);
+
+    static int getFirenodeID(FireNode *fn, PropagationModel *model, int keynum);
+
+    static int getFirenodeTime(FireNode *fn, PropagationModel *model, int keynum);
+    static int getFirenodeState(FireNode *fn, PropagationModel *model, int keynum);
+
+    static int getArrival_time_gradient(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the slope for given firenode */
 	static int getSlope(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the longitudinal wind for given firenode */
@@ -199,26 +201,18 @@ class DataBroker {
 
 
 
-	/*! \brief retrieving the south-west point in an NcFile */
-	FFPoint getNetCDFSWCorner(NcVar*);
-	/*! \brief retrieving the time origin in an NcFile */
-	double getNetCDFTimeOrigin(NcVar*);
-	/*! \brief retrieving the south-west point in an NcFile */
-	FFPoint getNetCDFSpatialSpan(NcVar*);
-	/*! \brief retrieving the time origin in an NcFile */
-	double getNetCDFTimeSpan(NcVar*);
-	/*! \brief loading a NCXYZTDataLayer from an NcFile */
-	XYZTDataLayer<double>* constructXYZTLayerFromFile(NcFile*, string,int);
-	/*! \brief loading a FuelDataLayer from an NcFile */
-	FuelDataLayer<double>* constructFuelLayerFromFile(NcFile*);
-	/*! \brief loading a PropagativeLayer from an NcFile */
-	PropagativeLayer<double>* constructPropagativeLayerFromFile(NcFile*, string);
-	/*! \brief loading a FluxLayer from an NcFile */
-	FluxLayer<double>* constructFluxLayerFromFile(NcFile*, string);
-
 	/*! \brief testing inclusion of a variable domain inside the fire domain */
 	bool isRelevantData(FFPoint&, FFPoint&);
-	double getNetCDFFileVersion(NcVar* var);
+
+
+	/*! \brief loading a NCXYZTDataLayer from an NcFile */
+	XYZTDataLayer<double>* constructXYZTLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a FuelDataLayer from an NcFile */
+	FuelDataLayer<double>* constructFuelLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a PropagativeLayer from an NcFile */
+	PropagativeLayer<double>* constructPropagativeLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	/*! \brief loading a FluxLayer from an NcFile */
+	FluxLayer<double>* constructFluxLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \transpose data from fortran netcdf*/
 	double* readAndTransposeFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t& ,bool  ,  int );
 	int*    readAndTransposeIntFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t&, bool ,  int );
@@ -239,7 +233,7 @@ public:
 
 	/*! \brief registering a propagation model */
 	void registerPropagationModel(PropagationModel*);
-
+	vector<string> getAllLayerNames() ;
 	void updateFuelValues(PropagationModel*, string key, double value );
 
 	/*! \brief registering a flux model */
@@ -256,6 +250,9 @@ public:
 
 	/*! \brief reading a table from an ascii file */
 	void readTableFromAsciiFile(string, vector<map<string, double> >&);
+	/*! \brief reading a table from an sttring variable  */
+
+	void readTableFromString(const std::string&, vector<map<string, double> >&);
 
 	/*! \brief splitting a string according to a delimiter */
 	void tokenize(const string&, vector<string>&, const string&);
@@ -265,16 +262,6 @@ public:
 			, const size_t&, const size_t&);
 	void initializeAtmosphericLayers(const double&, const size_t&, const size_t&);
 
-	/*! \brief initializing the propagative layer */
-	void initializePropagativeLayer(string);
-
-	/*! \brief initializing the flux layers */
-	void initializeFluxLayers(string);
-
-	/*! \brief initializing the parallel properties */
-	void initializeParallelProperties(const size_t&, const size_t&
-			, const size_t&, const double&);
-
 	/*! \brief insuring the presence of all needed layers */
 	void insureLayersExistence();
 
@@ -282,14 +269,17 @@ public:
 	void initFluxLayers(const double&);
 
 	/*! \brief default constant layer constructor */
-	void addConstantLayer(string, const double&);
+	void addConstantLayer(const string& ,const string& ,const string& , double ,const FFPoint&S ,const FFPoint& );
 
 	/*! \brief typical double layer constructor */
-	void addLayer(string name, double &x0 , double &y0, double& t0, double& width , double& height, double& timespan, size_t& nnx, size_t& nny, size_t& nnz,  double* values);
+	//void addLayer(string name, double &x0 , double &y0, double& t0, double& width , double& height, double& timespan, size_t& nnx, size_t& nny, size_t& nnz,  double* values);
 
 	/*! \brief accessor to the desired data layer */
 	DataLayer<double>* getLayer(const string&);
- 	XYZTDataLayer<double>* getwindULayer(); 
+	
+	bool hasLayer(const string& ) ;
+
+ 	//XYZTDataLayer<double>* getwindULayer(); 
 	/*! \brief accessor to the desired flux layer */
 	FluxLayer<double>* getFluxLayer(const string&);
 
@@ -297,7 +287,6 @@ public:
 	void computeActiveSurfacesFlux(const double&);
 
 	void loadMultiWindBin(double , size_t , size_t* , size_t* );
-    void dumpWindDataInBinary();
 	/*! \brief accessor to the desired set of properties for propagation models */
 	void getPropagationData(PropagationModel*, FireNode*);
 	bool* optimizedPropDataBroker;

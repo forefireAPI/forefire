@@ -12,7 +12,7 @@ import sys
 #else :
 #    fnames = sys.argv[1:]
 
-def pgds_to_KML(fnames, fout):
+def pgds_to_KML_nc4(fnames, fout):
     dbo={}
     kmlString = str("""<?xml version="1.0" encoding="UTF-8"?>
     <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -66,3 +66,37 @@ def pgds_to_KML(fnames, fout):
     with open(fout, "w") as text_file:
         text_file.write(kmlString)
 
+
+
+def bounds_to_KML(boundaries, fout):
+    kmlString = """<?xml version="1.0" encoding="UTF-8"?>
+    <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+    <Document>
+    	<name>kmldomain.kml</name>
+    <Style id="doms"><PolyStyle><fill>0</fill></PolyStyle></Style>"""
+ 
+    w, s, e, n = boundaries  
+
+    kmlString += f"""
+        <Placemark>
+            <name>MNH Bound in PGD</name>
+            <styleUrl>#doms</styleUrl>
+            <Polygon>
+                <tessellate>0</tessellate>
+                <outerBoundaryIs>
+                    <LinearRing>
+                        <coordinates>
+                            {w},{s},0 {e},{s},0 {e},{n},0 {w},{n},0 {w},{s},0
+                        </coordinates>
+                    </LinearRing>
+                </outerBoundaryIs>
+            </Polygon>
+        </Placemark>
+    """
+
+    kmlString += """  
+    </Document>
+    </kml>"""
+
+    with open(fout, "w") as text_file:
+        text_file.write(kmlString)

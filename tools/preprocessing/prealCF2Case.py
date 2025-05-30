@@ -18,6 +18,8 @@ import numpy as np
 import netCDF4 as nc4
 from PIL import Image
 from .ffToGeoJson import get_WSEN_LBRT_ZS_From_Pgd
+
+
  
 def addFieldToNcFile(ncfile, field, fieldname, typeName, dvartype):
         print("adding ", fieldname)
@@ -63,71 +65,7 @@ def addFieldToNcFile(ncfile, field, fieldname, typeName, dvartype):
         variable.type = typeName;
         
         return variable
-    
-
-def FiretoNC(filename, domainProperties, parametersProperties, fuelModelMap, elevation=None, wind=None, fluxModelMap =None, bmap=None, cellMap=None):
- 
-        ncfile =  nc4.Dataset(filename, 'w', format='NETCDF3_CLASSIC')
-        ncfile.version = "FF.1.0"
-        domain = ncfile.createVariable('domain', 'S1', ())
-        domain.type = "domain"
-        for key, value in domainProperties.items():
-            setattr(domain, key, value)
-
-        parameters = ncfile.createVariable('parameters', 'S1', ())
-        parameters.type = "parameters"       
-
-        if (parametersProperties is not None):
-            for key, value in parametersProperties.items():
-                setattr(parameters, key, value)
-
- 
-        if (fuelModelMap is not None):
-            addFieldToNcFile(ncfile, fuelModelMap, 'fuel', 'fuel', 'i2')
-            
-        if (elevation is not None):
-            addFieldToNcFile(ncfile, elevation, 'altitude', 'data', 'f4')
         
-        if (wind is not None):
-            addFieldToNcFile(ncfile, wind, 'wind', 'data', 'f4')
-            # 2 types de vents, 
-            # soit windU/windV statique (2 arrays, windU et WindV de forme:  1,1,NI,NJ)
-            # soit variable dans le temps, dynamique 2 arrays, windU et WindV de forme NT, 1, NI,NJ)
-            # soit champ potentiel nom wind de forme NAXES,NDIRCOEFFS,NI,NJ 
-#            addFieldToNcFile(ncfile, wind["zonal"], 'windU', 'data', 'f4')
- #           addFieldToNcFile(ncfile, wind["meridian"], 'windV', 'data', 'f4')
-                
-      #      windU = ncfile.createVariable('windU', 'f8', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
-       #     windU.type = "data" 
-       #     windU[0,0,:,:] = wind["zonal"]
-       #     windV = ncfile.createVariable('windV', 'f8', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
-       #     windV.type = "data" 
-       #     windV[0,0,:,:] = wind["meridian"]
-            
-        if (fluxModelMap is not None):
-            numOfModels = 0
-            for fMap in fluxModelMap:
-                numOfModels += len(fMap["table"])
-            
-            for fMap in fluxModelMap:  
-                fVar = addFieldToNcFile(ncfile, fMap["data"], fMap["name"], 'flux', 'i2')
-                #ncfile.createVariable(fMap["name"], 'i4', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
-                #fVar.type = "flux" ;
-                for entry in fMap["table"].keys():
-                    setattr(fVar, "model%dname"%fMap["table"][entry], entry)
-                fVar.indices = np.array(list(fMap["table"].values()),dtype=('i2'))
-                #fVar[0,0,:,:] = fMap["data"]
-
-        
-        print("writing ", filename)
-        ncfile.sync()
-        ncfile.close()
-
-def PGD2Case(pgd_path, png_path, out_path, dateStartDom, fuel_test=None, gen_wind=None):
-    WSEN, LBRT, ZS = get_WSEN_LBRT_ZS_From_Pgd(pgd_path)
-    image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=fuel_test, gen_wind=None)
-
-    
 def image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=None, gen_wind=None):
     
  
@@ -198,12 +136,7 @@ def image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=None,
         ni=3
         nj=3
         wind=np.full((2, 4, ni, nj), 0)
-        #wind params examples : 
-        #Southerly 10m.s-1  trigger[wind;loc=(0.,0.,0.);vel=(0.0,10.0,0.);t=0.]
-        #Westerly 10m.s-1  trigger[wind;loc=(0.,0.,0.);vel=(10.0,0.0,0.);t=0.]
-        #Northerly 10m.s-1  trigger[wind;loc=(0.,0.,0.);vel=(0.0,-10.0,0.);t=0.]
-        #Easterly 10m.s-1  trigger[wind;loc=(0.,0.,0.);vel=(-10.0,0.0,0.);t=0.]
-        N = 8  # Nombre de directions
+        N = é  # Nombre de directions
         angle_step = 2 * np.pi / N
         
         wind = np.zeros((2, N, ni, nj))
@@ -214,24 +147,7 @@ def image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=None,
             v = 10 * np.sin(angle)  # Composante V
             wind[0][i] = np.full((ni, nj), u)
             wind[1][i] = np.full((ni, nj), v)
-        # #for U
-        # #stherly
-        # wind[0][0] = np.full((ni, nj), 0)
-        # #westerly
-        # wind[0][1] = np.full((ni, nj), 10)
-        # #northrly
-        # wind[0][2] = np.full((ni, nj), 0)
-        # #eastrly
-        # wind[0][3] = np.full((ni, nj), -10)
-        
-        # #for V
-        # wind[1][0] = np.full((ni, nj), 10)
-        # #westerly
-        # wind[1][1] = np.full((ni, nj), 0)
-        # #northrly
-        # wind[1][2] = np.full((ni, nj), -10)
-        # #eastrly
-        # wind[1][3] = np.full((ni, nj), 0)   
+
         
     
     heatFluxModelMap = {}
@@ -247,3 +163,67 @@ def image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=None,
      
     
     FiretoNC(fout, domainProperties,parametersProperties,fuelMap,elevation=elevation, wind=wind, fluxModelMap = (heatFluxModelMap,vaporFluxModelMap))
+
+def FiretoNC(filename, domainProperties, parametersProperties, fuelModelMap, elevation=None, wind=None, fluxModelMap =None, bmap=None, cellMap=None):
+ 
+        ncfile =  nc4.Dataset(filename, 'w', format='NETCDF3_CLASSIC')
+        ncfile.version = "FF.1.0"
+        domain = ncfile.createVariable('domain', 'S1', ())
+        domain.type = "domain"
+        for key, value in domainProperties.items():
+            setattr(domain, key, value)
+
+        parameters = ncfile.createVariable('parameters', 'S1', ())
+        parameters.type = "parameters"       
+
+        if (parametersProperties is not None):
+            for key, value in parametersProperties.items():
+                setattr(parameters, key, value)
+
+ 
+        if (fuelModelMap is not None):
+            addFieldToNcFile(ncfile, fuelModelMap, 'fuel', 'fuel', 'i4')
+            
+        if (elevation is not None):
+            addFieldToNcFile(ncfile, elevation, 'altitude', 'data', 'f4')
+        
+        if (wind is not None):
+            addFieldToNcFile(ncfile, wind, 'wind', 'data', 'f4')
+            # 2 types de vents, 
+            # soit windU/windV statique (2 arrays, windU et WindV de forme:  1,1,NI,NJ)
+            # soit variable dans le temps, dynamique 2 arrays, windU et WindV de forme NT, 1, NI,NJ)
+            # soit champ potentiel nom wind de forme NAXES,NDIRCOEFFS,NI,NJ 
+#            addFieldToNcFile(ncfile, wind["zonal"], 'windU', 'data', 'f4')
+ #           addFieldToNcFile(ncfile, wind["meridian"], 'windV', 'data', 'f4')
+                
+      #      windU = ncfile.createVariable('windU', 'f8', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
+       #     windU.type = "data" 
+       #     windU[0,0,:,:] = wind["zonal"]
+       #     windV = ncfile.createVariable('windV', 'f8', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
+       #     windV.type = "data" 
+       #     windV[0,0,:,:] = wind["meridian"]
+            
+        if (fluxModelMap is not None):
+            numOfModels = 0
+            for fMap in fluxModelMap:
+                numOfModels += len(fMap["table"])
+            
+            for fMap in fluxModelMap:  
+                fVar = addFieldToNcFile(ncfile, fMap["data"], fMap["name"], 'flux', 'i4')
+                #ncfile.createVariable(fMap["name"], 'i4', ('DIMT', 'DIMZ', 'DIMY', 'DIMX'))
+                #fVar.type = "flux" ;
+                for entry in fMap["table"].keys():
+                    setattr(fVar, "model%dname"%fMap["table"][entry], entry)
+                fVar.indices = np.array(list(fMap["table"].values()),dtype=('i4'))
+                #fVar[0,0,:,:] = fMap["data"]
+
+        
+        print("writing ", filename)
+        ncfile.sync()
+        ncfile.close()
+
+def PGD2Case(pgd_path, png_path, out_path, dateStartDom, fuel_test=None, gen_wind=None):
+    WSEN, LBRT, ZS = get_WSEN_LBRT_ZS_From_Pgd(pgd_path)
+    image2Case(WSEN, LBRT, ZS, png_path, out_path, dateStartDom, fuel_test=fuel_test, gen_wind=None)
+
+

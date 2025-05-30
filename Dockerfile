@@ -1,17 +1,15 @@
-FROM osgeo/gdal:ubuntu-small-3.3.1
+FROM ubuntu:22.04
 
-# install requirements first to cache it
-RUN apt-get update
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    libnetcdf-c++4-dev \
+    cmake
 
-RUN apt install build-essential -y
-
-RUN apt install libnetcdf-dev libnetcdf-cxx-legacy-dev libnetcdf-c++4-dev -y
-
-RUN apt install cmake -y
-
-# copy files inside docker
 WORKDIR /forefire
+ENV FOREFIREHOME=/forefire
 
+# we could only copy src, cmakelists.txt and cmake-build.sh
 COPY . .
 
 # install forefire

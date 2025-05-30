@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file BurningMapLayer.h
+ * @brief Layer Class (for databroker access) containing the arival time data for the whole domain.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef BURNINGMAPLAYER_H_
 #define BURNINGMAPLAYER_H_
@@ -54,8 +42,10 @@ public:
 	BurningMapLayer(string name, FireDomain* fd
 			, const size_t& nnx, const size_t& nny)
 	: DataLayer<T>(name), nx(nnx), ny(nny), domain(fd) {
+		domain=fd;
 		size = nx*ny;
 		arrivalTimes = new FFArray<T>("BMap", 0., nx, ny);
+		cout<<"creating bmap"<<nx<<" "<<ny<<endl;
 		latestCall = -1.;
 		params = SimulationParameters::GetInstance();
 	};
@@ -86,6 +76,17 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return domain->getSWCorner().getX(); };
+	double getOriginY(){ return domain->getSWCorner().getY(); };
+	double getOriginZ(){ return 0;};
+	double getWidth(){ return domain->getNECorner().getX()-domain->getSWCorner().getX(); };
+	double getHeight(){ return domain->getNECorner().getY()-domain->getSWCorner().getY(); };
+	double getDepth(){ return 0; };
+
 
 };
 
@@ -118,15 +119,19 @@ size_t BurningMapLayer<T>::getValuesAt(FFPoint loc, const double& t
 
 template<typename T>
 T BurningMapLayer<T>::getNearestData(FFPoint loc){
-	cout<<"BurningMapLayer<T>::getNearestData() "
-			<<"shouldn't have been called"<<endl;
-	return 0.;
-}
+
+	/* getting the floor value */
+	size_t i = (size_t) (loc.getX()-getOriginX())/getDx();
+	size_t j = (size_t) (loc.getY()-getOriginY())/getDy();
+	
+	return domain->getArrivalTime(i, j);
+	}
 
 template<typename T>
 void BurningMapLayer<T>::getMatrix(
 		FFArray<T>** matrix, const double& t){
-	if ( t != latestCall ){
+			cout << "getting matrix lmayer  "<<nx<<"BMAPS"<<ny<<endl;
+	/*if ( t != latestCall ){
 
 		for ( size_t i=0; i < nx; i++ ){
 			for ( size_t j=0; j < ny; j++ ){
@@ -134,7 +139,7 @@ void BurningMapLayer<T>::getMatrix(
 			}
 		}
 		latestCall = t;
-	}
+	}*/
 	// Affecting the computed matrix to the desired array
 	*matrix = arrivalTimes;
 }

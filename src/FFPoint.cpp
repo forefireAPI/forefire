@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FFPoint.cpp
+ * @brief Implements the methods of the FFPoint class
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "FFPoint.h"
 
@@ -28,17 +16,11 @@ const double FFPoint::Pi = 3.141592653589793;
 
 // constructors and destructor
 FFPoint::FFPoint(){
-
-
 	x = 0.;
 	y = 0.;
 	z = 0.;
 }
-FFPoint::FFPoint(const double x0, const double y0){
-	x = x0;
-	y = y0;
-	z = 0.;
-}
+
 FFPoint::FFPoint(const double x0,const  double y0,const  double z0){
 	x = x0;
 	y = y0;
@@ -124,7 +106,7 @@ void FFPoint::setLoc(FFPoint p){
 }
 
 // norm function
-const double FFPoint::norm(){
+double FFPoint::norm(){
 	double sqnorm = x*x + y*y + z*z;
 	return sqrt(sqnorm);
 }
@@ -215,6 +197,17 @@ bool FFPoint::pointInPolygon(size_t& nvert, double* vertx, double* verty){
 		j=i;
 	}
 	return oddNodes;
+}
+
+
+double FFPoint::projectLat(double refLatitude, double metersPerDegreesLat) {
+    // Compute the latitude offset (in degrees) from the northward displacement.
+    return refLatitude + (y / metersPerDegreesLat);
+}
+
+double FFPoint::projectLon(double refLongitude, double metersPerDegreesLon) {
+    // Compute the longitude offset (in degrees) from the eastward displacement.
+    return refLongitude + (x / metersPerDegreesLon);
 }
 
 // print function

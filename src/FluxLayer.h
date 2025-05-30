@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FluxLayer.h
+ * @brief FluxLayer gives access to the desired flux model
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef FLUXLAYER_H_
 #define FLUXLAYER_H_
@@ -33,7 +21,6 @@ namespace libforefire {
 /*! \class FluxLayer
  * \brief FluxLayer gives access to the desired flux model
  *
- *  FluxLayer gives access to the desired flux model.
  */
 
 template<typename T> class FluxLayer : public DataLayer<T> {
@@ -132,7 +119,6 @@ public:
 	: DataLayer<T>(name), SWCorner(atmoSWCorner), NECorner(atmoNECorner)
 	  	  , nx(nnx), ny(nny), cells(FDcells), mapStartTime(t0)
 	  	  , mapNx(nmx), mapNy(nmy), mapNz(nmz), mapNt(nmt) {
-
 		size = nx*ny;
 		flux = new FFArray<T>(name, 0., nx, ny);
 
@@ -194,6 +180,17 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return SWCorner.getX(); };
+	double getOriginY(){ return SWCorner.getY(); };
+	double getOriginZ(){ return SWCorner.getZ(); };
+	double getWidth(){ return NECorner.getX()-SWCorner.getX(); };
+	double getHeight(){ return NECorner.getY()-SWCorner.getY(); };
+	double getDepth(){ return 0; };
+		
 
 };
 
@@ -237,6 +234,7 @@ T FluxLayer<T>::getValueAt(FireNode* fn){
 
 template<typename T>
 T FluxLayer<T>::getValueAt(FFPoint loc, const double& t){
+
 	return getNearestData(loc, t);
 }
 
@@ -255,8 +253,13 @@ T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 
 	nx > 1 ? i = ((size_t) (loc.getX()-SWCorner.getX())/dx) : i = 0;
 	ny > 1 ? j = ((size_t) (loc.getY()-SWCorner.getY())/dy) : j = 0;
-
-	return (*flux)(i, j);
+	
+	int numFluxModelsMax = 50;
+	int modelCount[numFluxModelsMax];
+	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
+	double v= cells[i][j].applyModelsOnBmap(this->getKey(), t, t, modelCount);
+ 
+	return v;
 }
 
 template<typename T>
@@ -304,7 +307,7 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 
 	   	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
 	   	int totalcount = 0;
-	   	totalcount = 0;
+ 
 
 	   	for ( size_t i = 0; i < nx; i++ ){
 			for ( size_t j = 0; j < ny; j++ ){
@@ -379,8 +382,9 @@ void FluxLayer<T>::setMatrix(string& mname, double* inMatrix
 	if ( flux->getSize() == sizein ){
 		flux->copyDataFromFortran(inMatrix);
 	} else {
-		cout<<"Error while trying to retrieve data for data layer "
-				<<this->getKey()<<", matrix mapSize not matching";
+		cout<<"Error while trying to retrieve "<<mname<<"data for data layer "
+				<<this->getKey()<<" at "<<time<<" size "<<sizeout<<endl;
+	
 	}
 }
 
@@ -398,6 +402,9 @@ template<typename T>
 void FluxLayer<T>::dumpAsBinary(string filename, const double& time
 		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
 	/* writing the matrix in a binary file */
+	if(nnx*nny==0){
+		cout<<"trying to dump empty field at "<<time<<" loc"<<SWC.getX()<<":"<<SWC.getY()<<" "<<NEC.getX()<<":"<<NEC.getY()<<endl;
+	}
 	ostringstream outputfile;
 	outputfile<<filename<<"."<<this->getKey();
 	ofstream FileOut(outputfile.str().c_str(), ios_base::binary);

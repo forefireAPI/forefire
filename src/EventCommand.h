@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file EventCommand.h
+ * @brief  Definitions for the class that defines hos to send a specific command to the interpreter at a scheduled time (an time Atom that can be schedueled)
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef EVENTCOMMAND_H_
 #define EVENTCOMMAND_H_
@@ -29,16 +17,10 @@ using namespace std;
 
 namespace libforefire{
 
-/*! \class Visitor
- * \brief Abstract class for visitors
+/*! \class EventCommand
+ * \brief TODO
  *
- *  The 'Visitor' abstract class conforms to the
- *  Visitor pattern to obtain information on the
- *  simulation through external objects. Visitors
- *  in LibForeFire are also 'ForeFireAtom' objects
- *  so they can be called by the simulator, i.e.
- *  an event encapsulates the visitor and can be
- *  called at different times of the simulation.
+ *  Detail
  */
 class EventCommand: public ForeFireAtom {
 

@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file Command.h
+ * @brief Definitions for main interaction class, contains all comands logics that are activated py the interpreter.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef COMMAND_H_
 #define COMMAND_H_
@@ -32,6 +20,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "FireNode.h"
 #include "include/Futils.h"
 #include "EventCommand.h"
+#include <vector>
+#include <algorithm>
+#include "HttpCommandServer.hpp"
 
 #ifndef COMMAND_DEBUG
 #define COMMAND_DEBUG 1<<8
@@ -81,7 +72,7 @@ class Command {
 	// Definition of the command map alias
 	typedef int (*cmd)(const string&, size_t&);
 	typedef map<string,cmd> commandMap;  /*!< map of aliases between strings and functions to be called */
-	static const int numberCommands = 18; /*!< number of possible commands */
+	static const int numberCommands = 21; /*!< number of possible commands */
 	static commandMap makeCmds(){
 		// Construction of the command translator
 		commandMap trans;
@@ -93,15 +84,17 @@ class Command {
 		trans["goTo"] = &goTo;
 		trans["print"] = &printSimulation;
 		trans["save"] = &saveSimulation;
+		trans["plot"] = &plotSimulation;
+		trans["computeSpeed"] = &computeModelSpeed;
+		trans["addLayer"] = &addLayer;
 		trans["setParameter"] = &setParameter;
 		trans["setParameters"] = &setParameters;
 		trans["getParameter"] = &getParameter;
 		trans["trigger"] = &triggerValue;
 		trans["include"] = &include;
-		trans["help"] = &help;
-		trans["man"] = &man;
 		trans["loadData"] = &loadData;
 		trans["systemExec"] = &systemExec;
+		trans["listenHTTP"] = &listenHTTP;
 		trans["clear"] = &clear;
 		trans["quit"] = &quit;
 
@@ -110,59 +103,6 @@ class Command {
 	/* A map of the commands to their effective functions */
 	static const commandMap translator;  /*!< map of aliases between strings and functions to be called */
 
-	// Definition of the command man alias
-	typedef map<string,string> commandMan;
-	static commandMan makeMan(){
-		// Construction of the man pages
-		commandMan cman;
-		ostringstream mantmp;
-		mantmp << "FireDomain[Psw;Pne;t;bmapdx;bmapdy]" << endl;
-		mantmp << " - 'Psw' and 'Pne' are the southwest and northwest points of the boundaries" << endl;
-		mantmp << "    and should be affected as in 'Psw=(0.,0.,0.)';" << endl;
-		mantmp << " - 't' is the time associated with fire domain ('t=0.');" << endl;
-		mantmp << " - 'bmapdx' and 'bmapdy' are the resolution of the burning map in each" << endl;
-		mantmp << "    direction and should be affected as in 'bmpadx=0.1';" << endl;
-		cman["FireDomain"] = mantmp.str();
-		mantmp << "FireNode[loc;vel;t]" << endl;
-		mantmp << " - 'loc' is the spatial point where the firenode is created ('loc=(0.,0.,0.)');" << endl;
-		mantmp << " - 'vel' is the initial velocity of the firenode ('vel=(0.,0.,0.)');" << endl;
-		mantmp << " - 't' is the time associated with fire node ('t=0.');" << endl;
-		cman["FireNode"] = mantmp.str();
-		cman["FireFront"] = "FireFront[]\n create a fire front with the following fire nodes\n";
-		cman["startFire"] = "startFire[loc=(0.,0.,0.),t=0.]\n create a triangular fire front with 3 nodes around the location at time t\n";
-		cman["step"] = "step[dt]\n - 'dt' is the duration for which the simulation will run ('dt=5.')\n";
-		cman["goTo"] = "goTo[t]\n - 't' is the desired time till which the simulation will run ('t=56.2')\n";
-		cman["print[output]"] = "print\n prints a representation of the simulation in the file 'output'\n";
-		cman["save"] = "save\n saves the simulation in hdf format\n";
-		cman["setParameter[param=value]"] = "setParameter\n - sets parameter 'param' to the given 'value'";
-		cman["setParameters[param1=val1;param2=val2;...;paramn=valn]"] = "setParameters\n - sets a given list of parameters to the desired values";
-		cman["getParameter[key=value]"] = "gets parameter 'key' ";
-		cman["include[input]"] = "include\n - executes the commands in the file 'input'";
-		cman["help"] = "help\n displays messages about the usage of commands\n";
-		cman["loadData"] = "loadData\n load a NC data file\n";
-		cman["clear"] = "clear\n clear all the simulation data\n";
-		cman["systemExec"] = "systemExec\n run a system command\n";
-		cman["quit"] = "quit\n terminates the simulation\n";
-		return cman;
-	}
-	/* A map of the commands to their man page */
-	static const commandMan manpages; /*!< manual pages for the commands */
-
-	// Definition of the dictionary structure
-	struct CmdDictEntry{
-		string inlineCmd;
-		string usage;
-		CmdDictEntry(){}
-		CmdDictEntry(string s1, string s2){
-			this->inlineCmd = s1;
-			this->usage = s2;
-		}
-		CmdDictEntry(const CmdDictEntry& cdt) : \
-				inlineCmd(cdt.inlineCmd)\
-				, usage(cdt.usage) {}
-	};
-	// Construction of the dictionary of commands
-	static CmdDictEntry cmdDict[numberCommands];
 
 	// Boolean for parallel simulation
 	static bool parallel;
@@ -207,6 +147,12 @@ class Command {
 	static int printSimulation(const string&, size_t&);
 	/*! \brief command to save in print format the simulation */
 	static int saveSimulation(const string&, size_t&);
+	/*! \brief command to load in print format the simulation */
+	static int addLayer(const string&, size_t&);
+	/*! \brief command to plot in png/jpg format the simulation */
+	static int plotSimulation(const string&, size_t&);
+	/*! \brief command to get speed and cout a double */
+	static int computeModelSpeed(const string&, size_t&);
 	/*! \brief command to set a given parameter */
 	static int setParameter(const string&, size_t&);
 	/*! \brief command to set a given list of parameters */
@@ -217,19 +163,23 @@ class Command {
 	static int triggerValue(const string&, size_t&);
 	/*! \brief command to trigger values that will modifie runtime model parameterisation */
 	static int include(const string&, size_t&);
-	/*! \brief help */
-	static int help(const string&, size_t&);
-	/*! \brief invoking the manual pages */
-	static int man(const string&, size_t&);
 	/*! \brief command to load a NC data file */
 	static int loadData(const string&, size_t&);
+	/*! \brief command to save a NC landscape data file */
+	static int saveData(const string&, size_t&);
+
+
 	/*! \brief command to clear the simulation */
 	static int systemExec(const string&, size_t&);
 	/*! \brief command to run a system trough pipe */
 	static int clear(const string&, size_t&);
 	/*! \brief command to quit the ForeFire shell */
 	static int quit(const string&, size_t&);
+    /*! \brief command to quit the ForeFire shell */
+    static int listenHTTP(const string&, size_t &) ;
 
+	static string executeCommandAndCaptureOutput(const std::string &cmd);
+    
 	/*! \brief splits the command into the desired options */
 	static void tokenize(const string&, vector<string>&, const string&);
 	/*! \brief reads the value of the desired string */
@@ -241,6 +191,9 @@ class Command {
 	/*! \brief reads the value of the desired FFPoint */
 	static FFPoint getPoint(string, string);
 	/*! \brief reads the value of the desired FFVector */
+	
+	static std::vector<FFPoint> getPoly(const std::string &, const std::string &);
+
 	static FFVector getVector(string, string);
 	/*! \brief counts the arguments in the commands */
 	static size_t argCount(string);
@@ -248,6 +201,24 @@ class Command {
 	static size_t tabsCount(string);
 	/*! \brief remove the tabs in the commands */
 	static string removeTabs(string);
+
+    static void writeImage(const char* filename, const std::vector<std::vector<double>>& matrix,
+                           double forced_min_val = std::numeric_limits<double>::quiet_NaN(),
+                           double forced_max_val = std::numeric_limits<double>::quiet_NaN(),
+                           const std::string& colormap = "grayscale"); // Default to grayscale if no colormap is specified.
+
+
+    static void writeHistogram(const char* filename, const std::vector<std::vector<double>>& matrix,   int bins = 100,                        
+							double forced_min_val = std::numeric_limits<double>::quiet_NaN(),
+                            double forced_max_val = std::numeric_limits<double>::quiet_NaN(),
+							
+							const std::string& colormap = "grayscale") ;
+
+    static void parseColorMap(const std::string& , std::vector<std::array<unsigned char, 4>>& ) ;
+
+	static void writeASCII(const char *, const std::vector<std::vector<double>>& , double , double , double , double );
+    static void writeNetCDF(const char *, const string& , const std::vector<std::vector<double>>& , const vector<double> &, const vector<double> &);
+	
 
 
 	static const string stringError;
@@ -270,6 +241,7 @@ public:
 		TimeTable* tt;
 		Simulator* sim;
 		ostream* outStream;
+		http_command::HttpCommandServer* server;
 		int debugMode;
 	};
 
@@ -316,7 +288,6 @@ public:
 	/*! \brief backup of the simulation */
 	static string dumpString();
 
-	
 
 };
 

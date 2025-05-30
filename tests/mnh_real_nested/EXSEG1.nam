@@ -1,0 +1,70 @@
+&NAM_CONFIO
+             ! NIO_VERB=5, NGEN_VERB=5
+             /
+&NAM_CONFZ
+  !NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8 
+/
+&NAM_LUNITn  CINIFILE = "RUN12.1.PRUN1.004",
+	     CINIFILEPGD="PGD_D3200mA.nested",
+ /
+
+&nam_dynn
+    xtstep = 4
+    cpresopt = 'ZRESI'
+    nitr = 10
+    lhorelax_uvwth = .false.
+    lhorelax_rv = .false.
+    lve_relax = .true.
+    nrimx = 5
+    nrimy = 5
+    xrimkmax = 0.004
+    xt4difu = 2000.0
+/
+&NAM_ADVn  CUVW_ADV_SCHEME= "CEN4TH",
+           CTEMP_SCHEME= "RKC4",
+           CMET_ADV_SCHEME= "PPM_01",
+           CSV_ADV_SCHEME= "PPM_01"
+/
+&nam_paramn
+    cturb = 'TKEL'
+    crad = 'ECMW'
+    ccloud = 'ICE3'
+    cdconv = 'NONE'
+    csconv = 'NONE'
+/
+&nam_param_radn
+    xdtrad = 500.0
+    xdtrad_clonly = 500.0
+    lclear_sky = .false.
+    nrad_colnbr = 400
+/
+&NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
+&NAM_TURBn  CTURBLEN = "BL89", CTURBDIM = "1DIM" /
+&NAM_CH_MNHCn LUSECHEM = F /
+&NAM_CONF  CCONF = "START", NVERB=5, NMODEL = 2, 
+            CEXP = "RUN12", CSEG = "FIRE" ,
+            CSPLIT='BSPLITTING' 
+            !NHALO=3 JPHEXT=3 
+            /
+&NAM_CONFn  LUSERV = T, NSV_USER=2 /
+&NAM_DYN  XSEGLEN = 12000., LCORIO = T, LNUMDIFU = T,
+           XALKTOP = 0.001, XALZBOT = 14500. /
+&NAM_NESTING NDAD(2) = 1, NDTRATIO(2) = 4, XWAY(2) = 2. /
+&NAM_BACKUP XBAK_TIME_FREQ= 1200. XBAK_TIME_FREQ_FIRST=1200. /
+&NAM_DIAG_SURFn  /
+&NAM_ISBA CALBEDO="DRY" /
+&NAM_ISBAn CSCOND="NP89", 
+       CC1DRY='DEF', CSOILFRZ='DEF', CDIFSFCOND='DEF', CSNOWRES='DEF' /
+&NAM_SSOn CROUGH='Z01D' /
+&NAM_DIAG_ISBAn /
+&NAM_SEAFLUXn CSEA_ALB="UNIF" /
+&NAM_BLANKn /
+&NAM_NEBn LSUBG_COND = F  /
+&nam_forefire
+    lforefire = .true.
+    couplingres = 1000
+    nffscalars = 1
+    ffsvnames(1) = 'BRatio'
+    ffoutups(1) = 60,    physout(1) = 1, cloudout(1) = 1,  flowout(1) = 1, chemout(1) = 0,
+    ffoutups(2) = 60,    physout(2) = 1, cloudout(2) = 1,  flowout(2) = 1, chemout(2) = 0
+/

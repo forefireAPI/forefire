@@ -1,38 +1,55 @@
-# This is a basic workflow to help you get started with Actions
+name: Linux
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches:
-      - "master" 
-      - "actions" 
+      - "master"
+      - "dev"
   pull_request:
     branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  build-native:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true # we use LFS to store large files (e.g. data.nc)
 
-      # Runs a single command using the runners shell
-      - name: Forefirebuild
-        run: sudo sh ./install-forefire.sh
+      - name: Install Dependencies (Build + Test)
+        run: |
+          sudo apt-get update -y
+          # Install build tools
+          sudo apt-get install -y --no-install-recommends build-essential cmake
+          # Install NetCDF libraries (C++ legacy for build, C base for Python test)
+          sudo apt-get install -y --no-install-recommends libnetcdf-dev libnetcdf-c++4-dev
+          # Install Python and pip
+          sudo apt-get install -y --no-install-recommends python3 python3-pip
+          # Keep strace installed for potential future debugging
+          sudo apt-get install -y --no-install-recommends strace
+          # === ADD ANY OTHER ForeFire build dependencies (e.g. MPI) ===
+          # pip install Python test dependencies
+          pip3 install --no-cache-dir lxml xarray netCDF4
 
-      - name: Check version
+      - name: ForeFire build
+        run: sudo bash ./install-forefire.sh -y
+
+      - name: Check ForeFire version
         run: ./bin/forefire -v
 
-      - name: Test
-        run: sh ./test-forefire.sh
+      - name: Add Build/Runtime Diagnostics
+        run: |
+          echo "--- ForeFire Linkage ---"
+          ldd ./bin/forefire | grep -i 'netcdf' || echo "Warning: NetCDF library not dynamically linked?"
+          echo "--- Input data.nc Info ---"
+          ls -lh tests/runff/data.nc
+          # Install ncdump tool and check the format kind
+          sudo apt-get install -y --no-install-recommends netcdf-bin
+          ncdump -k tests/runff/data.nc || echo "Could not check data.nc format"
+
+      - name: Run 'runff' Test Script
+        run: |
+          cd tests/runff
+          bash ff-run.bash # Execute the complete test logic script

@@ -1,0 +1,55 @@
+\documentclass[a4]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage{psfrag}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathrsfs}
+\usepackage{subeqnarray}
+\usepackage{subfigure}
+\usepackage{longtable}
+\usepackage[algosection,lined]{algorithm2e}
+
+\usepackage{multirow}
+\usepackage{graphicx,color}
+\usepackage[hypertex]{hyperref}
+
+\usepackage{listings}
+\lstset{language=C++, basicstyle=\small}
+
+\DeclareGraphicsRule{.jpg}{eps}{.jpg.bb}{`jpeg2ps #1}
+\DeclareGraphicsRule{.eps.gz}{eps}{.eps.bb}{`gunzip -c #1}
+\graphicspath{{figures/}{./}}
+
+\hypersetup{
+  letterpaper,
+  colorlinks,
+  urlcolor=black,
+  pdfpagemode=none,
+  pdftitle={ForeFire user's guide},
+  pdfauthor={Jean Baptiste Filippi},
+  pdfsubject={ForeFire user's guide},
+  pdfkeywords={ForeFire}
+}
+
+\title{ForeFire user's guide}
+
+%%===========================================================================%%
+
+\begin{document}
+
+\maketitle
+
+
+\input{ForeFireGeneralUsage}
+
+\input{ForeFireParams}
+
+\input{ForeFireModels}
+
+\input{ForeFireExampleCases}
+
+%\input{ForeFirePostProcessing}
+
+%%===========================================================================%%
+
+\end{document}

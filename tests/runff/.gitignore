@@ -1,0 +1,4 @@
+# ignore test output files in github
+ForeFire.0.nc
+real_case.kml
+to_reload.ff

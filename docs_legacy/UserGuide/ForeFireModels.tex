@@ -1,0 +1,483 @@
+\part{Models in ForeFire}
+
+%%%%%%%%%%%%%%%%
+% Models in ForeFire %
+%%%%%%%%%%%%%%%%
+\chapter{What are models in ForeFire made for?}
+
+ForeFire is a scientific code suitable for propagating an interface on a surface, \textit{i.e.} a fire front on the ground. The propagation is detemined by a propagation model that should, according to several local properties and assumptions, give the velocity in the normal direction to the current front. In return ForeFire can determine at each time the location of the interface as well as many physical/chemical fluxes that influence the behaviour of the surrounding atmosphere. Models in ForeFire are then of major importance in two ways:
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\begin{itemize}
+	\item Propagation models give the behaviour of the propagation of the interface,
+	\item Flux models enable to compute the considered physical/chemical flux on a given surface.
+\end{itemize}
+\end{minipage}
+}
+\end{center}
+
+
+%%%%%%%%%%%%%
+% Property layer %
+%%%%%%%%%%%%%
+\chapter{Layers}
+
+All ForeFire models are related to the computation of a specific property, either the propagation velocity or some flux. Several models can then have the same intent (\textit{i.e.} aim to compute the same property but in different manners). Suppose for example you have different areas in your domain where the released heat flux has different behaviours. This might happen if you have an interface between a wildland fire and urban areas. Indeed the heat release during the combustion process in vegetation and construction material do not present the same behaviour. Another example is given by a volcanic eruption where the $SO_{2}$ emissions are different above the crater or above the lava.
+
+\begin{figure}[!h]
+\psfrag{model1}[][c][1.0]{model A}
+\psfrag{model2}[][c][1.0]{model B}
+\psfrag{model3}[][c][1.0]{model C}
+\centering
+\includegraphics[height=0.35\textwidth]{figures/mapOfModels.eps}
+\caption{Different models can be used in different areas\label{fig:map}}
+\end{figure}
+
+The purpose of a layer is to gather all the information required for the computation of a specific property (propagation velocity or some flux) and enable to use the desired model at the desired location. One unique layer should then be defined for each specific property you want to compute. It is of particular importance for the layer responsible of the propagation models as it is the core of the interface tracking by ForeFire.
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: for each specific property you want to compute with ForeFire one has to define an associated layer. In all cases it is mandatory to define the propagative layer (layer of the propagation models).
+\end{minipage}
+}
+\end{center}
+
+\section{map of models}
+
+Layers are designed to meet the need to apply different models depending on the location where the propagation velocity and/or the flux is computed. The user can define beforehand the areas where each separate model should be used, as shown in figure \ref{fig:map}. This process defines the map of models that should be used during the ForeFire simulation for a given property.
+
+Each model is affected with an index and the layer stores a map of the indexes of the models to be used (see fig. \ref{fig:indexmap}). Two models of the same type (propagation or flux) should not have an identical index, but a propagation model can have the same index as a flux model. This limitation stems from the inside machinery of ForeFire (a table of correspondance are defined for propagation models and another one for all the flux models)
+
+\begin{figure}[!h]
+\centering
+\includegraphics[height=0.35\textwidth]{figures/mapOfModelsMap.eps}
+\caption{Discretization of the domain for the map of models. Each model is given an index.\label{fig:indexmap}}
+\end{figure}
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: each model should have a unique index. The user has to be very cautious when defining these indexes as two models of the same type (for examples flux models such as a model A for heat flux and model B for vapor flux) should never have the same index even if computed properties are different.
+\end{minipage}
+}
+\end{center}
+
+\section{how can I define the layers needed for my simulation?}
+\label{subsec:netCDF}
+
+The only present-day way to define a tailored layer with a specified map is through the use of a netCDF file. An example of the structure of a layer defined in the netCDF file should be as following (as verbatim of the result of a ncdump):
+\begin{lstlisting}[caption={example of layer definition in a netCDF file},frame=single]
+netcdf case {
+dimensions:
+        nx = ... ;
+        ny = ... ;
+        nz = 1 ;
+        nt = ... ;
+        domdim = 1 ;
+variables:
+        char domain(domdim) ;
+                domain:type = "domain" ;
+                domain:SWx = ... ;
+                domain:SWy = ... ;
+                domain:SWz = 0 ;
+                domain:Lx = ... ;
+                domain:Ly = ... ;
+                domain:Lz = 0 ;
+                domain:t0 = 0 ;
+                domain:Lt = ... ;
+        int heatFlux(nx, ny, nz, nt) ;
+                heatFlux:type = "flux" ;
+                heatFlux:indices = 0, 1, 2 ;
+                heatFlux:model0name = "heatFluxNominal" ;
+                heatFlux:model1name = "HeatFluxBasic" ;
+                heatFlux:model2name = "BurnupHeatFlux" ;
+data:
+...
+\end{lstlisting}
+
+First the domain defines the extension of the layer, with respect to space and time (SW stands for the SouthWest point coordinates, L for the lenghts of the domain, t0 for the initial time and Lt for the duration). 
+
+Then a layer is defined by its name (here heatFlux), its type (flux), the indices of its models ($0,1,2$) and the associated names of these models. These names are defined along with the indices, \textit{i.e.} one has to name each modelNname with the effectiv name of the model in ForeFire. Several layers can be defined on the same domain (usually the domain of your simulation), but be careful about the indexes of models of the same type. 
+
+Finally the map of indexes for each layer is stored in the data section (see netCDF user's guide).
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: each model defined in the netCDF should have a counterpart in ForeFire, which means that a model of the right type has been implemented in ForeFire and its name is the same as defined in the netCDF file.
+\end{minipage}
+}
+\end{center}
+
+The easiest way to define the complete netCDF file (with all the different layers you want to use: propagative, heat flux, vapor flux, ...) is by far to use the Java program developed by Jean-Baptiste Filippi that will automatically generate the file according to your needs.
+
+\section{what happens if I didn't define my layer beforehand in a netCDF file?}
+
+When only one model is needed for the whole domain it is a bit tedious to go through the whoe process of defining the layer in a netCDF file. Depending if it concerns propagation or flux there exist two way to define layers more easily:
+\begin{itemize}
+	\item if you want to use only one propagation model you can choose it directly in the parameters file of ForeFire (usually Params.ff). ForeFire will then construct automatically the propagative layer using the desired model (obviously is the desired model is implemented in ForeFire with the right name),
+	\item if you want to define a flux layer with only one model (for example in case of homogeneous vegetation) you can call the CheckLayer function (see \ref{sec:api}) with the desired name of the model. This will automaticlly create a layer with the desired name and using the desired model everywhere.
+\end{itemize}
+
+\section{do I have to do anything else for the layers?}
+
+No. As long as you have well-defined counterparts in ForeFire for all the models defined in the netCDF file the rest is handled automatically by ForeFire.
+
+
+%%%%%%%%%%%%%%%%%%
+% Common properties %
+%%%%%%%%%%%%%%%%%%
+\chapter{Common properties and behaviours of ForeFire models}
+\label{sec:comprop}
+
+All ForeFire models share common properties and behaviours, be it a propagation or a flux model. Let's take a look at the class ForeFireModel important attributes:
+
+\begin{lstlisting}[caption={FluxModel.h},frame=single]
+class ForeFireModel {
+protected:
+	DataBroker* dataBroker;
+	SimulationParameters* params;
+	size_t registerProperty(string);
+public:
+	int index;
+	size_t numProperties; 
+	vector<string> wantedProperties; 
+	size_t numFuelProperties;
+	vector<string> fuelPropertiesNames;
+	FFArray<double>* fuelPropertiesTable;
+	double* properties;
+};
+\end{lstlisting}
+
+A ForeFire model has an index (stored in 'index') and the table of properties needed to compute the desired property (stored in 'properties'). Each of these properties have a name stored 'wantedProperties', but some of them comes from the fuel. The values of these desired fuel properties are stored in another table 'fuelPropertiesTable' for the sake of ForeFire internal machinery; this should never be changed by the user and is handled transparently and automatically by ForeFire.
+
+A ForeFire model is also related to a data broker (which will responsible of getting the values of the properties at the desired locations and times,), to the simulation parameters (which means it can access any variable defined in ForeFire parameters file, which is usually Params.ff) and finally each model has a function to register the property it will need. This function is essential to the internal machinery of ForeFire and is the entry point to the user in case he wants to define a new model (see \ref{sec:newModel}).
+
+
+
+%%%%%%%%%%%%
+% Propagation %
+%%%%%%%%%%%%
+\chapter{Propagation handling in ForeFire}
+
+\section{Propagative layer}
+
+Propagation of the interfaces in ForeFire are carried through the advection of lagrangian markers which velocity is given by the rightful propagation model at the location. The propagative layer thus contains the information on the map of the propagation models to be used. If no map is defined in a netCDF file, the model defined in the parameters file is used on the whole domain.
+
+\section{Propagation model}
+
+A propagation model is used in ForeFire to determine the velocity of the lagrangian markers discretizing the interfaces. It is the code tanscription of some empirical/physical modeling of the behaviour of these interfaces. Let's take a simple example of a propagation velocity depending on the moiture content of the vegetation and the wind in normal direction (normal to the front). The mathematical transcription of this physical model could be: \begin{equation} v_{i} = A\dfrac{\vec{u}(\vec{x}_{i}).\vec{n}_{i}}{1+m(\vec{x}_{i})}, \label{eq:prop}\end{equation} where $\vec{x}_{i}$, $v_{i}$ and $\vec{n}_{i}$ are the location, velocity and normal of the $i^{th}$ lagrangian marker, $\vec{u}$ the ground wind, $m$ the moisture of the vegetation and $A$ a fitted coefficient. $\vec{u}$ and $m$ are assumed to vary in space and are thus taken at the marker's location.
+
+A ForeFire propagation model can take into account this physical model in the ForeFire simulation as following.
+
+\section{pattern of a propagation model}
+
+The pattern of a propagation model is available within the files 'PropagationModel.h' and 'PropagationModel.cpp' and incorporates all the common properties and behaviours of a ForeFire model (see \ref{sec:comprop}).
+\begin{lstlisting}[caption={PropagationModel.h},frame=single]
+class FluxModel {
+	PropagationModel(const int& = 0, DataBroker* = 0);
+	virtual string getName(){return "stub propagation model";}
+	double getSpeedForNode(FireNode*);
+	virtual double getSpeed(double*){return 0.;}
+};
+PropagationModel* getDefaultPropagationModel(const int& = 0
+             , DataBroker* = 0);
+\end{lstlisting}
+
+\begin{lstlisting}[caption={PropagationModel.cpp},frame=single]
+PropagationModel* getDefaultPropagationModel(const int & mindex
+             , DataBroker* db) {
+	return new PropagationModel(mindex, db);
+}
+PropagationModel::PropagationModel(const int & mindex
+             , DataBroker* db)
+: ForeFireModel(mindex, db) {
+}
+double PropagationModel::getSpeedForNode(FireNode* fn){
+	dataBroker->getPropagationData(this, fn);
+	return getSpeed(properties);
+}
+\end{lstlisting}
+
+\subsection*{the getSpeedForNode function}
+
+The getSpeedForNode function is the one called for each lagrangian marker (called FireNodes in ForeFire) to determine its velocity. It takes the lagrangian marker as argument and returns its propagation velocity. As one can see in 'PropagationModel.cpp' this function calls in its turn: 
+\begin{enumerate}
+	\item the data broker in order to retrieve all the wanted properties at the location of the marker,
+	\item the getSpeed function that is the actual funcion implementing the model.
+\end{enumerate}
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: the getSpeedForNode function shouldn't be modified, moreover it should not appear in a new propagation model implementation.
+\end{minipage}
+}
+\end{center}
+
+\subsection*{the getSpeed function}
+
+The getSpeed function is one translating into code the mathematical formulation \ref{eq:prop}. It is then different for every propagation model but its structure is the same. It takes the table of values of the different properties needed by the model and returns the computed velocity. Let's see how this is done in our example:
+\begin{lstlisting}[caption={getSpeed},frame=single]
+double Model::getSpeed(double* valueOf){
+	return A*valueOf[normalWind]/(1.+valueOf[moisture]);
+}
+\end{lstlisting}
+
+This line of code looks simple and straightforward from the mathematical equation we want to use. This feature is enabled by the fact that the model ask beforehand the data broker what are the values at the marker's location. These values are automatically stored in the table 'valueOf' and the value of each specific property can be retrieved easily by the name chosen for that property (for definition and initialization of these properties refer to \ref{sec:newModel}).
+
+
+
+%%%%%%%%
+% Fluxes %
+%%%%%%%%
+\chapter{Flux handling in ForeFire}
+
+\section{Flux layer}
+
+Fluxes in ForeFire are handled by flux layers (see 'FluxLayer.h' for the general framework). These layers contains two main information:
+\begin{enumerate}
+\item the information about the atmospheric mesh (number, size and location of the atmospheric cells),
+\item the map for the models that are to be used in each part of the domain.
+\end{enumerate}
+
+These flux layers are used to compute the fluxes needed in the coupling of ForeFire with an atmospheric model. Most of the times these fluxes are reduced to the heat and vapor fluxes (plus an optional tracer flux for visualization) but anyone can define a new flux layer to handle other physical/chimical processes. The user should be aware that doing this job in ForeFire requires to do the counterpart in the atmospheric model to take into accont the desired new phenomenom.
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+The user should only be taking care of the map of the different models as well as their implementation in ForeFire, the information about the atmospheric model being automatically handled by ForeFire.
+\end{minipage}
+}
+\end{center}
+
+A flux layer in ForeFire has all the relevant information (as far as flux is concerned) about the atmospheric mesh, \textit{i.e.} number, size and location of the atmospheric cells. ForeFire also defines an underlying finely resolved map of the times of arrival of the fire front (see fig. \ref{fig:fcomp}). The resolution of this so-called burning map is at least 10 times better than the atmospheric resolution.
+
+\begin{figure}
+\centering
+\includegraphics[height=0.45\textwidth]{figures/fluxComputation.eps}
+\caption{Four cells of the amospheric model (wide lines) with the contour of the fire front (dark grey). The underlying map of arrival times has a better resolution than the atmospheric cells (narrow lines), and different models can be applied in several regions (for example model A in the light gray region and model B everywhere else).\label{fig:fcomp}}
+\end{figure}
+
+The flux for a given atmospheric cell is then computed by summing all the fluxes in the cells of the map of arrival times. The flux in each of these cells is determined by the following process:
+\begin{enumerate}
+\item determine which model is to be used at the location of the cell,
+\item gather all the information needed by the model (for example vegetation, wind, temperature, current time, arrival time of the fire \ldots),
+\item apply the flux model with these parameters.
+\end{enumerate}
+
+In the following each of these steps will be further explained.
+
+\section{Flux Model}
+
+A flux model is used in ForeFire to compute some specific properties such as heat flux, chemical flux, ... and is the transcription into code of these physical/chemical models. Let's take a simple example. One would want to implement in ForeFire a heat flux model that has the following properties:
+\begin{itemize}
+\item the flux is null when the location is not burning,
+\item the flux is given by an empiric value $A$ when the location is burning,
+\item as soon as the fire touches a location, that location will be burning for a time $\tau=\tau_{0}/s_{d}$, where $\tau_{0}$ and $s_{d}$ are properties of the vegetation.
+\end{itemize}
+
+The mathematical transcription of this physical model is: \begin{equation} \phi(t,t^{i}) = A\mathcal{H}_{[0,\tau_{0}/s_{d}]}(t-t^{i}), \label{eq:hfb}\end{equation} where $\phi$ is the heat flux, $t^{i}$ the ignition time (arrival time of the fire), $\mathcal{H}$ the heaviside function and $t$ the current time.
+
+A ForeFire flux model is here to implement this formula into the ForeFire simulation.
+
+\subsection*{pattern of a flux model}
+
+The pattern of a flux model is available within the files 'FluxModel.h' and 'FluxModel.cpp' and incorporates the general pattern of a ForeFire model (see \ref{sec:comprop}).
+
+\begin{lstlisting}[caption={FluxModel.h},frame=single]
+class FluxModel {
+	FluxModel(const int& = 0, DataBroker* = 0);
+	virtual string getName(){return "stub flux model";}
+	double getValueAt(FFPoint&, const double&, const double&);
+	virtual double getValue(double*, const double&
+             , const double&){return 1.;}
+};
+FluxModel* getDefaultFluxModel(const int& = 0
+             , DataBroker* = 0);
+\end{lstlisting}
+
+\begin{lstlisting}[caption={FluxModel.cpp},frame=single]
+FluxModel* getDefaultFluxModel(const int & mindex
+             , DataBroker* db) {
+	return new FluxModel(mindex, db);
+}
+FluxModel::FluxModel(const int & mindex
+             , DataBroker* db)
+	: ForeFireModel(mindex, db) {
+}
+double FluxModel::getValueAt(FFPoint& loc
+             , const double& t, const double& at){
+	dataBroker->getFluxData(this, loc, t);
+	return getValue(properties, t, at);
+}
+\end{lstlisting}
+
+\subsection*{the getValueAt function}
+
+The getValueAt function is the one called for each cell of the map of arrival times. It takes as arguments the location, the present time and the arrival time of the fire at that location. As one can see in "FluxModel.cpp" this function calls in its turn the getValue function after the data broker has gathered the needed properties (dataBroker$\rightarrow$getFluxData(this, loc, t)).
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: the getValueAt function shouldn't be modified, moreover it should not appear in a new flux model implementation.
+\end{minipage}
+}
+\end{center}
+
+\subsection*{the getValue function}
+
+The getValue function is the one actually implementing the physical model. It takes the table of values of the different properties needed by the model and returns the desired flux. Let's see how this is done in our example:
+\begin{lstlisting}[caption={getValue},frame=single]
+double FluxModel::getValue(double* valueOf
+		, const double& t, const double& at){
+	if ( t-at < valueOf[tau0]/valueOf[sd] ) return A;
+	return 0.;
+
+}
+\end{lstlisting}
+
+This line of code looks simple and straightforward from the mathematical equation we want to use. This feature is enabled by the fact that the model ask beforehand the data broker what are the values at the marker's location. These values are automatically stored in the table 'valueOf' and the value of each specific property can be retrieved easily by the name chosen for that property (for definition and initialization of these properties refer to \ref{sec:newModel}).
+
+This model simply returns what the physical model specified:
+\begin{itemize}
+	\item the wanted amplitude if the difference between the current time $t$ and the arrival time of the fire at that location $at$ is inferior to the computed burning duration at that location,
+	\item zero if the location is not burning.
+\end{itemize} 
+
+
+%%%%%%%%%%%
+% New model %
+%%%%%%%%%%%
+\chapter{Implementing a new model in ForeFire}
+\label{sec:newModel}
+
+We will now see how to implement a new model by constructing the two files needed to represent the basic heat flux defined by eq. (\ref{eq:hfb}).
+
+\section{conformity with the pattern}
+
+The first step is to copy both "FluxModel.h" and "FluxModel.cpp" into new files with explicit names, for example here "HeatFluxNominalModel.h" and "HeatFluxNominalModel.cpp".
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: all the occurences of "PropagationModel" or "FluxModel" in the files should be replaced by the new name given to the model, in our example "HeatFluxNominalModel".
+\end{minipage}
+}
+\end{center}
+
+\section{give a name to the model}
+
+Then one has to give a name to the model in accordance to the names given in the netCDF file for the map of models (see $\S$ \ref{subsec:netCDF}). This is done in two steps:
+\begin{enumerate}
+\item declare the name in the .h file as in: \\ \begin{center}static const string name;\end{center}
+\item give the name in the .cpp file as in: \\ \begin{center}const string HeatFluxNominalModel::name = "heatFluxNominal";\end{center}
+\end{enumerate}
+
+\section{register the model to ForeFire}
+
+ForeFire simulator should have a notice that you created a new model that might be used in a ForeFire simulation. In order to send this information a new model should declare a static variable (see C++ documentation) and initialize it as following:
+\begin{enumerate}
+\item declare the initialization variable in the .h file as in: \\ \begin{center}static int isInitialized;\end{center}
+\item initialize it in the .cpp file as in: \\ \begin{center}int HeatFluxNominalModel::isInitialized = FireDomain::registerFluxModelInstantiator(name, getHeatFluxNominalModel );\end{center}
+\end{enumerate}
+
+N.B.: Registration for propagation models is done by registerPropagationModelInstantiator instead of registerFluxModelInstantiator.
+
+\section{declaring and registering the properties needed by the model}
+
+A flux model should need several properties such as the vegetation properties, the wind or the temperature atmosphere. Such properties that do not depend on the modeling itself are called external properties. ForeFire is able to handle external properties on its own and the user that wants to define a new flux model should only focus on the declaration and definition of these properties. For each wanted property it is a two step process. Let's take the example of $\tau_0$ in our model. It is a property of the fuel so it should be defined the prefix 'fuel.'.:
+\begin{enumerate}
+\item first I declare the property in the .h file as in: \\ \begin{center} static const size\_ t tau0; \end{center}
+where I can choose the name of the property. This name will be the reference when you want to use the value of this property. For instance when I will need this property I can its value at the desired location by calling 'valueOf[tau0]'. If I have called it only 'tautau', I would have to call 'valueOf[tautau]'.
+\item then I register this property  in the .cpp file. The property is regitered in the constructor of the model (see other models) as in: \\ \begin{center} tau0 = registerProperty("fuel.Tau0");\end{center} where the name on the right hand side ("fuel.Tau0") is the name that is valued in the ForeFire fuel file (usually 'fuels.ff').
+\end{enumerate}
+
+\begin{center}
+\fbox{
+\begin{minipage}{0.7\textwidth}
+\textbf{\underline{Important}}: The fuel properties are particular in the sense that the values are read in the fuel properties' file of ForeFire, usually 'fuels.ff'. The user should be well aware that if he wants to use a fuel property in its model the values for all the fuel in the domain should be informed in the fuels.ff file.
+
+\end{minipage}
+}
+\end{center}
+
+You can define and register as many properties as needed by the model as long as their names do not overlap.
+
+\subsection*{Currently available properties for propagation models}
+
+There are actually several properties already implemented in ForeFire which can be used directly in any propagation and flux model:
+\begin{table}[htbp]
+   	\begin{center}
+   	\begin{tabular}{|l|l|}
+		\hline
+		fuel.X & gets the required fuel X property \\
+		altitude & gets the altitude \\
+		slope & gets the slope in the outward normal direction to the front \\
+		windU & gets the longitudinal wind from an atmospheric model \\
+		windV & gets the transversal wind from an atmospheric model \\
+		normalWind & gets the wind in the outward normal direction to the front \\
+		frontDepth & gets the depth of the front in the normal direction \\
+		curvature & gets the curvature of the front \\
+		\hline
+	\end{tabular}
+    \caption{Currently available properties for propagation models. \label{propprops}}
+   	\end{center}
+\end{table}
+
+\subsection*{Currently available properties for flux models}
+
+\begin{table}[htbp]
+   	\begin{center}
+   	\begin{tabular}{|l|l|}
+		\hline
+		fuel.X & gets the required fuel X property \\
+		altitude & gets the altitude \\
+		windU & gets the longitudinal wind from an atmospheric model \\
+		windV & gets the transversal wind from an atmospheric model \\
+		\hline
+	\end{tabular}
+    \caption{Currently available properties for flux models. \label{fluxprops}}
+   	\end{center}
+\end{table}
+
+These properties are those usually used in our models. Once again if it does not fit your needs feel free to contact the ForeFire team for hand-tailored solutions.
+
+\section{defining coefficients for the model}
+
+The vast majority of physical/chemical models rely on one or more coefficients. To ease the use of such coefficients you can declare this coefficients in ForeFire parameters' file (usually Params.ff) and use it in your model. The best way to deal with this is to declare and define this coefficients in a two-step process:
+\begin{enumerate}
+\item declare the coefficient in the .h file as in: \\ \begin{center} double nominalHeatFlux; \end{center}
+where I can choose the name of the coefficient. This name will be the reference when you want to use the value of this coeffiecient, simply by calling it.
+\item then I define this coeffiecient  in the constructor of the model (see other models). First I give a default value, then I check if this coefficient is valued in the parameters' file. If so, I give this new value to the coefficient. In our example this gives: \\ \begin{center} 	nominalHeatFlux = 150000.;\\
+if ( params->isValued("nominalHeatFlux") )\\ nominalHeatFlux = params->getDouble("nominalHeatFlux"); \end{center} where 'params' is the reference to the simulation parameters.
+\end{enumerate}
+
+This simple process allows you to change the value of the desired coefficient simply by changing its value in the parameters' file. For example if I want to change the nominal heat flux of my model I would simply need to had the line 'setParameter[nominalHeatFlux=...]' in the parameters' file.
+
+\section{defining the 'geSpeed' or 'getValue' function}
+
+After defining all these variables and properties it is now time to use them and effectively implement our model. This is done in the 'getSpeed' (for propagation models) or the 'getValue' (for flux models). Coefficients defined earlier are directly reachable by their names, and variable values at the desired location are reachable through the table of double in argument of the function (usually 'valueOf'). In our example this gives the simple code:
+\begin{lstlisting}[caption={the getValue for the 'HeatFluxNominal' model},frame=single]
+double HeatFluxNominalModel::getValue(double* valueOf
+		, const double& t, const double& at){
+	if ( t-at < valueOf[tau0]/valueOf[sd] ) 
+	             return nominalHeatFlux;
+	return 0.;
+
+}
+\end{lstlisting}
+
+
+%%%%%
+% API %
+%%%%%
+\chapter{API: which functions can be called to get the computed values?}
+\label{sec:api}
+
+Now that you have all these layers and models ready to compute the desired properties, how can you retrieve it. Most of the time this will have to be done when coupling ForeFire with a meso-scale atmospheric model. 
+
+%%===========================================================================%%

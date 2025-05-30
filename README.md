@@ -1,132 +1,128 @@
-# ForeFire
-
-![logo](./doc/images/forefire.jpg)
-
-_Refer to the [Wiki](https://github.com/forefireAPI/firefront/wiki) for a more detailed guide on using ForeFire._
-
-ForeFire is an [open-source code for wildland fire spread models](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models), developed and maintained by Université de Corse Pascal Paoli.
-
-Access the [demo simulator here](http://forefire.univ-corse.fr/sim/dev/).
-
-![demo](./doc/images/sim-forefire.jpg)
+<p align="center">
+  <img src="./docs/source/_static/forefire.svg" alt="ForeFire Logo" width="400">
+</p>
 
 
-It has been designed and runs on Unix systems. Three modules can be built with the source code.
-
-The main binaries are  
-  - An interpreter (executable)
-  - A shared library (with C/C++/Java and Fortran bindings)
-
-## 1. Requirements
-
-The requirements and ForeFire can be installed by running `install-forefire.sh` (Ubuntu or Debian distributions)
-
-```
-cd forefire
-
-sudo sh install-forefire.sh
-```
-
-The program will be built in: `./bin/forefire`
-
-OR run the commands:
-
-```
-apt-get update
-
-apt install build-essential -y
-
-apt install libnetcdf-dev libnetcdf-cxx-legacy-dev -y
-
-apt install cmake -y
-```
-
-To install
-- The C++ compiler
-- [NetCDF Library](https://www.unidata.ucar.edu/software/netcdf/) and [NetCDF-C++ legacy](https://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/index.jsp)
-- [Cmake](https://cmake.org/) build tool
-
-## 2. Build
-
-### 2.1 Cmake
-
-To build with cmake run the script
-```
-sh cmake-build.sh
-```
-
-To make the program [executable from eveywhere](https://unix.stackexchange.com/questions/3809/how-can-i-make-a-program-executable-from-everywhere) (during the session) Add the bin folder to path
-```
-export PATH=$PATH:`pwd`/bin
-```
-If you want to change it permanently, paste
-```
-export PATH="</path/to/file>:$PATH"
-
-```
-at the end of your `~/.bashrc` file. The file can be edited with
-```
-nano ~/.bashrc
-```
-for example
-```
-export PATH="/mnt/c/gitrepos/forefire/bin:$PATH"
-```
+---
+[![linuxCI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
+[![macOSCI](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
+![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+[![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest) 
+[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
 
-### 2.2 Scons and Other build systems
-More information on other build systems are available [here](./doc/buildSystems/readme.MD)
-
-## 3. Running an example
-
-An example for the region of aullene in south France is provided. The example contains 3 files
-- fuels.ff
-- aullene.ff
-- landscape.nc:
-
-Run the example with
-
-```
-cd firefront/examples/aullene/
-
-../../bin/forefire -i aullene.ff
-```
-The simulation result will be outputed in JSON format
+**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models and enables high-fidelity coupled fire-atmosphere simulations, aiming to improve wildfire prediction and understanding for complex environments.
 
 
-### 4. Running with python
+**Key Links:**
+- 📚 **Full Documentation:** [forefire.readthedocs.io](https://forefire.readthedocs.io/en/latest/)
+- 🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
+- 🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
 
-Installing requirements
-```
-cd py3_tools
-pip install -r requirements.txt
-```
+## Features
 
-You can use the script `coord_to_ff.py` to run the simulation in a default location
+*   **Advanced Simulation Engine:** Core C++ logic for fire propagation using various Rate of Spread (ROS) models and handling complex geospatial data (NetCDF).
+*   **Fire-Atmosphere Coupling:** Designed for two-way coupling by linking the core library with atmospheric models like [MesoNH](https://mesonh.aero.obs-mip.fr/mesonh/) (developed by CNRS & Météo-France).
+*   **High Performance:** Optimized C++ core with MPI support for parallel computing.
+*   **Flexible Interfaces:** Built upon a core **C++ Simulation Engine (Library)**:
+    *   **`forefire` Interpreter:** The primary way to run simulations using script files (`.ff`), interactive console commands, or the web interface (via `listenHTTP[]`).
+    *   **C++ Library (`libforefireL`):** Allows direct integration into other software.
+    *   **Python Bindings:** Enable scripting and control from Python (see [./bindings/python/README.md](./bindings/python/README.md)).
+*   **Flexible Output:** Can generate outputs in various formats, including KML for visualization in Google Earth, Geojson, NetCDF, and custom binary/text formats.
+*   **Extensible:** Add custom ROS models in C++; customize web interfaces.
+*   **Applications:** Research, case reanalysis, ensemble forecasting.
 
-```
-python coord_to_ff.py
-```
 
-For running in a chosen location, the script accepts latitude and longitude in epsg:4326 projection as inputs. It reprojects the coordinates into epsg:32632 projection, used in aullene's landscape.
-```
-python coord_to_ff.py --lat 41.6 --lon 9.1
-```
+## Quick Start with Docker
 
-The GeoJSON of geometry type Polygon will be saved in the `/examples/aullene` folder
+The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
 
-## 4. Building python Lib
-The `/swig` folder contains and `Sconstruct` file for python bindings.
+![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
 
-Requires numpy (and numpy.i), swig, and matplotlib for testing. 
+1. Clone the repository
+    
+    ``` bash
+    # Clone the repository
+    git clone https://github.com/forefireAPI/forefire.git
+    cd forefire
+    ```
 
-## 5. Building with Docker
-A sample Dockerfile can allow to build a Docker image with
-```
-docker build . -t forefire
+2. Build the Docker image 
+
+    ```bash
+    docker build . -t forefire:latest
+    ```
+
+3. Run the container interactively
+
+    ```bash
+    docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
+    ```
+4. Inside the container navigate to test directory and lauch the forefire console:
+    ```bash
+    cd tests/runff
+
+    # start the forefire console with the command
+    forefire
+    ```
+
+5. Inside the console launch an http server with listenHttp[] command
+
+    ```bash
+    forefire> listenHTTP[]
+
+    # the output should be
+    >> ForeFire HTTP command server listening at http://localhost:8000
+    ```
+
+    This server provides a grafical user interface that you can access on your browser at http://localhost:8000/
+
+6. Run your first simulation
+    - Run the command `include[real_case.ff]`
+    - Then press Refresh Map
+
+    You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
+
+## Build from source
+
+See the Full Documentation for more details on building from source with the `install-forefire.sh` file
+
+## Python Bindings
+ForeFire provides Python bindings for easier scripting and integration. See the Python Bindings [./bindings/python/README.md](./bindings/python/README.md) for details.
+
+## Contributing
+
+We welcome contributions to ForeFire! We especially appreciate help with:
+
+- Improving documentation and tutorials.
+- Python bindings
+- Enhancing packaging (Docker, Pip, etc.) and cross-platform compatibility.
+
+ Please read our **[Contributing Guidelines](CONTRIBUTING.md)** to learn how you can help, including how to report bugs, suggest features, and submit code changes.
+
+All contributors are expected to adhere to our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+
+## License
+ForeFire is licensed under the GNU General Public License v3.0. See [LICENSE](./LICENSE) for full details.
+
+## Citation
+If you use ForeFire in your work, please cite:
+
+**BibTex**
+```bibtex
+@article{article,
+author = {Filippi, Jean-Baptiste and Bosseur, Frédéric and Grandi, Damien},
+year = {2014},
+month = {11},
+pages = {},
+title = {ForeFire: open-source code for wildland fire spread models},
+isbn = {9789892608846},
+doi = {10.14195/978-989-26-0884-6_29}
+}
 ```
 
-To run this image and interactively acces the continer use
-```
-docker run -it forefire bash
-```
+**Plain Text**
+> Filippi, Jean-Baptiste & Bosseur, Frédéric & Grandi, Damien. (2014). ForeFire: open-source code for wildland fire spread models. 10.14195/978-989-26-0884-6_29. 

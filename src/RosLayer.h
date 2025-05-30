@@ -1,28 +1,18 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file RosLayer.h
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef ROSLAYER_H_
 #define ROSLAYER_H_
 
 #include "DataLayer.h"
 #include "FDCell.h"
+#include "FFPoint.h"
+
 
 using namespace std;
 
@@ -43,7 +33,7 @@ template<typename T> class RosLayer : public DataLayer<T> {
 	size_t size; /*!< size of the array */
 
 	FFArray<T>* rosMap; /*!< pointer to the array of burning ratios */
-
+	FFPoint SWCorner, NECorner;
 	FDCell** cells; /*!< pointers to the atmospheric cells */
 
 	double latestCall; /*!< time of the latest call to getMatrix() */
@@ -57,8 +47,8 @@ public:
 	/*! \brief Default constructor */
 	RosLayer() : DataLayer<T>() {};
 	/*! \brief Constructor with all necessary information */
-	RosLayer(string name, const size_t& nnx, const size_t& nny, FDCell** FDcells)
-	: DataLayer<T>(name), nx(nnx), ny(nny), cells(FDcells) {
+	RosLayer(string name,FFPoint& atmoSWCorner, FFPoint& atmoNECorner,  const size_t& nnx, const size_t& nny, FDCell** FDcells)
+	: DataLayer<T>(name), SWCorner(atmoSWCorner), NECorner(atmoNECorner), nx(nnx), ny(nny), cells(FDcells) {
 		size = nx*ny;
 		rosMap = new FFArray<T>("Ros", 0., nx, ny);
 		latestCall = -1.;
@@ -91,7 +81,17 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
-
+			
+	double getDx(){ return getWidth()/nx; };
+	double getDy(){ return getHeight()/ny; };
+	double getDz(){ return 0; };
+	double getOriginX(	){ return SWCorner.getX(); };
+	double getOriginY(){ return SWCorner.getY(); };
+	double getOriginZ(){ return SWCorner.getZ(); };
+	double getWidth(){ return NECorner.getX()-SWCorner.getX(); };
+	double getHeight(){ return NECorner.getY()-SWCorner.getY(); };
+	double getDepth(){ return 0; };
+		
 };
 
 template<typename T>

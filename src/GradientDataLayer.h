@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file GradientDataLayer.h
+ * @brief Defines the GradientDataLayer template class, an implicit layer computing gradients from parent data layers.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef GRADIENTDATALAYER_H_
 #define GRADIENTDATALAYER_H_
@@ -72,6 +60,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return parent->getDx(); };
+	double getDy(){ return parent->getDy(); };
+	double getDz(){ return parent->getDz(); };
+	double getOriginX(	){ return parent->getOriginX(); };
+	double getOriginY(){ return parent->getOriginY(); };
+	double getOriginZ(){ return parent->getOriginZ(); };
+	double getWidth(){ return parent->getWidth(); };
+	double getHeight(){ return parent->getHeight(); };
+	double getDepth(){ return parent->getDepth(); };
 
 };
 
@@ -86,11 +84,36 @@ T GradientDataLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time){
-	cout << "this call shouln't be used in a gradient layer" << endl;
-	return 0.;
-}
+T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time) {
+    // Get the current value at the given location.
+    T currentValue = parent->getValueAt(loc, time);
 
+    // Prepare the eight unit directions.
+    vector<FFPoint> directions;
+    directions.push_back(FFPoint(1, 0,0));
+    directions.push_back(FFPoint(1, 1,0));
+    directions.push_back(FFPoint(0, 1,0));
+    directions.push_back(FFPoint(-1, 1,0));
+    directions.push_back(FFPoint(-1, 0,0));
+    directions.push_back(FFPoint(-1, -1,0));
+    directions.push_back(FFPoint(0, -1,0));
+    directions.push_back(FFPoint(1, -1,0));
+
+
+    // Compute the gradient in each direction and find the maximum.
+    T maxGradient = 0.0;
+    for (size_t i = 0; i < directions.size(); ++i) {
+        FFPoint nextLoc = loc + (10 * directions[i]);
+        T neighborValue = parent->getValueAt(nextLoc, time);
+        // Since the displacement magnitude is dx in every case (after normalization),
+        // the gradient is computed as the difference divided by dx.
+        T gradient = (neighborValue - currentValue) / 10;
+        if (gradient > maxGradient) {
+            maxGradient = gradient;
+        }
+    }
+    return maxGradient;
+}
 template<typename T>
 size_t GradientDataLayer<T>::getValuesAt(FireNode* fn
 		, PropagationModel* model, size_t curItem){

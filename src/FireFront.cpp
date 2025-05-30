@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FireFront.cpp
+ * @brief Implements the methods of the FireFront class
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "FireFront.h"
 #include "Visitor.h"
@@ -107,6 +95,7 @@ void FireFront::commonInitialization(){
 	vertx = 0;
 	verty = 0;
 	nvert = 0;
+	max_inner_front_nodes_filter = 	SimulationParameters::GetInstance()->getInt("max_inner_front_nodes_filter");
 }
 
 FireDomain* FireFront::getDomain(){
@@ -573,7 +562,7 @@ void FireFront::split(FireNode* fna, const double& t){
 		if ( abs(meanRadius) > 0.5*dist ){
 			FFPoint tt = fnb->locAtTime(t) - fna->getLoc();
 			double a = 1./sqrt(tt.getX()*tt.getX()+tt.getY()*tt.getY());
-			FFPoint n = FFPoint(-a*tt.getY(), a*tt.getX());
+			FFPoint n = FFPoint(-a*tt.getY(), a*tt.getX(),0.);
 			double dx = abs(meanRadius) - sqrt(meanRadius*meanRadius-0.25*dist*dist);
 			if ( meanRadius > 0. ){
 				splitLoc = splitLoc + dx*n;
@@ -606,8 +595,8 @@ void FireFront::merge(FireNode* fna, FireNode* fnb){
 		double maxX = max(fna->getX(),fnb->getX()) + 2.*domain->getPerimeterResolution();
 		double minY = min(fna->getY(),fnb->getY()) - 2.*domain->getPerimeterResolution();
 		double maxY = max(fna->getY(),fnb->getY()) + 2.*domain->getPerimeterResolution();
-		FFPoint swc = FFPoint(minX, minY);
-		FFPoint nec = FFPoint(maxX, maxY);
+		FFPoint swc = FFPoint(minX, minY,0.);
+		FFPoint nec = FFPoint(maxX, maxY,0.);
 		double t = fna->getTime();
 
 		
@@ -786,7 +775,7 @@ void FireFront::merge(FireNode* fna, FireNode* fnb){
 			fnC = fnC->getNext();
 		}
 		/* If I have not enough nodes in the inner front I need to trash it */
-		if ( tmpFront->getNumFN() < 500 ){
+		if ( tmpFront->getNumFN() < max_inner_front_nodes_filter ){
 			if (outputs) cout<<getDomainID()
 					<<": trashing inner front "<<tmpFront->toString()<<" because of lack of nodes ("
 					<<tmpFront->getNumFN()<<" nodes in the front)"<<endl;
@@ -900,8 +889,8 @@ void FireFront::mergeInnerFronts(FireNode* fna, FireNode* fnb){
 		double maxX = max(fna->getX(),fnb->getX()) + 2.*domain->getPerimeterResolution();
 		double minY = min(fna->getY(),fnb->getY()) - 2.*domain->getPerimeterResolution();
 		double maxY = max(fna->getY(),fnb->getY()) + 2.*domain->getPerimeterResolution();
-		FFPoint swc = FFPoint(minX, minY);
-		FFPoint nec = FFPoint(maxX, maxY);
+		FFPoint swc = FFPoint(minX, minY,0.);
+		FFPoint nec = FFPoint(maxX, maxY,0.);
 		double t = fna->getTime();
 
 		FireFront* frontb = fnb->getFront();
@@ -1014,11 +1003,17 @@ void FireFront::accept(Visitor* v) {
 			fntmp->accept(v);
 		}
 	}
+	if ( this != domain->getDomainFront() ) {
+		v->postVisitInner(this);
+	}
 	for ( innerFront = innerFronts.begin();
 			innerFront != innerFronts.end(); ++innerFront ) {
 		(*innerFront)->accept(v);
 	}
-	if ( this != domain->getDomainFront() ) v->decreaseLevel();
+	if ( this != domain->getDomainFront() ) {
+		v->postVisitAll(this);
+		v->decreaseLevel();
+	}
 }
 
 void FireFront::computeBoundingBox(FFPoint& swc, FFPoint& nec){

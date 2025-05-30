@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file PropagativeLayer.h
+ * @brief TODO: add a brief description.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef PROPAGATIVELAYER_H_
 #define PROPAGATIVELAYER_H_
@@ -134,6 +122,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return mapDx; };
+	double getDy(){ return mapDy; };
+	double getDz(){ return mapDz; };
+	double getOriginX(	){ return mapSWCornerX; };
+	double getOriginY(){ return mapSWCornerY; };
+	double getOriginZ(){ return mapSWCornerZ; };
+	double getWidth(){ return getDx()*mapNx; };
+	double getHeight(){ return getDy()*mapNy;; };
+	double getDepth(){ return getDz()*mapNz;; };
 
 };
 

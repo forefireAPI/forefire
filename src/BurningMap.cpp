@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file BurningMap.cpp
+ * @brief Class containing the arival time data for the whole domain.
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #include "BurningMap.h"
 
@@ -80,16 +68,6 @@ FFArray<double>* BurningMap::getMap(){
 // Mutators
 void BurningMap::loadBin(std::ifstream&  FileIn){
 
-				/*	size_t nny;
-					size_t nnz;
-					size_t nnt;
-		double vals[sizeX*sizeY];
-		FileIn.read((char *)&nnx, sizeof(size_t));
-		FileIn.read((char *)&nny, sizeof(size_t));
-		FileIn.read((char *)&nnz, sizeof(size_t));
-		FileIn.read((char *)&nnt, sizeof(size_t));
-		FileIn.read((char *)&vals, sizeof(vals));*/
-	//cout<<" EHHHOUI "<<arrivalTimeMap->loadBin()<<" and "<<nnx*nny<<endl;
 		arrivalTimeMap->loadBin(	FileIn);
  
 	
@@ -145,7 +123,7 @@ double BurningMap::getDy(){
 }
 
 FFPoint BurningMap::getCenter(const size_t& i, const size_t& j){
-	return FFPoint(SWCorner.getX()+(i+0.5)*dx, SWCorner.getY()+(j+0.5)*dy);
+	return FFPoint(SWCorner.getX()+(i+0.5)*dx, SWCorner.getY()+(j+0.5)*dy,0);
 }
 
 string BurningMap::toString(const double& time){

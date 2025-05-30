@@ -1,1 +1,12 @@
+
+# handles large files via git-lfs
+*.ref filter=lfs diff=lfs merge=lfs -text
+
+# handles lf and crlf for those using git on windows with wsl
+* text=auto
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.csv   text eol=lf
+
+# makes ipynb extension not detectable by linguist
 *.ipynb linguist-detectable=false

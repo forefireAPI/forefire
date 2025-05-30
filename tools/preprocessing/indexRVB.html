@@ -1,0 +1,173 @@
+<html>
+<head>
+    <meta charset="utf-8">  <!-- Ensures correct character encoding for JavaScript and HTML -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Optimizes the viewport for mobile devices -->
+    <title>3D Visualization with A-Frame</title>  <!-- Title for your HTML document -->
+    
+    <!-- A-Frame Core Library -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    
+    <!-- Additional A-Frame Extensions if needed -->
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.4.0/dist/aframe-extras.min.js"></script>
+    
+    <!-- JSZip for loading and unzipping files in JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+
+<script>
+
+AFRAME.registerComponent('color-switcher', {
+    init: function() {
+        this.el.addEventListener('pinchended', (evt) => {
+            const mesh = document.querySelector('[laz-loader]').getObject3D('mesh');
+            const geometry = mesh.geometry;
+            const isRGB = geometry.getAttribute('color').array === geometry.userData.rgb_colors;
+
+            // Toggle between RGB and classification colors
+            if (isRGB) {
+                geometry.setAttribute('color', new THREE.BufferAttribute(geometry.userData.classification_colors, 3));
+            } else {
+                geometry.setAttribute('color', new THREE.BufferAttribute(geometry.userData.rgb_colors, 3));
+            }
+        });
+    }
+});
+
+
+    
+AFRAME.registerComponent('laz-loader', {
+    schema: {
+        datafile: {type: 'string'}
+    },
+
+    init: function() {
+        fetch(this.data.datafile)
+        .then(response => response.blob())
+        .then(blob => JSZip.loadAsync(blob))
+        .then(zip => {
+            // Assume the binary file is named 'data.bin' inside the zip
+            return zip.file('data.bin').async('arraybuffer');
+        })
+        .then(arrayBuffer => {
+            const dataView = new DataView(arrayBuffer);
+            let offset = 0;
+
+            // Read header information
+            const min_x = dataView.getFloat64(offset, true); offset += 8;
+            const min_y = dataView.getFloat64(offset, true); offset += 8;
+            const min_z = dataView.getFloat64(offset, true); offset += 8;
+            
+            const total_points = dataView.getUint32(offset, true); offset += 4;
+            console.log('number of points :', total_points);
+            const positions = new Float32Array(total_points * 3);
+            const rgb_colors = new Float32Array(total_points * 3);
+            const classifications = new Uint8Array(total_points);
+            const colors = new Float32Array(total_points * 3);
+
+            for (let i = 0; i < total_points; i++) {
+                let baseIdx = i * 3;
+                positions[baseIdx] = -dataView.getFloat32(offset, true); offset += 4;
+                positions[baseIdx + 2] = dataView.getFloat32(offset, true); offset += 4;
+                positions[baseIdx + 1] = dataView.getFloat32(offset, true); offset += 4;
+
+                rgb_colors[baseIdx] = dataView.getUint8(offset++) / 255;
+                rgb_colors[baseIdx + 1] = dataView.getUint8(offset++) / 255;
+                rgb_colors[baseIdx + 2] = dataView.getUint8(offset++) / 255;
+
+                classifications[i] = dataView.getUint8(offset++);
+
+                // Map classifications to colors
+                let color = new THREE.Color(0x000000); // default black
+                switch (classifications[i]) {
+                    case 1: color.setHex(0x000000); break; // black
+                    case 2: color.setHex(0x808080); break; // grey
+                    case 3: color.setHex(0xFFFF00); break; // yellow
+                    case 4: color.setHex(0x008000); break; // green
+                    case 5: color.setHex(0x006400); break; // dark green
+                    case 6: color.setHex(0xFFA500); break; // orange
+                    case 65: color.setHex(0xFF0000); break; // red
+                    default: color.setHex(0x888888); break; // default grey
+                }
+
+                colors[baseIdx] = color.r;
+                colors[baseIdx + 1] = color.g;
+                colors[baseIdx + 2] = color.b;
+                
+                
+            }
+            const classificationMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    size: { value: 10}
+                },
+                vertexShader: `
+                    uniform float size;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = size; //* (300.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    void main() {
+                        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+                        if (dot(circCoord, circCoord) > 1.0) {
+                            discard;
+                        }
+                        gl_FragColor = vec4(vColor, 1.0);
+                    }
+                `,
+                depthTest: true,
+                transparent: true
+            });
+
+            const bufGeometry = new THREE.BufferGeometry();
+            bufGeometry.userData.rgb_colors = rgb_colors;
+            bufGeometry.userData.classification_colors = colors;
+
+            bufGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+             // change here to new THREE.BufferAttribute(colors, 3)); for classified colors
+            bufGeometry.setAttribute('color', new THREE.BufferAttribute(rgb_colors, 3));
+            const points = new THREE.Points(bufGeometry, classificationMaterial);
+            this.el.setObject3D('mesh', points);
+        })
+        .catch(err => console.error('Failed to load or process zip file:', err));
+    }
+});
+
+</script>
+
+    
+    
+    
+    
+    
+    
+    
+    
+</head>
+    <body>
+    <a-scene arjs='sourceType: webcam; debugUIEnabled: false;' background="color: black">
+ 
+        <a-entity movement-controls="fly: true">
+            <a-entity camera position="0 0 0" look-controls></a-entity>
+        </a-entity>
+              <!-- change here the scale-->
+        <a-entity laz-loader="datafile: corte.zip" position="0 0 0" scale="1 1 1"></a-entity>
+        
+   
+        <!-- Classification Legend -->
+        <a-text value="Legend:" color="#FFFFFF" position="-3 2 0" scale="1 1 1"></a-text>
+        <a-text value="1 - Non attributed: Black" color="black" position="-3 1.8 0" scale="1 1 1"></a-text>
+        <a-text value="2 - Ground: Grey" color="grey" position="-3 1.6 0" scale="1 1 1"></a-text>
+        <a-text value="3 - Low Vegetation: Yellow" color="yellow" position="-3 1.4 0" scale="1 1 1"></a-text>
+        <a-text value="4 - Medium Vegetation: Green" color="green" position="-3 1.2 0" scale="1 1 1"></a-text>
+        <a-text value="5 - High Vegetation: Dark Green" color="darkgreen" position="-3 1 0" scale="1 1 1"></a-text>
+        <a-text value="6 - Building: Orange" color="orange" position="-3 0.8 0" scale="1 1 1"></a-text>
+        <a-text value="65 - Unknown: Red" color="red" position="-3 0.6 0" scale="1 1 1"></a-text>
+    </a-scene>
+
+</body>
+</html> 

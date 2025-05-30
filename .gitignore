@@ -5,14 +5,17 @@ bin
 build
 lib
 sconsbuild
-forefire2
-
+local
+tools/cache
+tools/cmaps
+bindings/python/src/pyforefire.egg-info
 #python
 __pycache__
-
+venv
 # compilation files
 *.dblite
 *.o
+*.so
 
 # editors
 .vscode
@@ -22,4 +25,30 @@ __pycache__
 
 # jupyter notebooks checkpoints
 .ipynb_checkpoints
+
+#docs
+docs/doxygen/xml
+docs/doxygen/html
+
+# build
 CMakeLists.txt
+build.sh
+
+#tools
+tools/postprocessing/loadInParaview.py
+tests/config_firecast_local.bash
+tools/config_firecast_local.bash
+tools/ai
+changeLicense.py
+httpConnectInfo.txt
+
+#tests
+tests/python/FF_FS4roslog.csv
+tests/python/ros_computation.py
+tests/python/ros_sampling.py
+tests/python/test_logdb.csv
+tests/runff/altitude.png
+tests/runff/httpConnectInfo.txt
+tests/python/log.txt
+tests/python/runROS.bash
+simulation_result.geojson

@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE, Universit� de Corse.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file FireDomain.h
+ * @brief Class describing the "world" of the simulation
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef FIREDOMAIN_H_
 #define FIREDOMAIN_H_
@@ -38,7 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 US
 #include "DataLayer.h"
 #include "FluxLayer.h"
 #include "FFArrays.h"
-#include "Halo.h"
 #include "FireNodeData.h"
 #include "FireFrontData.h"
 #include "ParallelException.h"
@@ -58,16 +45,7 @@ namespace libforefire{
  *  for the simulation.
  */
 class FireDomain: public ForeFireAtom, Visitable {
-	struct distributedDomainInfo{
-		size_t ID;
-		size_t atmoNX;
-		size_t atmoNY;
-		size_t refNX;
-		size_t refNY;
-		FFPoint* SWCorner;
-		FFPoint* NECorner;
-		double lastTime;
-	};
+
 
 	/* Internal variables of the simulation */
     /*--------------------------------------*/
@@ -89,11 +67,13 @@ class FireDomain: public ForeFireAtom, Visitable {
 	FFPoint NECorner; /*!< NorthEast Corner of the mesh */
 	FFPoint SECorner; /*!< SouthEast Corner of the mesh */
 
+
 	/* reference properties */
     /*----------------------*/
 	int refYear; /*!< reference year */
 	int refDay; /*!< reference day (since 1st January; 01/01 == 1) */
 	double refLatitude, refLongitude; /*!< reference latitude and longitude */
+	double metersPerDegreeLat, metersPerDegreesLon; /*!< reference latitude to meter ratio and longitude to meter ratio*/
 
 	int numIterationAtmoModel; /*! current number of the iteration if coupled to MNH */
 
@@ -154,7 +134,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	static list<FireNode*> trashNodes;
 	static list<FireFront*> trashFronts;
 
-	static list<distributedDomainInfo*> parallelDispatchDomains;
 	/* Factories of models */
     /*---------------------*/
 
@@ -176,16 +155,11 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/* VARIABLES AND ALGORITHMS FOR PARALLEL SIMULATIONS */
 	/*---------------------------------------------------*/
 
-	/*! lists of halos */
-	list<Halo*> outerHalos;
-	list<Halo*> innerHalos;
-	list<FDCell*> outerHaloCells, innerHaloCells;
 
 	/*! \brief markers for communication in parallel simulations */
 	static const double endChain; /*!< Marker for the end of the chain */
 	static const double endCom; /*!< Marker for the end of communication */
 	static const double noCom; /*!< Marker for no communication (non-active halos) */
-	static const int maxComNodes; /*!< Max number of com markers */
 
 	/*! \brief list of link nodes */
 	list<FireNode*> linkNodes;
@@ -203,14 +177,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 
 	list<Frontier*> frontiers;
 	list<Frontier*> infrontiers;
-
-	/*! \brief list of data concerning halo firenodes (communicated by other processors) */
-	list<FireNodeData*> haloFirenodesData;
-
-	/*! \brief list of firenodes potentially in excess in the halo */
-	list<FireNode*> excessHaloFirenodes;
-	list<FireNode*> endsExcessFirenodes;
-
 	/*! \brief list of firenodes that has just changed id */
 	list<FireNode*> recentlyIDChangedNodes;
 
@@ -220,18 +186,8 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/*! \brief string flux for debugging purpose */
 	ostringstream debugOutput;
 
-	/*! \brief creating the list containing the data of incoming firenodes */
-	void createHaloFirenodesList(list<FireNodeData*>&);
+ 
 
-	/*! \brief adding a chain into a list */
-	void addChainToList(list<FireNodeData*>&
-			, list<FireNodeData*>&);
-
-	/*! \brief controlling all the chains */
-	void correctChains(list<FireNodeData*>&);
-
-	/*! \brief controlling (and adjusting if necessary) a chain */
-	bool correctChain(list<FireNodeData*>&, list<FireNodeData*>&);
 
 	/*! \brief obtaining the chain following number of appearance */
 	void getChainAt(const list<FireNodeData*>&, const int&
@@ -240,12 +196,6 @@ class FireDomain: public ForeFireAtom, Visitable {
 	/*! \brief removes and returns the chain following number of appearance */
 	list<FireNodeData*>* popChainAt(list<FireNodeData*>&, const int&);
 
-	/*! \brief determining the position of the chain
-	 * related to another chain in a given list */
-	int getPositionOfRelatedChain(const list<FireNodeData*>&
-			, const list<FireNodeData*>&);
-	int getPositionOfRelatedChain(const list<FireNodeData*>&
-			, const double&);
 
 	/*! \brief append chain to a given list */
 	void appendChain(list<FireNodeData*>&
@@ -256,45 +206,28 @@ class FireDomain: public ForeFireAtom, Visitable {
 			, list<FireNodeData*>&);
 	void pushBackInChain(list<FireNodeData*>*, FireNodeData*);
 	void pushFrontInChain(list<FireNodeData*>*, FireNodeData*);
-	bool haloDataInListForward(double&, list<FireNodeData*>&
-			, list<FireNodeData*>::iterator&);
-	bool haloDataInListBackward(double&, list<FireNodeData*>&
-			, list<FireNodeData*>::iterator&);
 
 	/* Functions for parallel handling */
 	bool idInChain(const double&, const list<FireNodeData*>&);
 	bool isPrevLinkDataInList(const double&, const list<FireNodeData*>&);
 	bool isNextLinkDataInList(const double&, const list<FireNodeData*>&);
-	FireNode* searchForPreviousLinkInFrontier(const int&, list<FireNode*>, FFPoint);
+	
 	FireNode* findRelatedPreviousLink(list<FireNode*>, FFPoint);
 	double distanceAlongFrontier(FFPoint&, FFPoint&);
 	double distanceOnFrontier(int&, FFPoint, FFPoint);
 	double distanceOnBoundingBox(int&, FFPoint, FFPoint);
 
-	/*! \brief searching for excess firenodes */
-	void findExcessFirenodes(const list<FireNodeData*>&, list<FireNode*>&);
-
-	/*! \brief deleting excess firenodes */
-	void deleteExcessFirenodes(list<FireNode*>&, list<FireNode*>&);
 
 	/*! \brief deleting link nodes */
 	void deleteLinkNodes(list<FireNode*>&);
 
-	/*! \brief creating the unknown incoming firenodes */
-	void formIncomingStructures(list<FireNodeData*>&
-			, list<FireNode*>&, list<FireNode*>&
-			, list<FireNode*>&, list<FireFront*>&);
-
-	/*! \brief specific burning scan routine for parallel changes */
-	void parallelBurningScan(list<FireFront*>&, const double&);
-
+	
 	/*! \brief table for the possible corner nodes */
 	FFPoint& getStartCornerFromIndex(const int&);
 	FFPoint getBoundingBoxCornerFromIndex(const int&, FFPoint&, FFPoint&);
 	/*! \brief finding the frontier for a given point */
 	int getFrontierIndex(FFPoint loc);
-	/*! \brief looking to see if an incoming firenode already exists */
-	FireNode* alreadyPresentInOuterHalo(FireNodeData*);
+	
 
 	/*! \brief finding closest node from a location within a given set of nodes */
 	FireNode* findClosestNodeInList(FFPoint&, const list<FireNode*>&);
@@ -304,13 +237,8 @@ class FireDomain: public ForeFireAtom, Visitable {
 	FireNode* findClosestWithinNodeInList(FFPoint&, const double&, const list<FireNode*>&);
 	FireNode* findClosestWithinNodeInList(FireNodeData*, const double&, const list<FireNode*>&);
 
-	/*! \brief finding good candidates when information from other procs isn't relevant */
-	FireNode* findSuitableRelatedNodeBackward(FireNode*);
-	FireNode* findSuitableRelatedNodeForward(FireNode*);
-	FireNode* findExistingNodeNear(FireNodeData*);
 
-	/*! \brief finding the closest point lying on the frontiers */
-	FFPoint closestPointOnOuterHaloFrontiers(FFPoint&);
+	FireNode* findExistingNodeNear(FireNodeData*);
 
 	/*-----------------*/
 	/* OTHER FUNCTIONS */
@@ -335,9 +263,40 @@ class FireDomain: public ForeFireAtom, Visitable {
 public:
 
 	
-	size_t numberOfRispatchDomains;
+	struct distributedDomainInfo{
+		size_t ID;
+		size_t atmoNX;
+		size_t atmoNY;
+		size_t refNX;
+		size_t refNY;
+		FFPoint* SWCorner;
+		FFPoint* NECorner;
+		double lastTime;
+	};
+
+	// Define the CellData structure
+	struct CellData {
+		size_t localx;
+		size_t localy;
+		size_t nx;
+		size_t ny;
+		size_t nz;
+		size_t nt;
+		std::vector<double> data; // Assuming T is double
+	};
+
+	// Define the DistributedDomainBCellList structure
+	struct DistributedDomainBCellList {
+		size_t ID;
+		size_t numActiveCells;
+		std::vector<CellData> cells;
+	};
+
+	// Alias for a list of DistributedDomainBCellList
+	using ListOfDistributedDomainBCellList = std::vector<DistributedDomainBCellList>;
 
 
+	static std::list<distributedDomainInfo*> parallelDispatchDomains;
 
 	/* Propagation models */
 	static const size_t NUM_MAX_PROPMODELS = 50; /*!< maximum number of propagation models */
@@ -345,10 +304,15 @@ public:
 	static int registerPropagationModelInstantiator(string, PropagationModelInstantiator);
 	void updateFuelTable( string , double );
 	PropagationModel* propModelInstanciation(const int&, string);
+
 	void registerPropagationModel(const int&, PropagationModel*);
 	bool addPropagativeLayer(string);
 	size_t getFreePropModelIndex();
 
+	/* Mesh properties */
+    /*-----------------*/
+	FFPoint SWLngLat; /*!< SouthWest Corner of the mesh */
+	FFPoint NELngLat; /*!< NorthEast Corner of the mesh */
 	/* Flux models */
 	static const size_t NUM_MAX_FLUXMODELS = 500; /*!< maximum number of flux models */
 	static FluxModel* fluxModelsTable[NUM_MAX_FLUXMODELS];
@@ -362,7 +326,23 @@ public:
 
 	size_t getFreeFluxModelIndex();
 
+    // Getter for the reference latitude.
+    double getRefLatitude()  ;
 
+    // Getter for the reference longitude.
+    double getRefLongitude()  ;
+
+    // Getter for the latitude conversion factor.
+    double getMetersPerDegreeLat() ;
+
+    // Getter for the longitude conversion factor.
+    double getMetersPerDegreesLon() ;
+
+	double getXFromLon(double) ;
+	double getYFromLat(double) ;
+	double getLonFromX(double) ;
+	double getLatFromY(double) ;
+	vector<double> getActiveBBoxLBRT();
 
 	static bool commandOutputs; /*! boolean for command outputs */
 	static bool outputs; /*! boolean for outputs */
@@ -370,15 +350,6 @@ public:
 	static bool recycleFronts; //to recycle fronts in memory
 	static size_t atmoIterNumber;
 
-	/*! \brief halos */
-	Halo* southOuterHalo;
-	Halo* westOuterHalo;
-	Halo* northOuterHalo;
-	Halo* eastOuterHalo;
-	Halo* southInnerHalo;
-	Halo* westInnerHalo;
-	Halo* northInnerHalo;
-	Halo* eastInnerHalo;
 
 	bool atmosphericCoupling; /*! boolean for coupled simulations */
 	bool parallel; /*! boolean for parallel simulations */
@@ -397,13 +368,6 @@ public:
 			, const int&, const double&);
 	/*! \brief Destructor */
 	virtual ~FireDomain();
-
-	/*! \brief packing the information about the firenodes in the halo cells */
-	void createFirenodesMatrices();
-	void createFirenodesMatrices(list<FireNode*>&);
-
-	/*! \brief creation of the firenodes in the halo cells */
-	void manageHaloFirenodes(const double&);
 
 	/*! \brief present time of the simulation */
 	double getSimulationTime();
@@ -433,6 +397,9 @@ public:
 	double& getMaxTimeStep();
 	double getArrivalTime(FFPoint&);
 	double getArrivalTime(const size_t&, const size_t&);
+	double getMaxSpeed(FFPoint&);
+	double getMaxSpeed(const size_t&, const size_t&);
+	
 	FFPoint& getSWCorner();
 	FFPoint& getNECorner();
 	int getNumIterationAtmoModel();
@@ -448,6 +415,7 @@ public:
 	double& SECornerX();
 	double& SECornerY();
 	void readMultiDomainMetadata();
+	void pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney);
 
 	/*! \brief cell containing a firenode */
 	FDCell* getCell(FireNode*);
@@ -461,8 +429,6 @@ public:
 	/*! \brief give Max com nodes */
 	int getMaxComNodes();
 
-	/*! \brief Setting parameters of the simulation */
-	void setParameter(string, string);
 
 	/*! \brief Mutators */
 	void setBoundariesFront(FireFront*);
@@ -500,9 +466,7 @@ public:
 	FireNode* getFireNodeByID(const double);
 	FireNode* getFireNodeByIDNeighborCells(const double, FDCell*, int = 1);
 
-	/*! \brief searching a firenode by ID in the halo cells */
-	FireNode* getFirenodeInInnerHalo(const double&);
-	FireNode* getFirenodeInOuterHalo(const double&);
+ 
 
 	/*! \brief visitor function */
 	void accept(Visitor*);
@@ -524,11 +488,6 @@ public:
 	bool isInOuterHalo(FireNode*);
 	bool isInOuterHalo(FFPoint&);
 	bool isInOuterHalo(const double&, const double&);
-	bool isInActiveOuterHalo(FireNode*);
-	bool isInActiveOuterHalo(FireNodeData*);
-	bool isInActiveOuterHalo(FFPoint&);
-	bool isInActiveOuterHalo(const double&, const double&);
-
 	/*! \brief Test to see if a firenode pertains to a list */
 	bool firenodeInList(FireNode*, const list<FireNode*>&);
 
@@ -562,7 +521,9 @@ public:
 	/*! \brief Computing the propagation speed of a given firenode */
 	double getPropagationSpeed(FireNode*);
 
-	/*! \brief Computing the propagation speed of a given firenode */
+    PropagationModel* getPropagationModel(const std::string& key);
+
+    /*! \brief Computing the propagation speed of a given firenode */
 	double getModelValueAt(int&, FFPoint&, const double&, const double&, const double&);
 
 	/*! \brief recycle/create a firenode */
@@ -591,9 +552,10 @@ public:
 	void stopOutgoingNode(FireNode*, FFPoint&, double&);
 	void addToTrashFronts(FireFront*);
 	void dumpCellsInBinary();
-	void loadWindDataInBinary(double);
-	void dumpWindDataInBinary();
-	void loadCellsInBinary();
+	size_t countActiveCellsInDispatchDomain(size_t ) ;
+    distributedDomainInfo *getParallelDomainInfo(size_t forID);
+    void loadWindDataInBinary(double);
+    void loadCellsInBinary();
 	/*! \brief creating new atoms in the domain */
 	FireNode* FireNodeFactory();
 	FireFront* FireFrontFactory();
@@ -616,7 +578,9 @@ public:
 	list<FireNode*> getPhysicalDomainNodesWithin(FireNodeData*, const double&, bool = true);
 
 	/*! \brief saving the simulation */
-	void saveSimulation();
+	void saveArrivalTimeNC();
+	/*! \brief loading the simulation */
+	void loadArrivalTimeNC(string);
 
 	/*! \brief dumping the map of arrival times for debugging */
 	void dumpBurningMatrixAsBinary();
@@ -627,6 +591,7 @@ public:
 	void visualizeBurningMatrixAroundNode(FireNode*);
 	int getNumFN();
 	int getNumFF();
+	size_t getlocalBMapSize();
 
 	double getSimulationMaxResolution(double&, double&, const size_t&);
 	double getBurningMapResolution(double&, double);
@@ -655,6 +620,9 @@ public:
 	/*! \brief scanning a region with respect to all fire fronts */
 	void areaBurningScan(FFPoint&, FFPoint&, double);
 
+    /*! \brief retrun a diag matrix */
+	std::vector<std::vector<double>> getDataMatrix(const std::string& ) ;
+	std::vector<std::vector<double>> getDataMatrix(const std::string& , FFPoint& , FFPoint& , size_t& , size_t& ) ;
 	/*! \brief checking the burning status of a given location */
 	bool checkForBurningStatus(FFPoint&);
 

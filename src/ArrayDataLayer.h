@@ -1,22 +1,10 @@
-/*
-
-Copyright (C) 2012 ForeFire Team, SPE,.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, write to the Free Software
-Foundation, Inc., 51  Street, Fifth Floor, Boston, MA 02110-1301 US
-
-*/
+/**
+ * @file ArrayDataLayer.h
+ * @brief Template class for 3D arrays
+ * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
+ * @license This program is free software; See LICENSE file for details. (See LICENSE file).
+ * @author Jean‑Baptiste Filippi — 2025
+ */
 
 #ifndef ARRAYDATALAYER_H_
 #define ARRAYDATALAYER_H_
@@ -92,6 +80,17 @@ public:
 		delete array;
 	}
 
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return dz; };
+	double getOriginX(	){ return originX; };
+	double getOriginY(){ return originY; };
+	double getOriginZ(){ return originZ; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return dz*nz; };
+
+
 	/*! \brief interpolation method enum type */
 	enum InterpolationMethod {
 		nearestData = 0,
@@ -127,6 +126,9 @@ public:
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
 
+
+
+
 };
 
 template<typename T>
@@ -151,6 +153,12 @@ T Array3DdataLayer<T>::getValueAt(FFPoint loc, const double& time){
 			<<"Array3DdataLayer<T>::getValueAt(FFPoint, const double&)"<<endl;
 	return (T) 0;
 }
+
+
+double getDx();
+double getDy();
+FFPoint& getOriginPoint();
+FFPoint& getSpan();
 
 template<typename T>
 size_t Array3DdataLayer<T>::getValuesAt(FireNode* fn
@@ -301,6 +309,10 @@ template<typename T> class Array2DdataLayer : public DataLayer<T> {
 	double originX; /*!< abscissa of the SouthWest Corner */
 	double originY; /*!< coordinate of the SouthWest Corner */
 
+	FFPoint origin;
+	FFPoint span;
+	
+
 	size_t nx; /*!< size of the array in the X direction */
 	size_t ny; /*!< size of the array in the Y direction */
 	size_t size; /*!< size of the array */
@@ -377,6 +389,16 @@ public:
 	string print();
 	void dumpAsBinary(string, const double&
 			, FFPoint&, FFPoint&, size_t&, size_t&);
+			
+	double getDx(){ return dx; };
+	double getDy(){ return dy; };
+	double getDz(){ return 0; }; 
+	double getOriginX(	){ return originX; };
+	double getOriginY(){ return originY; };
+	double getOriginZ(){ return 0; };
+	double getWidth(){ return dx*nx; };
+	double getHeight(){ return dy*ny; };
+	double getDepth(){ return 0; };
 
 };
 
@@ -440,7 +462,7 @@ T Array2DdataLayer<T>::getNearestData(FFPoint loc){
 template<typename T>
 FFPoint Array2DdataLayer<T>::posToIndices(FFPoint loc){
 	return FFPoint((loc.getX()-originX)/dx
-			, (loc.getY()-originY)/dy);
+			, (loc.getY()-originY)/dy,0);
 }
 
 template<typename T>

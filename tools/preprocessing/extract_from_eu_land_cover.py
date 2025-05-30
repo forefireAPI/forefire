@@ -9,24 +9,26 @@ Created on Mon Oct 30 11:38:26 2023
 import rasterio
 from rasterio.windows import from_bounds
 from pyproj import Transformer
-import matplotlib.pyplot as plt
+import fiona
 import numpy as np
-from pyproj import CRS
+import os
 import osmnx as ox  
 from rasterio.features import geometry_mask
-from rasterio.warp import reproject, Resampling
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+
 from rasterio.transform import from_origin
+
 import geopandas as gpd
 from rasterio.mask import mask
 from shapely.geometry import box
 import json
-from PIL import Image
-import rasterio
-from rasterio.warp import calculate_default_transform, reproject, transform_bounds, Resampling
-import numpy as np
+ 
 from .ffToGeoJson import create_kml,generate_indexed_png_and_legend
 
-
+ 
+from rasterio.features import rasterize
+from shapely.geometry import mapping
+ 
 attribute_widths_road_edge_full = {
     'secondary': 0.8,
     'track': 0.8,
@@ -99,9 +101,16 @@ attribute_widths_road_Edge = {
     'primary': 1.5,
 }
 
+# Example usage
+attribute_widths_waterway = {
+    'river': 1.5,
+    'stream': 0.5,
+    'canal': 1.0,
+    'drain': 0.7,
+    'generic': 0.5  # Set a generic width for all water features
+}
+
 def extract_subregion(input_tif, output_tif, westI, southI, eastI, northI):
-    print(f"clipping {input_tif} into {output_tif} bounds W{westI}, S{southI}, E{eastI}, N{northI}")
-    print(f"NW({northI},{westI}), SW({southI},{westI}), SE({southI},{eastI}), NE({northI},{eastI})")
     
     with rasterio.open(input_tif) as src:
         # Transformer pour convertir les coordonnées lat/lon (WGS84) en coordonnées du système du raster
@@ -213,19 +222,236 @@ def warp_and_clip_raster(input_file_path: str, warped_file_path: str, output_fil
     
 
 
-def extract_roads_from_geotiff(west,south,east,north, road_shape_file):
-    print(f"Getting roads with bounds from {west,south,east,north} saving {road_shape_file}")
+def extract_roads_from_geotiff_original(west,south,east,north, road_shape_file):
     try:
         G = ox.graph_from_bbox(north, south, east, west, network_type='all')
     except Exception as e:
         return str(e)
     ox.save_graph_shapefile(G, filepath=road_shape_file )
 
-def rasterize_shapefile(shapefile_path, ref_tif, output_path, attribute_widths=attribute_widths_road_Edge, default_width = 0.3, imbounds =None,code=62):
+
+def extract_roads_from_geotiff(west, south, east, north, road_shape_file, attribute_widths=attribute_widths_road_Edge):
+ 
+    
+    # Define the road types to extract based on the attribute_widths_road_Edge dictionary keys
+    road_types = list(attribute_widths.keys())
+
+    # Create a custom filter to fetch only the roads of interest
+    custom_filter = f'["highway"~"{ "|".join(road_types) }"]'
+    
+    try:
+        # Define the bounding box
+        bbox = (north, south, east, west)
+        
+        # Retrieve the graph with the custom filter using the new bbox parameter
+        G = ox.graph_from_bbox(bbox=bbox, network_type='drive', custom_filter=custom_filter)
+    except Exception as e:
+        return str(e)
+    
+    if len(G.edges) <= 0:
+        return None
+    # You might want to further process the graph here to assign or use your custom attributes
+    # For example, adjusting edge widths as per your dictionary before saving
+    for u, v, key, data in G.edges(data=True, keys=True):
+        road_type = data.get('highway', None)
+        if isinstance(road_type, list):  # Sometimes 'highway' can be a list of types
+            road_type = road_type[0]    # Select the first type as the representative
+        width = attribute_widths.get(road_type, None)
+        if width is not None:
+            data['width'] = width
+
+    # Save the graph to a shapefile
+    ox.save_graph_geopackage(G, filepath=road_shape_file)
+    
+    return road_shape_file
+
+
+
+def extract_waterways_from_geotiff(west, south, east, north, waterway_shape_file, attribute_widths):
+    
+    # Define the waterway types to extract based on the attribute_widths dictionary keys
+    waterway_types = list(attribute_widths.keys())
+
+    # Create a custom filter to fetch only the waterways of interest
+    custom_filter = f'["waterway"~"{ "|".join(waterway_types) }"]'
+    
+
+    try:    
+        bbox = (north, south, east, west)  
+        # Retrieve the graph with the custom filter using the new 'bbox' parameter
+        G = ox.graph_from_bbox(bbox=bbox, network_type='none', custom_filter=custom_filter, retain_all=True)
+    except Exception as e:
+        return str(e)
+    
+    if len(G.edges) <= 0:
+        return None
+    
+    # You might want to further process the graph here to assign or use your custom attributes
+    # For example, adjusting widths as per your dictionary before saving
+    for u, v, key, data in G.edges(data=True, keys=True):
+        waterway_type = data.get('waterway', None)
+        if isinstance(waterway_type, list):  # Sometimes 'waterway' can be a list of types
+            waterway_type = waterway_type[0]    # Select the first type as the representative
+        width = attribute_widths.get(waterway_type, None)
+        if width is not None:
+            data['width'] = width
+
+    # Save the graph to a shapefile
+    ox.save_graph_geopackage(G, filepath=waterway_shape_file)
+    return waterway_shape_file
+
+def rasterize_shapefiles_check(road_shapefile_path, water_shapefile_path, ref_tif, output_path,
+                         roads_attribute_widths, water_attribute_widths,
+                         default_width=0.3, imbounds=None, road_code=62, water_code=162):
+
+    shapes = []
+
+    if os.path.exists(road_shapefile_path):
+        roads_gdf = gpd.read_file(road_shapefile_path)
+        for _, feature in roads_gdf.iterrows():
+            if('highway' in feature.keys()):
+                highway_type = feature['highway']
+                line_width = roads_attribute_widths.get(highway_type, default_width)
+                if line_width > 0:
+                    buffered_geom = feature['geometry'].buffer(line_width / 2)  # Adjust this buffer as needed
+                    shapes.append((mapping(buffered_geom), road_code))
+    else:
+        print(f"Warning: Road shapefile {road_shapefile_path} not found.")
+
+    if os.path.exists(water_shapefile_path):
+        water_gdf = gpd.read_file(water_shapefile_path)
+        generic_water_width = water_attribute_widths.get('generic', default_width)  # Assuming a generic type
+        for _, feature in water_gdf.iterrows():
+            buffered_geom = feature['geometry'].buffer(generic_water_width / 2)  # Adjust this buffer as needed
+            shapes.append((mapping(buffered_geom), water_code))
+    else:
+        print(f"Warning: Water shapefile {water_shapefile_path} not found.")
+
+    with rasterio.open(ref_tif) as refT:
+        ref_crs = refT.crs
+        width = refT.width
+        height = refT.height
+        transform = refT.transform  # Directly use the transform from the reference raster
+
+        # Create a base raster array
+        raster = refT.read(1)
+        refT.close()
+        
+        if shapes:
+            # Rasterize the shapes onto the raster array only if there are shapes to rasterize
+            rasterized = rasterize(shapes, out_shape=(height, width), fill=0, transform=transform, dtype=np.uint8)
+            raster[rasterized == road_code] = road_code
+            raster[rasterized == water_code] = water_code
+
+        # Save the raster data to a new GeoTIFF file
+        with rasterio.open(output_path, 'w', driver='GTiff', width=width, height=height, count=1,
+                           dtype=raster.dtype, crs=ref_crs, transform=transform) as dst:
+            dst.write(raster, 1)
+
+        refT.close()
+        
+def rasterize_shapefiles(road_shapefile_path, water_shapefile_path, ref_tif, output_path, 
+                         roads_attribute_widths, water_attribute_widths, 
+                         default_width=0.3, imbounds=None, road_code=62, water_code=162):
+    
+    roads_gdf = None
+    water_gdf = None
+    
+    if road_shapefile_path is not None:
+        if os.path.exists(road_shapefile_path):
+            layers = fiona.listlayers(road_shapefile_path)
+            if "edges" in layers:
+                roads_gdf = gpd.read_file(road_shapefile_path,layer="edges")
+                print(f"Loaded road 'edges' layer with {len(roads_gdf)} shapes.")
+            
+        
+    if water_shapefile_path  is not None:
+        if os.path.exists(water_shapefile_path):
+            layers = fiona.listlayers(water_shapefile_path)
+            if "edges" in layers:
+                water_gdf = gpd.read_file(water_shapefile_path,layer="edges")
+                print(f"Loaded water stream 'edges' layer with {len(water_gdf)} shapes.")
+
+    # Use specified bounds if provided, otherwise derive bounds from both GeoDataFrames
+    if imbounds is not None:
+        bounds = imbounds
+    else:
+        print("WARNING getting bounds from roads")
+
+        bounds = [
+            roads_gdf.total_bounds[0], # minx
+            roads_gdf.total_bounds[1],  # miny
+            roads_gdf.total_bounds[2],  # maxx
+            roads_gdf.total_bounds[3]  # maxy
+        ]#
+
+    x_min, y_min, x_max, y_max = bounds
+
+    # Load the reference raster
+    with rasterio.open(ref_tif) as refT:
+        ref_crs = refT.crs
+        width = refT.width
+        height = refT.height
+
+        # Calculate the resolution based on reference raster
+        resolutionx = (x_max - x_min) / width
+        resolutiony = (y_max - y_min) / height
+
+        # Create a transformation from the bounds
+        transform = rasterio.transform.from_origin(x_min, y_max, resolutionx, resolutiony)
+
+        # Read the existing raster data
+        raster = refT.read(1)
+        #raster *= 0
+        refT.close()
+
+        # Prepare shapes and associated codes for roads and waterways
+        shapes = []
+        
+        if roads_gdf is not None:
+            print("using road shapefile :", road_shapefile_path)
+            for _, feature in roads_gdf.iterrows():
+                if('highway' in feature.keys()):
+                    highway_type = feature['highway']
+                   # print("YESSSSSSSSS HIGHWAY ")
+                    line_width = roads_attribute_widths.get(highway_type, default_width)
+                    if line_width > 0:
+                        buffered_geom = feature['geometry'].buffer(line_width * resolutionx / 2)
+                        shapes.append((mapping(buffered_geom), road_code))
+                else:
+                    print("NO HIGHWAY ", feature.keys())
+
+        if water_gdf is not  None:
+            print("using water shapefile :", water_shapefile_path)
+            generic_water_width = water_attribute_widths.get('generic', default_width)  # Assuming a generic type if no specific 'waterway' key
+            for _, feature in water_gdf.iterrows():
+                buffered_geom = feature['geometry'].buffer(generic_water_width * resolutionx / 2)
+                shapes.append((mapping(buffered_geom), water_code))
+            
+
+        # Rasterize the shapes onto the raster array
+        if len(shapes) > 0:
+            print("Number of shapes to resterize :", len(shapes))
+            rasterized = rasterize(shapes, out_shape=(height, width), fill=0, transform=transform, dtype=np.uint8)
+            raster[rasterized == road_code] = road_code
+            raster[rasterized == water_code] = water_code
+
+        
+      #  for _, feature in roads_gdf.iterrows():
+      #      highway_type = feature['highway']
+      #      line_width = 10#attribute_widths.get(highway_type, default_width)  # Default line width is 1 pixel
+      #      mask = geometry_mask([feature['geometry'].buffer(line_width * resolutionx / 2)],
+      #                           transform=transform, invert=True, out_shape=(height, width))
+      #      raster[mask] = road_code  # Set pixel value to 255 (white) where there is a feature
+    # Save the raster data to a new GeoTIFF file
+    with rasterio.open(output_path, 'w', driver='GTiff', width=width, height=height, count=1,
+                       dtype=raster.dtype, crs=ref_crs, transform=transform) as dst:
+        dst.write(raster, 1)
+
+        
+def rasterize_shapefile_original(shapefile_path, ref_tif, output_path, attribute_widths=attribute_widths_road_Edge, default_width = 0.3, imbounds =None,code=62):
     print(f"Rasterizing roads {shapefile_path} to {output_path}  with {attribute_widths}")
     reference_properties = {}
-    width=2000
-    height = 2000
     
     gdf = gpd.read_file(shapefile_path)
     bounds = gdf.total_bounds  # minx, miny, maxx, maxy
@@ -324,18 +550,57 @@ def fake_fuel(legend_file_path, WSEN, LBRT,output_dir,fuel_resolution = 10):
     generate_indexed_png_and_legend(legend_file_path,fuel_road_indices, fuel_png, fuel_cbar_png)
     create_kml(west, south, east, north, "FUEL", fuel_png,fuel_kml , pngcbarfile=fuel_cbar_png) 
     
-    
 
-def landcover_roads_to_fuel(S2GLC_tif,legend_file_path, WSEN, LBRT,output_dir,fuel_resolution = 10):
+
+def rasterize_kml(kml_path, ref_tif, output_path, default_value=1, imbounds=None):
+    print(f"Rasterizing KML {kml_path} to {output_path}")
+
+    # Load reference GeoTIFF for spatial reference
+    with rasterio.open(ref_tif) as refT:
+        ref_crs = refT.crs
+        width = refT.width
+        height = refT.height
+        x_min, y_min, x_max, y_max = refT.bounds
+        if imbounds is not None:
+            x_min, y_min, x_max, y_max = imbounds
+        x_range = x_max - x_min
+        y_range = y_max - y_min
+
+        resolutionx = x_range / width
+        resolutiony = y_range / height
+        transform = from_origin(x_min, y_max, resolutionx, resolutiony)
+
+        # Create an empty raster
+        raster = refT.read(1, out_shape=(height, width))
+
+    # Load the KML file
+    gdf = gpd.read_file(kml_path, driver='KML')
+
+    # Rasterize each feature based on its name
+    for _, feature in gdf.iterrows():
+        polygon_name = feature['Name']  # Assuming the name attribute holds the values
+        polygon_value = int(polygon_name) if polygon_name.isdigit() else default_value
+        mask = geometry_mask([feature['geometry'].buffer(resolutionx / 2)], transform=transform, invert=True, out_shape=(height, width))
+        raster[mask] = polygon_value
+
+    # Save the rasterized data to a new GeoTIFF file
+    with rasterio.open(output_path, 'w', driver='GTiff',
+                       width=width, height=height,
+                       count=1, dtype=raster.dtype,
+                       crs=ref_crs, transform=transform) as dst:
+        dst.write(raster, 1)
+        
+def landcover_roads_to_fuel(S2GLC_tif,legend_file_path, WSEN, LBRT,output_dir,fuel_modifier=None, fuel_resolution = 10, no_fuel_code = 62):
 
     fuel_indices_origin = f"{output_dir}/fuel_indices_S2GLC.tif"
     fuel_indices_warped = f"{output_dir}/fuel_indices_warped.tif"
     fuel_indices_warped_clipped = f"{output_dir}/fuel_indices_warped_clipped.tif"
     
     roads_shape = f"{output_dir}/roads_shape.shp"
-    
+    water_shape = f"{output_dir}/water_shape.shp"
     fuel_road_indices = f'{output_dir}/fuel.tif'
      
+    fuel_mod_road_indices = f'{output_dir}/fuelMod.tif'
     
     fuel_kml = f'{output_dir}/fuel.kml'
     fuel_png =f'{output_dir}/fuel.png'
@@ -347,15 +612,30 @@ def landcover_roads_to_fuel(S2GLC_tif,legend_file_path, WSEN, LBRT,output_dir,fu
     west, south, east, north =WSEN
     l,b,r,t = LBRT
     
-        
-
-    
-    
     extract_subregion(S2GLC_tif, fuel_indices_origin, west, south, east, north)
+    
     warp_and_clip_raster(fuel_indices_origin,fuel_indices_warped,fuel_indices_warped_clipped ,west, south, east, north,target_width = int((r-l)/fuel_resolution),target_height = int((t-b)/fuel_resolution))
+    
+    roads_shape = extract_roads_from_geotiff(west, south, east, north, roads_shape,attribute_widths=attribute_widths_road_Edge)
  
-    extract_roads_from_geotiff(west, south, east, north, roads_shape)
-    rasterize_shapefile(roads_shape,fuel_indices_warped_clipped,fuel_road_indices,imbounds=(west, south,east ,north),code=62)
 
-    generate_indexed_png_and_legend(legend_file_path,fuel_road_indices, fuel_png, fuel_cbar_png)
+    water_shape = extract_waterways_from_geotiff(west, south, east, north, water_shape, attribute_widths=attribute_widths_waterway)
+ 
+     
+    rasterize_shapefiles(roads_shape,water_shape,fuel_indices_warped_clipped,fuel_road_indices,roads_attribute_widths=attribute_widths_road_Edge,water_attribute_widths=attribute_widths_waterway,imbounds=(west, south,east ,north), road_code=no_fuel_code, water_code=162)
+    
+    
+    print("Rasterized roads and water")
+    
+    reftif = fuel_road_indices
+    
+    if fuel_modifier is not None:
+        import fiona
+        fiona.drvsupport.supported_drivers['KML'] = 'rw'
+        rasterize_kml(fuel_modifier,fuel_road_indices,fuel_mod_road_indices)
+        reftif = fuel_mod_road_indices
+        print("applied ",fuel_modifier)
+
+    generate_indexed_png_and_legend(legend_file_path,reftif, fuel_png, fuel_cbar_png)
     create_kml(west, south, east, north, "FUEL", fuel_png,fuel_kml , pngcbarfile=fuel_cbar_png)
+    return fuel_png, fuel_kml, fuel_cbar_png
