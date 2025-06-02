@@ -1,5 +1,5 @@
 . $HOME/runMNH
-export MPIRUN="mpirun -np 4"
+export MPIRUN="mpiexec -np 4"
 ncgen -o ForeFire/lpsimple.nc ForeFire/lpsimple.cdl
 mkdir ForeFire/Outputs
 mkdir MODEL1

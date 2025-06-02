@@ -84,8 +84,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-
-**ForeFire** is a modular, high-performance wildland fire simulation engine implemented in C++. It is designed to model the spread of wildfire perimeters over large landscapes at meter scale resolution, serving both as a research platform and an operational forecasting tool. 
+Wildfire forecasting is at the same time an active research area and an important need for operational decision support systems. **ForeFire** is a modular, high-performance wildland fire simulation engine implemented in C++. It is designed to model the spread of wildfire perimeters over large landscapes at meter scale resolution, serving both as a research platform and an operational forecasting tool. 
 ForeFire can be used to forecast wildfires spanning thousands of hectares within seconds, supporting wildfire management operations, while also providing an open testbed for experimenting with new fire behavior, fire intensity, and fire flux models in a scientific context.
 
 ForeFire offers multiple interfaces and utilities to maximize usability and integration. 
