@@ -200,11 +200,6 @@ std::string commandHelp = R"(
      - 'host': Hostname or IP address for the server
      - 'port': Port number on which the server will listen;
 
-## help
-    help[]
-    Displays a list of available commands and their brief descriptions.
-    Use Tab-Tab on a specific command name for full details.;
-
 ## clear
     clear[]
     clears-up memory except parameters, no more schedueled events or fire domain.
