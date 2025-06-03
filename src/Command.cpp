@@ -2007,6 +2007,18 @@ namespace libforefire
         {
             double newPerimRes = getFloat("perimeterResolution", arg);
             double newSpatialInc = getFloat("spatialIncrement", arg);
+
+            bool valid = true;
+
+            if (newPerimRes != FLOATERROR && newPerimRes <= 0.0) {
+                cout << "Error: perimeterResolution must be greater than 0." << endl;
+                valid = false;
+            }
+            if (newSpatialInc != FLOATERROR && newSpatialInc <= 0.0) {
+                cout << "Error: spatialIncrement must be greater than 0." << endl;
+                valid = false;
+            }
+            if (!valid) return error;
             
             FireDomain* domain = getDomain();
             if (domain != nullptr)
