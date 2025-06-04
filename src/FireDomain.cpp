@@ -412,6 +412,12 @@
 	 }
 	 return buffer.st_size;   
  }
+ void FireDomain::setPerimeterResolution(double res) {
+	this->perimeterResolution = res;
+ }
+ void FireDomain::setSpatialIncrement(double inc) {
+	 this->spatialIncrement = inc;
+ }
  void FireDomain::pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney) {
 	 distributedDomainInfo *currentInfo = new distributedDomainInfo;
 	 currentInfo->ID = id;

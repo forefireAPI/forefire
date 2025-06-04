@@ -2003,6 +2003,44 @@ namespace libforefire
                 return normal;
             }
         }
+        if (tmpArgs[0] == "resolution")
+        {
+            double newPerimRes = getFloat("perimeterResolution", arg);
+            double newSpatialInc = getFloat("spatialIncrement", arg);
+
+            bool valid = true;
+
+            if (newPerimRes != FLOATERROR && newPerimRes <= 0.0) {
+                cout << "Error: perimeterResolution must be greater than 0." << endl;
+                valid = false;
+            }
+            if (newSpatialInc != FLOATERROR && newSpatialInc <= 0.0) {
+                cout << "Error: spatialIncrement must be greater than 0." << endl;
+                valid = false;
+            }
+            if (!valid) return error;
+            
+            FireDomain* domain = getDomain();
+            if (domain != nullptr)
+            {
+                if (newPerimRes != FLOATERROR)
+                {
+                    domain->setPerimeterResolution(newPerimRes);
+                    cout << "Updated perimeterResolution to " << newPerimRes << endl;
+                }
+                if (newSpatialInc != FLOATERROR)
+                {
+                    domain->setSpatialIncrement(newSpatialInc);
+                    cout << "Updated spatialIncrement to " << newSpatialInc << endl;
+                }
+                return normal;
+            }
+            else 
+            {
+                cout << "Error: No FireDomain available to update resolution parameters." << endl;
+                return error;
+            }
+        }
         return error;
     }
     int Command::include(const string &arg, size_t &numTabs)
