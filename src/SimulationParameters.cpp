@@ -370,7 +370,6 @@ std::string landCoverIndexedCSV = R"(Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
 	parameters.insert(make_pair("spatialCFLmax", "0.3"));
-	parameters.insert(make_pair("spatialIncrement", "2"));
 	parameters.insert(make_pair("watchedProc", "-2"));
 	parameters.insert(make_pair("CommandOutputs", "0"));
 	parameters.insert(make_pair("FireDomainOutputs", "0"));

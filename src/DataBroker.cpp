@@ -1267,7 +1267,7 @@ namespace libforefire
 
 					if (varName == "altitude" && domain->getDomainID() == 0)
 					{
-						cout << "HHHHHHHHHHHHHHH   read Altitude " << domain->getDomainID() << endl;
+						cout << "Reading Altitude " << domain->getDomainID() << endl;
 						auto altLayer = constructXYZTLayer(currentVar, SWCorner, spatialExtent, timeOrigin, Lt, -1);
 						registerLayer(varName, altLayer);
 					}
