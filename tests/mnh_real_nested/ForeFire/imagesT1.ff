@@ -1,0 +1,6 @@
+plot[parameter=plumeTopHeight;filename=images/plumeTopHeight.png;size=320,320;projectionOut=json;cmap=turbo;range=0.0,5000.0]
+plot[parameter=tke;filename=images/tke.png;size=320,320;projectionOut=json;cmap=turbo;range=0.0,10.0]
+plot[parameter=plumeBottomHeight;filename=images/plumeBottomHeight.png;size=320,320;projectionOut=json;cmap=turbo;range=0.0,5000.0]
+plot[parameter=wind;filename=images/wind.png;size=320,320;projectionOut=json;cmap=turbo;range=0.0,10.0]
+plot[parameter=smokeAtGround;filename=images/smokeAtGround.png;size=320,320;projectionOut=json;cmap=turbo;range=0.0,0.030]
+include[ForeFire/imagesT1.ff]@nowplus=100

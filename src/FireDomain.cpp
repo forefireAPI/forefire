@@ -95,8 +95,7 @@
 			  #else
 				 readMultiDomainMetadata();
 			 #endif
-			 cout<<"all inited, the big now with "<<parallelDispatchDomains.size()<<" total "<<parallelDispatchDomains.size()<<endl;
- 
+
 			 atmosphericCoupling = true;
 	 
 			 if(parallelDispatchDomains.size() >0){
@@ -2701,7 +2700,7 @@
 							 }
 					 }
 				 }
-				 cout <<"Domain "<<getDomainID()<<" size:"<<atmoNX<<":"<<atmoNY<<":"<<atmoNZ<<" area:"<<(NECornerX()-SWCornerX())<<":"<<(NECornerY()-SWCornerY())<<" Bmap size="<<globalBMapSizeX<<":"<<globalBMapSizeY<< " res=" <<burningMatrixResX<<":"<< burningMatrixResY<< endl;
+				 cout <<"ForeFire inited domain "<<getDomainID()<<" size:"<<atmoNX<<":"<<atmoNY<<":"<<atmoNZ<<" area:"<<(NECornerX()-SWCornerX())<<":"<<(NECornerY()-SWCornerY())<<" Bmap size="<<globalBMapSizeX<<":"<<globalBMapSizeY<< " res=" <<burningMatrixResX<<":"<< burningMatrixResY<< endl;
 			 }
 		 } catch ( const bad_alloc & ) {
 			 // deleting what has been allocated

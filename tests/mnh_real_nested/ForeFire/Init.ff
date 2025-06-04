@@ -1,0 +1,5 @@
+FireDomain[sw=(48400.0,48400.0,0.0);ne=(75600.0,75600.0,0.0);t=54000.0]
+startFire[lonlat=(-8.175970, 39.972564,0);t=54000.0]
+startFire[lonlat=(-8.155587, 39.951699,0);t=54000.0]
+include[ForeFire/imagesT1.ff]@t=54020
+listenHTTP[host=127.0.0.1:8080]

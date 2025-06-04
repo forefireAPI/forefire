@@ -579,8 +579,6 @@ void FFGetDoubleArray(const char* mname, double t
 				}else{				
 					MPI_Send(t2->getData(), t2->getSize(), MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
 				}
-			}else{
-				cout << "Setting Initial Altitude layer" << tmpname << endl;
 			}
 			#endif 
 

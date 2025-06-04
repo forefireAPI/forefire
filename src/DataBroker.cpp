@@ -87,10 +87,10 @@ namespace libforefire
 		std::string paramTable = params->getParameter("fuelsTable");
 		if (paramTable != "1234567890")
 		{
-			cout << "Read fuel table" << paramTable << endl;
+		 
 			if (paramTable.substr(0, 3) == "STD")
 			{
-				cout << "Using standard fuel table" << paramTable << endl;
+			 
 				readTableFromString(params->getParameter(paramTable), fuelPropertiesTable);
 			}
 			else
@@ -1154,7 +1154,7 @@ namespace libforefire
 
 					std::ostringstream oss;
 					oss << bbox[0] << "," << bbox[1] << "," << bbox[2] << "," << bbox[3];
-					cout << "WARNING got BBoxWSEN as a double array in NC data, should be a string parameter, not using it: " << oss.str() << endl;
+				//	cout << "WARNING got BBoxWSEN as a double array in NC data, should be a string parameter, not using it: " << oss.str() << endl;
 					// params->setParameter("dataTileBBoxWSEN", oss.str());
 				}
 				else

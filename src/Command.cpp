@@ -189,7 +189,7 @@ namespace libforefire
 
                 if (currentSession.fd->getDomainID() == 1)
                 { // ID 1 is for the Fortran MPI rank 1
-                    cout << "Creating master FD coupler" << endl;
+                    
                     currentSession.params->setParameter("runmode", "masterMNH");
 
                     currentSession.fdp = new FireDomain(t, SW, NE);
@@ -555,7 +555,7 @@ namespace libforefire
                 lastnode = refDomain->addFireNode(pos2, vel2, t, fdepth, kappa, currentSession.ff, lastnode);
                 refDomain->addFireNode(pos3, vel3, t, fdepth, kappa, currentSession.ff, lastnode);
                 completeFront(currentSession.ff);
-                cout << "Fire started at " << pos.x << ", " << pos.y << " Time: "<<t<< endl;
+       
             }
         }
         else
@@ -3196,7 +3196,7 @@ namespace libforefire
                 if (currentSession.fdp != 0)
                 {
                     listenMode = MPIMODE;
-                    cout << "HTTP MPI rank >>>>" << getDomain()->getDomainID() << "<<" << endl;
+                 
                 }
             }
         }
