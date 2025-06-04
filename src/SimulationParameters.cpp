@@ -95,19 +95,44 @@ bool SimulationParameters::ISODateDecomposition(string date, double &secs, int &
     return true;
 }
 
-double SimulationParameters::SecsBetween(double t1, int y1, int yday1, double t2, int y2, int yday2)
+double SimulationParameters::SecsBetween(double t1, int y1, int yday1,
+                                         double t2, int y2, int yday2)
 {
-    y1 -= 1900;
-    yday1--;
-    int tt1 = t1 + yday1*86400 + (y1-70)*31536000 + ((y1-69)/4)*86400 - ((y1-1)/100)*86400 + ((y1+299)/400)*86400;
-    time_t rawtime1 = (time_t) tt1;
-    
-    y2 -= 1900;
-    yday2--;
-    int tt2 = t2 + yday2*86400 + (y2-70)*31536000 + ((y2-69)/4)*86400 - ((y2-1)/100)*86400 + ((y2+299)/400)*86400;
-    time_t rawtime2 = (time_t) tt2;
-   // cout << "t1 "<< t1<< "t2  "<< t2<< " y1 "<< y1<< " y2 "<< y2 << " yday 1 "<<  yday1<< " yday 2 "<<  yday2 << rawtime1 << " yo "<<rawtime2 <<endl;
-    return fabs(difftime(rawtime1, rawtime2));
+    /* -----------------------------------------------------------
+     *  Convert both (year, day‑of‑year, seconds‑of‑day) triplets
+     *  to seconds since the Unix epoch (1970‑01‑01 00:00:00 UTC)
+     *  using an arithmetic formula that handles years both
+     *  before and after 1970.  The result keeps the sign, so
+     *  the caller can get a positive or negative difference.
+     * ----------------------------------------------------------- */
+
+    auto daysFromEpoch = [](int year, int yday) -> long long
+    {
+        /* Number of days between 1970‑01‑01 and the first
+         * day of the given ISO year.
+         *
+         * Days = 365 × ΔY + leapDays
+         * where leapDays counts the Gregorian leap‑year rule:
+         *   leap years are divisible by 4,
+         *   except centuries, unless divisible by 400.
+         */
+        long long y = static_cast<long long>(year);
+        long long delta = y - 1970;               // years offset (may be negative)
+
+        // Count leap days from 1970 (exclusive) up to the given year (exclusive).
+        long long leaps = (y - 1) / 4  - 1969 / 4
+                        - (y - 1) / 100 + 1969 / 100
+                        + (y - 1) / 400 - 1969 / 400;
+
+        return delta * 365LL + leaps + static_cast<long long>(yday - 1);
+    };
+
+    const long long secsPerDay = 86400LL;
+
+    long double secs1 = static_cast<long double>(daysFromEpoch(y1, yday1)) * secsPerDay + t1;
+    long double secs2 = static_cast<long double>(daysFromEpoch(y2, yday2)) * secsPerDay + t2;
+
+    return static_cast<double>(secs2 - secs1);
 }
 
 string SimulationParameters::GetPath(string arg)
@@ -367,9 +392,7 @@ std::string landCoverIndexedCSV = R"(Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal
 	parameters.insert(make_pair("day", "1"));
 	parameters.insert(make_pair("DefaultSWLngLat","8.6192,41.765"));
 	parameters.insert(make_pair("perimeterResolution", "40"));
-	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("spatialIncrement", "2"));
-	parameters.insert(make_pair("spatialCFLmax", "0.3"));
 	parameters.insert(make_pair("watchedProc", "-2"));
 	parameters.insert(make_pair("CommandOutputs", "0"));
 	parameters.insert(make_pair("FireDomainOutputs", "0"));

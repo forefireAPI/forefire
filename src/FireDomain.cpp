@@ -2624,28 +2624,12 @@
  
 		 // Perimeter resolution
 		 perimeterResolution = params->getDouble("perimeterResolution");
-		 if ( parallel ){
-			 params->setInt("numFNMax", atmoNZ);
-			 double maxResolution = getSimulationMaxResolution(dx, dy, atmoNZ);
-			 if ( perimeterResolution < maxResolution ){
-				 if ( getDomainID()==1 ) cout<<"changing perimeter resolution to "
-					 <<maxResolution<<" for parallel issues"<<endl;
-				 params->setDouble("perimeterResolution", maxResolution);
-				 perimeterResolution = maxResolution;
-				 spatialCFL = spatialIncrement/perimeterResolution;
-				 params->setDouble("spatialCFL", spatialCFL);
-			 }
-		 }
-		 // Spatial increment
 		 spatialIncrement = params->getDouble("spatialIncrement");
-		 spatialCFLMax = params->getDouble("spatialCFLmax");
-		 spatialCFL = spatialIncrement/perimeterResolution;
-		 if ( spatialCFL > spatialCFLMax ){
-			 spatialIncrement = spatialCFLMax*perimeterResolution;
-			 spatialCFL = spatialCFLMax;
-			 params->setDouble("spatialCFL", spatialCFL);
-			 cout<<"changing spatial increment to "
-			 <<spatialIncrement<<" to satisfy maximum spatial CFL condition"<<endl;
+		 spatialCFLMax = params->getDouble("spatialCFLmax"); 
+
+		 if ( spatialIncrement/perimeterResolution > 0.3 ){
+			 cout<<"WARNING: very high spatial increment "
+			 <<spatialIncrement<<" given perimeter resolution "<< perimeterResolution<<endl;
 		 }
  
 		 // Burning map resolution

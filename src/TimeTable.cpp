@@ -74,8 +74,8 @@ FFEvent* TimeTable::getUpcomingEvent(){
 		decrement();
 	} else {
 		// no events left to be treated (size=0)
-		cout << "ForeFire simulation ended with no more event to be treated" << endl;
-		upEvent = 0;
+		//cout << "ForeFire simulation ended with no more event to be treated" << endl;
+		upEvent = nullptr;
 	}
 	return upEvent;
 }

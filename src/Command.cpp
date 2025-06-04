@@ -10,7 +10,8 @@
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
-
+#include <cmath> 
+#include <fstream>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -265,13 +266,12 @@ namespace libforefire
                                        simParam->getInt("refYear"),
                                        simParam->getInt("refDay"),
                                        secs, year, yday);
+            if (t<0){
+                cout << "WARNING: Trying to set an ignition at date "<< date<<" before reference date at " << simParam->FormatISODate(simParam->getDouble("refTime"), simParam->getInt("refYear"), simParam->getInt("refDay")) << endl;
+                t=0;     
+            }
         }
-    
-        // simParam->setParameter("ISOdate", simParam->FormatISODate(simParam->getInt("refTime") + refDomain->getSimulationTime(), refDomain->getReferenceYear(), refDomain->getReferenceDay()));
 
-        // Determine the input type based on a parameter.
-        // For example, "polyencoded", "geojson", "kml", or "points" indicate polygon input.
-        // "lonlat" or "loc" indicate a single point.
         string type = "none";
         if (getString("polyencoded",arg) != stringError) type="polyencoded";
         if (getString("geojson",arg) != stringError)type="geojson";
@@ -282,8 +282,214 @@ namespace libforefire
 
         
         FireDomain *refDomain = getDomain();
-        
-        if (type == "polyencoded" || type == "geojson" ||
+        if (type == "geojson")
+        {
+            /*-----------------------------------------------------------------
+             *  Decide whether the 'geojson' argument is an inline GeoJSON text
+             *  or a filename.  If it's a filename, read the file so that the
+             *  rest of the code always works on the string `geojsonText`.
+             *-----------------------------------------------------------------*/
+            std::string geojsonParam = getString("geojson", arg);
+            std::string geojsonText;
+
+            if (geojsonParam != stringError && !geojsonParam.empty())
+            {
+                /* Trim simple whitespace. */
+                std::string trimmed = geojsonParam;
+                trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
+                trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
+
+                /* Triple‑quoted inline string?  e.g.  \"\"\"{ ... }\"\"\"   */
+                bool tripleQuoted = trimmed.size() >= 6 &&
+                                    trimmed.substr(0, 3) == "\"\"\"" &&
+                                    trimmed.substr(trimmed.size() - 3) == "\"\"\"";
+
+                if (tripleQuoted)
+                {
+                    geojsonText = trimmed.substr(3, trimmed.size() - 6); // strip outer quotes
+                }
+                else
+                {
+                    /* Try to open it as a file path. */
+                    std::ifstream jf(trimmed.c_str());
+                    if (jf)
+                    {
+                        geojsonText.assign((std::istreambuf_iterator<char>(jf)),
+                                           std::istreambuf_iterator<char>());
+                    }
+                    else
+                    {
+                        /* Not a file (or failed to open) – treat as raw inline GeoJSON. */
+                        geojsonText = trimmed;
+                    }
+                }
+            }
+            else
+            {
+                /* No explicit parameter value; fall back to the whole argument. */
+                geojsonText = arg;
+            }
+
+            size_t vpos = geojsonText.find("\"valid_at\"");
+            if (vpos != std::string::npos)
+            {
+                size_t q1 = geojsonText.find('"', vpos + 10);          // first quote after :
+                size_t q2 = (q1 != std::string::npos) ? geojsonText.find('"', q1 + 1) : std::string::npos;
+                if (q1 != std::string::npos && q2 != std::string::npos)
+                {
+                    std::string iso = geojsonText.substr(q1 + 1, q2 - q1 - 1);
+                    int year, yday;
+                    double secs;
+                    if (simParam->ISODateDecomposition(iso, secs, year, yday))
+                    {
+                        t = simParam->SecsBetween(simParam->getDouble("refTime"),
+                                                  simParam->getInt("refYear"),
+                                                  simParam->getInt("refDay"),
+                                                  secs, year, yday);
+                          
+                        if (t<0){
+                                cout << "WARNING: Adding contour at t=0 because was trying to set an ignition at date "<< iso<<" before reference data date at " << simParam->FormatISODate(simParam->getDouble("refTime"), simParam->getInt("refYear"), simParam->getInt("refDay")) << endl;
+                                t=0;     
+                        }
+
+                    }
+                }
+            }
+
+            /* --------------------------------------------------------------
+             *  Only parse inside the "coordinates" array, ignore everything
+             *  else (timestamps, properties, …) to avoid spurious numbers.
+             * -------------------------------------------------------------- */
+            size_t coordKey = geojsonText.find("\"coordinates\"");
+            if (coordKey == std::string::npos)
+            {
+                std::cout << "Error: \"coordinates\" key not found in GeoJSON." << std::endl;
+                return normal;
+            }
+            size_t startBracket = geojsonText.find('[', coordKey);
+            if (startBracket == std::string::npos)
+            {
+                std::cout << "Error: '[' after \"coordinates\" not found." << std::endl;
+                return normal;
+            }
+
+            /* 2) Parse all coordinate triples belonging to rings.
+             *    Depth == 2 (MultiPolygon) or 1 (Polygon) signals ring
+             *    closure.                                               */
+            std::vector<std::vector<FFPoint>> polygons;
+            std::vector<FFPoint>               currentRing;
+            std::string                        numbuf;
+            std::vector<double>                triple;
+            int                                depth = 0;
+
+            double refLon     = getDomain()->getRefLongitude();
+            double refLat     = getDomain()->getRefLatitude();
+            double mPerDegLon = getDomain()->getMetersPerDegreesLon();
+            double mPerDegLat = getDomain()->getMetersPerDegreeLat();
+
+            auto flushNumber = [&](void)
+            {
+                if (!numbuf.empty())
+                {
+                    try
+                    {
+                        triple.push_back(std::stod(numbuf));
+                    }
+                    catch (...) { /* silently ignore bad numbers */ }
+                    numbuf.clear();
+
+                    if (triple.size() == 3)
+                    {
+                        const double lon = triple[0];
+                        const double lat = triple[1];
+                        const double alt = triple[2];
+                        const double x   = (lon - refLon) * mPerDegLon;
+                        const double y   = (lat - refLat) * mPerDegLat;
+
+                        /* Add the point to the current ring. */
+                        currentRing.emplace_back(x, y, alt);
+                        triple.clear();
+                    }
+                }
+            };
+
+            for (size_t idx = startBracket; idx < geojsonText.size(); ++idx)
+            {
+                char c = geojsonText[idx];
+
+                if ((c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.' ||
+                    c == 'e' || c == 'E')
+                {
+                    numbuf.push_back(c);
+                }
+                else
+                {
+                    flushNumber();
+
+                    if (c == '[')
+                        ++depth;
+                    else if (c == ']')
+                    {
+                        --depth;
+                        /* Ring terminates when we just closed a bracket
+                         * that returns us to depth 2 (MultiPolygon) or
+                         * 1 (Polygon).                                   */
+                        if ((depth == 2 || depth == 1) && !currentRing.empty())
+                        {
+                            /* Remove duplicate closing point, if present. */
+                            if (currentRing.size() > 1 &&
+                                currentRing.front().distance2D(currentRing.back()) < 1e-6)
+                                currentRing.pop_back();
+
+                            polygons.push_back(currentRing);
+                            currentRing.clear();
+                        }
+                        /* Finished the outermost coordinates array?      */
+                        if (depth == 0 && idx > startBracket)
+                            break;
+                    }
+                }
+            }
+            flushNumber();
+            if (!currentRing.empty())
+                polygons.push_back(currentRing);
+
+            if (polygons.empty())
+            {
+                std::cout << "Error: No coordinates found in GeoJSON string." << std::endl;
+                return normal;
+            }
+
+     
+            /* 3) Insert outer ring then inner rings as fire fronts.      */
+            double fdepth = currentSession.params->getDouble("initialFrontDepth");
+            double kappa  = 0.0;
+            FFVector defaultVel(0, 0);
+
+            FireFront  *contfront = currentSession.ff->getContFront();
+
+            for (size_t p = 0; p < polygons.size(); ++p)
+            {
+                /* First polygon continues from contfront, subsequent ones
+                 * are nested inside the current front.                   */
+                if (p == 0)
+                    currentSession.ff = refDomain->addFireFront(t, contfront);
+                else
+                    currentSession.ff = refDomain->addFireFront(t, currentSession.ff);
+
+                FireNode *lastnode = nullptr;
+                for (auto it = polygons[p].rbegin(); it != polygons[p].rend(); ++it)
+                {
+                    lastnode = refDomain->addFireNode(*it, defaultVel, t,
+                                                      fdepth, kappa,
+                                                      currentSession.ff, lastnode);
+                }
+                completeFront(currentSession.ff);
+            }
+
+            return normal;   /* GeoJSON fully handled – no fall-through. */
+        }
+        if (type == "polyencoded" ||
             type == "kml" || type == "points")
         {
             // Get the polygon points.
@@ -366,44 +572,7 @@ namespace libforefire
     {
         std::vector<FFPoint> points;
 
-        if (opt == "geojson")
-        {
-            // Example input: [[8.81116, 41.96981, 0], [8.81137, 41.96976, 0], ...]
-            // Remove non-digit characters (except '.', '-' and '+') by replacing them with spaces.
-            std::vector<double> coords;
-            std::string cleaned;
-            for (char c : arg) {
-                if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+')
-                    cleaned.push_back(c);
-                else
-                    cleaned.push_back(' ');
-            }
-            
-            // Use istringstream to extract numbers from the cleaned string.
-            std::istringstream iss(cleaned);
-            double num;
-            while (iss >> num) {
-                coords.push_back(num);
-            }
-            
-            if (coords.size() % 3 != 0)
-                return points; // Malformed input.
-        
-            double refLon = getDomain()->getRefLongitude();
-            double refLat = getDomain()->getRefLatitude();
-            double mPerDegLon = getDomain()->getMetersPerDegreesLon();
-            double mPerDegLat = getDomain()->getMetersPerDegreeLat();
-        
-            for (size_t i = 0; i < coords.size(); i += 3) {
-                double lon = coords[i];
-                double lat = coords[i + 1];
-                double alt = coords[i + 2];
-                double x = (lon - refLon) * mPerDegLon;
-                double y = (lat - refLat) * mPerDegLat;
-                points.push_back(FFPoint(x, y, alt));
-            }
-        }
-        else if (opt == "kml")
+       if (opt == "kml")
         {
             // Example input:
             // "8.810264,41.968841,0.14 8.810117,41.968757,0.03 8.810017,41.968692,0.01"
@@ -2026,13 +2195,11 @@ namespace libforefire
             {
                 if (newPerimRes != FLOATERROR)
                 {
-                    domain->setPerimeterResolution(newPerimRes);
-                    cout << "Updated perimeterResolution to " << newPerimRes << endl;
+                    domain->setPerimeterResolution(newPerimRes); 
                 }
                 if (newSpatialInc != FLOATERROR)
                 {
-                    domain->setSpatialIncrement(newSpatialInc);
-                    cout << "Updated spatialIncrement to " << newSpatialInc << endl;
+                    domain->setSpatialIncrement(newSpatialInc); 
                 }
                 return normal;
             }
@@ -2044,6 +2211,64 @@ namespace libforefire
         }
         return error;
     }
+
+    void Command::executeLoop(ifstream* inputStream)
+    {
+        // Support multiline commands whose arguments are wrapped in triple quotes (""").
+        // A block begins the first time we meet an *unmatched* \"\"\" and is closed by
+        // the corresponding second occurrence.
+        std::string line;
+        std::string bufferedCmd;
+        bool inTripleQuote = false;
+
+        while (std::getline(*inputStream, line))
+        {
+            if (!inTripleQuote)
+            {
+                /* Skip comments and empty lines when *not* inside a multiline literal   */
+                if (line.empty() || line[0] == '#' || line[0] == '*')
+                    continue;
+
+                std::size_t firstTriple = line.find("\"\"\"");
+                if (firstTriple != std::string::npos)
+                {
+                    /* We entered a triple‑quoted literal – save the line and check if it
+                       also contains the closing delimiter on the same line.             */
+                    inTripleQuote = true;
+                    bufferedCmd = line;
+
+                    std::size_t secondTriple = line.find("\"\"\"", firstTriple + 3);
+                    if (secondTriple != std::string::npos)
+                    {
+                        // Opening and closing on the same line → execute immediately
+                        inTripleQuote = false;
+                        ExecuteCommand(bufferedCmd);
+                        bufferedCmd.clear();
+                    }
+                }
+                else
+                {
+                    // Regular single‑line command
+                    ExecuteCommand(line);
+                }
+            }
+            else
+            {
+                /* We are inside a multiline literal: keep accumulating lines verbatim   */
+                bufferedCmd += "\n";
+                bufferedCmd += line;
+
+                if (line.find("\"\"\"") != std::string::npos)
+                {
+                    // Closing delimiter reached → execute the whole buffered command
+                    inTripleQuote = false;
+                    ExecuteCommand(bufferedCmd);
+                    bufferedCmd.clear();
+                }
+            }
+        }
+    }
+    
     int Command::include(const string &arg, size_t &numTabs)
     {
         /* the commands are read from a defined file
@@ -2051,19 +2276,9 @@ namespace libforefire
         ifstream instream(arg.c_str());
         if (instream)
         {
-            // reading all the commands (one command per line) of the input file
-            string line;
-            // size_t numLine = 0;
-            while (getline(instream, line))
-            {
-                // while ( getline( cin, line ) ) {
-                // numLine++;
-                // checking for comments or newline
-                if ((line[0] == '#') || (line[0] == '*') || (line[0] == '\n'))
-                    continue;
-                // treating the command of the current line
-                ExecuteCommand(line);
-            }
+            // If the file is successfully opened, execute the command loop
+            executeLoop(&instream);
+            instream.close();
         }
         else
         {
@@ -2828,6 +3043,7 @@ namespace libforefire
          * and then call the corresponding function */
 
         // Getting all the arguments, using the 'tokenize' function
+      
         if (line.size() == 0)
             return;
         vector<string> command;
@@ -2835,7 +3051,18 @@ namespace libforefire
         string scmd;
         string postcmd;
         const string delimiter = "[";
-        tokenize(line, command, delimiter);
+        // Split only on the *first* '[' delimiter:
+        size_t bracketPos = line.find('[');
+        if (bracketPos != std::string::npos)
+        {
+            command.push_back(line.substr(0, bracketPos));          // part before '['
+            command.push_back(line.substr(bracketPos + 1));         // part after '[' (may include ']')
+        }
+        else
+        {
+            command.push_back(line);                                // whole line, no args
+        }
+        
         if (command.size() > 1)
         {
             // counting and removing the tabs for the level of the command
@@ -2844,8 +3071,10 @@ namespace libforefire
             if (command[1].size() > 1)
             {
                 // dropping the last parenthesis ']'
+              
                 postcmd = command[1].substr(command[1].rfind("]") + 1, -1);
                 command[1] = command[1].substr(0, command[1].rfind("]"));
+               // cout << "postcmd >" << postcmd << "< \ncommand[1] >" << command[1] << "<" << endl;
             }
             else
             {
@@ -2897,6 +3126,7 @@ namespace libforefire
                     try
                     {
                         // calling the right function
+                          //            cout << "executing command '" << scmd << "' with argument(s) '" << command[1] << "'" << endl;
                         (curcmd->second)(command[1], numTabs);
                     }
                     catch (BadOption &)
@@ -2942,120 +3172,7 @@ namespace libforefire
         std::cout.rdbuf(oldbuf);
         return captured.str();
     }
-    /*
-    std::string Command::executeCommandAndCaptureOutput(const std::string &cmd) {
-        // Normalize the request URI. Remove a leading '/' if present.
-        std::string path = cmd;
-        if (!path.empty() && path[0] == '/') {
-            path = path.substr(1);
-        }
-        std::cout<<">"<<cmd<<"<     >"<<path<<std::endl;
-        std::string body;
-        std::string contentType;
-
-        // CASE 1: Index request.
-        if (path.empty() || path == "index.html") {
-            std::ifstream file("index.html", std::ios::in | std::ios::binary);
-            if (file.good()) {
-                std::ostringstream contents;
-                contents << file.rdbuf();
-                body = contents.str();
-                contentType = "text/html; charset=UTF-8";
-            } else {
-                // Build an HTML directory listing.
-                DIR *dir = opendir(".");
-                if (!dir) {
-                    body = "<html><head><title>ForeFire Directory Listing</title></head>"
-                           "<body><h1>ForeFire Directory Listing</h1><p>Error opening directory.</p></body></html>";
-                } else {
-                    std::ostringstream listing;
-                    listing << "<!DOCTYPE html>\n<html>\n<head>\n"
-                            << "<meta charset=\"utf-8\">\n"
-                            << "<title>ForeFire Directory Listing</title>\n"
-                            << "<style>\n"
-                            << "body { font-family: sans-serif; background-color: #f0f0f0; padding: 20px; }\n"
-                            << "h1 { color: #d9534f; }\n"
-                            << "table { width: 100%; border-collapse: collapse; }\n"
-                            << "th, td { padding: 8px; border-bottom: 1px solid #ccc; text-align: left; }\n"
-                            << "a { text-decoration: none; color: #337ab7; }\n"
-                            << "a:hover { text-decoration: underline; }\n"
-                            << "</style>\n"
-                            << "</head>\n<body>\n"
-                            << "<h1>ForeFire Directory Listing</h1>\n"
-                            << "<table>\n"
-                            << "<tr><th>Filename</th></tr>\n";
-                    struct dirent *entry;
-                    while ((entry = readdir(dir)) != NULL) {
-                        std::string name(entry->d_name);
-                        if (name == "." || name == "..")
-                            continue;
-                        listing << "<tr><td><a href=\"/" << name << "\">" << name << "</a></td></tr>\n";
-                    }
-                    listing << "</table>\n</body>\n</html>\n";
-                    closedir(dir);
-                    body = listing.str();
-                }
-                contentType = "text/html; charset=UTF-8";
-            }
-        }
-        // CASE 2: ForeFire command.
-        else if (path.compare(0, 3, "ff:") == 0) {
-            std::string fireCommand = path.substr(3);
-            std::streambuf* oldbuf = std::cout.rdbuf();
-            std::ostringstream captured;
-            std::cout.rdbuf(captured.rdbuf());
-            Command::ExecuteCommand(fireCommand);
-            std::cout.rdbuf(oldbuf);
-            body = captured.str();
-            contentType = "text/plain; charset=UTF-8";
-        }
-        // CASE 3: File request.
-        else {
-            std::ifstream file(path, std::ios::in | std::ios::binary);
-            if (!file.good()) {
-                body = "File not found: " + path;
-                contentType = "text/plain; charset=UTF-8";
-            } else {
-                std::ostringstream contents;
-                contents << file.rdbuf();
-                body = contents.str();
-                size_t dotPos = path.find_last_of('.');
-                if (dotPos != std::string::npos) {
-                    std::string ext = path.substr(dotPos);
-                    if (ext == ".html" || ext == ".htm")
-                        contentType = "text/html; charset=UTF-8";
-                    else if (ext == ".png" || ext == ".PNG")
-                        contentType = "image/png";
-                    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".JPG" || ext == ".JPEG")
-                        contentType = "image/jpeg";
-                    else
-                        contentType = "text/plain; charset=UTF-8";
-                } else {
-                    contentType = "text/plain; charset=UTF-8";
-                }
-            }
-        }
-
-        // Build Date header in RFC1123 format.
-        std::time_t now = std::time(nullptr);
-        char dateBuf[100];
-        std::tm *gmt = std::gmtime(&now);
-        std::strftime(dateBuf, sizeof(dateBuf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-
-        // Assemble complete HTTP response using HTTP/1.0.
-        std::ostringstream responseStream;
-        responseStream << "HTTP/1.0 200 OK\r\n"
-                       << "Host: localhost\r\n"
-                       << "Date: " << dateBuf << "\r\n"
-                       << "Connection: close\r\n"
-                       << "Content-Type: " << contentType << "\r\n"
-                       << "Content-Length: " << body.size() << "\r\n"
-                       << "\r\n"
-                       << body;
-
-        return responseStream.str();
-    }
-    */
+  
 
     int Command::listenHTTP(const std::string &arg, size_t &numTabs)
     {

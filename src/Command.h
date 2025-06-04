@@ -163,6 +163,8 @@ class Command {
 	static int triggerValue(const string&, size_t&);
 	/*! \brief command to trigger values that will modifie runtime model parameterisation */
 	static int include(const string&, size_t&);
+
+
 	/*! \brief command to load a NC data file */
 	static int loadData(const string&, size_t&);
 	/*! \brief command to save a NC landscape data file */
@@ -281,6 +283,7 @@ public:
 
 	/*! \brief execute the desired command */
 	static void ExecuteCommand(string&);
+	static void executeLoop(ifstream* inputStream);
 
 	/*! \brief complete the last front */
 	static void completeFront(FireFront*);

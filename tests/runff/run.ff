@@ -21,7 +21,7 @@ startFire[lonlat=(8.70, 41.952, 0);t=0]
 trigger[wind;loc=(0.,0.,0.);vel=(10,5,0.)]
 
 # --- Run Simulation ---
-goTo[t=3600]
+goTo[t=360]
 
 # --- End ---
 print[simulation_result.geojson]

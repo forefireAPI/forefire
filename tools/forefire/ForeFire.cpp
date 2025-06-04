@@ -117,16 +117,15 @@ void ForeFire::FFWebShell(char* path) {
     }
 }
 
+
+
 void ForeFire::FFShell(ifstream* inputStream) {
     if (inputStream) {
         string line;
         string standAlone = "setParameter[runmode=standalone]";
         executor.ExecuteCommand(standAlone);
-        while (getline(*inputStream, line)) {
-            if ((line[0] == '#') || (line[0] == '*') || (line[0] == '\n'))
-                continue;
-            executor.ExecuteCommand(line);
-        }
+        executor.executeLoop(inputStream);
+
     } else {
 
         const char* logoFF = R"(
