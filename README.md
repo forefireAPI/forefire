@@ -60,7 +60,7 @@ The easiest way to get started is often using Docker and the interactive console
     ```bash
     docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
     ```
-4. Inside the container navigate to test directory and lauch the forefire console:
+4. Inside the container navigate to test directory and launch the forefire console:
     ```bash
     cd tests/runff
 
@@ -77,7 +77,7 @@ The easiest way to get started is often using Docker and the interactive console
     >> ForeFire HTTP command server listening at http://localhost:8000
     ```
 
-    This server provides a grafical user interface that you can access on your browser at http://localhost:8000/
+    This server provides a graphical user interface that you can access on your browser at http://localhost:8000/
 
 6. Run your first simulation
     - Run the command `include[real_case.ff]`
