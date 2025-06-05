@@ -2411,6 +2411,12 @@ namespace libforefire
 
             domVar.putAtt("type", "domain");
 
+            std::string bboxwsen = simParam->getParameter("BBoxWSEN");
+            if (!bboxwsen.empty())
+            {
+                domVar.putAtt("BBoxWSEN", bboxwsen.c_str());
+            }
+
             std::string wsenlbrt = simParam->getParameter("WSENLBRT");
             if (!wsenlbrt.empty())
             {
