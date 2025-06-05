@@ -1,6 +1,6 @@
 [project]
 name = "pyforefire"
-version = "2024.1"
+version = "2025.2"
 dependencies = [
     "pybind11",
     "numpy",
@@ -15,7 +15,7 @@ maintainers = [
   { name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr" }
 ]
 description = "Python version of ForeFire library"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 keywords = ["ForeFire", "forefire", "pyforefire", "pybind", "pybind11"]
 classifiers = [
@@ -23,6 +23,10 @@ classifiers = [
     "Programming Language :: C++",
     "Operating System :: OS Independent"
 ]
+
+[build-system]
+requires = ["setuptools>=61", "wheel", "pybind11"]
+build-backend = "setuptools.build_meta"
 
 [project.urls]
 Homepage = "https://github.com/forefireAPI/forefire"

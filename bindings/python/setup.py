@@ -55,7 +55,7 @@ elif os.environ.get("NETCDF_HOME"):
     netcdf_library_dirs.append(os.path.join(NETCDF_HOME, "lib"))
     netcdf_libraries.extend(["netcdf", "netcdf_c++4"])
 else:
-    print("Warning: Neither (SRC_MESONH and XYZ) nor NETCDF_HOME are set. "
+    print("Warning:  NETCDF_HOME not set. "
           "Attempting to use system default include and library paths for NetCDF.")
 
 # --- Define the Pybind11 extension ---
@@ -73,7 +73,7 @@ ext_modules = [
         runtime_library_dirs=([forefire_lib_dir] + netcdf_library_dirs) if current_platform != "Windows" else [],
         # Link the precompiled ForeFire library explicitly.
         extra_objects=[os.path.join(forefire_lib_dir, f"lib{FOREFIRE_LIB}.{lib_ext}")],
-        extra_compile_args=["-std=c++17"],
+        # not needed up to 2025 extra_compile_args=["-std=c++17"],
         language="c++"
     )
 ]
