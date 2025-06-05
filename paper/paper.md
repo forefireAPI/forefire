@@ -91,7 +91,7 @@ ForeFire offers multiple interfaces and utilities to maximize usability and inte
 The core C++ library has Fortran and Python bindings and is accompanied by a lightweight scriptable interpreter (in custom FF language), a local HTTP service that enables a customizable graphical user interface and ability to load, save and export data in NetCDF, GeoJson, KML, png and jpg. 
 ForeFire is discrete‑event‑driven [@filippi2009], focusing computational effort on the active region of the fire front defined as a dynamic mesh or multipolygons of fire markers. 
 
-Eventually ForeFire is also capable of two-way coupling with the MesoNH [@lac2018] atmospheric model to account for fire-atmosphere interaction [@filippi2013].
+Moreover, additionaly ForeFire is also capable of two-way coupling with the MesoNH [@lac2018] atmospheric model to account for fire-atmosphere interaction [@filippi2013].
 
 # Statement of need
 
@@ -136,21 +136,21 @@ print[]
 ```
 But the interface can also be run interactively using a highly customizable web‑based graphical interface (command `listenHTTP[host:port]`), that starts a local HTTP service with ForeFire bindings and serves standard or user‑defined web pages as shown in \autoref{fig:gui}.
 
-![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds\label{fig:gui}](gui.jpg)
+![Default web interface accessed trough ForeFire internal HTTP service and exposing interactive commands. The simulation here is a wildfire in Portugal with ForeFire coupled with an atmospheric model that provides winds.\label{fig:gui}](gui.jpg)
 
 By utilizing pre-compiled datasets over extensive regions, this approach supports continent-wide operational forecasting services. 
-It has been applied to identify optimal escape routes [@kamilaris2023], integrated into the French national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), showcased on the [FireCaster demonstration platform](https://forefire.univ-corse.fr/), and adopted by various commercial companies.
+It has been applied to identify optimal escape routes [@kamilaris2023], integrated into the French national WildFire Decision Support System [OPEN DFCI](https://opendfci.fr/), showcased on the [FireCaster demonstration platform](https://forefire.univ-corse.fr/), and also currently used in commercial simulation services [AriaFire Firecaster](https://firecaster.ariafire.com), [UmGraueMeio Pantera](https://www.umgrauemeio.com/) and [Ororatech FireSpread](https://ororatech.com/all-products/fire-spread).
 
-But the ability to run as batch also means it can be used to perform systematic model evaluation [@filippi2014] generate simulation ensembles [@allaire2020] or large simulation databases for deep learning [@allaire2021],[@allaire2022]
+But the ability to run as batch also means it can be used to perform systematic model evaluation [@filippi2014] generate simulation ensembles [@allaire2020] or large simulation databases for deep learning [@allaire2021],[@allaire2022].
 
 ### 3. Two-way coupling with the MesoNH atmospheric model
-The same scripts and input data can be executed in coupled mode with Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with sample coupled cases available in the main [MesoNH Repository](https://src.koda.cnrs.fr/mesonh/). 
+The same scripts and input data can be executed in a coupled mode with the Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with sample coupled cases available in the main [MesoNH Repository](https://src.koda.cnrs.fr/mesonh/). 
 In this configuration MesoNH launches ForeFire (FORTRAN Bindings) as an MPI enabled sub-process, a master process integrates the fire perimeter using surface fields from the atmospheric model and distributes fluxes fields to the atmosphic model. Coupled simulation can be run on a laptop at field scale to evaluate model ability on prescribed well instrumented experiments [@filippi2013], but also on more than 400 processors to perform faster than real-time high resolution simulation of fire-induced winds on a large wildfire [@filippi2018], fire-induced convection during an extreme wildfire event [@couto2024],[@campos2023] or even to estimate wildfire spotting (firebrands) with a resolved fire plume [@alonsopinar2025].
 
 While simulations in coupled mode can take significantly more time and generate much larger output files, they are designed to run efficiently on a supercomputing cluster with some specific routines to generate 3D output files through ForeFire. 
 Python helper scripts available in the ForeFire repository convert these simulation outputs to VTK/VTU files, allowing three-dimensional rendering of fire-atmosphere variables in Open-Source [ParaView](https://www.paraview.org/) as shown in \autoref{fig:coupled}. 
 
-![Coupled simulation of the Pedrogao Grande wildfire [@couto2024], rendered in Paraview. On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyrocu clouds in blue\label{fig:coupled}](coupled.jpg)
+![Coupled simulation of the Pedrogao Grande wildfire [@couto2024], rendered in Paraview. On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyrocu clouds in blue.\label{fig:coupled}](coupled.jpg)
 
 # Acknowledgements
 This work has been supported by the Centre National de la Recherche Scientifique and French National Research Agency under grants **ANR-09-COSI-006-01 (IDEA)** and **ANR-16-CE04-0006 (FIRECASTER)**. The authors thank all contributors and collaborators who have assisted in the development and testing of the ForeFire software.
