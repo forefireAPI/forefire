@@ -1,5 +1,5 @@
 $PYTHONEXE percolation.py
-$PYTHONEXE idealized_wind.py
+$PYTHONEXE idealizedwind.py
 
 # Basic sanity checks on generated output
 # Check that 360wind.png exists and is not empty
