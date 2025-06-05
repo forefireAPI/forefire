@@ -1,0 +1,66 @@
+# ForeFire Basic Simulation Example
+# REQUIRES: data.nc and fuels.csv in the current directory.
+
+# --- Parameters ---
+setParameter[ForeFireDataDirectory=.]
+setParameter[fuelsTableFile=fuels.csv]
+setParameter[propagationModel=Rothermel]
+setParameter[dumpMode=geojson]
+
+# Optional Tuning Params
+setParameter[perimeterResolution=10]
+setParameter[spatialIncrement=3]
+setParameter[propagationSpeedAdjustmentFactor=0.6]
+setParameter[windReductionFactor=0.4]
+setParameter[dumpMode=geojson]
+
+# --- Load Data & Domain ---
+loadData[data.nc;2025-02-10T17:30:54Z]
+# --- Ignition from geojson litteral
+startFire[geojson="""{
+	"type": "FeatureCollection",
+	"valid_at": "2025-02-10T17:35:54Z",
+	"features": [
+	{
+		"type": "Feature",
+		"properties": { "numberOfPolygons": 1 },
+		"geometry": {
+			"type": "MultiPolygon",
+			"coordinates": [ [ [[8.69992, 41.95206, 0], [8.69984, 41.95194, 0], [8.69976, 41.95182, 0], [8.70024, 41.95182, 0], [8.70000, 41.95218, 0], [8.69992, 41.95206, 0]] ] ]
+		}
+	}
+	]
+}
+"""]
+# Printing into file in 3600s
+print[temp.geojson]@nowplus=3600
+
+
+#changing wind now
+trigger[wind;loc=(0.,0.,0.);vel=(10,5,0.)]
+
+# --- advancing simulation to 3600 ---
+goTo[t=3600]
+
+# celar memory
+clear[]
+
+#reloading data at a different date
+loadData[data.nc;2025-02-10T17:30:54Z]
+
+# Printing into file in 3600s
+print[temp.geojson]@nowplus=3600
+
+#changing wind in 7200s
+trigger[wind;loc=(0.,0.,0.);vel=(10,5,0.)]@nowplus=7200
+
+#loading the dumped geojson
+startFire[geojson=temp.geojson]
+
+#advancing simulation
+step[dt=7200]
+
+
+print[temp2.geojson]
+
+quit[]

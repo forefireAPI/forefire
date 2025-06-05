@@ -2753,7 +2753,7 @@ namespace libforefire
 
     int Command::quit(const string &arg, size_t &numTabs)
     {
-        cout << "*** QUITTING FOREFIRE, GOODBYE ***" << endl;
+        
         delete currentSession.fd;
         delete currentSession.outStrRep;
         delete currentSession.sim;
