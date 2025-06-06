@@ -34,7 +34,7 @@ The `ff-run.bash` script:
 
 ## Other Tests
 
-The `tests/` directory contains other subdirectories (`mnh_*`, `python`, `runANN`) for potentially testing specific features like coupled simulations or Python bindings. A main `tests/run.bash` script exists but is not currently fully validated in CI. Refer to specific subdirectories for details if needed.
+The `tests/` directory contains other subdirectories (`mnh_*`, `python`, `runANN`). Check [./tests/README.md](./tests/README.md) for details.
 
 ## Contributing
 
