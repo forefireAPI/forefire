@@ -54,3 +54,4 @@ tests/python/log.txt
 tests/python/runROS.bash
 simulation_result.geojson
 paper/paper.pdf
+temp*.geojson

@@ -42,7 +42,7 @@ trigger[wind;loc=(0.,0.,0.);vel=(10,5,0.)]
 # --- advancing simulation to 3600 ---
 goTo[t=3600]
 
-# celar memory
+# clear memory
 clear[]
 
 #reloading data at a different date
@@ -60,7 +60,4 @@ startFire[geojson=temp.geojson]
 #advancing simulation
 step[dt=7200]
 
-
 print[temp2.geojson]
-
-quit[]

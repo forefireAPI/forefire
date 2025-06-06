@@ -25,4 +25,3 @@ goTo[t=360]
 
 # --- End ---
 print[simulation_result.geojson]
-# Omit quit[] if using listenHTTP
