@@ -5,6 +5,7 @@
 # handles lf and crlf for those using git on windows with wsl
 * text=auto
 *.sh    text eol=lf
+*.bash    text eol=lf
 *.bash  text eol=lf
 *.csv   text eol=lf
 
