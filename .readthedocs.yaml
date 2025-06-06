@@ -10,7 +10,7 @@ build:
     - doxygen 
 
   jobs:
-    pre_build: # Run doxygen first, assuming Doxyfile is in docs/doxygen
+    pre_build:
       - "doxygen docs/doxygen/Doxyfile"
 
 sphinx:
