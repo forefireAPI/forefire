@@ -103,11 +103,12 @@ T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time) {
     // Compute the gradient in each direction and find the maximum.
     T maxGradient = 0.0;
     for (size_t i = 0; i < directions.size(); ++i) {
-        FFPoint nextLoc = loc + (10 * directions[i]);
+		double dxGrad = getDx();
+        FFPoint nextLoc = loc + (dxGrad * directions[i]);
         T neighborValue = parent->getValueAt(nextLoc, time);
         // Since the displacement magnitude is dx in every case (after normalization),
         // the gradient is computed as the difference divided by dx.
-        T gradient = (neighborValue - currentValue) / 10;
+        T gradient = (neighborValue - currentValue) / dxGrad;
         if (gradient > maxGradient) {
             maxGradient = gradient;
         }
