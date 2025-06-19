@@ -62,7 +62,7 @@ authors:
     corresponding: false
   - name: Alberto Alonso-Pinar
     orcid: 0009-0009-2051-9700
-    affiliation: [1, 3]
+    affiliation: "1, 3"
     corresponding: false
 
 affiliations:
