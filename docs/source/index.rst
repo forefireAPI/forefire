@@ -15,7 +15,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    getting_started/introduction
    getting_started/quickstart
    getting_started/installation
-   getting_started/running_the_example
+   getting_started/execution_modes
 
 .. toctree::
    :maxdepth: 1

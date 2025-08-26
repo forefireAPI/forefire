@@ -90,5 +90,5 @@ Steps
 
 Congratulations! You've successfully run your first ForeFire simulation and have a working environment. Here are some recommended next steps to deepen your understanding:
 
-- **Explore Execution Modes:** Learn about the command-line (batch) and interactive console alternatives to the Web UI by reading the :doc:`running_the_example` guide.
+- **Explore Execution Modes:** Learn about the command-line (batch) and interactive console alternatives to the Web UI by reading the :doc:`execution_modes` guide.
 - **Understand the Script:** To see what was inside the ``real_case.ff`` script you just ran, dive into the :doc:`/user_guide/forefire_script` guide.

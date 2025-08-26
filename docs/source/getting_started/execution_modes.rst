@@ -1,6 +1,6 @@
 .. _running-the-example:
 
-Running an Example
+Execution Modes
 ==================
 
 In the :doc:`quickstart` guide, you launched the example simulation using the interactive Web UI. That is just one of several ways to operate the ``forefire`` interpreter.
