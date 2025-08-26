@@ -67,7 +67,7 @@ While the exact commands depend on the simulation, a common workflow within a ``
   .. code-block:: none
 
     # Include parameters from a separate file (optional)
-    # include[input=params.ff]
+    # include[params.ff]
 
     # Set specific parameters directly
     setParameters[propagationModel=Rothermel;perimeterResolution=30;dumpMode=geojson]

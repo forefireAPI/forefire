@@ -84,7 +84,7 @@ This method starts the ForeFire interpreter first, allowing you to execute the s
 
   .. code-block:: none
 
-    forefire> include[input=real_case.ff]
+    forefire> include[real_case.ff]
 
 
 4.  **Observe:** The simulation will run similarly to Method 1, executing the commands from ``real_case.ff`` and printing output to the console. Afterwards, you remain in the interactive console (``forefire>`` prompt) and can inspect parameters (e.g., ``getParameter[propagationModel]``), run further steps manually (e.g., ``step[dt=600]``), or exit using ``quit[]``.
@@ -127,7 +127,7 @@ This method uses the built-in HTTP server to provide a web-based console and map
 4.  **Use the Web Interface:**
 
   - Open your browser to ``http://localhost:8000/`` (or the specified port).
-  - In the command input box in the web UI, type ``include[input=real_case.ff]`` and press Enter or click Send. This executes the script file relative to where the interpreter was started (which we ensured was `tests/runff`).
+  - In the command input box in the web UI, type ``include[real_case.ff]`` and press Enter or click Send. This executes the script file relative to where the interpreter was started (which we ensured was `tests/runff`).
   - Click "Refresh Map" periodically to see the simulation progress visually. You can also type other commands directly into the web console.
 
 Choosing a Method
