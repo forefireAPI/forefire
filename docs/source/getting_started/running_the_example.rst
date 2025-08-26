@@ -3,7 +3,15 @@
 Running an Example
 ==================
 
-After successfully installing ForeFire (either :doc:`from source <installation>` or via :doc:`Docker <quickstart>`), you can run the example simulation located in the ``tests/runff/`` directory. This helps verify your installation and introduces you to the basic command execution methods.
+In the :doc:`quickstart` guide, you launched the example simulation using the interactive Web UI. That is just one of several ways to operate the ``forefire`` interpreter.
+
+This page details all three primary execution modes, allowing you to choose the best method for your specific task:
+
+-   **Direct Execution (Batch Mode):** Best for standard, non-interactive runs or for use in automated scripts.
+-   **Interactive Console:** Ideal for experimenting with commands step-by-step or inspecting the simulation state.
+-   **Web Interface:** Excellent for visual feedback and interactive demonstrations.
+
+Below, we demonstrate each method using the same ``real_case.ff`` script.
 
 Simulation Files Used
 ---------------------
@@ -95,7 +103,7 @@ This method starts the ForeFire interpreter first, allowing you to execute the s
 3: Web Interface
 ~~~~~~~~~~~~~~~~
 
-This method uses the built-in HTTP server to provide a web-based console and map visualization. It executes commands in the same way as the interactive console but through your browser.
+This method, which you may have already used in the :doc:`quickstart` guide, uses the built-in HTTP server to provide a web-based console and map visualization. It executes commands in the same way as the interactive console but through your browser.
 
 1.  **Navigate to the test directory** (if not already there):
 
