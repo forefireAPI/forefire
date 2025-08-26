@@ -76,7 +76,7 @@ Steps
     :align: center
     :width: 90%
   
-  **This confirms your Docker setup is working!** For other ways to run ForeFire scripts (like directly from the command line), see the :doc:`running_the_example` page.
+  **This confirms your Docker setup is working!**
 
 9.  **Stop the Container:**
 
@@ -85,3 +85,10 @@ Steps
   - In the ForeFire console (either web or terminal inside the container), type `quit`.
   - In the container's bash shell (terminal), type `exit`.
   - The `docker run` command used `--rm`, so the container will be automatically removed upon exit.
+
+.. rubric:: Next Steps
+
+Congratulations! You've successfully run your first ForeFire simulation and have a working environment. Here are some recommended next steps to deepen your understanding:
+
+- **Explore Execution Modes:** Learn about the command-line (batch) and interactive console alternatives to the Web UI by reading the :doc:`execution_modes` guide.
+- **Understand the Script:** To see what was inside the ``real_case.ff`` script you just ran, dive into the :doc:`/user_guide/forefire_script` guide.
