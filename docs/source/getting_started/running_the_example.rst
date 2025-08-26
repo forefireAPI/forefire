@@ -51,7 +51,10 @@ This is the simplest way to run a simulation non-interactively by feeding the en
 
     ../../bin/forefire -i real_case.ff
 
-3.  **Observe:** ForeFire will print status messages to the console as it executes the commands within ``real_case.ff``. It will likely create output files (as specified by ``print``/``save`` commands in the script) in the current directory (``tests/runff``).
+3.  **Observe:** ForeFire will create 2 files:
+
+  - ``to_reload.ff``: a Forefire ascii state file ready to be reincluded or modified to run
+  - ``ForeFire.0.nc``: a burnig map matrix in netcdf
 
 2: Interactive Console
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -87,7 +90,7 @@ This method starts the ForeFire interpreter first, allowing you to execute the s
     forefire> include[real_case.ff]
 
 
-4.  **Observe:** The simulation will run similarly to Method 1, executing the commands from ``real_case.ff`` and printing output to the console. Afterwards, you remain in the interactive console (``forefire>`` prompt) and can inspect parameters (e.g., ``getParameter[propagationModel]``), run further steps manually (e.g., ``step[dt=600]``), or exit using ``quit[]``.
+4.  **Observe:** The simulation will run similarly to Method 1, executing the commands from ``real_case.ff``. Afterwards, you remain in the interactive console (``forefire>`` prompt) and can inspect parameters (e.g., ``getParameter[propagationModel]``), run further steps manually (e.g., ``step[dt=600]``), or exit using ``quit[]``.
 
 3: Web Interface
 ~~~~~~~~~~~~~~~~
