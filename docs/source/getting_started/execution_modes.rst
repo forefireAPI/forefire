@@ -1,4 +1,4 @@
-.. _running-the-example:
+.. _execution_modes:
 
 Execution Modes
 ==================
