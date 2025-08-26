@@ -395,7 +395,9 @@ namespace libforefire
                     {
                         triple.push_back(std::stod(numbuf));
                     }
-                    catch (...) { /* silently ignore bad numbers */ }
+                    catch (...) { /* silently ignore bad numbers */ 
+                    cout << "Error: Invalid number in GeoJSON coordinates: " << numbuf << std::endl;
+                    }
                     numbuf.clear();
 
                     if (triple.size() == 3)
@@ -734,6 +736,8 @@ namespace libforefire
             FFPoint pos = getPoint("loc", arg);
             FFVector vel = getVector("vel", arg);
             double t = getFloat("t", arg);
+            if(t == FLOATERROR)
+                t = getDomain()->getTime();
             int fdom = getInt("domain", arg);
             if (fdom == INTERROR)
                 fdom = 0;
@@ -1861,6 +1865,7 @@ namespace libforefire
 
         // 'modelName' is optional (used for flux layers)
         std::string modelName = "";
+        cout << "Adding layer: " << layerName << " of type: " << layerType << "Model: " << modelName << " ARG "<<arg<<endl;
         if (argMap.find("modelName") != argMap.end())
             modelName = argMap["modelName"];
 
