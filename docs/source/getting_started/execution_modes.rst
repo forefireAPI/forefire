@@ -62,7 +62,7 @@ This is the simplest way to run a simulation non-interactively by feeding the en
 3.  **Observe:** ForeFire will create 2 files:
 
   - ``to_reload.ff``: a Forefire ascii state file ready to be reincluded or modified to run
-  - ``ForeFire.0.nc``: a burnig map matrix in netcdf
+  - ``ForeFire.0.nc``: a burning map matrix in netcdf
 
 2: Interactive Console
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +131,7 @@ This method, which you may have already used in the :doc:`quickstart` guide, use
 
   Alternatively, to launch the HTTP server directly without entering the interactive console first, you can use the `-l` command-line option. This is convenient if you primarily want to use the web interface.
 
-  .. code-block:: none
+  .. code-block:: bash
 
     forefire -l
 
