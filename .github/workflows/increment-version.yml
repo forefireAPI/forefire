@@ -2,7 +2,7 @@ name: Increment Version on Dev
 
 on:
   push:
-    branches: [ dev ]
+    # branches: [ dev ] we can add back later if needed
   workflow_dispatch:
 
 jobs:

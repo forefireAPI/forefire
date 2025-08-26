@@ -231,7 +231,29 @@ void MNHCreateDomain(const int id
 		// completing the last front
 		executor.completeFront(executor.currentSession.ff);
 	}
+	#ifdef MPI_COUPLING
+	ostringstream globalInitFile;
+	globalInitFile<<SimulationParameters::GetInstance()->getParameter("caseDirectory")<<'/'
+								<<SimulationParameters::GetInstance()->getParameter("ForeFireDataDirectory")<<'/'
+								<<SimulationParameters::GetInstance()->getParameter("GlobalInitFile");
 
+	ifstream globalInputInit(globalInitFile.str().c_str());
+			if ( globalInputInit ) {
+			
+			string line;
+			 
+			while ( getline( globalInputInit, line ) ) {
+				//numLine++;
+				// checking for comments or newline
+				if((line[0] == '#')||(line[0] == '*')||(line[0] == '\n'))
+					continue;
+				// treating the command of the current line
+				executor.ExecuteCommand(line);
+			}
+		} else {
+			cout<<"No global initialization "<<globalInitFile.str()<<" files for all domains" << endl;
+		}
+	#endif
  
 	// advancing the simulation to the beginning of the atmospheric simulation
 	double deltaT = session->fd->getSecondsFromReferenceTime(year, month, day, t);
