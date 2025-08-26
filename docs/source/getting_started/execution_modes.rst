@@ -1,9 +1,17 @@
-.. _running-the-example:
+.. _execution_modes:
 
-Running an Example
+Execution Modes
 ==================
 
-After successfully installing ForeFire (either :doc:`from source <installation>` or via :doc:`Docker <quickstart>`), you can run the example simulation located in the ``tests/runff/`` directory. This helps verify your installation and introduces you to the basic command execution methods.
+In the :doc:`quickstart` guide, you launched the example simulation using the interactive Web UI. That is just one of several ways to operate the ``forefire`` interpreter.
+
+This page details all three primary execution modes, allowing you to choose the best method for your specific task:
+
+-   **Direct Execution (Batch Mode):** Best for standard, non-interactive runs or for use in automated scripts.
+-   **Interactive Console:** Ideal for experimenting with commands step-by-step or inspecting the simulation state.
+-   **Web Interface:** Excellent for visual feedback and interactive demonstrations.
+
+Below, we demonstrate each method using the same ``real_case.ff`` script.
 
 Simulation Files Used
 ---------------------
@@ -51,7 +59,10 @@ This is the simplest way to run a simulation non-interactively by feeding the en
 
     ../../bin/forefire -i real_case.ff
 
-3.  **Observe:** ForeFire will print status messages to the console as it executes the commands within ``real_case.ff``. It will likely create output files (as specified by ``print``/``save`` commands in the script) in the current directory (``tests/runff``).
+3.  **Observe:** ForeFire will create 2 files:
+
+  - ``to_reload.ff``: a Forefire ascii state file ready to be reincluded or modified to run
+  - ``ForeFire.0.nc``: a burning map matrix in netcdf
 
 2: Interactive Console
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -84,15 +95,15 @@ This method starts the ForeFire interpreter first, allowing you to execute the s
 
   .. code-block:: none
 
-    forefire> include[input=real_case.ff]
+    forefire> include[real_case.ff]
 
 
-4.  **Observe:** The simulation will run similarly to Method 1, executing the commands from ``real_case.ff`` and printing output to the console. Afterwards, you remain in the interactive console (``forefire>`` prompt) and can inspect parameters (e.g., ``getParameter[propagationModel]``), run further steps manually (e.g., ``step[dt=600]``), or exit using ``quit[]``.
+4.  **Observe:** The simulation will run similarly to Method 1, executing the commands from ``real_case.ff``. Afterwards, you remain in the interactive console (``forefire>`` prompt) and can inspect parameters (e.g., ``getParameter[propagationModel]``), run further steps manually (e.g., ``step[dt=600]``), or exit using ``quit[]``.
 
 3: Web Interface
 ~~~~~~~~~~~~~~~~
 
-This method uses the built-in HTTP server to provide a web-based console and map visualization. It executes commands in the same way as the interactive console but through your browser.
+This method, which you may have already used in the :doc:`quickstart` guide, uses the built-in HTTP server to provide a web-based console and map visualization. It executes commands in the same way as the interactive console but through your browser.
 
 1.  **Navigate to the test directory** (if not already there):
 
@@ -120,14 +131,14 @@ This method uses the built-in HTTP server to provide a web-based console and map
 
   Alternatively, to launch the HTTP server directly without entering the interactive console first, you can use the `-l` command-line option. This is convenient if you primarily want to use the web interface.
 
-  .. code-block:: none
+  .. code-block:: bash
 
     forefire -l
 
 4.  **Use the Web Interface:**
 
   - Open your browser to ``http://localhost:8000/`` (or the specified port).
-  - In the command input box in the web UI, type ``include[input=real_case.ff]`` and press Enter or click Send. This executes the script file relative to where the interpreter was started (which we ensured was `tests/runff`).
+  - In the command input box in the web UI, type ``include[real_case.ff]`` and press Enter or click Send. This executes the script file relative to where the interpreter was started (which we ensured was `tests/runff`).
   - Click "Refresh Map" periodically to see the simulation progress visually. You can also type other commands directly into the web console.
 
 Choosing a Method
