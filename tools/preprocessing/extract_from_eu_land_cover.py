@@ -28,6 +28,9 @@ from .ffToGeoJson import create_kml,generate_indexed_png_and_legend
  
 from rasterio.features import rasterize
 from shapely.geometry import mapping
+
+import xarray as xr
+
  
 attribute_widths_road_edge_full = {
     'secondary': 0.8,
@@ -552,7 +555,7 @@ def fake_fuel(legend_file_path, WSEN, LBRT,output_dir,fuel_resolution = 10):
     
 
 
-def rasterize_kml(kml_path, ref_tif, output_path, default_value=1, imbounds=None):
+def rasterize_kml(kml_path, ref_tif, output_path, default_value=62, imbounds=None):
     print(f"Rasterizing KML {kml_path} to {output_path}")
 
     # Load reference GeoTIFF for spatial reference
@@ -589,6 +592,57 @@ def rasterize_kml(kml_path, ref_tif, output_path, default_value=1, imbounds=None
                        count=1, dtype=raster.dtype,
                        crs=ref_crs, transform=transform) as dst:
         dst.write(raster, 1)
+        
+def nc_masked_kml(ref_nc, path_kml, field='fuel', default_value=1, imbounds=None):
+    import fiona
+    fiona.drvsupport.supported_drivers['KML'] = 'rw'
+    
+    if field == 'fuel':
+        ny = ref_nc[field].sizes['fy']
+        nx = ref_nc[field].sizes['fx']
+    
+    else:
+        ny = ref_nc.sizes['ny']
+        nx = ref_nc.sizes['nx']
+
+    attrs = ref_nc['domain'].attrs
+
+    west, south, east, north = map(float, attrs['BBoxWSEN'].split(','))
+    if imbounds is not None:
+        west, south, east, north = imbounds
+
+    resx = (east - west) / nx
+    resy = (north - south) / ny
+
+    transform = from_origin(west, north, resx, resy)
+
+
+    gdf = gpd.read_file( path_kml, driver='KML')
+
+
+    shapes = []
+    for _, feature in gdf.iterrows():
+        name = feature.get('Name', '')
+        try:
+            val = int(name) if name.isdigit() else default_value
+        except Exception:
+            val = default_value
+        geom = feature.geometry
+        shapes.append((geom, val))
+        
+    rasterized = rasterize(
+            shapes,
+            out_shape=(ny, nx),
+            transform=transform,
+            fill=0,
+            dtype='int16')
+    
+    fieldnc = ref_nc[field][0,0,::-1,:] #for fuels it is upside down
+    fieldnc_updated = xr.where(rasterized == 1, 62, fieldnc)
+
+    ref_nc[field][0,0,:,:] = fieldnc_updated[::-1,:]
+    
+    return ref_nc
         
 def landcover_roads_to_fuel(S2GLC_tif,legend_file_path, WSEN, LBRT,output_dir,fuel_modifier=None, fuel_resolution = 10, no_fuel_code = 62):
 

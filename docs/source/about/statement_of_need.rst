@@ -27,7 +27,3 @@ ForeFire is intended for:
 *   **Wildfire Researchers:** Investigating fire behavior, model development, sensitivity analyses, fire-atmosphere interactions.
 *   **Operational Agencies:** Use in forecasting systems (potentially via ensemble simulations), risk assessment, and post-fire analysis.
 *   **Students and Educators:** A tool for learning about wildfire dynamics and simulation techniques.
-
-**Context:**
-
-ForeFire aims to complement and extend the capabilities of other existing wildfire simulation tools by focusing on high-performance computing, advanced physics coupling, and providing a flexible open-source C++ core. *(Mention specific limitations of other tools that ForeFire addresses, if appropriate, and potentially cite 1-2 key alternative tools for comparison).*
