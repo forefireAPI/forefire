@@ -16,4 +16,7 @@ COPY . .
 RUN sh cmake-build.sh
 
 # add executable to PATH
-RUN cp /forefire/bin/forefire /bin
+RUN cp /forefire/bin/forefire /usr/local/bin/
+
+# Set the entrypoint to bash for interactive sessions
+CMD ["bash"]

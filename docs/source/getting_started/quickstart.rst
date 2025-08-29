@@ -34,7 +34,7 @@ Steps
   
   .. code-block:: bash
 
-    docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
+    docker run -it --rm -p 8000:8000 --name ff_interactive forefire
 
 4.  **Inside the container, navigate to the test directory:**
 
