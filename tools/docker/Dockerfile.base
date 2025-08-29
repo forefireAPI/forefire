@@ -1,16 +1,10 @@
 FROM ubuntu:22.04
 
-# Install build tools, ForeFire dependencies, AND Python environment
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libnetcdf-c++4-dev \
-    cmake \
-    python3 \
-    python3-pip \
-    python3-dev \
-    git && \
-    rm -rf /var/lib/apt/lists/*
+    cmake
 
 WORKDIR /forefire
 ENV FOREFIREHOME=/forefire
@@ -18,14 +12,11 @@ ENV FOREFIREHOME=/forefire
 # we could only copy src, cmakelists.txt and cmake-build.sh
 COPY . .
 
-# Build and install the ForeFire C++ library
+# install forefire
 RUN sh cmake-build.sh
 
-# Add the main forefire executable to the PATH
+# add executable to PATH
 RUN cp /forefire/bin/forefire /usr/local/bin/
-
-# Use pip to install the Python dependencies defined in pyproject.toml
-RUN pip3 install ./bindings/python
 
 # Set the entrypoint to bash for interactive sessions
 CMD ["bash"]

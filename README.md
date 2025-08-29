@@ -58,7 +58,7 @@ The easiest way to get started is often using Docker and the interactive console
 3. Run the container interactively
 
     ```bash
-    docker run -it --rm -p 8000:8000 --name ff_interactive forefire bash
+    docker run -it --rm -p 8000:8000 --name ff_interactive forefire
     ```
 4. Inside the container navigate to test directory and launch the forefire console:
     ```bash
