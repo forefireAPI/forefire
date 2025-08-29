@@ -1,0 +1,60 @@
+# File: tools/Dockerfile.multistage
+# Target: Creates an optimized, smaller final image using a multi-stage build.
+# Contains full Python support.
+
+# --- STAGE 1: The "Builder" ---
+# This stage is a temporary environment used to compile the C++ code.
+# It contains all the heavy build tools, which will NOT be in the final image.
+FROM ubuntu:22.04 AS builder
+
+# Install build tools and C++ dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    libnetcdf-c++4-dev \
+    cmake \
+    git && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Copy all source code into the builder stage
+COPY . .
+
+# Build the C++ library and executable
+RUN sh cmake-build.sh
+
+
+# --- STAGE 2: The "Final Image" ---
+# This is the final, clean image that will be distributed.
+# It starts from a fresh Ubuntu base and only pulls in what's necessary.
+FROM ubuntu:22.04
+
+# Install only the RUNTIME dependencies needed for ForeFire and the Python bindings.
+# As requested, we use libnetcdf-c++4-dev here for consistency with the build stage.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libnetcdf-c++4-dev \
+    libgomp1 \
+    python3 \
+    g++ \
+    python3-pip \
+    python3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /forefire
+ENV FOREFIREHOME=/forefire
+
+# The magic step: Copy the ENTIRE built project from the 'builder' stage.
+# This brings over the compiled libs, binaries, and the source code needed for the bindings.
+COPY --from=builder /src/ .
+
+# Add the forefire executable to the system's PATH
+RUN cp /forefire/bin/forefire /usr/local/bin/
+
+# Install the Python bindings and their dependencies (numpy, etc.)
+# This compiles the C++ extension using the headers we just copied.
+RUN pip3 install ./bindings/python
+
+# Set the default command to start a bash shell
+CMD ["bash"]
