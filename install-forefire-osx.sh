@@ -12,9 +12,9 @@ if ! xcode-select -p > /dev/null 2>&1; then
 fi
 
 # Install dependencies via Homebrew.
-brew install cmake
-brew install netcdf
-brew install netcdf-cxx
+brew reinstall cmake
+brew reinstall netcdf
+brew reinstall netcdf-cxx
 
 # Set NETCDF_HOME to the prefix for the NetCDF C library.
 export NETCDF_HOME=$(brew --prefix netcdf)
