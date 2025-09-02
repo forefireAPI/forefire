@@ -83,8 +83,14 @@ with open(os.path.join(this_dir, "README.md"), "r", encoding="utf-8") as fh:
 
 setup(
     name="pyforefire",
-    version="2025.1",
-    install_requires=["pybind11", "setuptools", "wheel"],
+    version="2025.2",
+    install_requires=[
+        "pybind11",
+        "setuptools",
+        "wheel",
+        "numpy",
+        "matplotlib",
+        ],
     author="Jean-Baptiste Filippi",
     author_email="filippi_j@univ-corse.fr",
     description="Python bindings for ForeFire library",
