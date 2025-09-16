@@ -4,19 +4,20 @@ on:
   push:
     branches:
       - "master"
-      # - "dev-ci"
+      - "dev-ci"
   pull_request:
     branches: [ "master" ]
 
   workflow_dispatch:
 
 jobs:
-
   docker:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -27,3 +28,6 @@ jobs:
       - name: Check ForeFire version inside Docker
         run: |
           docker run --rm forefire:latest forefire -v
+
+      - name: Run 'runff' Test Script inside Docker
+        run: docker run --rm forefire:latest bash -c "cd tests/runff && bash ff-run.bash"
