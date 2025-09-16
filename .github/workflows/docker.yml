@@ -51,7 +51,6 @@ jobs:
       - name: Run 'runff' Test Script on the built image
         run: |
           # The 'tags' output is a multi-line string of all generated tags.
-          # We'll grab the first tag from the list to use for our test.
           TEST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           echo "Testing image with tag: $TEST_TAG"
           docker run --rm $TEST_TAG bash -c "cd tests/runff && bash ff-run.bash"
