@@ -21,7 +21,9 @@ ForeFire includes several built-in propagation models. Below are the primary mod
 *   **Use Case:** Ideal for simple tests, debugging setups, or scenarios where a constant spread rate is desired.
 *   **Parameterization:** This model **does not** use an external fuels file. The spread speed is set directly in the simulation script via a model-specific parameter.
 *   **Example:**
+
   .. code-block:: bash
+
     setParameter[propagationModel=Iso]
     setParameter[Iso.speed=0.5]  # Sets spread to 0.5 meters/second
 
@@ -40,7 +42,7 @@ ForeFire includes several built-in propagation models. Below are the primary mod
 .. note::
   The relationship between a model and its parameters is key: when a model like `Rothermel` is selected, it informs the simulation engine which properties it needs (e.g., `slope`, `normalWind`, `fuel.Rhod`, etc.). The engine then provides these values, retrieving the `fuel.*` properties from the loaded CSV table.
 
----
+----
 
 .. _rothermel-fuel-file:
 
@@ -86,7 +88,7 @@ The ``Index`` column links these properties to the integer values in the landsca
 .. important::
    While all columns are required by the file parser, the parameters most fundamentally driving the *Rothermel* calculation are typically: ``Index``, ``Rhod``, ``Md``, ``sd``, ``e``, ``Sigmad``, ``DeltaH``, and ``me``. Different models may utilize different columns.
 
----
+----
 
 Finding and Creating Fuel Parameter Sets
 ----------------------------------------
