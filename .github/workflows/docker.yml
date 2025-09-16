@@ -3,7 +3,7 @@ name: Build, Test, and Push Docker Image
 on:
   push:
     branches: [ "master" ]
-    tags: [ 'v*.*.*' ] # Trigger on semver tags
+    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -38,7 +38,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            # For git tags like v1.2.3, create a Docker tag 1.2.3
             type=semver,pattern={{version}}
+            # For all other events (pushes to master, PRs)
+            type=sha,prefix=,format=short
 
       - name: Build and push Docker image
         id: build-and-push
