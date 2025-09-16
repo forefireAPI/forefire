@@ -3,9 +3,9 @@ name: Build, Test, and Push Docker Image
 on:
   push:
     branches:
-      - "dev-ci" # A push to this branch will trigger the image publication
+      - "dev-ci"
   pull_request:
-    branches: [ "master" ] # A pull request to master will build and test, but not publish
+    branches: [ "master" ]
   workflow_dispatch:
 
 env:
@@ -15,7 +15,6 @@ env:
 jobs:
   build-test-and-push:
     runs-on: ubuntu-latest
-    # Grant GITHUB_TOKEN permissions to write to the package registry
     permissions:
       contents: read
       packages: write
@@ -24,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          lfs: true # Important for pulling the data.nc file
+          lfs: true
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -38,22 +37,21 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # This action will generate useful tags based on the git event
-          # e.g., :dev-ci, :latest, :sha-abcdef1
 
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
-          # This condition ensures we only push on commits to the 'dev-ci' branch
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev-ci' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # 'load: true' makes the built image available to the Docker daemon for the next step
           load: true
 
       - name: Run 'runff' Test Script on the built image
         run: |
-          echo "Testing image with digest: ${{ steps.build-and-push.outputs.digest }}"
-          docker run --rm ${{ steps.build-and-push.outputs.digest }} bash -c "cd tests/runff && bash ff-run.bash"
+          # The 'tags' output is a multi-line string of all generated tags.
+          # We'll grab the first tag from the list to use for our test.
+          TEST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          echo "Testing image with tag: $TEST_TAG"
+          docker run --rm $TEST_TAG bash -c "cd tests/runff && bash ff-run.bash"
