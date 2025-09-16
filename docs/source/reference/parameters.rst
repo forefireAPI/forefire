@@ -171,8 +171,13 @@ Physics & Models
 
 propagationModel
 """"""""""""""""
-*   **Description:** Name of the primary Rate of Spread (ROS) model to use for calculating fire spread speed (e.g., `Iso`, `Rothermel`, `Balbi`). Specific models may have their own parameters (e.g., `Iso.speed`).
+*   **Description:** Name of the Rate of Spread (ROS) model to use. ForeFire is a general solver, and this choice dictates how spread speed is calculated and what fuel parameterization is required.
 *   **Default:** `Iso`
+*   **Available Models:** The string provided must match the name of a registered C++ model class. Common supported models include:
+    *   `Iso`: A simple isotropic model. Does not use a fuels file. Speed is set via the `Iso.speed` parameter.
+    *   `Rothermel`: The Rothermel 1972 surface fire spread model. Requires a detailed fuel parameterization file.
+    *   `BalbiNov2011`, `Balbi2015`: Physical models from Balbi et al. Also use the fuel parameterization file.
+*   **More Info:** See the :doc:`/user_guide/fuels_and_models` guide for detailed explanations of each model and their data requirements.
 
 burningTresholdFlux
 """""""""""""""""""
