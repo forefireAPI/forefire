@@ -2,8 +2,8 @@ name: Build, Test, and Push Docker Image
 
 on:
   push:
-    branches:
-      - "dev-ci"
+    branches: [ "master" ]
+    tags: [ 'v*.*.*' ] # Trigger on semver tags
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -37,20 +37,22 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
 
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev-ci' }}
+          # Only push if the ref starts with 'refs/tags/'
+          push: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           load: true
 
       - name: Run 'runff' Test Script on the built image
         run: |
-          # The 'tags' output is a multi-line string of all generated tags.
           TEST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           echo "Testing image with tag: $TEST_TAG"
           docker run --rm $TEST_TAG bash -c "cd tests/runff && bash ff-run.bash"
