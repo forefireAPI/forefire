@@ -8,12 +8,13 @@ on:
     branches: [ "master" ]  
   workflow_dispatch:
 
-jobs:
-  build-native-macos:
+jobs build-native-macos:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Make install script executable
         run: chmod +x ./install-forefire-osx.sh
@@ -26,6 +27,13 @@ jobs:
 
       - name: Install Python test dependencies
         run: pip3 install --break-system-packages lxml xarray netCDF4
+
+      - name: Add Build/Runtime Diagnostics
+        run: |
+          echo "--- Input data.nc Info ---"
+          ls -lh tests/runff/data.nc
+          brew install netcdf
+          ncdump -k tests/runff/data.nc || echo "Could not check data.nc format"
 
       - name: Run 'runff' Test Script
         run: |
