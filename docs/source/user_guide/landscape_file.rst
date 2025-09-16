@@ -23,7 +23,7 @@ At a minimum, a functional ForeFire simulation generally requires the following 
 
     *   **Typical Variable Name(s):** ``fuel``, ``fuel_index``, ``land_cover`` (The exact name might be configurable or expected by default - check standard examples or parameters).
     *   **Description:** A 2D array (grid) containing **integer values** representing the fuel type at each location in the simulation domain.
-    *   **Crucial Link:** Each unique integer value in this array **must** correspond directly to an ``Index`` value present in the :doc:`fuels_file` used for the simulation. ForeFire uses this to look up the fuel properties needed for the fire spread calculations. Index `0` is often used for non-burnable areas.
+    *   **Crucial Link:** Each unique integer value in this array **must** correspond directly to an ``Index`` value present in the model parameter file (see :doc:`/user_guide/fuels_and_models`) used for the simulation. ForeFire uses this to look up the fuel properties needed for the fire spread calculations. Index `0` is often used for non-burnable areas.
     *   **Dimensions:** Typically (Y, X) or (latitude, longitude) corresponding to the spatial grid.
 
 *   **Elevation (Digital Elevation Model - DEM)**
@@ -58,10 +58,10 @@ Coordinate System & Domain Definition
 *   **Grid:** All 2D spatial variables (Fuel, Elevation, Wind) within the file must share the **same grid resolution, spatial extent, and coordinate system**.
 *   **Domain Bounds:** The simulation domain is defined when creating the :ref:`FireDomain <cmd-FireDomain>`. You specify the South-West (SW) and North-East (NE) corners in the *projected Cartesian coordinates* (meters). Optionally, you can also provide the WGS84 geographic bounding box (`opt:BBoxWSEN` in `FireDomain`), which helps ForeFire align the simulation coordinate system with real-world locations, especially for outputs like GeoJSON or KML.
 
-Relationship to Fuels File
---------------------------
+Relationship to the Fuels & Models File
+---------------------------------------
 
-As mentioned under Required Variables, the link between the integer values in the ``fuel`` layer of the NetCDF file and the ``Index`` column in the :doc:`fuels_file` is **absolutely critical**. If the landscape file contains a fuel index (e.g., `5`) that is not defined in the ``fuels.csv``, the simulation will likely fail or produce incorrect results.
+As mentioned under Required Variables, the link between the integer values in the ``fuel`` layer of the NetCDF file and the ``Index`` column in the model parameter file (see :doc:`/user_guide/fuels_and_models`) is **absolutely critical**. If the landscape file contains a fuel index (e.g., `5`) that is not defined in the ``fuels.csv``, the simulation will likely fail or produce incorrect results.
 
 Creating Landscape Files
 ------------------------
