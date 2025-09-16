@@ -23,3 +23,11 @@ jobs:
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
+
+      - name: Install Python test dependencies
+        run: pip3 install lxml xarray netCDF4
+
+      - name: Run 'runff' Test Script
+        run: |
+          cd tests/runff
+          bash ff-run.bash
