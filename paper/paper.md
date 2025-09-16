@@ -91,15 +91,15 @@ Wildfire forecasting is both an active research area and an important need for d
 Wildfire modeling tools have historically been split between **complex combustion research models** and **streamlined operational tools**, each with distinct limitations. 
 Computational combustion and fluid dynamics (CFD) based models (e.g., FIRETEC [@linn2005] or WFDS [@mell2007]) are highly computationally intensive and yet unable to provide large wildfire forecasts faster than real time. 
 Atmospheric coupled codes, such as WRF/SFire [@mandel2011] must be run within an atmospheric model and require a large amount of processing power and data.
-Operational wildfire simulators, such as widely used Farsite (now Flammap) [@finney1998], or Canadian Prometheus [@garcia2008], are able to simulate fire fronts spanning tens of kilometers in a matter of seconds, but have definite built-in modeling assumptions and are distributed as compiled software with graphical interfaces with limited scriptability.
+Operational wildfire simulators, such as widely used Farsite [@finney1998] (now Flammap[@Finney2023FlamMap]), or Canadian Prometheus [@garcia2008], are able to simulate fire fronts spanning tens of kilometers in a matter of seconds, but have definite built-in modeling assumptions and are distributed as compiled software with graphical interfaces with limited scriptability. Other open source libraries are ElmFire [@lautenberger2013] or Cell2Fire [@pais2021] that are tied to a single spread models and do not include scripting language, or deep learning based [@XIA2025106401]. 
 
-ForeFire was developed as a community tool to fill the gap between highly complex customizable models and more rigid operational tools: a **unified** wildfire simulator that is both **adaptable** and **high-performing**. 
+ForeFire was developed as a community tool to fill the gap between highly complex customizable models and more rigid operational tools: a **unified** wildfire simulator that is both **adaptable** (highly scriptable with multiple bindings) and **high-performing** (discrete‑event‑driven simulation with dynamic mesh allows to concentrate computation at meter scale resolution only on the active part of the front to perform speed over 100Ha per second on a single CPU). It is inteded to serve both as a research platform and a tool for operational forecasting.
 
 # Typical Use Cases
 
 ## Rapid prototyping of new models
 ForeFire implements several standard fire flux and spread rate models, such as Rothermel [@andrews2018] or Balbi [@balbi2009], but also makes it trivial to switch, extend or add to this base with a single `.cpp` using any existing model file as a template.
-Internally data is handled as *layers* that can come from a NumPy array, read from NetCDF or generated on the fly by ForeFire (e.g. slope derived from the elevation layer). 
+Internally data is handled as *layers* that can come from a NumPy array, read from NetCDF or generated on the fly by ForeFire (e.g. slope derived from the elevation layer, fuel loaded as index map with tabulated fuel (with part of [@Scott2005] fuel table already available)). 
 Developing a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions of the Balbi Rate Of Spread formulation on case studies in [@balbi2009] and [@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption in [@filippi2021], plume chemistry [@strada2012] or industrial fires in [@baggio2022]. In addition, the code includes a generic `ANNPropagationModel`, which implements a feedforward artificial neural network (ANN) that expects a pre-trained graph file.
 
 ## Batch simulations with the ForeFire scripting
