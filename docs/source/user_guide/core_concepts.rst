@@ -88,7 +88,7 @@ Simulation Workflow Summary
     *   Commands from a script file (or interactive input) are processed.
     *   :doc:`Parameters </reference/parameters>` are set.
     *   The :ref:`FireDomain <cmd-firedomain>` is created.
-    *   :ref:`loadData <cmd-loaddata>` populates the `DataBroker` with `DataLayer` from the :doc:`/user_guide/landscape_file`. The :doc:`/user_guide/fuels_file` information is associated.
+    *   :ref:`loadData <cmd-loaddata>` populates the `DataBroker` with `DataLayer` from the :doc:`/user_guide/landscape_file`. The :doc:`/user_guide/fuels_and_models` information is associated.
     *   The initial fire state is defined using :ref:`startFire <cmd-startfire>` or custom `FireFront`/`FireNode` commands, scheduling the first update events for the initial nodes into the `TimeTable`.
 
 2.  **Simulation Loop (driven by step or goTo):**
