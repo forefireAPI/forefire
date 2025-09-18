@@ -1,5 +1,6 @@
 // Updated list of commands.
 const commands = {
+    "include": "include[real_case.ff]",
     "FireDomain": "FireDomain[sw=(0.0,0.0,0.0);ne=(100.0,100.0,0.0);t=0.0]",
     "FireNode": "FireNode[loc=(0.0,0.0,0.0);vel=(0.0,0.0,0.0);t=0.]",
     "FireFront": "FireFront[]",
@@ -15,7 +16,6 @@ const commands = {
     "setParameter": "setParameter[param=value]",
     "setParameters": "setParameters[param1=val1;param2=val2]",
     "getParameter": "getParameter[paramNames]",
-    "include": "include[real_case.ff]",
     "loadData": "loadData[data.nc;2024-12-13T15:41:33Z]",
     "clear": "clear[]",
     "systemExec": "systemExec[ls]",
