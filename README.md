@@ -44,8 +44,6 @@
 
 The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
 
-![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
-
 1. Clone the repository
     
     ``` bash
@@ -89,6 +87,8 @@ The easiest way to get started is often using Docker and the interactive console
     In ForeFire, running a simulation and viewing the result are separate commands. The UI guides you through this process.
     - **Step 1: Run the simulation script.** In the command input box, type `include[real_case.ff]` and click the **`Send`** button. The simulation will run on the server.
     - **Step 2: View the result.** After the command finishes, click the **`Refresh Map`** button to load the simulation results onto the map.
+    
+    ![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
     
     You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
 
