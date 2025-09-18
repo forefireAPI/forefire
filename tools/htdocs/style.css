@@ -1,157 +1,173 @@
-    /* Global Styles */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: monospace;
-      background-color: #111;
-      color: #eee;
-    }
-    /* Main container as a flex row: sidebar + main area */
-    #container {
-      display: flex;
-      height: 100vh;
-    }
-    /* Sidebar: left bar with layers list */
-    #sidebar {
-      width: 200px;
-      background-color: #222;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    /* Logo container */
-    #logo {
-      text-align: center;
-      margin-bottom: 10px;
-    }
+/* Global Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: monospace;
+  background-color: #111;
+  color: #eee;
+}
+/* Main container as a flex row: sidebar + main area */
+#container {
+  display: flex;
+  height: 100vh;
+}
+/* Sidebar: left bar with layers list */
+#sidebar {
+  width: 200px;
+  background-color: #222;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+/* Logo container */
+#logo {
+  text-align: center;
+  margin-bottom: 10px;
+}
 
-    /* Logo image sizing */
-    #logo img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
+/* Logo image sizing */
+#logo img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
 
-    #layerList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      flex-grow: 1;
-      overflow-y: auto;
-    }
-    #layerList li {
-      margin: 5px 0;
-      padding: 5px;
-      cursor: pointer;
-      background-color: #333;
-    }
-    #layerList li:hover {
-      background-color: #444;
-    }
-    #updateLayers {
-      background-color: #444;
-      border: none;
-      color: #eee;
-      padding: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    /* Right side: main area */
-    #mainArea {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Header: big orange date with toggle checkbox */
-    #dateHeader {
-      background: #111;
-      text-align: center;
-      font-size: 2em;
-      color: orange;
-      padding: 10px;
-    }
-    #dateHeader label {
-      font-size: 0.5em;
-      color: #ccc;
-      margin-left: 10px;
-      cursor: pointer;
-    }
-    /* Response Console: server responses */
-    #responseConsole {
-      background: #222;
-      padding: 10px;
-      height: 200px;
-      overflow-y: auto;
-    }
-    /* Command History: sent commands in green */
-    #commandHistory {
-      background: #222;
-      padding: 10px;
-      height: 100px;
-      overflow-y: auto;
-      margin: 5px;
-      color: lightgreen;
-    }
-    .commandText {
-      margin: 2px 0;
-    }
-    /* Input Area: command input and buttons */
-    #inputArea {
-      display: flex;
-      align-items: center;
-      height: 40px;
-      padding: 5px;
-      background-color: #111;
-    }
-    #inputArea input {
-      flex: 1;
-      padding: 5px;
-      font-size: 1em;
-      background-color: #333;
-      color: #eee;
-      border: 1px solid #444;
-    }
-    #inputArea button {
-      padding: 5px 10px;
-      background-color: #444;
-      color: #eee;
-      border: none;
-      cursor: pointer;
-      margin-left: 5px;
-    }
-    /* Predefined Command Buttons */
-    #commandButtons {
-      margin: 5px;
-    }
-    #commandButtons button {
-      padding: 5px 10px;
-      margin: 2px;
-      background-color: #444;
-      color: #eee;
-      border: none;
-      cursor: pointer;
-      font-size: 0.9em;
-    }
-    #commandButtons button:hover {
-      background-color: #555;
-    }
-    /* Map container: fixed height to avoid layout issues with big images */
-    #map {
-      height: 500px;
-      width: calc(100% - 10px);
-      margin: 5px;
-    }
-    /* Bounding box handle style */
-    .bbox-handle {
-      background: red;
-      border-radius: 50%;
-      width: 8px;
-      height: 8px;
-      border: 1px solid #fff;
-    }
-    /* Container for the wind canvas */
-    #windContainer {
-      margin: 5px;
-    }
+#layerList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+#layerList li {
+  margin: 5px 0;
+  padding: 5px;
+  cursor: pointer;
+  background-color: #333;
+}
+#layerList li:hover {
+  background-color: #444;
+}
+#updateLayers {
+  background-color: #444;
+  border: none;
+  color: #eee;
+  padding: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+/* Right side: main area */
+#mainArea {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+/* Header: big orange date with toggle checkbox */
+#dateHeader {
+  background: #111;
+  text-align: center;
+  font-size: 2em;
+  color: orange;
+  padding: 10px;
+}
+#dateHeader label {
+  font-size: 0.5em;
+  color: #ccc;
+  margin-left: 10px;
+  cursor: pointer;
+}
+/* Response Console: server responses */
+#responseConsole {
+  background: #222;
+  padding: 10px;
+  height: 200px;
+  overflow-y: auto;
+}
+/* Command History: sent commands in green */
+#commandHistory {
+  background: #222;
+  padding: 10px;
+  height: 100px;
+  overflow-y: auto;
+  margin: 5px;
+  color: lightgreen;
+}
+.commandText {
+  margin: 2px 0;
+}
+/* Input Area: command input and buttons */
+#inputArea {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 5px;
+  background-color: #111;
+}
+#inputArea input {
+  flex: 1;
+  padding: 5px;
+  font-size: 1em;
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #444;
+}
+#inputArea button {
+  padding: 5px 10px;
+  background-color: #444;
+  color: #eee;
+  border: none;
+  cursor: pointer;
+  margin-left: 5px;
+}
+/* Predefined Command Buttons */
+#commandButtons {
+  margin: 5px;
+}
+#commandButtons button {
+  padding: 5px 10px;
+  margin: 2px;
+  background-color: #444;
+  color: #eee;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+#commandButtons button:hover {
+  background-color: #555;
+}
+/* Map container: fixed height to avoid layout issues with big images */
+#map {
+  height: 500px;
+  width: calc(100% - 10px);
+  margin: 5px;
+}
+/* Bounding box handle style */
+.bbox-handle {
+  background: red;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #fff;
+}
+/* Container for the wind canvas */
+#windContainer {
+  margin: 5px;
+}
+
+#refreshMap {
+  background-color: #5a995a !important;
+}
+
+#refreshMap:hover {
+  background-color: #72be72 !important;
+}
+
+#sendCommand {
+  background-color: darkorange !important; /* A clear, action-oriented orange */
+}
+
+#sendCommand:hover {
+  background-color: orange !important; /* A slightly darker orange for hover */
+}
