@@ -9,6 +9,15 @@
   <link rel="stylesheet" href="js/leaflet-velocity.css" />
   
   <link rel="stylesheet" href="style.css" />
+
+    <!-- External JS Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" defer></script>
+  <script src="https://unpkg.com/togeojson@0.16.0/togeojson.js" defer></script>
+  <script src="js/leaflet-velocity.js" defer></script>
+  <script src="js/rosacewind.js" defer></script>
+  <!-- Our GUI JS -->
+  <script src="js/forefireGUI.js" defer></script>
+
 </head>
 <body>
   <div id="container">
@@ -56,33 +65,5 @@
     </div>
   </div>
   
-  <!-- External JS Libraries -->
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/togeojson@0.16.0/togeojson.js"></script>
-  <script src="js/leaflet-velocity.js"></script>
-  <script src="js/rosacewind.js"></script>
-  <!-- Our GUI JS -->
-  <script src="js/forefireGUI.js"></script>
-  
-  <!-- Script to toggle logs -->
-  <script>
-    const toggleLogs = document.getElementById('toggleLogs');
-    const responseConsole = document.getElementById('responseConsole');
-    const commandHistory = document.getElementById('commandHistory');
-
-    toggleLogs.addEventListener('change', function() {
-      const displayStyle = this.checked ? 'block' : 'none';
-      responseConsole.style.display = displayStyle;
-      commandHistory.style.display = displayStyle;
-      
-      // Optional: Adjust map height if needed when logs are hidden
-      // For example, increase the map height when logs are hidden
-      if (!this.checked) {
-        document.getElementById('map').style.height = '700px';
-      } else {
-        document.getElementById('map').style.height = '500px';
-      }
-    });
-  </script>
 </body>
 </html>

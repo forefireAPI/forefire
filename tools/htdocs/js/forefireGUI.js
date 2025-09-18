@@ -522,3 +522,21 @@ document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) =>
 document.getElementById('WindOrParts').addEventListener('change', (e) => {
   setWindMapUseVector(e.target.checked)
 });
+
+const toggleLogs = document.getElementById('toggleLogs');
+const responseConsole = document.getElementById('responseConsole');
+const commandHistory = document.getElementById('commandHistory');
+
+toggleLogs.addEventListener('change', function() {
+  const displayStyle = this.checked ? 'block' : 'none';
+  responseConsole.style.display = displayStyle;
+  commandHistory.style.display = displayStyle;
+  
+  // Optional: Adjust map height if needed when logs are hidden
+  // For example, increase the map height when logs are hidden
+  if (!this.checked) {
+    document.getElementById('map').style.height = '700px';
+  } else {
+    document.getElementById('map').style.height = '500px';
+  }
+});
