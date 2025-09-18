@@ -256,19 +256,6 @@ function updateMapWithGeoJSON(geojson, refit = true) {
     }
   }
   
-  document.getElementById('refreshMap').addEventListener('click', async () => {
-    await sendCommand("setParameter[dumpMode=geojson]");
-    const geojsonText = await sendCommand("print[]");
-    if (geojsonText) {
-      try {
-        const geojson = JSON.parse(geojsonText);
-        updateMapWithGeoJSON(geojson);
-      } catch (e) {
-        console.error("Failed to parse GeoJSON:", e);
-      }
-    }
-  });
-  
   document.getElementById('sendCommand').addEventListener('click', () => {
     const command = document.getElementById('commandInput').value.trim();
     if (command !== "") {
@@ -453,14 +440,14 @@ function updateMapWithGeoJSON(geojson, refit = true) {
   let autoRefreshInterval = null;
 
 // 1) Factor out the refresh logic into a separate function:
-async function refreshMap() {
+async function refreshMap(refit = true) {
   // The same logic you had in the 'refreshMap' button’s click handler
   await sendCommand("setParameter[dumpMode=geojson]");
   const geojsonText = await sendCommand("print[]");
   if (geojsonText) {
     try {
       const geojson = JSON.parse(geojsonText);
-      updateMapWithGeoJSON(geojson, false);
+      updateMapWithGeoJSON(geojson, refit);
     } catch (e) {
       console.error("Failed to parse GeoJSON:", e);
     }
@@ -510,8 +497,10 @@ document.getElementById('refreshMap').addEventListener('click', refreshMap);
 // 3) Handle the auto-refresh checkbox changes:
 document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) => {
   if (e.target.checked) {
-    // Start auto-refresh every 10 seconds (adjust as needed)
-    autoRefreshInterval = setInterval(refreshMap, 500);
+    // Start auto-refresh (adjust as needed)
+      autoRefreshInterval = setInterval(() => {
+      refreshMap(false); 
+    }, 500);
   } else {
     // Stop auto-refresh
     clearInterval(autoRefreshInterval);
