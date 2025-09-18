@@ -1,5 +1,6 @@
 // Updated list of commands.
 const commands = {
+    "include": "include[real_case.ff]",
     "FireDomain": "FireDomain[sw=(0.0,0.0,0.0);ne=(100.0,100.0,0.0);t=0.0]",
     "FireNode": "FireNode[loc=(0.0,0.0,0.0);vel=(0.0,0.0,0.0);t=0.]",
     "FireFront": "FireFront[]",
@@ -15,7 +16,6 @@ const commands = {
     "setParameter": "setParameter[param=value]",
     "setParameters": "setParameters[param1=val1;param2=val2]",
     "getParameter": "getParameter[paramNames]",
-    "include": "include[run.ff]",
     "loadData": "loadData[data.nc;2024-12-13T15:41:33Z]",
     "clear": "clear[]",
     "systemExec": "systemExec[ls]",
@@ -256,19 +256,6 @@ function updateMapWithGeoJSON(geojson, refit = true) {
     }
   }
   
-  document.getElementById('refreshMap').addEventListener('click', async () => {
-    await sendCommand("setParameter[dumpMode=geojson]");
-    const geojsonText = await sendCommand("print[]");
-    if (geojsonText) {
-      try {
-        const geojson = JSON.parse(geojsonText);
-        updateMapWithGeoJSON(geojson);
-      } catch (e) {
-        console.error("Failed to parse GeoJSON:", e);
-      }
-    }
-  });
-  
   document.getElementById('sendCommand').addEventListener('click', () => {
     const command = document.getElementById('commandInput').value.trim();
     if (command !== "") {
@@ -453,14 +440,14 @@ function updateMapWithGeoJSON(geojson, refit = true) {
   let autoRefreshInterval = null;
 
 // 1) Factor out the refresh logic into a separate function:
-async function refreshMap() {
+async function refreshMap(refit = true) {
   // The same logic you had in the 'refreshMap' button’s click handler
   await sendCommand("setParameter[dumpMode=geojson]");
   const geojsonText = await sendCommand("print[]");
   if (geojsonText) {
     try {
       const geojson = JSON.parse(geojsonText);
-      updateMapWithGeoJSON(geojson, false);
+      updateMapWithGeoJSON(geojson, refit);
     } catch (e) {
       console.error("Failed to parse GeoJSON:", e);
     }
@@ -510,8 +497,10 @@ document.getElementById('refreshMap').addEventListener('click', refreshMap);
 // 3) Handle the auto-refresh checkbox changes:
 document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) => {
   if (e.target.checked) {
-    // Start auto-refresh every 10 seconds (adjust as needed)
-    autoRefreshInterval = setInterval(refreshMap, 500);
+    // Start auto-refresh (adjust as needed)
+      autoRefreshInterval = setInterval(() => {
+      refreshMap(false); 
+    }, 500);
   } else {
     // Stop auto-refresh
     clearInterval(autoRefreshInterval);
@@ -521,4 +510,22 @@ document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) =>
 
 document.getElementById('WindOrParts').addEventListener('change', (e) => {
   setWindMapUseVector(e.target.checked)
+});
+
+const toggleLogs = document.getElementById('toggleLogs');
+const responseConsole = document.getElementById('responseConsole');
+const commandHistory = document.getElementById('commandHistory');
+
+toggleLogs.addEventListener('change', function() {
+  const displayStyle = this.checked ? 'block' : 'none';
+  responseConsole.style.display = displayStyle;
+  commandHistory.style.display = displayStyle;
+  
+  // Optional: Adjust map height if needed when logs are hidden
+  // For example, increase the map height when logs are hidden
+  if (!this.checked) {
+    document.getElementById('map').style.height = '700px';
+  } else {
+    document.getElementById('map').style.height = '500px';
+  }
 });
