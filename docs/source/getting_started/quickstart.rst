@@ -66,9 +66,11 @@ Steps
 
 8.  **Run a Simulation:**
 
-  *   In the web console's command input box, type: `include[real_case.ff]` and press Enter or click Send.
-  *   Click the "Refresh Map" button.
+  In ForeFire, running a simulation and viewing the result are separate commands. The UI guides you through this.
 
+    * **Step 1: Run the simulation script.** In the command input box, type `include[real_case.ff]` and click the **`Send`** button. The simulation will run on the server.
+    * **Step 2: View the result.** After the command finishes, click the **`Refresh Map`** button to load the simulation results onto the map.
+  
   You should see a simulation running in the Aullène region of Corsica.
   
   .. image:: /_static/images/gui_real_case_ff.jpg

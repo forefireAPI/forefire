@@ -291,12 +291,14 @@ namespace http_command {
                 return buildResponse("200 OK", "text/html; charset=UTF-8", body);
             } else {
                 if (!fileExists(path)) {
-                    cout << "File not found: " << path << std::endl;
                     if (const char* ffHome = std::getenv("FOREFIREHOME")) {
                         
                         std::string altPath = std::string(ffHome) +"/tools/htdocs/"+ path;
-                        if (fileExists(altPath))
+                        if (fileExists(altPath)){
                             path = altPath;
+                        }
+                    } else {
+                        cout << "FOREFIREHOME not set. File not found: " << path << std::endl;
                     }
                 }
                 if (fileExists(path)) {

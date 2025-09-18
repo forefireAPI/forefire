@@ -4,13 +4,18 @@
 
 
 ---
+<!-- Identity & Citation -->
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
+<!-- Project Health & Status -->
 [![linuxCI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
 [![macOSCI](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Docker CI/CD](https://github.com/forefireAPI/forefire/actions/workflows/docker.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/docker.yml)
+[![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest)
+<!-- Distribution and Technical Stack -->
+[![Docker Package](https://img.shields.io/badge/Docker-Package-blue?logo=docker&logoColor=white)](https://github.com/forefireAPI/forefire/pkgs/container/forefire)
 ![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
 ![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-[![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest) 
-[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
 
 
 **ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models and enables high-fidelity coupled fire-atmosphere simulations, aiming to improve wildfire prediction and understanding for complex environments.
@@ -80,9 +85,11 @@ The easiest way to get started is often using Docker and the interactive console
     This server provides a graphical user interface that you can access on your browser at http://localhost:8000/
 
 6. Run your first simulation
-    - Run the command `include[real_case.ff]`
-    - Then press Refresh Map
-
+    
+    In ForeFire, running a simulation and viewing the result are separate commands. The UI guides you through this process.
+    - **Step 1: Run the simulation script.** In the command input box, type `include[real_case.ff]` and click the **`Send`** button. The simulation will run on the server.
+    - **Step 2: View the result.** After the command finishes, click the **`Refresh Map`** button to load the simulation results onto the map.
+    
     You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
 
 ## Build from source
