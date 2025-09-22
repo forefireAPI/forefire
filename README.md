@@ -92,6 +92,10 @@ The easiest way to get started is often using Docker and the interactive console
     
     You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
 
+### Sample data and Git LFS
+
+The demo datasets bundled under `tests/runff/` are stored with Git LFS because they include several megabytes of raster data that we only use in the quick-start examples and regression tests. Make sure Git LFS is installed before cloning; otherwise Git will pull pointer files only. If that happens, download the dataset directly from the GitHub web interface and drop it back into the expected folder before running the examples. This data is only provided for the bundled test scenarios.
+
 ## Build from source
 
 See the Full Documentation for more details on building from source with the `install-forefire.sh` file

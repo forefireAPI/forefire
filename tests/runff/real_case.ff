@@ -5,5 +5,6 @@ startFire[loc=(35581.873264425,28699.674854985,0);t=0]
 startFire[loc=(35181.873264425,28699.674854985,0);t=0]
 trigger[wind;loc=(0.,0.,0.);vel=(10.0923828125,0.6782714843750001,0.)]@t=1200
 step[dt=2400]
+print[]
 print[to_reload.ff]
 save[]
