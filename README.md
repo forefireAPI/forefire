@@ -44,6 +44,10 @@
 
 The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
 
+#### Windows note
+
+ForeFire targets Unix-like systems (Linux/macOS). On Windows, please use Docker Desktop or WSL2 to run the quick-start examples.
+
 1. Clone the repository
     
     ``` bash
@@ -52,18 +56,26 @@ The easiest way to get started is often using Docker and the interactive console
     cd forefire
     ```
 
-2. Build the Docker image 
+2. Verify Git LFS sample data (required for the quick-start examples)
+
+    On Unix/macOS:
+    ```bash
+    bash tools/preflight/verify-lfs.sh
+    ```
+    If this fails (e.g., `tests/runff/data.nc` is ~1 KB), install Git LFS and reclone the repo, or download the file from the GitHub web UI into `tests/runff/`.
+
+3. Build the Docker image 
 
     ```bash
     docker build . -t forefire:latest
     ```
 
-3. Run the container interactively
+4. Run the container interactively
 
     ```bash
     docker run -it --rm -p 8000:8000 --name ff_interactive forefire
     ```
-4. Inside the container navigate to test directory and launch the forefire console:
+5. Inside the container navigate to test directory and launch the forefire console:
     ```bash
     cd tests/runff
 
@@ -71,7 +83,7 @@ The easiest way to get started is often using Docker and the interactive console
     forefire
     ```
 
-5. Inside the console launch an http server with listenHttp[] command
+6. Inside the console launch an http server with listenHttp[] command
 
     ```bash
     forefire> listenHTTP[]
@@ -82,7 +94,7 @@ The easiest way to get started is often using Docker and the interactive console
 
     This server provides a graphical user interface that you can access on your browser at http://localhost:8000/
 
-6. Run your first simulation
+7. Run your first simulation
     
     In ForeFire, running a simulation and viewing the result are separate commands. The UI guides you through this process.
     - **Step 1: Run the simulation script.** In the command input box, type `include[real_case.ff]` and click the **`Send`** button. The simulation will run on the server.
