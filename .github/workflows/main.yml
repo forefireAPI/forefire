@@ -18,6 +18,10 @@ jobs:
         with:
           lfs: true # we use LFS to store large files (e.g. data.nc)
 
+      - name: Verify LFS test asset (data.nc)
+        run: |
+          bash ./tools/preflight/verify-lfs.sh
+
       - name: Install Dependencies (Build + Test)
         run: |
           sudo apt-get update -y
