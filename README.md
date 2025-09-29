@@ -58,7 +58,6 @@ ForeFire targets Unix-like systems (Linux/macOS). On Windows, please use Docker 
 
 2. Verify Git LFS sample data (required for the quick-start examples)
 
-    On Unix/macOS:
     ```bash
     bash tools/preflight/verify-lfs.sh
     ```
