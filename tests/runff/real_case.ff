@@ -1,3 +1,4 @@
+systemExec[bash check_data_nc.bash]
 include[params.ff]
 loadData[data.nc;2025-02-10T17:35:54Z]
 startFire[loc=(35881.873264425,28699.674854985,0);t=0]
@@ -8,3 +9,4 @@ step[dt=2400]
 print[]
 print[to_reload.ff]
 save[]
+
