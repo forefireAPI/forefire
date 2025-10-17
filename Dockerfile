@@ -30,5 +30,9 @@ RUN cp /forefire/bin/forefire /usr/local/bin/
 # Use pip to install the Python bindings
 RUN pip3 install ./bindings/python
 
-# Set the entrypoint to bash for interactive sessions
-CMD ["bash"]
+# Copy and set up the entrypoint script
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint for automatic demo startup
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
