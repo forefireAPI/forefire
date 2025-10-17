@@ -6,6 +6,7 @@ RUN apt-get update && \
     build-essential \
     libnetcdf-c++4-dev \
     cmake \
+    curl \
     python3 \
     python3-pip \
     python3-dev \
