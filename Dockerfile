@@ -22,7 +22,7 @@ ENV FOREFIREHOME=/forefire
 # Copy build configuration first (rarely changes)
 COPY CMakeLists.txt cmake-build.sh LICENSE ./
 
-# Copy source code and applications (changes more frequently)
+# Copy source code and applications
 COPY src/ ./src/
 COPY app/ ./app/
 COPY tools/runANN/ ./tools/runANN/
