@@ -22,9 +22,10 @@ ENV FOREFIREHOME=/forefire
 # Copy build configuration first (rarely changes)
 COPY CMakeLists.txt cmake-build.sh LICENSE ./
 
-# Copy source code and tools (changes more frequently)
+# Copy source code and applications
 COPY src/ ./src/
-COPY tools/ ./tools/
+COPY app/ ./app/
+COPY tools/runANN/ ./tools/runANN/
 
 # Build and install the ForeFire C++ library
 RUN sh cmake-build.sh
