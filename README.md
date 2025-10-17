@@ -42,7 +42,11 @@
 
 ## Quick Start with Docker
 
-The easiest way to get started is often using Docker and the interactive console, via the **`forefire` command-line interpreter** 
+
+The easiest way to get started is often using Docker and the interactive console with instruction noted below via the **`forefire` command-line interpreter** see in video :
+
+<video src="./docs/source/_static/build_small_600.mp4" width="600" autoplay loop muted playsinline></video>
+
 
 #### Windows note
 
