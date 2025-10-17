@@ -24,7 +24,7 @@ COPY CMakeLists.txt cmake-build.sh LICENSE ./
 
 # Copy source code and tools (changes more frequently)
 COPY src/ ./src/
-COPY tools/ ./tools/
+COPY app/ ./app/
 
 # Build and install the ForeFire C++ library
 RUN sh cmake-build.sh
