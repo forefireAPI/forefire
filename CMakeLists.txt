@@ -159,7 +159,7 @@ endif()
 # ----------------------------------
 # Main Project Executable
 # ----------------------------------
-set(INTERPRETER tools/forefire/ForeFire.cpp tools/forefire/AdvancedLineEditor.cpp)
+set(INTERPRETER app/forefire/ForeFire.cpp app/forefire/AdvancedLineEditor.cpp)
 add_executable(forefire ${INTERPRETER})
 if(DEFINED NETCDF_STATIC_LIBS)
     if(MPI_FOUND)
