@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jul 18 10:23:07 2024
+Polished on Wed OCt 29 08:35:00 2025
 
 @author: Batti Filippi
+@co-author: Fernando Veiga
 """
 
 import numpy as np
@@ -17,12 +19,9 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.patches as patches
 import numpy as np
-from matplotlib import cm
+import matplotlib
 import math
 import datetime
-from pyproj import Proj, transform
-
-
 import pyforefire.helpers as ffhelpers
 
 def plot_test(pathes, myExtents, bg_array=None):
@@ -60,7 +59,7 @@ def plot_test(pathes, myExtents, bg_array=None):
     ax.grid(True)
 
     # Create a colormap instance from inferno and determine colors for each path
-    cmap = cm.get_cmap('inferno', len(pathes))
+    cmap = matplotlib.colormaps['inferno']
     
     for idx, path in enumerate(pathes):
         # Use a different color for each path
@@ -71,7 +70,7 @@ def plot_test(pathes, myExtents, bg_array=None):
     ax.axis('equal')
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
-    plt.show()
+    #plt.show()
 
 def load_weather_file(file_path, default_step_size=1800):
     """
@@ -92,6 +91,7 @@ def load_weather_file(file_path, default_step_size=1800):
         for line in f:
             if line.strip().startswith("Year"):
                 header = line.strip().split()
+                print(header)
                 break
         
         # Read the remaining lines as data rows.
@@ -376,19 +376,19 @@ def plot_landscape_with_header(lcp_data):
     plt.tight_layout()
     plt.show()
 
+## Simulation Parameters ##
+nb_steps = 3               # The number of step the simulation will execute
+step_size =   1000              # The duration (in seconds) between each step
 
 # Initialize pyforefire module
 ff = pyff.ForeFire()
-mylcpfile = "/Users/filippi_j/soft/tests/farsite/examples/flatland/Inputs/a_lcpFiles/flatland.lcp"
-mylcpfile = "/Users/filippi_j/soft/tests/farsite/examples/Panther/cust/input/238648_cust_fm94.lcp"
-mylcpfile = "/Users/filippi_j/soft/firefront/local/tests/python/ZHR_37.lcp"
-mylWeatherFile = "/Users/filippi_j/soft/firefront/local/tests/python/weather_MNH_41_69-1_90.wxs"
+mylcpfile = "./flatland.lcp"
+mylWeatherFile = './flatland_3mph0deg7hr.raws'
 a = readLCPFile(mylcpfile)
 
 #plot_landscape_with_header(a)
 
 ff["propagationModel"] = "Farsite"
-pmodel = ff["propagationModel"]
 ff["fuelsTable"] = "STDfarsiteFuelsTable"
 ff["FarsiteLoggerCSVPath"] = "FF_FS4roslog_2.csv"
 
@@ -398,26 +398,14 @@ ff["moistures.tens"] =  0.04
 ff["moistures.livew"] =  1
 ff["moistures.hundreds"] =  0.06
 
-
-ff["moistures.ones"] = 0.06
-ff["moistures.liveh"] =  0.7
-ff["moistures.tens"] =  0.07
-ff["moistures.livew"] =  1
-ff["moistures.hundreds"] =  0.08
-
 ff["spatialIncrement"] = 1
 ff["minimalPropagativeFrontDepth"] = 30
 ff["perimeterResolution"] = float(ff["spatialIncrement"]) * 20
 
 ff["minSpeed"] = 0
 ff["relax"] = 0.5
-ff["bmapLayer"]=1
+ff["bmapLayer"] = 1
 
-#    "loeast": -192.0,
-#    "hieast": 14208.0,
-#    "lonorth": -291.0,
-#    "hinorth": 16299.0,
-#startx,starty = 211424,5113945
 S = float(a["header"]["SouthUtm"])
 N = float(a["header"]["NorthUtm"])
 W = float(a["header"]["WestUtm"])
@@ -427,12 +415,9 @@ ff["SWx"] = W
 ff["SWy"] = S
 ff["Lx"] = E-W
 ff["Ly"] = N-S
-print(ff["Ly"])
 
 dwidth = E-W
 dheight =  N-S
-
-
 
 wind_map = np.zeros((2,2,20,20))
 windU=wind_map[0:1,:,:,:]  
@@ -441,52 +426,30 @@ windU[0,1,:,:].fill(0.0)
 windV=wind_map[1:2,:,:,:] 
 windV[0,0,:,:].fill(0.0)
 windV[0,1,:,:].fill(1.0)
+#print('wind_map',wind_map, wind_map.shape)
 
 fuel = a["landscape"]["fuel"]
 fuel_map = np.zeros((1, 1) + np.shape(fuel))
 fuel_map[0, 0, ...] = fuel
-#import json
+#print('fuelmap',fuel_map, fuel_map.shape)
 
-#print(json.dumps(a["header"], indent=4))
 altitude = a["landscape"]["elevation"]
 altitude_map = np.zeros((1, 1) + np.shape(altitude))
 altitude_map[0, 0, ...] = altitude
+#print('altitudemap',altitude_map, altitude_map.shape)
 
-time=0.
-domain_string = f'FireDomain[sw=({W},{S},0);ne=({E},{N},0);t={time}]'
+# Set computation
+domain_string = f'FireDomain[sw=({W},{S},0);ne=({E},{N},0);t=0.]'
 ff.execute(domain_string)
-
 ff.addLayer("propagation",ff["propagationModel"],"propagationModel")
-
 ff.addIndexLayer("table", "fuel", W,S, 0, dwidth, dheight,0, fuel_map)
 ff.addScalarLayer("windScalDir", "windU", W,S, 0, dwidth, dheight,0, windU)
 ff.addScalarLayer("windScalDir", "windV", W,S, 0, dwidth, dheight,0,  windV)
 ff.addScalarLayer("data", "altitude", W,S, 0, dwidth, dheight,0,  altitude_map)
 
-startx,starty=W+dwidth/2,S+dheight/2
-#startx,starty=22500.0, 22500.0
-startx,starty=408364,4615349
-
-
-
-
-# Define the input projection (WGS 84 Lat/Lon)
-wgs84 = Proj(proj="latlong", datum="WGS84")
-utmZone = Proj(proj="utm", zone=31, datum="WGS84", north=True)
-
-lon, lat = 1.9, 41.685
-
-startx,starty= transform(wgs84, utmZone, lon, lat)
-
-#print(utm_x, utm_y )
-#print(startx,starty)
-
-
-
-#startx,starty = 211424,5113945
-
+startx, starty = W + dwidth/2, S + dheight/2
 dx = 2*float(ff["perimeterResolution"])
-#fireString =f"startFire[loc=({startx},{starty},0.);t={time}]"
+fireString =f"startFire[loc=({startx},{starty},100.);t=0.]"
 ff.execute("    FireFront[id=2;domain=0;t=0]")
 ff.execute(f"        FireNode[domain=0;id=4;fdepth=20;kappa=0;loc=({startx},{starty+dx},100);vel=(0,0.1,0);t=0;state=init;frontId=2]")
 ff.execute(f"        FireNode[domain=0;id=6;fdepth=20;kappa=0;loc=({startx+dx},{starty},100);vel=(0.1,0,0);t=0;state=init;frontId=2]")
@@ -494,13 +457,12 @@ ff.execute(f"        FireNode[domain=0;id=8;fdepth=20;kappa=0;loc=({startx},{sta
 ff.execute(f"        FireNode[domain=0;id=10;fdepth=20;kappa=0;loc=({startx-dx},{starty},100);vel=(-0.1,0,0);t=0;state=init;frontId=2]")
 
 pathes = []
-norm = 4.08802  
-step_size = 3600
 
-data_records = load_weather_file(mylWeatherFile)[22:34]
+data_records = load_weather_file(mylWeatherFile)
+print('Data_weather!',data_records)
 for i, record in enumerate(data_records):
         current_dt = record['datetime']
-        wind_speed = record['wind_spd']/1.8
+        wind_speed = record['wind_spd'] * 0.44704 * 0.5#mph
         wind_dir = record['wind_dir']+180.0
         
         # Convert wind direction (degrees) to radians.
@@ -511,6 +473,7 @@ for i, record in enumerate(data_records):
         
         # Here, we use the current date-time in ISO format as a simulation time identifier.
         sim_time = current_dt.isoformat()
+        print(sim_time)
         
         # Trigger the wind in the simulation.
         ff.execute(f"trigger[wind;loc=(0.,0.,0.);vel=({wind_x},{wind_y},0);t={sim_time}]")
@@ -520,40 +483,17 @@ for i, record in enumerate(data_records):
             next_dt = data_records[i+1]['datetime']
             dt_seconds = (next_dt - current_dt).total_seconds()
         else:
-            dt_seconds = 1800
+            dt_seconds = 3600
         
         # Advance the simulation.
         ff.execute("step[dt=%f]" % dt_seconds)
         
         # Retrieve and accumulate the simulation path information.
-        if(i%2==0):
-            pathes += pyff.helpers.printToPathe(ff.execute("print[]"))
+        #if(i%2==0):
+        pathes += pyff.helpers.printToPathe(ff.execute("print[]"))
         print(f"Simulated for {current_dt} with wind speed {wind_speed} and direction {wind_dir}°, step {dt_seconds} sec")
     
-#ff.execute("save[filename=data.nc;fields=fuel,altitude,wind]")
-
-#for angle in [0,0,0,0,0,0,300,300,300,300,300,300,300,300,300]:
-#    rotation_angle_rad = math.radians(angle)
-#    herex = norm * math.sin(rotation_angle_rad)
-#    herey = norm * math.cos(rotation_angle_rad)
-#    ff.execute(f"trigger[wind;loc=(0.,0.,0.);vel=({herex},{herey},0);t={time}]")
-#    ff.execute("step[dt=%f]" % (step_size))
-#    pathes += pyff.helpers.printToPathe(ff.execute("print[]"))
-#    print(angle)
-
-
+ff.execute("save[filename=data.nc;fields=fuel,altitude,wind]")
 
 ffplotExtents =(W,E,S,N)
-print(ffplotExtents)
-
-bmap = ff["fuel"]
-bmap[bmap < 0.0] = 00
-print(np.shape(bmap))
-plot_test(pathes, ffplotExtents, bg_array=bmap)
-#pyff.helpers.plot_simulation(pathes,None ,None,  ffplotExtents ,scalMap=None)
-#ff.execute("plot[parameter=fuel;filename=fuel.png;range=(0.02,0.06);histbins=50;cmap=turbo]")
-
-#ff.execute("plot[parameter=speed;filename=360wind.png;range=(0.02,0.06);histbins=50;cmap=turbo]")
-
-
-
+pyff.helpers.plot_simulation(pathes,ff.getDoubleArray("fuel")[0,0,:,:], ff.getDoubleArray("altitude")[0,0,:,:],  ffplotExtents)
