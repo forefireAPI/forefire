@@ -59,6 +59,7 @@ authors:
     corresponding: false
   - name: Antonio Leblanc
     affiliation: 4
+    orcid: 0009-0001-9043-2039
     corresponding: false
   - name: Alberto Alonso-Pinar
     orcid: 0009-0009-2051-9700
