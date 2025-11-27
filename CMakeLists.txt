@@ -16,12 +16,15 @@ if(MPI_C_COMPILER AND MPI_CXX_COMPILER)
     message(STATUS "  MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
     set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
     set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
+
     if(MPI_C_LIBRARIES)
         link_directories(${MPI_C_LIBRARIES})
     endif()
+
     if(MPI_CXX_LIBRARIES)
         link_directories(${MPI_CXX_LIBRARIES})
     endif()
+
     set(MPI_FOUND TRUE)
 else()
     find_package(MPI)
@@ -29,15 +32,52 @@ else()
         message(STATUS "MPI found via find_package")
         include_directories(${MPI_INCLUDE_PATH})
     else()
-        message(WARNING "MPI not found. MPI targets will not be built.")
+        # Try to detect MPI installation from environment variables like MPI_HOME, MPI_ROOT, or any *MPI*ROOT*
+        set(_mpi_env_vars)
+        foreach(_var_name IN LISTS ENV)
+            string(TOUPPER "${_var_name}" _upper_name)
+            if(_upper_name MATCHES "MPI_HOME|MPI_ROOT|.*MPI.*ROOT.*")
+                list(APPEND _mpi_env_vars "${_var_name}")
+            endif()
+        endforeach()
+
+        set(_mpi_found_env_var "")
+        foreach(_mpi_env_var ${_mpi_env_vars})
+            if(DEFINED ENV{${_mpi_env_var}})
+                set(_mpi_found_env_var "${_mpi_env_var}")
+                break()
+            endif()
+        endforeach()
+
+        if(_mpi_found_env_var)
+            set(HEREMPI $ENV{${_mpi_found_env_var}})
+            message(STATUS "Detected MPI environment variable: ${_mpi_found_env_var} = ${HEREMPI}")
+            set(MPI_C_COMPILER "${HEREMPI}/bin/mpicc")
+            set(MPI_CXX_COMPILER "${HEREMPI}/bin/mpicxx")
+            set(MPI_C_LIBRARIES "${HEREMPI}/lib/release/libmpi.so")
+            set(MPI_CXX_LIBRARIES "${HEREMPI}/lib/libmpicxx.so")
+            set(MPI_INCLUDE_PATH "${HEREMPI}/include")
+            set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
+            set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
+            link_directories("${HEREMPI}/lib" "${HEREMPI}/lib/release")
+            include_directories("${MPI_INCLUDE_PATH}")
+            message(STATUS "Set MPI_C_COMPILER: ${MPI_C_COMPILER}")
+            message(STATUS "Set MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
+            message(STATUS "Set MPI_C_LIBRARIES: ${MPI_C_LIBRARIES}")
+            message(STATUS "Set MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+            message(STATUS "Set MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
+            set(MPI_FOUND TRUE)
+        else()
+            message(WARNING "No suitable MPI environment variable (e.g., MPI_HOME, MPI_ROOT, *MPI*ROOT*) found. Please specify MPI paths manually with -DMPI_C_COMPILER, -DMPI_CXX_COMPILER, -DMPI_C_LIBRARIES, -DMPI_CXX_LIBRARIES, -DMPI_INCLUDE_PATH.")
+        endif()
     endif()
 endif()
 
 # ----------------------------------
 # Check for MESONH and XYZ Environment Variables
 # ----------------------------------
-if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ})
-    message(STATUS "MESONH and XYZ environment variables are set. Configuring static NetCDF.")
+if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ} AND DEFINED ENV{FF_STATIC})
+    message(STATUS "MESONH and XYZ environment variables are set. FF_STATIC too, static NetCDF.")
     set(MESONH $ENV{SRC_MESONH})
     set(XYZ $ENV{XYZ})
     file(GLOB NETCDF_DIR "${MESONH}/src/dir_obj${XYZ}/MASTER/NETCDF-*")
@@ -202,3 +242,32 @@ if(APPLE)
 endif()
 
 include(CPack)
+
+# ----------------------------------
+# LFS Data Integrity Check
+# ----------------------------------
+message(STATUS "Running Git LFS data integrity check...")
+
+execute_process(
+    COMMAND bash tools/check_all_lfs.bash
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE LFS_CHECK_RESULT
+    OUTPUT_VARIABLE LFS_CHECK_OUTPUT
+    ERROR_VARIABLE  LFS_CHECK_ERROR
+)
+
+if(LFS_CHECK_RESULT EQUAL 0)
+    message(STATUS "✅ LFS data check passed successfully.")
+else()
+    message(WARNING "
+************************************************************
+⚠️  WARNING: Git LFS data integrity check failed!
+You will NOT be able to run built-in examples until LFS data
+files are correctly downloaded or restored.
+------------------------------------------------------------
+Command output:
+${LFS_CHECK_OUTPUT}
+${LFS_CHECK_ERROR}
+************************************************************
+")
+endif()
