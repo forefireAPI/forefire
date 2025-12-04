@@ -100,7 +100,7 @@ ForeFire was developed as a community tool to fill the gap between highly comple
 
 ## Rapid prototyping of new models
 ForeFire implements several standard fire flux and spread rate models, such as Rothermel [@andrews2018] and Balbi [@balbi2009], and makes it trivial to switch, extend, or add to this base with a single `.cpp` file using any existing model file as a template.
-Internally, data is handled as *layers* that can come from a NumPy array, be read from NetCDF, or be generated on the fly by ForeFire (e.g., slope derived from the elevation layer, fuel loaded as an index map with tabulated fuel — with part of `@Scott2005` fuel tables already available). 
+Internally, data is handled as *layers* that can come from a NumPy array, be read from NetCDF, or be generated on the fly by ForeFire (e.g., slope derived from the elevation layer, fuel loaded as an index map with tabulated fuel — with standards fuel tables [@Scott2005] already available). 
 Developing a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions of the Balbi Rate Of Spread formulation on case studies [@balbi2009;@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption [@filippi2021], plume chemistry [@strada2012], or industrial fires [@baggio2022]. In addition, the code includes a generic `ANNPropagationModel` that implements a feedforward artificial neural network (ANN) and expects a pre-trained graph file.
 
 ## Batch simulations with the ForeFire scripting
