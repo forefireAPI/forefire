@@ -113,7 +113,7 @@ By utilizing pre-compiled datasets over extensive regions, this approach support
 
 
 ### Two-way coupling with the MesoNH atmospheric model
-The same scripts can be executed in coupled mode with the Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with fire propagating using surface fields (wind) from MesoNH and forcing heat and other flux fields into the atmosphere. An idealized coupled simulation can be run on a laptop at field scale [@filippi2013], but also on a supercomputer to forecast fire-induced winds of large wildfires [@filippi2018], fire-induced convection [@couto2024], [@campos2023], or even to estimate wildfire spotting [@alonsopinar2025].
+The same scripts can be executed in coupled mode with the Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with fire propagating using surface fields (wind) from MesoNH and forcing heat and other flux fields into the atmosphere. An idealized coupled simulation can be run on a laptop at field scale [@filippi2013], but also on a supercomputer to forecast fire-induced winds of large wildfires [@filippi2018], fire-induced convection [@couto2024;@campos2023], or even to estimate wildfire spotting [@alonsopinar2025].
 
 Coupled simulations generate gigabytes of 3D data that can be converted to VTK/VTU files using Python helper scripts to visualize in the open-source tool ParaView, as shown in \autoref{fig:coupled}. 
 
