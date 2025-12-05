@@ -100,8 +100,8 @@ ForeFire was developed as a community tool to fill the gap between highly comple
 
 ## Rapid prototyping of new models
 ForeFire implements several standard fire flux and spread rate models, such as Rothermel [@andrews2018] and Balbi [@balbi2009], and makes it trivial to switch, extend, or add to this base with a single `.cpp` file using any existing model file as a template.
-Internally, data is handled as *layers* that can come from a NumPy array, be read from NetCDF, or be generated on the fly by ForeFire (e.g., slope derived from the elevation layer, fuel loaded as an index map with tabulated fuel — with standards fuel tables [@Scott2005] already available). 
-Developing a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions of the Balbi Rate Of Spread formulation on case studies [@balbi2009;@santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption [@filippi2021], plume chemistry [@strada2012], or industrial fires [@baggio2022]. In addition, the code includes a generic `ANNPropagationModel` that implements a feedforward artificial neural network (ANN) and expects a pre-trained graph file.
+Internally, data is handled as *layers* that can come from a NumPy array, be read from NetCDF, or be generated on the fly by ForeFire (e.g., slope derived from the elevation layer, fuel loaded as an index map with tabulated fuel — with standard fuel tables [@Scott2005] already available). 
+Developing a Rate Of Spread wildfire model was the original purpose of this simulation code and helped to iterate versions of the Balbi Rate Of Spread formulation on case studies [@balbi2009; @santoni2011]. It also served to implement various heat and chemical species flux models used for volcanic eruption [@filippi2021], plume chemistry [@strada2012], or industrial fires [@baggio2022]. In addition, the code includes a generic `ANNPropagationModel` that implements a feedforward artificial neural network (ANN) and expects a pre-trained graph file.
 
 ## Batch simulations with the ForeFire scripting
 Custom FF language allows users to easily generate multiple scenarios, including fire-fighting strategies, model evaluation [@filippi2014], ensemble forecasts [@allaire2020], or generate a deep learning database [@allaire2021]. A FF script is a set of scheduled instructions that are interpreted in real-time, advancing the simulation clock with a `step[dt=]` or a `goTo[t=]` command. 
@@ -113,11 +113,11 @@ By utilizing pre-compiled datasets over extensive regions, this approach support
 
 
 ### Two-way coupling with the MesoNH atmospheric model
-The same scripts can be executed in coupled mode with the Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with fire propagating using surface fields (wind) from MesoNH and forcing heat and other flux fields into the atmosphere. An idealized coupled simulation can be run on a laptop at field scale [@filippi2013], but also on a supercomputer to forecast fire-induced winds of large wildfires [@filippi2018], fire-induced convection [@couto2024;@campos2023], or even to estimate wildfire spotting [@alonsopinar2025].
+The same scripts can be executed in coupled mode with the Open-Source atmospheric model [MesoNH](https://mesonh.cnrs.fr/) [@lac2018] with fire propagating using surface fields (wind) from MesoNH and forcing heat and other flux fields into the atmosphere. An idealized coupled simulation can be run on a laptop at field scale [@filippi2013], but also on a supercomputer to forecast fire-induced winds of large wildfires [@filippi2018], fire-induced convection [@couto2024; @campos2023], or even to estimate wildfire spotting [@alonsopinar2025].
 
 Coupled simulations generate gigabytes of 3D data that can be converted to VTK/VTU files using Python helper scripts to visualize in the open-source tool ParaView, as shown in \autoref{fig:coupled}. 
 
-![Coupled simulation of the Pedrogao Grande wildfire [@couto2024] (Paraview rendering). On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyro-cumulonimbus clouds in blue.\label{fig:coupled}](coupled.jpg)
+![Coupled simulation of the Pedrogao Grande wildfire [@couto2024] (ParaView rendering). On the ground, the burned area is in orange, while among atmospheric variables, downbursts are highlighted in red and pyro-cumulonimbus clouds in blue.\label{fig:coupled}](coupled.jpg)
 
 # Acknowledgements
 This work has been supported by the Centre National de la Recherche Scientifique and French National Research Agency under grants **ANR-09-COSI-006-01 (IDEA)** and **ANR-16-CE04-0006 (FIRECASTER)**. The authors thank all contributors and collaborators who have assisted in the development and testing of the ForeFire software.
