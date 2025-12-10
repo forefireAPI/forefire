@@ -24,6 +24,20 @@ const commands = {
   
   // Populate predefined command buttons.
   const commandButtonsDiv = document.getElementById('commandButtons');
+  const responseConsoleEl = document.getElementById('responseConsole');
+  const commandHistoryEl = document.getElementById('commandHistory');
+
+  function uiLog(message, type = 'info') {
+    console.log(`[UI ${type}] ${message}`);
+    if (responseConsoleEl) {
+      const div = document.createElement('div');
+      div.className = `ui-log ui-${type}`;
+      div.textContent = message;
+      responseConsoleEl.appendChild(div);
+      responseConsoleEl.scrollTop = responseConsoleEl.scrollHeight;
+    }
+  }
+
   for (const cmd in commands) {
     const btn = document.createElement('button');
     btn.textContent = cmd;
@@ -35,7 +49,7 @@ const commands = {
   }
   
   // Initialize Leaflet map.
-  const map = L.map('map').setView([42.0, 9.0], 8);
+  const map = L.map('map', { doubleClickZoom: false }).setView([42.0, 9.0], 8);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
@@ -43,6 +57,315 @@ const commands = {
   let mapLayer = null;
   let imageOverlay = null; // For image overlays
   let velocityLayer = null; // For wind velocity layer
+  let activeLayer = null; // Track the last clicked layer
+  let lastPlotCommand = null;
+  // --- Colorbar UI State ---
+  const colorbarElements = {
+    canvas: document.getElementById('colorbarCanvas'),
+    minLabel: document.getElementById('colorbarMinLabel'),
+    maxLabel: document.getElementById('colorbarMaxLabel'),
+    minInput: document.getElementById('colorbarMinInput'),
+    maxInput: document.getElementById('colorbarMaxInput'),
+    cmapSelect: document.getElementById('colorbarCmapSelect'),
+    autoFitCheckbox: document.getElementById('colorbarAutoFit'),
+    applyBtn: document.getElementById('colorbarApply'),
+    useDataBtn: document.getElementById('colorbarUseData'),
+    status: document.getElementById('colorbarStatus')
+  };
+  colorbarElements.ctx = colorbarElements.canvas ? colorbarElements.canvas.getContext('2d') : null;
+
+  const COLORBAR_GRADIENTS = {
+    viridis: ['#440154', '#46337f', '#365c8d', '#277f8e', '#1fa187', '#95d840', '#fde725'],
+    plasma: ['#0d0887', '#7e03a8', '#cc4778', '#f89540', '#f0f921'],
+    plasma_r: ['#f0f921', '#f89540', '#cc4778', '#7e03a8', '#0d0887'],
+    hot: ['#000000', '#ff0000', '#ffff00', '#ffffff'],
+    hot_r: ['#ffffff', '#ffff00', '#ff0000', '#000000'],
+    coolwarm: ['#3b4cc0', '#ffffff', '#b40426'],
+    grey: ['#000000', '#7f7f7f', '#ffffff'],
+    spring: ['#ff00ff', '#ffff00'],
+    jet: ['#00007f', '#007fff', '#00ff00', '#ff7f00', '#7f0000'],
+    turbo: ['#30123b', '#4145ab', '#2c87f0', '#29d7b1', '#8cf473', '#f9ec4f', '#f9a13c', '#d9381e'],
+    fuel: ['#120400', '#5f2c09', '#c76a17', '#f5c453', '#fff6cf']
+  };
+  const AVAILABLE_COLORMAPS = ['viridis', 'plasma', 'plasma_r', 'hot', 'hot_r', 'coolwarm', 'grey', 'spring', 'jet', 'turbo', 'fuel'];
+  const DEFAULT_COLORMAP = 'viridis';
+  const INVALID_DATA_SENTINELS = new Set([-999, -9999]);
+
+  const colorbarState = {
+    min: null,
+    max: null,
+    cmap: DEFAULT_COLORMAP,
+    autoRange: true,
+    lastDataMin: null,
+    lastDataMax: null,
+    userCmapOverride: false
+  };
+  let suppressCmapEvent = false;
+
+  function formatLabelValue(value) {
+    if (!Number.isFinite(value)) {
+      return 'N/A';
+    }
+    const absVal = Math.abs(value);
+    if ((absVal > 0 && absVal < 0.001) || absVal >= 1000) {
+      return value.toExponential(2);
+    }
+    return value.toFixed(3);
+  }
+
+  function drawColorbar(cmapName) {
+    if (!colorbarElements.ctx || !colorbarElements.canvas) return;
+    const palette = COLORBAR_GRADIENTS[cmapName] || COLORBAR_GRADIENTS[DEFAULT_COLORMAP];
+    const ctx = colorbarElements.ctx;
+    const width = colorbarElements.canvas.width;
+    const height = colorbarElements.canvas.height;
+    const gradient = ctx.createLinearGradient(0, 0, width, 0);
+    const stops = palette.length - 1;
+    palette.forEach((color, index) => {
+      const stop = stops === 0 ? 0 : index / stops;
+      gradient.addColorStop(stop, color);
+    });
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  function updateColorbarStatus(message = '') {
+    if (colorbarElements.status) {
+      colorbarElements.status.textContent = message;
+    }
+  }
+
+  function sanitizeDataValue(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return null;
+    }
+    if (INVALID_DATA_SENTINELS.has(value)) {
+      return null;
+    }
+    return value;
+  }
+
+  function updateColorbarData(minVal, maxVal) {
+    const dataMin = sanitizeDataValue(minVal);
+    const dataMax = sanitizeDataValue(maxVal);
+
+    colorbarState.lastDataMin = dataMin;
+    colorbarState.lastDataMax = dataMax;
+
+    if (colorbarElements.minLabel) {
+      colorbarElements.minLabel.textContent = formatLabelValue(dataMin ?? NaN);
+    }
+    if (colorbarElements.maxLabel) {
+      colorbarElements.maxLabel.textContent = formatLabelValue(dataMax ?? NaN);
+    }
+
+    if (colorbarState.autoRange) {
+      if (dataMin !== null && dataMax !== null && dataMin < dataMax) {
+        colorbarState.min = dataMin;
+        colorbarState.max = dataMax;
+        if (colorbarElements.minInput) {
+          colorbarElements.minInput.value = dataMin;
+        }
+        if (colorbarElements.maxInput) {
+          colorbarElements.maxInput.value = dataMax;
+        }
+        updateColorbarStatus('Using data range');
+      } else {
+        colorbarState.min = null;
+        colorbarState.max = null;
+        if (colorbarElements.minInput) {
+          colorbarElements.minInput.value = '';
+        }
+        if (colorbarElements.maxInput) {
+          colorbarElements.maxInput.value = '';
+        }
+        updateColorbarStatus('Data range unavailable');
+      }
+    } else {
+      updateColorbarStatus('Custom range locked');
+    }
+  }
+
+  function setColorbarCmap(newCmap, userInitiated = false) {
+    const cmap = AVAILABLE_COLORMAPS.includes(newCmap) ? newCmap : DEFAULT_COLORMAP;
+    colorbarState.cmap = cmap;
+    colorbarState.userCmapOverride = userInitiated;
+    if (colorbarElements.cmapSelect) {
+      suppressCmapEvent = true;
+      colorbarElements.cmapSelect.value = cmap;
+      suppressCmapEvent = false;
+    }
+    drawColorbar(cmap);
+  }
+
+  function handleColorbarApply() {
+    if (!colorbarElements.minInput || !colorbarElements.maxInput) return;
+    const minValue = colorbarElements.minInput.value.trim();
+    const maxValue = colorbarElements.maxInput.value.trim();
+    if (minValue === '' || maxValue === '') {
+      updateColorbarStatus('Provide both min and max values.');
+      return;
+    }
+    const parsedMin = Number(minValue);
+    const parsedMax = Number(maxValue);
+    if (!Number.isFinite(parsedMin) || !Number.isFinite(parsedMax)) {
+      updateColorbarStatus('Values must be numeric.');
+      return;
+    }
+    if (parsedMin >= parsedMax) {
+      updateColorbarStatus('Min must be lower than max.');
+      return;
+    }
+    colorbarState.min = parsedMin;
+    colorbarState.max = parsedMax;
+    colorbarState.autoRange = false;
+    syncAutoFitCheckbox();
+    updateColorbarStatus('Custom range applied.');
+    replotActiveLayer("colorbar apply");
+  }
+
+  function handleColorbarUseData() {
+    colorbarState.autoRange = true;
+    syncAutoFitCheckbox();
+    if (colorbarState.lastDataMin !== null && colorbarState.lastDataMax !== null && colorbarState.lastDataMin < colorbarState.lastDataMax) {
+      colorbarState.min = colorbarState.lastDataMin;
+      colorbarState.max = colorbarState.lastDataMax;
+      if (colorbarElements.minInput) {
+        colorbarElements.minInput.value = colorbarState.lastDataMin;
+      }
+      if (colorbarElements.maxInput) {
+        colorbarElements.maxInput.value = colorbarState.lastDataMax;
+      }
+      updateColorbarStatus('Using data range');
+    } else {
+      colorbarState.min = null;
+      colorbarState.max = null;
+      if (colorbarElements.minInput) {
+        colorbarElements.minInput.value = '';
+      }
+      if (colorbarElements.maxInput) {
+        colorbarElements.maxInput.value = '';
+      }
+      updateColorbarStatus('Waiting for data range');
+    }
+    replotActiveLayer("data range");
+  }
+
+  function replotActiveLayer(reason = "colorbar update") {
+    if (!activeLayer) {
+      uiLog("Select a layer before applying colorbar changes", "warn");
+      return;
+    }
+    runLayerPlot(activeLayer, false, reason);
+  }
+
+  function syncAutoFitCheckbox() {
+    if (colorbarElements.autoFitCheckbox) {
+      colorbarElements.autoFitCheckbox.checked = !!colorbarState.autoRange;
+    }
+  }
+
+  function ensureColorbarDefaultsForLayer(layerName) {
+    if (layerName === 'fuel' && !colorbarState.userCmapOverride && colorbarState.cmap !== 'fuel') {
+      setColorbarCmap('fuel', false);
+    }
+  }
+
+  function getRangeParam(layerName) {
+    if (Number.isFinite(colorbarState.min) && Number.isFinite(colorbarState.max) && colorbarState.min < colorbarState.max) {
+      return `;range=(${colorbarState.min},${colorbarState.max})`;
+    }
+    if (layerName === 'fuel') {
+      return ';range=(0,255)';
+    }
+    return '';
+  }
+
+  function getCmapParam(layerName) {
+    let cmap = colorbarState.cmap;
+    if (!cmap) {
+      cmap = layerName === 'fuel' ? 'fuel' : DEFAULT_COLORMAP;
+    }
+    return cmap ? `;cmap=${cmap}` : '';
+  }
+
+  function handlePlotMetadata(layerName, metadata) {
+    if (!metadata || typeof metadata !== 'object') {
+      return;
+    }
+    if (layerName === 'wind' || layerName === 'windU' || layerName === 'windV') {
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(metadata, 'minVal') || Object.prototype.hasOwnProperty.call(metadata, 'maxVal')) {
+      updateColorbarData(metadata.minVal, metadata.maxVal);
+    }
+  }
+
+  function buildPlotCommand(layerName) {
+    ensureColorbarDefaultsForLayer(layerName);
+    const bboxSegment = getBBoxParam();
+    const rangeSegment = getRangeParam(layerName);
+    const cmapSegment = getCmapParam(layerName);
+    const filename = `${layerName}.png`;
+    return `plot[parameter=${layerName};filename=${filename};size=320,320${rangeSegment}${cmapSegment};projectionOut=json${bboxSegment}]`;
+  }
+
+  function extractLayerFromPlotCommand(commandString) {
+    if (typeof commandString !== 'string') {
+      return null;
+    }
+    const match = commandString.match(/plot\[(.*?)\]/i);
+    if (!match) {
+      return null;
+    }
+    const inner = match[1];
+    const paramMatch = inner.match(/parameter=([^;]+)/i);
+    if (!paramMatch) {
+      return null;
+    }
+    return paramMatch[1];
+  }
+
+  function initializeColorbarUI() {
+    if (colorbarElements.cmapSelect) {
+      AVAILABLE_COLORMAPS.forEach((name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+      colorbarElements.cmapSelect.appendChild(option);
+      });
+      colorbarElements.cmapSelect.addEventListener('change', (event) => {
+        if (suppressCmapEvent) {
+          return;
+        }
+        setColorbarCmap(event.target.value, true);
+        replotActiveLayer("colormap change");
+      });
+    }
+    if (colorbarElements.autoFitCheckbox) {
+      colorbarElements.autoFitCheckbox.checked = colorbarState.autoRange;
+      colorbarElements.autoFitCheckbox.addEventListener('change', (event) => {
+        colorbarState.autoRange = event.target.checked;
+        if (colorbarState.autoRange) {
+          handleColorbarUseData();
+        } else {
+          updateColorbarStatus('Custom range locked');
+          replotActiveLayer("autofit off");
+        }
+      });
+    }
+    if (colorbarElements.applyBtn) {
+      colorbarElements.applyBtn.addEventListener('click', handleColorbarApply);
+    }
+    if (colorbarElements.useDataBtn) {
+      colorbarElements.useDataBtn.addEventListener('click', handleColorbarUseData);
+    }
+    setColorbarCmap(DEFAULT_COLORMAP, false);
+    updateColorbarStatus('Waiting for data range');
+  }
+
+  initializeColorbarUI();
   
   // --- Bounding Box Code ---
   let bboxRect = null;
@@ -152,33 +475,33 @@ const commands = {
       map.fitBounds(mapLayer.getBounds());
     }
   }
-// Update map with GeoJSON overlay.
-function updateMapWithGeoJSON(geojson, refit = true) {
-  if (mapLayer) {
+  // Update map with GeoJSON overlay.
+  function updateMapWithGeoJSON(geojson, refit = false) {
+    if (mapLayer) {
       map.removeLayer(mapLayer);
-  }
+    }
 
-  // Define fire-like colors for styling
-  const fireStyle = {
+    // Define fire-like colors for styling
+    const fireStyle = {
       color: "#ff4500",  // Fire orange-red outline
       weight: 2,         // Line thickness
       opacity: 1,        // Full opacity for edges
       fillColor: "#ff6600", // Fire orange fill
       fillOpacity: 0.7   // Semi-transparent fill
-  };
+    };
 
-  // Apply the fire-style to the GeoJSON layer
-  mapLayer = L.geoJSON(geojson, {
+    // Apply the fire-style to the GeoJSON layer
+    mapLayer = L.geoJSON(geojson, {
       style: function (feature) {
-          return fireStyle;
+        return fireStyle;
       }
-  }).addTo(map);
+    }).addTo(map);
 
-  // Fit map to the bounds of the new GeoJSON layer if refit is true
-  if (refit && mapLayer.getBounds && mapLayer.getBounds().isValid()) {
+    // Fit map to the bounds of the new GeoJSON layer if refit is true
+    if (refit && mapLayer.getBounds && mapLayer.getBounds().isValid()) {
       map.fitBounds(mapLayer.getBounds());
+    }
   }
-}
 
   
   // Add image overlay.
@@ -186,21 +509,24 @@ function updateMapWithGeoJSON(geojson, refit = true) {
     if (imageOverlay) {
       map.removeLayer(imageOverlay);
     }
+    // Bust cache so freshly generated image is fetched.
+    const cacheBustedUrl = imageUrl ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_cb=${Date.now()}` : imageUrl;
     const leafletBounds = [[bounds.SWlat, bounds.SWlon], [bounds.NElat, bounds.NElon]];
-    imageOverlay = L.imageOverlay(imageUrl, leafletBounds, { opacity: 0.7 });
+    imageOverlay = L.imageOverlay(cacheBustedUrl, leafletBounds, { opacity: 0.7 });
     imageOverlay.addTo(map);
     imageOverlay.setZIndex(0);
   }
   
   // Send command function: auto-prefix with "ff:".
   async function sendCommand(command) {
-    const responseDiv = document.getElementById('responseConsole');
-    const historyDiv = document.getElementById('commandHistory');
+    const responseDiv = responseConsoleEl || document.getElementById('responseConsole');
+    const historyDiv = commandHistoryEl || document.getElementById('commandHistory');
     historyDiv.innerHTML += "<div class='commandText'>" + command + "</div>";
     historyDiv.scrollTop = historyDiv.scrollHeight;
     responseDiv.innerHTML += "<div class='commandText'>forefire >" + command + "</div>";
     responseDiv.scrollTop = responseDiv.scrollHeight;
-  
+    const originalCommand = command;
+
     if (!command.startsWith("ff:")) {
       command = "ff:" + command;
     }
@@ -230,6 +556,15 @@ function updateMapWithGeoJSON(geojson, refit = true) {
 
       responseDiv.scrollTop = responseDiv.scrollHeight;
       const trimmed = text.trim();
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        try {
+          const metadata = JSON.parse(trimmed);
+          const derivedLayer = extractLayerFromPlotCommand(originalCommand);
+          handlePlotMetadata(derivedLayer, metadata);
+        } catch (e) {
+          // Ignore JSON parse issues for non-plot responses.
+        }
+      }
       if (trimmed.startsWith("<?xml") || trimmed.startsWith("<kml")) {
         updateMapWithKML(text);
       }
@@ -238,7 +573,7 @@ function updateMapWithGeoJSON(geojson, refit = true) {
       responseDiv.innerHTML += "<div>Error: " + error + "</div>";
       return null;
     } finally {
-      updateISODate();
+    updateISODate();
     }
   }
   
@@ -282,108 +617,128 @@ function updateMapWithGeoJSON(geojson, refit = true) {
   
   // --- Layers Sidebar and Update ---
   async function updateLayerList() {
+    uiLog("Requesting layer list...");
     const layersResponse = await sendCommand("getParameter[layerNames]");
-    if (layersResponse) {
-      const layers = layersResponse.trim().split(/\s*,\s*/);
-      const layerListEl = document.getElementById('layerList');
-      layerListEl.innerHTML = "";
-      let hasWindU = false, hasWindV = false;
-      layers.forEach(layer => {
-        const li = document.createElement('li');
-        li.textContent = layer;
-        li.addEventListener('click', () => {
-          // Build the appropriate ff:plot command.
-          let cmd = "";
-          if (layer === "fuel") {
-            cmd = `plot[parameter=fuel;filename=fuel.png;range=(0,255);cmap=fuel;projectionOut=json${getBBoxParam()}]`;
-          } else if (layer === "windU" || layer === "windV") {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;size=320,320;projectionOut=json${getBBoxParam()}]`;
-            if (layer === "windU") hasWindU = true;
-            if (layer === "windV") hasWindV = true;
-          } else {
-            cmd = `plot[parameter=${layer};filename=${layer}.png;size=320,320;projectionOut=json${getBBoxParam()}]`;
-          }
-          sendCommand(cmd).then(responseText => {
-            try {
-              const bounds = JSON.parse(responseText);
-              // If no bounding box exists yet, use these bounds.
-              if (!bboxRect && bounds.SWlon !== undefined) {
-                createBoundingBoxFromResponse(bounds);
-              }
-              const imageUrl = cmd.match(/filename=([^;]+)/)[1];
-              addImageOverlay(imageUrl, bounds);
-            } catch (err) {
-              console.error("Error parsing overlay bounds:", err);
-            }
-          });
-        });
-        layerListEl.appendChild(li);
+    if (!layersResponse) {
+      uiLog("Layer list request returned no data", "warn");
+      return;
+    }
+    const layers = layersResponse.trim().split(/\s*,\s*/).filter(Boolean);
+    const layerListEl = document.getElementById('layerList');
+    layerListEl.innerHTML = "";
+    activeLayer = null;
+    layers.forEach(layer => {
+      const li = document.createElement('li');
+      li.textContent = layer;
+      li.addEventListener('click', () => {
+        activeLayer = layer;
+        runLayerPlot(layer, true, "layer click");
       });
-      // If both windU and windV exist, add an extra "wind" button.
-      if (layers.includes("windU") && layers.includes("windV")) {
-        const li = document.createElement('li');
-        li.textContent = "wind";
-        li.style.fontWeight = "bold";
-        li.addEventListener('click', () => {
-          // Toggle wind layer: if it exists, remove it.
-          if (velocityLayer) {
-            map.removeLayer(velocityLayer);
-            velocityLayer = null;
-            return;
+      layerListEl.appendChild(li);
+    });
+    // If both windU and windV exist, add an extra "wind" button.
+    if (layers.includes("windU") && layers.includes("windV")) {
+      const li = document.createElement('li');
+      li.textContent = "wind";
+      li.style.fontWeight = "bold";
+      li.addEventListener('click', () => {
+        // Toggle wind layer: if it exists, remove it.
+        if (velocityLayer) {
+          map.removeLayer(velocityLayer);
+          velocityLayer = null;
+          uiLog("Wind layer removed");
+          return;
+        }
+        activeLayer = "wind";
+        let cmd = `plot[parameter=wind;filename=windCS.json;size=60,60;projectionOut=json${getBBoxParam()}]`;
+        sendCommand(cmd).then(responseText => {
+          let bboxData;
+          try {
+            bboxData = JSON.parse(responseText);
+          } catch (e) {
+            console.error("Error parsing bounding box data:", e);
+            uiLog("Wind plot response was not JSON", "warn");
           }
-          let cmd = `plot[parameter=wind;filename=windCS.json;size=60,60;projectionOut=json${getBBoxParam()}]`;
-          sendCommand(cmd).then(responseText => {
-            let bboxData;
-            try {
-              bboxData = JSON.parse(responseText);
-            } catch (e) {
-              console.error("Error parsing bounding box data:", e);
-            }
-            // If no bounding box exists yet and the response contains bounds, create one.
-            if (!bboxRect && bboxData && bboxData.SWlon !== undefined) {
-              createBoundingBoxFromResponse(bboxData);
-            }
-            // Use minVal and maxVal from bboxData if available.
-            let windMin = (bboxData && bboxData.minVal !== undefined) ? bboxData.minVal : 0;
-            let windMax = (bboxData && bboxData.maxVal !== undefined) ? bboxData.maxVal : 10;
-            console.log("Wind min/max:", windMin, windMax);
-            // Now fetch the actual wind data from the file windCS.json.
-            fetch("windCS.json")
-              .then(resp => resp.json())
-              .then(windData => {
-                if (velocityLayer) {
-                  map.removeLayer(velocityLayer);
-                }
-                velocityLayer = L.velocityLayer({
-                  displayValues: true,
-                  displayOptions: {
-                    velocityType: "Wind",
-                    position: "bottomleft",
-                    emptyString: "No velocity data",
-                    angleConvention: "bearingCW",
-                    showCardinal: false,
-                    useVectors: true,    
-                    speedUnit: "ms",
-                    directionString: "Direction",
-                    speedString: "Speed"
-                  },
-                  data: windData,               
-                  lineWidth: 3,
-                  minVelocity: windMin,
-                  maxVelocity: windMax,
-                  velocityScale: 0.005,
-                  opacity: 1,
-                  paneName: "overlayPane"
-                });
-                velocityLayer.addTo(map);
-              })
-              .catch(e => {
-                console.error("Error fetching wind data:", e);
+          // If no bounding box exists yet and the response contains bounds, create one.
+          if (!bboxRect && bboxData && bboxData.SWlon !== undefined) {
+            createBoundingBoxFromResponse(bboxData);
+          }
+          // Use minVal and maxVal from bboxData if available.
+          let windMin = (bboxData && bboxData.minVal !== undefined) ? bboxData.minVal : 0;
+          let windMax = (bboxData && bboxData.maxVal !== undefined) ? bboxData.maxVal : 10;
+          uiLog(`Wind min/max: ${windMin}/${windMax}`);
+          // Now fetch the actual wind data from the file windCS.json.
+          fetch(`windCS.json?_cb=${Date.now()}`)
+            .then(resp => resp.json())
+            .then(windData => {
+              if (velocityLayer) {
+                map.removeLayer(velocityLayer);
+              }
+              velocityLayer = L.velocityLayer({
+                displayValues: true,
+                displayOptions: {
+                  velocityType: "Wind",
+                  position: "bottomleft",
+                  emptyString: "No velocity data",
+                  angleConvention: "bearingCW",
+                  showCardinal: false,
+                  useVectors: true,    
+                  speedUnit: "ms",
+                  directionString: "Direction",
+                  speedString: "Speed"
+                },
+                data: windData,               
+                lineWidth: 3,
+                minVelocity: windMin,
+                maxVelocity: windMax,
+                velocityScale: 0.005,
+                opacity: 1,
+                paneName: "overlayPane"
               });
-          });
+              velocityLayer.addTo(map);
+              uiLog("Wind layer updated");
+            })
+            .catch(e => {
+              console.error("Error fetching wind data:", e);
+              uiLog("Failed to fetch wind data", "error");
+            });
         });
-        layerListEl.appendChild(li);
+      });
+      layerListEl.appendChild(li);
+    }
+    uiLog(`Layer list refreshed (${layers.length} items)`);
+  }
+
+  async function runLayerPlot(layer, refit = true, reason = "rerender") {
+    activeLayer = layer;
+    ensureColorbarDefaultsForLayer(layer);
+    const cmd = buildPlotCommand(layer);
+    lastPlotCommand = cmd;
+    uiLog(`Plotting ${layer} (${reason})...`);
+    try {
+      const responseText = await sendCommand(cmd);
+      if (!responseText) {
+        uiLog(`No data returned for ${layer}`, "warn");
+        return;
       }
+      try {
+        const bounds = JSON.parse(responseText);
+        // If no bounding box exists yet, use these bounds.
+        if (!bboxRect && bounds.SWlon !== undefined) {
+          createBoundingBoxFromResponse(bounds);
+        }
+        const match = cmd.match(/filename=([^;]+)/);
+        if (match) {
+          addImageOverlay(match[1], bounds);
+        }
+        handlePlotMetadata(layer, bounds);
+        uiLog(`Overlay updated for ${layer}`);
+      } catch (err) {
+        console.error("Error parsing overlay bounds:", err);
+        uiLog(`Plot response for ${layer} was not JSON`, "warn");
+      }
+    } catch (err) {
+      uiLog(`Failed to plot ${layer}: ${err.message}`, "error");
     }
   }
   
@@ -440,18 +795,23 @@ function updateMapWithGeoJSON(geojson, refit = true) {
   let autoRefreshInterval = null;
 
 // 1) Factor out the refresh logic into a separate function:
-async function refreshMap(refit = true) {
+async function refreshMap(refit = false) {
+  const shouldRefit = (typeof refit === "boolean") ? refit : false;
+  uiLog(`Refreshing map${shouldRefit ? " with refit" : ""}...`);
   // The same logic you had in the 'refreshMap' button’s click handler
   await sendCommand("setParameter[dumpMode=geojson]");
   const geojsonText = await sendCommand("print[]");
   if (geojsonText) {
     try {
       const geojson = JSON.parse(geojsonText);
-      updateMapWithGeoJSON(geojson, refit);
-    } catch (e) {
-      console.error("Failed to parse GeoJSON:", e);
+        updateMapWithGeoJSON(geojson, shouldRefit);
+      } catch (e) {
+        console.error("Failed to parse GeoJSON:", e);
+        uiLog("GeoJSON parse failed during refresh", "error");
+      }
+    } else {
+      uiLog("No GeoJSON returned during refresh", "warn");
     }
-  }
 
   // If velocityLayer is active, refresh the wind data too:
   if (velocityLayer) {
@@ -486,13 +846,19 @@ async function refreshMap(refit = true) {
       })
       .catch(e => {
         console.error("Error fetching wind data:", e);
+      uiLog("Failed to refresh wind layer", "error");
       });
   }
+  // Refresh current image layer (if any) when live-refreshing.
+  if (activeLayer && activeLayer !== "wind") {
+    runLayerPlot(activeLayer, false, "auto-refresh");
+  }
+  uiLog("Refresh complete");
 }
 
 
-// 2) Link existing "Refresh Map" button to our new function:
-document.getElementById('refreshMap').addEventListener('click', refreshMap);
+// 2) Link existing "Refresh Map" button to our new function without recentering:
+document.getElementById('refreshMap').addEventListener('click', () => refreshMap(false));
 
 // 3) Handle the auto-refresh checkbox changes:
 document.getElementById('autoRefreshCheckbox').addEventListener('change', (e) => {
@@ -513,13 +879,15 @@ document.getElementById('WindOrParts').addEventListener('change', (e) => {
 });
 
 const toggleLogs = document.getElementById('toggleLogs');
-const responseConsole = document.getElementById('responseConsole');
-const commandHistory = document.getElementById('commandHistory');
 
 toggleLogs.addEventListener('change', function() {
   const displayStyle = this.checked ? 'block' : 'none';
-  responseConsole.style.display = displayStyle;
-  commandHistory.style.display = displayStyle;
+  if (responseConsoleEl) {
+    responseConsoleEl.style.display = displayStyle;
+  }
+  if (commandHistoryEl) {
+    commandHistoryEl.style.display = displayStyle;
+  }
   
   // Optional: Adjust map height if needed when logs are hidden
   // For example, increase the map height when logs are hidden

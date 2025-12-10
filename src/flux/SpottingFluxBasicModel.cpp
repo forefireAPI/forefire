@@ -75,9 +75,9 @@ SpottingFluxBasicModel::SpottingFluxBasicModel(
 		const int & mindex, DataBroker* db) : FluxModel(mindex, db) {
 
 	/* defining the properties needed for the model */
-	spot0 = registerProperty("fuel.Spot");
+	//spot0 = registerProperty("fuel.Spot");
 	sigmad = registerProperty("fuel.Sigmad");
-
+	spot0 = sigmad;
 	/* allocating the vector for the values of these properties */
 	if ( numProperties > 0 ) properties =  new double[numProperties];
 

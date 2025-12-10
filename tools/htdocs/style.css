@@ -19,7 +19,8 @@ html, body {
   padding: 10px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
 }
 /* Logo container */
 #logo {
@@ -58,6 +59,73 @@ html, body {
   cursor: pointer;
   margin-top: 10px;
 }
+#colorbarPanel {
+  background-color: #1b1b1b;
+  border: 1px solid #333;
+  padding: 8px;
+  font-size: 0.85em;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.colorbar-header {
+  text-transform: uppercase;
+  font-size: 0.75em;
+  letter-spacing: 0.08em;
+  color: #f0a500;
+}
+.colorbar-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75em;
+  color: #ccc;
+}
+.colorbar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.colorbar-controls label {
+  display: flex;
+  flex-direction: column;
+  color: #bbb;
+  font-size: 0.75em;
+  gap: 2px;
+}
+.colorbar-controls .autofit-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.colorbar-controls input,
+.colorbar-controls select {
+  background-color: #2c2c2c;
+  color: #eee;
+  border: 1px solid #444;
+  padding: 2px 4px;
+  font-size: 0.85em;
+}
+.colorbar-actions {
+  display: flex;
+  gap: 6px;
+}
+.colorbar-actions button {
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #444;
+  padding: 4px 6px;
+  font-size: 0.75em;
+  cursor: pointer;
+  flex: 1;
+}
+.colorbar-actions button:hover {
+  background-color: #444;
+}
+#colorbarStatus {
+  min-height: 14px;
+  font-size: 0.7em;
+  color: #999;
+}
 /* Right side: main area */
 #mainArea {
   flex-grow: 1;
@@ -84,6 +152,16 @@ html, body {
   padding: 10px;
   height: 200px;
   overflow-y: auto;
+}
+.ui-log {
+  color: #9ac7ff;
+  font-style: italic;
+}
+.ui-log.ui-warn {
+  color: #f0b429;
+}
+.ui-log.ui-error {
+  color: #ff7f7f;
 }
 /* Command History: sent commands in green */
 #commandHistory {

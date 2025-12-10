@@ -29,6 +29,37 @@
 
       <ul id="layerList"></ul>
       <button id="updateLayers">Update Layers</button>
+      <div id="colorbarPanel">
+        <div class="colorbar-header">Layer Colorbar</div>
+        <canvas id="colorbarCanvas" width="160" height="16"></canvas>
+        <div class="colorbar-scale">
+          <span id="colorbarMinLabel">N/A</span>
+          <span id="colorbarMaxLabel">N/A</span>
+        </div>
+        <div class="colorbar-controls">
+          <label>
+            Min
+            <input type="number" id="colorbarMinInput" step="any" placeholder="auto">
+          </label>
+          <label>
+            Max
+            <input type="number" id="colorbarMaxInput" step="any" placeholder="auto">
+          </label>
+          <label>
+            Cmap
+            <select id="colorbarCmapSelect"></select>
+          </label>
+          <label class="autofit-row">
+            <input type="checkbox" id="colorbarAutoFit" checked />
+            Auto-fit range
+          </label>
+        </div>
+        <div class="colorbar-actions">
+          <button id="colorbarApply">Apply</button>
+          <button id="colorbarUseData">Use Data Range</button>
+        </div>
+        <div id="colorbarStatus"></div>
+      </div>
       <canvas id="wind" width="100" height="100"></canvas>
     </div>
     <!-- Main area -->
@@ -54,7 +85,7 @@
         <label>
           <input type="checkbox" id="autoRefreshCheckbox" />
           live
-          <input type="checkbox" id="WindOrParts" />
+          <input type="checkbox" id="WindOrParts" checked />
           Arrows
         </label>
       </div>

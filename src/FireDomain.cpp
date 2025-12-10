@@ -838,6 +838,7 @@
 		 }
 
 		 FluxModel* model = fluxModelInstanciation(mindex, fmname);
+		 cout<<"FDomain 841 Adding flux layer "<<lname<<" with model "<<fmname<<endl;
  
 		 if ( model != 0 ){
 			 /* Instantiating a flux layer related to this model */

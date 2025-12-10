@@ -251,7 +251,7 @@ void MNHCreateDomain(const int id
 				executor.ExecuteCommand(line);
 			}
 		} else {
-			cout<<"No global initialization "<<globalInitFile.str()<<" files for all domains" << endl;
+		//	cout<<"No global initialization "<<globalInitFile.str()<<" files for all domains" << endl;
 		}
 	#endif
  
@@ -277,6 +277,8 @@ void CheckLayer(const char* lname){
 			cout<<"WARNING: layer for "<<tmpname
 					<<" could not be found within ForeFire framework, "
 					<<"this should cause serious problems when coupling"<<endl;
+		}else{
+			cout<<"Layer "<<tmpname<<" created with default parameters"<<endl;
 		}
 	}
 }
@@ -606,7 +608,7 @@ void FFGetDoubleArray(const char* mname, double t
 
 	} 
 	else {
-		cout<<"MesoNH trying to set data for unknown layer :"<<tmpname<<endl;
+			cout<<"MesoNH trying to set data for unknown layer :"<<tmpname<<endl;
 	}
 }
 
