@@ -284,8 +284,6 @@ public:
 	/*! \brief accessor to the desired flux layer */
 	FluxLayer<double>* getFluxLayer(const string&);
 
-	/*! \brief recomputes flux actives surfaces for each model */
-	void computeActiveSurfacesFlux(const double&);
 
 	void loadMultiWindBin(double , size_t , size_t* , size_t* );
 	/*! \brief accessor to the desired set of properties for propagation models */

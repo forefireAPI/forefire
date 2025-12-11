@@ -13,6 +13,9 @@
 #include "FDCell.h"
 #include "FFArrays.h"
 #include "DataBroker.h"
+#include <vector>
+#include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -64,8 +67,16 @@ template<typename T> class FluxLayer : public DataLayer<T> {
 	double mapDt; /*!< increment in the T direction */
 
 	double latestCallGetMatrix; /*!< time of the latest call to getMatrix() */
-	double latestCallInstantaneousFlux; /*!< time of the latest call to getInstantaneousFlux() */
-
+	
+	struct Emission {
+		FFPoint center;
+		double area;
+		double radius;
+		double startTime;
+		double endTime;
+		double flux; // per-unit-area
+	};
+	std::vector<Emission> emissions;
 
 	SimulationParameters* params;
 
@@ -73,6 +84,8 @@ template<typename T> class FluxLayer : public DataLayer<T> {
 	size_t getPosInMap(FFPoint&, const double&);
 
 	T getNearestData(FFPoint, double);
+	void pruneEmissions(const double& t);
+	double emissionContributionAt(const double& x, const double& y, const double& t) const;
 
 public:
 	/*! \brief Default constructor */
@@ -106,7 +119,6 @@ public:
 		mapDt = 1;
 
 		latestCallGetMatrix = -1.;
-		latestCallInstantaneousFlux = -1.;
 
 		params = SimulationParameters::GetInstance();
 	}
@@ -141,7 +153,6 @@ public:
 		mapDt = timespan/mapNt;
 
 		latestCallGetMatrix = -1.;
-		latestCallInstantaneousFlux = -1.;
 
 		params = SimulationParameters::GetInstance();
 	};
@@ -166,14 +177,11 @@ public:
 	void setFirstCall(const double&);
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
+	/*! \brief register a timed emission */
+	void addEmission(const FFPoint& center, double area, double startTime, double endTime, double fluxPerArea);
 	/*! \brief stores data from a fortran array into the FFArray */
 	void setMatrix(string&, double*, const size_t&, size_t&, const double&);
 
-	/*! \brief getter to the pointer on the FFArray */
-	void getInstantaneousFlux(FFArray<T>**, const double&);
-
-	/*! \brief fill an aray with active bmap cells */
-	int computeActiveMatrix(const double& , int*);
 
 	/*! \brief print the related FFArray */
 	string print2D(size_t, size_t);
@@ -239,6 +247,41 @@ T FluxLayer<T>::getValueAt(FFPoint loc, const double& t){
 }
 
 template<typename T>
+void FluxLayer<T>::pruneEmissions(const double& t){
+	if (emissions.empty()) return;
+	emissions.erase(
+		std::remove_if(emissions.begin(), emissions.end(), [&](const Emission& e){
+			return e.endTime < t;
+		}),
+		emissions.end());
+}
+
+template<typename T>
+double FluxLayer<T>::emissionContributionAt(const double& x, const double& y, const double& t) const {
+	if (emissions.empty()) return 0.0;
+	const double halfDx = dx * 0.5;
+	const double halfDy = dy * 0.5;
+	for (const auto& e : emissions) {
+		if (t < e.startTime || t > e.endTime) {
+			continue;
+		}
+		double dxp = x - e.center.x;
+		double dyp = y - e.center.y;
+		double dist2 = dxp*dxp + dyp*dyp;
+		if (e.radius > 0.0) {
+			if (dist2 <= e.radius * e.radius) {
+				return e.flux;
+			}
+		} else {
+			if (std::fabs(dxp) <= halfDx && std::fabs(dyp) <= halfDy) {
+				return e.flux;
+			}
+		}
+	}
+	return 0.0;
+}
+
+template<typename T>
 T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 	if ( loc.getX() < SWCorner.getX() or loc.getX() > NECorner.getX() ){
 
@@ -253,12 +296,15 @@ T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 
 	nx > 1 ? i = ((size_t) (loc.getX()-SWCorner.getX())/dx) : i = 0;
 	ny > 1 ? j = ((size_t) (loc.getY()-SWCorner.getY())/dy) : j = 0;
-	
+
 	int numFluxModelsMax = 50;
 	int modelCount[numFluxModelsMax];
 	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
 	double v= cells[i][j].applyModelsOnBmap(this->getKey(), t, t, modelCount);
- 
+	pruneEmissions(t);
+	double cx = SWCorner.getX() + ( (double)i + 0.5 ) * dx;
+	double cy = SWCorner.getY() + ( (double)j + 0.5 ) * dy;
+	v += emissionContributionAt(cx, cy, t);
 	return v;
 }
 
@@ -284,54 +330,39 @@ void FluxLayer<T>::setFirstCall(const double& t){
 }
 
 template<typename T>
-int FluxLayer<T>::computeActiveMatrix(const double& t, int* modelCount){
-   int totalCount = 0;
-		string fluxName = this->getKey();
-		for ( size_t i = 0; i < nx; i++ ){
-			for ( size_t j = 0; j < ny; j++ ){
-				totalCount += cells[i][j].activeModelsOnBmap(fluxName,  t, modelCount);
-			}
-		}
-    return totalCount;
+void FluxLayer<T>::addEmission(const FFPoint& center, double area, double startTime, double endTime, double fluxPerArea){
+	Emission e;
+	e.center = center;
+	e.area = area;
+	e.radius = (area > 0.0) ? std::sqrt(area / 3.14159265358979323846) : 0.0;
+	e.startTime = startTime;
+	e.endTime = endTime;
+	e.flux = fluxPerArea;
+	emissions.push_back(e);
 }
+
+
 
 template<typename T>
 void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
-
 	if ( t != latestCallGetMatrix ){
-
 		// TODO computing active area
 		string fluxName = this->getKey();
 		int numFluxModelsMax = 50;
 		int modelCount[numFluxModelsMax];
-
-	   	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
-	   	int totalcount = 0;
- 
-
+		for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
+		pruneEmissions(t);
+		
 	   	for ( size_t i = 0; i < nx; i++ ){
 			for ( size_t j = 0; j < ny; j++ ){
-				(*flux)(i,j) = cells[i][j].applyModelsOnBmap(fluxName, latestCallGetMatrix, t, modelCount);
+				double base = cells[i][j].applyModelsOnBmap(fluxName, latestCallGetMatrix, t, modelCount);
+				double cx = SWCorner.getX() + ( (double)i + 0.5 ) * dx;
+				double cy = SWCorner.getY() + ( (double)j + 0.5 ) * dy;
+				double added = emissionContributionAt(cx, cy, t);
+				(*flux)(i,j) = base + added;
 			}
 		}
-
-	    for (int i = 0; i < numFluxModelsMax; i++) {
-	    	string modelName=cells[0][0].getFluxModelName(i);
-	    	if (!modelName.empty()){
-	    		params->setDouble(modelName+".activeArea",modelCount[i]*cells[0][0].getBmapElementArea());
-	    		totalcount += modelCount[i];
-	    	}
-	    }
-
-	   	for ( size_t i = 0; i < nx; i++ ){
-			for ( size_t j = 0; j < ny; j++ ){
-				(*flux)(i,j) = cells[i][j].applyModelsOnBmap(fluxName, latestCallGetMatrix, t, modelCount);
-			}
-		}
-
-	    params->setDouble(fluxName+".activeArea",totalcount*cells[0][0].getBmapElementArea());
 		latestCallGetMatrix = t;
-
 	}
 	// Affecting the computed matrix to the desired array
 	*matrix = flux;
@@ -344,37 +375,7 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 	}
 }
 
-template<typename T>
-void FluxLayer<T>::getInstantaneousFlux(FFArray<T>** matrix, const double& t){
-	string fluxName = this->getKey();
-	int numFluxModelsMax = 50;
-	int modelCount[numFluxModelsMax];
-   	int totalcount = 0;
-   	for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
 
-	if ( t != latestCallInstantaneousFlux ){
-		// computing the instantaneous flux
-		string fluxName = this->getKey();
-		for ( size_t i = 0; i < nx; i++ ){
-			for ( size_t j = 0; j < ny; j++ ){
-				(*flux)(i,j) = cells[i][j].applyModelsOnBmap(fluxName, t, t, modelCount);
-			}
-		}
-
-		for (int i = 0; i < numFluxModelsMax; i++) {
-			    	string modelName=cells[0][0].getFluxModelName(i);
-			    	if (!modelName.empty()){
-			    		params->setDouble(modelName+".activeArea",modelCount[i]*cells[0][0].getBmapElementArea());
-			    		totalcount += modelCount[i];
-			    	}
-			    }
-			    params->setDouble(fluxName+".activeArea",totalcount*cells[0][0].getBmapElementArea());
-
-		latestCallInstantaneousFlux = t;
-	}
-	// Affecting the computed matrix to the desired array
-	*matrix = flux;
-}
 
 template<typename T>
 void FluxLayer<T>::setMatrix(string& mname, double* inMatrix

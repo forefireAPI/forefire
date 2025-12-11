@@ -1865,7 +1865,6 @@ namespace libforefire
 
         // 'modelName' is optional (used for flux layers)
         std::string modelName = "";
-        cout << "Adding layer: " << layerName << " of type: " << layerType << "Model: " << modelName << " ARG "<<arg<<endl;
         if (argMap.find("modelName") != argMap.end())
             modelName = argMap["modelName"];
 
@@ -2215,6 +2214,183 @@ namespace libforefire
             }
         }
         return error;
+    }
+
+    int Command::emit(const string &arg, size_t &numTabs)
+    {
+        FireDomain *domain = getDomain();
+        if (domain == 0)
+        {
+            cout << "emit: no active FireDomain, create one first." << endl;
+            return error;
+        }
+
+        auto isoToSeconds = [&](const string &iso) -> double
+        {
+            if (iso == stringError)
+                return FLOATERROR;
+            SimulationParameters *simParam = SimulationParameters::GetInstance();
+            int year = 0, yday = 0;
+            double secs = 0.;
+            if (!simParam->ISODateDecomposition(iso, secs, year, yday))
+            {
+                return FLOATERROR;
+            }
+            return simParam->SecsBetween(simParam->getDouble("refTime"),
+                                         simParam->getInt("refYear"),
+                                         simParam->getInt("refDay"),
+                                         secs, year, yday);
+        };
+
+        auto parsePointString = [&](const string &raw, bool lonlat) -> FFPoint
+        {
+            if (raw == stringError || raw.size() < 2)
+                return pointError;
+            string inner = raw.substr(1, raw.size() - 2);
+            vector<string> tokens;
+            tokenize(inner, tokens, ",");
+            if (tokens.size() != 3)
+                return pointError;
+            double a, b, c;
+            if (!(istringstream(tokens[0]) >> a && istringstream(tokens[1]) >> b && istringstream(tokens[2]) >> c))
+            {
+                return pointError;
+            }
+            if (lonlat)
+            {
+                double x = domain->getXFromLon(a);
+                double y = domain->getYFromLat(b);
+                return FFPoint(x, y, c);
+            }
+            return FFPoint(a, b, c);
+        };
+
+        string layer = getString("layer", arg);
+        if (layer == stringError)
+            layer = getString("name", arg);
+        if (layer == stringError)
+        {
+            cout << "emit: missing layer parameter (layer=...)" << endl;
+            return error;
+        }
+
+        double value = getFloat("value", arg);
+        if (value == FLOATERROR)
+            value = getFloat("val", arg);
+        if (value == FLOATERROR)
+        {
+            cout << "emit: missing flux value (value=...)" << endl;
+            return error;
+        }
+
+        // Time window handling
+        double now = domain->getTime();
+        double tStart = isoToSeconds(getString("startDate", arg));
+        if (tStart == FLOATERROR)
+            tStart = isoToSeconds(getString("dateStart", arg));
+        if (tStart == FLOATERROR)
+            tStart = isoToSeconds(getString("ISOstart", arg));
+        double tEnd = isoToSeconds(getString("endDate", arg));
+        if (tEnd == FLOATERROR)
+            tEnd = isoToSeconds(getString("dateEnd", arg));
+        if (tEnd == FLOATERROR)
+            tEnd = isoToSeconds(getString("ISOend", arg));
+
+        double tStartNumeric = getFloat("tstart", arg);
+        if (tStart == FLOATERROR && tStartNumeric != FLOATERROR)
+            tStart = tStartNumeric;
+        if (tStart == FLOATERROR)
+        {
+            double altStart = getFloat("t", arg);
+            if (altStart != FLOATERROR)
+                tStart = altStart;
+        }
+
+        double tEndNumeric = getFloat("tend", arg);
+        if (tEnd == FLOATERROR && tEndNumeric != FLOATERROR)
+            tEnd = tEndNumeric;
+        double duration = getFloat("duration", arg);
+
+        if (tStart == FLOATERROR)
+            tStart = now;
+        if (tEnd == FLOATERROR)
+        {
+            if (duration != FLOATERROR)
+            {
+                tEnd = tStart + duration;
+            }
+            else
+            {
+                tEnd = tStart;
+            }
+        }
+        if (tEnd < tStart)
+        {
+            cout << "emit: end time precedes start time, adjusting to start." << endl;
+            tEnd = tStart;
+        }
+
+        // Spatial support
+        constexpr double pi = 3.14159265358979323846;
+        double radius = getFloat("radius", arg);
+        double surface = getFloat("surface", arg);
+        if (surface == FLOATERROR)
+            surface = getFloat("area", arg);
+
+        FFPoint center = pointError;
+
+        FFPoint loc = getPoint("loc", arg);
+        if (loc != pointError)
+            center = loc;
+        FFPoint lonlat = getPoint("lonlat", arg);
+        if (lonlat != pointError)
+            center = lonlat;
+
+        FFPoint sw = getPoint("sw", arg);
+        FFPoint ne = getPoint("ne", arg);
+        FFPoint swlonlat = parsePointString(getString("swlonlat", arg), true);
+        FFPoint nelonlat = parsePointString(getString("nelonlat", arg), true);
+
+        if (sw != pointError && ne != pointError)
+        {
+            center = FFPoint(0.5 * (sw.x + ne.x), 0.5 * (sw.y + ne.y), 0.5 * (sw.z + ne.z));
+            double width = fabs(ne.x - sw.x);
+            double height = fabs(ne.y - sw.y);
+            if (surface == FLOATERROR)
+                surface = width * height;
+        }
+        else if (swlonlat != pointError && nelonlat != pointError)
+        {
+            center = FFPoint(0.5 * (swlonlat.x + nelonlat.x), 0.5 * (swlonlat.y + nelonlat.y), 0.5 * (swlonlat.z + nelonlat.z));
+            double width = fabs(nelonlat.x - swlonlat.x);
+            double height = fabs(nelonlat.y - swlonlat.y);
+            if (surface == FLOATERROR)
+                surface = width * height;
+        }
+
+        if (radius != FLOATERROR && surface == FLOATERROR)
+        {
+            surface = pi * radius * radius;
+        }
+
+        if (surface == FLOATERROR)
+        {
+            surface = 0.0;
+        }
+
+        if (center == pointError)
+        {
+            cout << "emit: no location provided (use loc=(), lonlat=(), sw+ne)." << endl;
+            return error;
+        }
+
+        bool ok = domain->emitFlux(layer, center, surface, tStart, tEnd, value);
+        if (!ok)
+        {
+            cout << "emit: domain failed to register emission request." << endl;
+            return error;
+        }
+        return normal;
     }
 
     void Command::executeLoop(ifstream* inputStream)

@@ -631,6 +631,8 @@ public:
 	std::vector<std::vector<double>> getDataMatrix(const std::string& , FFPoint& , FFPoint& , size_t& , size_t& ) ;
 	/*! \brief checking the burning status of a given location */
 	bool checkForBurningStatus(FFPoint&);
+	/*! \brief register an emission request on a given flux layer (stub) */
+	bool emitFlux(const std::string& layerName, const FFPoint& center, double surfaceArea, double startTime, double endTime, double value);
 
 };
 

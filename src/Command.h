@@ -72,7 +72,7 @@ class Command {
 	// Definition of the command map alias
 	typedef int (*cmd)(const string&, size_t&);
 	typedef map<string,cmd> commandMap;  /*!< map of aliases between strings and functions to be called */
-	static const int numberCommands = 21; /*!< number of possible commands */
+	static const int numberCommands = 22; /*!< number of possible commands */
 	static commandMap makeCmds(){
 		// Construction of the command translator
 		commandMap trans;
@@ -97,6 +97,7 @@ class Command {
 		trans["listenHTTP"] = &listenHTTP;
 		trans["clear"] = &clear;
 		trans["quit"] = &quit;
+		trans["emit"] = &emit;
 
 		return trans;
 	}
@@ -179,6 +180,8 @@ class Command {
 	static int quit(const string&, size_t&);
     /*! \brief command to quit the ForeFire shell */
     static int listenHTTP(const string&, size_t &) ;
+	/*! \brief command to emit a flux over a given area for a time span */
+	static int emit(const string&, size_t&);
 
 	static string executeCommandAndCaptureOutput(const std::string &cmd);
     
