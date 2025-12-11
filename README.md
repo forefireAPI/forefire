@@ -6,7 +6,7 @@
 ---
 <!-- Identity & Citation -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![DOI](https://img.shields.io/badge/DOI-10.14195/978--989--26--0884--6_29-blue)](https://www.researchgate.net/publication/278769168_ForeFire_open-source_code_for_wildland_fire_spread_models) <!-- Or use Zenodo DOI if available -->
+ [![DOI](https://camo.githubusercontent.com/76a5b3086405ed966d1386695b4f78097f5aaf7d234ebb692f95dfd6d173d615/68747470733a2f2f6a6f73732e7468656f6a2e6f72672f7061706572732f31302e32313130352f6a6f73732e30383638302f7374617475732e737667)](https://doi.org/10.21105/joss.08680)
 <!-- Project Health & Status -->
 [![linuxCI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
 [![macOSCI](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml)
@@ -137,16 +137,21 @@ If you use ForeFire in your work, please cite:
 
 **BibTex**
 ```bibtex
-@article{article,
-author = {Filippi, Jean-Baptiste and Bosseur, Frédéric and Grandi, Damien},
-year = {2014},
-month = {11},
-pages = {},
-title = {ForeFire: open-source code for wildland fire spread models},
-isbn = {9789892608846},
-doi = {10.14195/978-989-26-0884-6_29}
+@article{ForeFireJOSS2025,
+  title = {ForeFire: A Modular,  Scriptable C++ Simulation Engine and Library for Wildland-Fire Spread},
+  volume = {10},
+  ISSN = {2475-9066},
+  url = {http://dx.doi.org/10.21105/joss.08680},
+  DOI = {10.21105/joss.08680},
+  number = {116},
+  journal = {Journal of Open Source Software},
+  publisher = {The Open Journal},
+  author = {Filippi,  Jean-Baptiste and Baggio,  Roberta and Paugam,  Ronan and Bosseur,  Frédéric and Leblanc,  Antonio and Alonso-Pinar,  Alberto},
+  year = {2025},
+  month = dec,
+  pages = {8680}
 }
 ```
 
 **Plain Text**
-> Filippi, Jean-Baptiste & Bosseur, Frédéric & Grandi, Damien. (2014). ForeFire: open-source code for wildland fire spread models. 10.14195/978-989-26-0884-6_29. 
+> Filippi, J.-B., Baggio, R., Paugam, R., Bosseur, F., Leblanc, A., & Alonso-Pinar, A. (2025). ForeFire: A Modular, Scriptable C++ Simulation Engine and Library for Wildland-Fire Spread. Journal of Open Source Software, 10(116), 8680. https://doi.org/10.21105/joss.08680

@@ -1,50 +1,62 @@
-cff-version: 1.2.0
-message: "If you use ForeFire in your work, please cite it using the metadata below."
-
+cff-version: "1.2.0"
 authors:
-  - given-names: Jean-Baptiste
-    family-names: Filippi
-    # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX # TODO: Add J-B's ORCID (use the full URL format)
-    affiliation: "SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France" # TODO: Verify exact affiliation name
-
-  # TODO: Add any other major contributors who should be listed as authors of the software
-
-title: "ForeFire: An Open-Source C++ Engine for High-Performance Wildfire Simulation"
-
-# version: Use the version number that is being submitted/reviewed.
-version: "2.0.0"
-
-# doi: Uncomment and add the software DOI after archiving the reviewed version on Zenodo/Figshare.
-# Do NOT use the DOI of the 2014 paper here.
-# doi: 10.5281/zenodo.XXXXXXX
-
-# date-released: Set this to the date of the release corresponding to the 'version'.
-date-released: 2025-04-29
-
-url: "https://github.com/forefireAPI/forefire"
-license: GPL-3.0-only
-
-keywords:
-  - C++
-  - Python
-  - wildfire simulation
-  - fire behavior modeling
-  - high-performance computing
-  - fire-atmosphere coupling
-  - numerical modeling
-
-# Optional: Add preferred-citation once the JOSS paper is accepted/published
-# preferred-citation:
-#   type: article
-#   authors:
-#     # List authors of the JOSS paper here, matching paper.md
-#     - given-names: Jean-Baptiste
-#       family-names: Filippi
-#       # orcid: https://orcid.org/XXXX-XXXX-XXXX-XXXX
-#       affiliation: "SPE, UMR 6134, CNRS, University of Corsica Pascal Paoli, Corte, France"
-#   title: "ForeFire: An Open-Source C++ Engine for High-Performance Wildfire Simulation" # Title of the JOSS paper
-#   journal: "Journal of Open Source Software"
-#   # volume: X # JOSS will assign
-#   # issue: Y # JOSS will assign
-#   # year: ZZZZ # Year JOSS paper published
-#   doi: "10.21105/joss.XXXXX" # TODO: Add the JOSS paper DOI once assigned
+- family-names: Filippi
+  given-names: Jean-Baptiste
+  orcid: "https://orcid.org/0000-0002-6244-0648"
+- family-names: Baggio
+  given-names: Roberta
+  orcid: "https://orcid.org/0000-0003-1531-0530"
+- family-names: Paugam
+  given-names: Ronan
+  orcid: "https://orcid.org/0000-0001-6429-6910"
+- family-names: Bosseur
+  given-names: Frédéric
+  orcid: "https://orcid.org/0000-0002-8108-0887"
+- family-names: Leblanc
+  given-names: Antonio
+  orcid: "https://orcid.org/0009-0001-9043-2039"
+- family-names: Alonso-Pinar
+  given-names: Alberto
+  orcid: "https://orcid.org/0009-0009-2051-9700"
+contact:
+- family-names: Filippi
+  given-names: Jean-Baptiste
+  orcid: "https://orcid.org/0000-0002-6244-0648"
+doi: 10.5281/zenodo.17742375
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Filippi
+    given-names: Jean-Baptiste
+    orcid: "https://orcid.org/0000-0002-6244-0648"
+  - family-names: Baggio
+    given-names: Roberta
+    orcid: "https://orcid.org/0000-0003-1531-0530"
+  - family-names: Paugam
+    given-names: Ronan
+    orcid: "https://orcid.org/0000-0001-6429-6910"
+  - family-names: Bosseur
+    given-names: Frédéric
+    orcid: "https://orcid.org/0000-0002-8108-0887"
+  - family-names: Leblanc
+    given-names: Antonio
+    orcid: "https://orcid.org/0009-0001-9043-2039"
+  - family-names: Alonso-Pinar
+    given-names: Alberto
+    orcid: "https://orcid.org/0009-0009-2051-9700"
+  date-published: 2025-12-05
+  doi: 10.21105/joss.08680
+  issn: 2475-9066
+  issue: 116
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 8680
+  title: "ForeFire: A Modular, Scriptable C++ Simulation Engine and
+    Library for Wildland-Fire Spread"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.08680"
+  volume: 10
+title: "ForeFire: A Modular, Scriptable C++ Simulation Engine and
+  Library for Wildland-Fire Spread"
