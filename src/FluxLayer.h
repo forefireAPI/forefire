@@ -262,6 +262,7 @@ double FluxLayer<T>::emissionContributionAt(const double& x, const double& y, co
 	const double halfDx = dx * 0.5;
 	const double halfDy = dy * 0.5;
 	for (const auto& e : emissions) {
+		
 		if (t < e.startTime || t > e.endTime) {
 			continue;
 		}
@@ -270,6 +271,7 @@ double FluxLayer<T>::emissionContributionAt(const double& x, const double& y, co
 		double dist2 = dxp*dxp + dyp*dyp;
 		if (e.radius > 0.0) {
 			if (dist2 <= e.radius * e.radius) {
+				
 				return e.flux;
 			}
 		} else {
@@ -304,7 +306,9 @@ T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 	pruneEmissions(t);
 	double cx = SWCorner.getX() + ( (double)i + 0.5 ) * dx;
 	double cy = SWCorner.getY() + ( (double)j + 0.5 ) * dy;
+	
 	v += emissionContributionAt(cx, cy, t);
+	
 	return v;
 }
 
@@ -345,6 +349,9 @@ void FluxLayer<T>::addEmission(const FFPoint& center, double area, double startT
 
 template<typename T>
 void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
+	int domID = params->getInt("mpirank");
+
+
 	if ( t != latestCallGetMatrix ){
 		// TODO computing active area
 		string fluxName = this->getKey();
@@ -353,15 +360,23 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 		for (int i = 0; i < numFluxModelsMax; i++) modelCount[i]= 0;
 		pruneEmissions(t);
 		
-	   	for ( size_t i = 0; i < nx; i++ ){
+	
+		double sumAdded = 0.0;
+		for ( size_t i = 0; i < nx; i++ ){
 			for ( size_t j = 0; j < ny; j++ ){
 				double base = cells[i][j].applyModelsOnBmap(fluxName, latestCallGetMatrix, t, modelCount);
 				double cx = SWCorner.getX() + ( (double)i + 0.5 ) * dx;
 				double cy = SWCorner.getY() + ( (double)j + 0.5 ) * dy;
 				double added = emissionContributionAt(cx, cy, t);
 				(*flux)(i,j) = base + added;
+				sumAdded += (added+base);
 			}
 		}
+		if ((domID == 1 ) && (fluxName == "heatFlux" )){
+			double diffN =   t - latestCallGetMatrix ;
+			//cout<<"ID "<<domID<<".  "<<this->getKey()	<<" has "<<sumAdded<<" at time "<< t <<" and "<< latestCallGetMatrix << " and " << diffN<< endl;
+		} 
+
 		latestCallGetMatrix = t;
 	}
 	// Affecting the computed matrix to the desired array

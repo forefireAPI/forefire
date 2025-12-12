@@ -180,12 +180,15 @@ void FDCell::removeFireNode(FireNode* fn){
 
 double FDCell::getBurningRatio(const double& t){
 	/* if the burning map is not allocated */
-	if ( arrivalTimes == 0 ) return 0.;
+
+	//if ( arrivalTimes == 0 ) return 0.;
+	
 	/* else getting the ratio and checking
 	 * that there is still something burning*/
 	double numBurningCells = 0;
 	FFPoint center;
 	center.setX(SWCorner.getX()+0.5*dx);
+	
 	for ( size_t i=0; i<mapSizeX; i++ ){
 		center.setY(SWCorner.getY()+0.5*dy);
 		for ( size_t j=0; j<mapSizeY; j++ ){
@@ -194,8 +197,7 @@ double FDCell::getBurningRatio(const double& t){
 		}
 		center.setX(center.getX()+dx);
 	}
-//	cout<<"Burning ratio in cell "<<globalI<<":"<<globalJ	<<" = "<<numBurningCells<<" size :"<<mapSize<<" result "<<numBurningCells/mapSize<<endl;
-/*	if ( numBurningCells == 0 ) delete arrivalTimes;*/
+
 	return numBurningCells/mapSize;
 }
 

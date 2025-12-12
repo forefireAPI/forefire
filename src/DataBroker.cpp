@@ -721,12 +721,11 @@ namespace libforefire
 		// Iterate over regular layers and add their names.
 		for (const auto &entry : layersMap)
 		{
-
-			names.push_back(entry.first);
+				names.push_back(entry.first);
 		}
 
 		// Iterate over flux layers and add their names.
-
+		
 		return names;
 	}
 

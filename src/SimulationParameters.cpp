@@ -366,6 +366,8 @@ std::string landCoverIndexedCSV = R"(Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal
 	parameters.insert(make_pair("normalScheme","medians"));
 	parameters.insert(make_pair("curvatureComputation", "1"));
 	parameters.insert(make_pair("curvatureScheme","circumradius"));
+
+	parameters.insert(make_pair("FRPToWatts","10000000"));
 	parameters.insert(make_pair("frontDepthComputation", "0"));
 	parameters.insert(make_pair("frontDepthScheme","normalDir"));
 	parameters.insert(make_pair("minimalPropagativeFrontDepth","10."));

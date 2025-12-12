@@ -838,7 +838,7 @@
 		 }
 
 		 FluxModel* model = fluxModelInstanciation(mindex, fmname);
-		 cout<<"FDomain 841 Adding flux layer "<<lname<<" with model "<<fmname<<endl;
+
  
 		 if ( model != 0 ){
 			 /* Instantiating a flux layer related to this model */
@@ -1378,16 +1378,17 @@
 		 /* the location is considered to be burning if the heat released
 		  * by the fire is superior to a prescribed value (~500 W.m-2) */
 		 
-		 double at = getArrivalTime(loc);
-		 if ( t >= at ){ 
-			 int mind = dataBroker->heatFluxLayer->getFunctionIndexAt(loc, t);
+		// double at = getArrivalTime(loc);
+		// if ( t >= at ){ 
+			 //int mind = dataBroker->heatFluxLayer->getFunctionIndexAt(loc, t);
  
-			 double heatFlux = getModelValueAt(mind, loc, t, t, at);
+			 //double heatFlux = getModelValueAt(mind, loc, t, t, at);
+			 double heatFlux = dataBroker->heatFluxLayer->getValueAt( loc, t);
 			 
 			 if ( heatFlux > burningTresholdFlux ) {
 				 return true;
 			 }
-		 }
+		 //}
 		 return false;
 	 }
  
@@ -3606,12 +3607,12 @@
 			 return false;
 		 }
 		 fl->addEmission(center, surfaceArea, startTime, endTime, value);
-		 cout << "emitFlux registered -> layer: " << layerName
+	/*	 cout << "emitFlux registered -> layer: " << layerName
 			  << " center: (" << center.x << "," << center.y << "," << center.z << ")"
 			  << " area: " << surfaceArea
 			  << " start: " << startTime
 			  << " end: " << endTime
-			  << " flux: " << value << endl;
+			  << " flux: " << value << endl;*/
 		 return true;
 	 }
 

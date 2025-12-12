@@ -1663,17 +1663,14 @@ namespace libforefire
                                 }
                             }else{
                                 *currentSession.outStream << kmlStream.str() << std::endl;
-                            }
-                           
+                            }  
                         }
-
-
-
                     }
-                }
+                }   
                 // --------------------------------------------------------------
                 // ELSE: original logic for other parameters / file extensions
                 // --------------------------------------------------------------
+                
                 else
                 {
                     // Standard approach: fetch single matrix for the requested "parameter"
@@ -2192,8 +2189,7 @@ namespace libforefire
                 cout << "Error: spatialIncrement must be greater than 0." << endl;
                 valid = false;
             }
-            if (!valid) return error;
-            
+            if (!valid) return error;            
             FireDomain* domain = getDomain();
             if (domain != nullptr)
             {
@@ -2218,7 +2214,7 @@ namespace libforefire
 
     int Command::emit(const string &arg, size_t &numTabs)
     {
-        FireDomain *domain = getDomain();
+        FireDomain *domain = currentSession.fd;//getDomain();
         if (domain == 0)
         {
             cout << "emit: no active FireDomain, create one first." << endl;
@@ -2273,62 +2269,7 @@ namespace libforefire
             cout << "emit: missing layer parameter (layer=...)" << endl;
             return error;
         }
-
-        double value = getFloat("value", arg);
-        if (value == FLOATERROR)
-            value = getFloat("val", arg);
-        if (value == FLOATERROR)
-        {
-            cout << "emit: missing flux value (value=...)" << endl;
-            return error;
-        }
-
-        // Time window handling
-        double now = domain->getTime();
-        double tStart = isoToSeconds(getString("startDate", arg));
-        if (tStart == FLOATERROR)
-            tStart = isoToSeconds(getString("dateStart", arg));
-        if (tStart == FLOATERROR)
-            tStart = isoToSeconds(getString("ISOstart", arg));
-        double tEnd = isoToSeconds(getString("endDate", arg));
-        if (tEnd == FLOATERROR)
-            tEnd = isoToSeconds(getString("dateEnd", arg));
-        if (tEnd == FLOATERROR)
-            tEnd = isoToSeconds(getString("ISOend", arg));
-
-        double tStartNumeric = getFloat("tstart", arg);
-        if (tStart == FLOATERROR && tStartNumeric != FLOATERROR)
-            tStart = tStartNumeric;
-        if (tStart == FLOATERROR)
-        {
-            double altStart = getFloat("t", arg);
-            if (altStart != FLOATERROR)
-                tStart = altStart;
-        }
-
-        double tEndNumeric = getFloat("tend", arg);
-        if (tEnd == FLOATERROR && tEndNumeric != FLOATERROR)
-            tEnd = tEndNumeric;
-        double duration = getFloat("duration", arg);
-
-        if (tStart == FLOATERROR)
-            tStart = now;
-        if (tEnd == FLOATERROR)
-        {
-            if (duration != FLOATERROR)
-            {
-                tEnd = tStart + duration;
-            }
-            else
-            {
-                tEnd = tStart;
-            }
-        }
-        if (tEnd < tStart)
-        {
-            cout << "emit: end time precedes start time, adjusting to start." << endl;
-            tEnd = tStart;
-        }
+  
 
         // Spatial support
         constexpr double pi = 3.14159265358979323846;
@@ -2378,13 +2319,91 @@ namespace libforefire
             surface = 0.0;
         }
 
+        // Time window: start now, duration required
+        double tStart = domain->getTime();
+        double duration = getFloat("duration", arg);
+        if (duration == FLOATERROR)
+        {
+            cout << "emit: missing duration=... (seconds)" << endl;
+            return error;
+        }
+        if (duration < 0)
+        {
+            cout << "emit: duration must be non-negative." << endl;
+            return error;
+        }
+        double tEnd = tStart + duration;
+
+        // Flux handling with optional FRP (MW) conversion
+        double flux = getFloat("flux", arg);
+        double frpMw = getFloat("frp", arg);
+        double value = FLOATERROR;
+        double total = FLOATERROR;
+
+        if (flux == FLOATERROR)
+        {
+            if (frpMw != FLOATERROR)
+            {
+                if (surface <= 0.0 && radius == FLOATERROR)
+                {
+                    cout << "emit: FRP given but area/radius missing or zero." << endl;
+                    return error;
+                }
+                if (surface <= 0.0 && radius != FLOATERROR)
+                {
+                    surface = pi * radius * radius;
+                }
+                if (surface <= 0.0)
+                {
+                    cout << "emit: FRP requires a positive area." << endl;
+                    return error;
+                }
+                 double frptoHeatWatt = currentSession.params->getDouble("FRPToWatts");
+                if (frptoHeatWatt == FLOATERROR || frptoHeatWatt <= 0.0) {              frptoHeatWatt = 1e7; }// default MW->W
+                double watts = frpMw * frptoHeatWatt ; // radiant MW -> W, then to total heat
+                flux = watts / surface;
+            }
+            else
+            {
+                value = getFloat("value", arg);
+                if (value == FLOATERROR)
+                    value = getFloat("val", arg);
+                total = getFloat("total", arg);
+
+                if (value != FLOATERROR)
+                {
+                    if (surface <= 0.0)
+                    {
+                        cout << "emit: value given but area/surface missing or zero." << endl;
+                        return error;
+                    }
+                    flux = value / surface;
+                }
+                else if (total != FLOATERROR)
+                {
+                    if (surface <= 0.0 || duration <= 0.0)
+                    {
+                        cout << "emit: total given but duration or area is zero." << endl;
+                        return error;
+                    }
+                    flux = total / (surface * duration);
+                }
+            }
+        }
+
         if (center == pointError)
         {
             cout << "emit: no location provided (use loc=(), lonlat=(), sw+ne)." << endl;
             return error;
         }
 
-        bool ok = domain->emitFlux(layer, center, surface, tStart, tEnd, value);
+        if (flux == FLOATERROR)
+        {
+            cout << "emit: provide flux=..., FRP=..., value=... (power), or total=... (energy)." << endl;
+            return error;
+        }
+
+        bool ok = domain->emitFlux(layer, center, surface, tStart, tEnd, flux);
         if (!ok)
         {
             cout << "emit: domain failed to register emission request." << endl;
