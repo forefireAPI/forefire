@@ -3544,24 +3544,22 @@ namespace libforefire
 
                     int colorIndex = 0;
                     double range = maxVal - minVal;
-                    
-                    if (std::isfinite(val) && std::isfinite(minVal) && std::isfinite(maxVal) && range != 0.0) {
-                        double normalized = (val - minVal) / range;
-                        colorIndex = static_cast<int>(normalized * (mapSize - 1));
-                        colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
+                    if (std::isfinite(val) && std::isfinite(minVal) && std::isfinite(maxVal) && range > 0.0 && mapSize > 0) {
+                        double normalized = 0.0;
+                        if (val <= minVal) {
+                            normalized = 0.0;
+                        } else if (val >= maxVal) {
+                            normalized = 1.0;
+                        } else {
+                            normalized = (val - minVal) / range; // safe: numerator smaller than range
+                        }
+                        if (!std::isfinite(normalized)) normalized = 0.0;
+                        colorIndex = static_cast<int>(normalized * static_cast<double>(mapSize - 1));
+                        colorIndex = std::max(0, std::min(colorIndex, static_cast<int>(mapSize - 1)));
                     } else {
                         // Failsafe: set to 0 or 1 depending on mapSize
-                             colorIndex = (mapSize > 1) ? 1 : 0;
-                             }
-                    
-                    //int colorIndex = static_cast<int>((val - minVal) / (maxVal - minVal) * (mapSize - 1));
-                      //                  colorIndex = std::max(0, std::min(colorIndex, mapSize - 1));
-                                        /*  if ((x % 1000 == 0) && (y % 1000 == 0)) {
-                                              std::cout << val << " : " << colorIndex << std::endl;
-                                          }*/
-                    /*  if ((x % 1000 == 0) && (y % 1000 == 0)) {
-                          std::cout << val << " : " << colorIndex << std::endl;
-                      }*/
+                        colorIndex = (mapSize > 1) ? 1 : 0;
+                    }
                     const auto &color = colorMap[colorIndex];
                     image[index] = color[0];
                     image[index + 1] = color[1];
