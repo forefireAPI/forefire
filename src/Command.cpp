@@ -29,6 +29,7 @@ namespace libforefire
     double Command::endTime = 0;
 
     bool Command::firstCommand = true;
+    bool Command::quitAsked = false;
     size_t Command::refTabs = 0;
 
     FFPoint *Command::lastReadLoc = 0;
@@ -1116,13 +1117,14 @@ namespace libforefire
                 }
                 catch (...)
                 {
-                    if (getDomain()->commandOutputs)
-                    {
-                        cout << getDomain()->getDomainID() << ": "
-                             << "**** ERROR IN SAFE TOPOLOGY MODE, QUITING ****" << endl;
-                    }
-                    // TODO supersafe mode ?
-                    quit(arg, numTabs);
+                    // Reports an error rather than ending the process. This
+                    // used to call quit(), so an internal failure here took
+                    // the host down with exit status 0 — a coupled run or a
+                    // batch job recorded success while having stopped early.
+                    // The caller now sees the failure and chooses.
+                    cerr << getDomain()->getDomainID() << ": "
+                         << "**** ERROR IN SAFE TOPOLOGY MODE ****" << endl;
+                    return error;
                 }
             }
         }
@@ -2423,6 +2425,11 @@ namespace libforefire
 
         while (std::getline(*inputStream, line))
         {
+            // A `quit[]` earlier in the script stops the file here rather than
+            // ending the process, so the caller still gets to return normally.
+            if (quitAsked)
+                break;
+
             if (!inTripleQuote)
             {
                 /* Skip comments and empty lines when *not* inside a multiline literal   */
@@ -2959,13 +2966,38 @@ namespace libforefire
 
     int Command::quit(const string &arg, size_t &numTabs)
     {
-        
+        // No exit() here. `quit` is in the command table, so it is reachable
+        // from the Python binding and from the HTTP server, and a library
+        // that ends its host's process skips every destructor, `finally` and
+        // atexit handler on the way out — and used to do it with status 0, so
+        // a batch run reported success having done nothing. The session is
+        // released and the request is recorded; whoever is driving the shell
+        // decides what to do about it.
         delete currentSession.fd;
+        currentSession.fd = 0;
         delete currentSession.outStrRep;
+        currentSession.outStrRep = 0;
         delete currentSession.sim;
-        delete currentSession.params;
-        exit(0);
+        currentSession.sim = 0;
+
+        // currentSession.params is deliberately not deleted: it is the
+        // SimulationParameters singleton, owned by GetInstance() and shared
+        // with every other holder. Deleting it left GetInstance() handing out
+        // a dangling pointer, which only went unnoticed because exit()
+        // followed on the next line.
+
+        quitAsked = true;
         return normal;
+    }
+
+    bool Command::quitRequested()
+    {
+        return quitAsked;
+    }
+
+    void Command::clearQuitRequest()
+    {
+        quitAsked = false;
     }
 
     void Command::setOstringstream(ostringstream *oss)

@@ -121,6 +121,8 @@ class Command {
 	};
 
 	static bool firstCommand;
+	/*! \brief set by quit(), read by quitRequested() */
+	static bool quitAsked;
 	static size_t refTabs;
 
 	static FFPoint* lastReadLoc;
@@ -176,7 +178,14 @@ class Command {
 	static int systemExec(const string&, size_t&);
 	/*! \brief command to run a system trough pipe */
 	static int clear(const string&, size_t&);
-	/*! \brief command to quit the ForeFire shell */
+	/*! \brief releases the session and asks the host to stop
+	 *
+	 * Does NOT terminate the process. This is library code, and the host
+	 * process is not ours to end: a `quit[]` arriving over the Python binding
+	 * or the HTTP server used to take the interpreter down with it, skipping
+	 * every destructor and `finally`, and exiting 0 so a batch job reported
+	 * success. Callers driving a shell should check quitRequested() and stop.
+	 */
 	static int quit(const string&, size_t&);
     /*! \brief command to quit the ForeFire shell */
     static int listenHTTP(const string&, size_t &) ;
@@ -231,6 +240,16 @@ class Command {
 	static const FFVector vectorError;
 
 public:
+
+	/*! \brief whether a `quit[]` has asked the host to stop
+	 *
+	 * Set by quit() and cleared by clearQuitRequest(). A shell reading
+	 * commands should stop its loop when this is true; a library embedder is
+	 * free to ignore it and carry on, which is the difference between asking
+	 * and terminating. */
+	static bool quitRequested();
+	/*! \brief forgets a pending quit request */
+	static void clearQuitRequest();
 
 	// Reference time
 	static double refTime;
