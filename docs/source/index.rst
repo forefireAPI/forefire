@@ -6,6 +6,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
 **Key Links:**
 
 - `GitHub Repository <https://github.com/forefireAPI/forefire>`_
+- `ForeFire on PyPI <https://pypi.org/project/forefire/>`_ — ``pip install forefire``
 - `Online Demo Simulator <http://forefire.univ-corse.fr/sim>`_
 
 .. toctree::
@@ -24,6 +25,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    user_guide/basic_configuration
    user_guide/fuels_and_models
    user_guide/landscape_file
+   user_guide/python_arrays
    user_guide/forefire_script
    user_guide/core_concepts
 

@@ -1,32 +1,137 @@
-Installation: Build from Source
-================================
+Installation
+============
 
-This guide explains how to install ForeFire by compiling it directly on your Linux/Unix-like system. This gives you a native build, but requires managing dependencies.
-There are two main ways to build from source:
+There are three ways to install ForeFire. Which one you want depends on what
+you intend to do with it:
 
-- Option 1: Using the provided install script (easiest for Debian/Ubuntu)
-- Option 2: Following manual steps (for all systems or finer control).
+.. list-table::
+  :header-rows: 1
+  :widths: 20 45 35
+
+  * - Method
+    - Use it when
+    - Section
+  * - **pip**
+    - You want to run simulations or drive ForeFire from Python.
+    - :ref:`install-pip`
+  * - **Docker**
+    - You are on Windows, or you want the web console with no setup.
+    - :doc:`quickstart`
+  * - **From source**
+    - You need MPI coupling with Meso-NH, a CPU-tuned build, or you are
+      working on ForeFire itself.
+    - :ref:`install-source`
+
+.. _install-pip:
+
+Install with pip
+----------------
+
+This is the fastest route, and it needs no compiler, no CMake and no NetCDF
+installation of your own — NetCDF is bundled inside the wheel.
+
+.. code-block:: bash
+
+  pip install forefire
+
+Requirements
+~~~~~~~~~~~~
+
+- **CPython 3.9 to 3.14.** The free-threaded builds (``cp314t``) are
+  deliberately not published: the C++ core still keeps mutable global state, so
+  a wheel advertising free-threading would silently re-enable the GIL on
+  import.
+- **Linux** on ``x86_64`` or ``aarch64`` (``manylinux_2_28`` or newer), or
+  **macOS 14+ on Apple Silicon**.
+
+There is no wheel for Intel macOS, musl-based Linux (Alpine), 32-bit targets,
+Windows or PyPy. On those platforms pip falls back to the source distribution,
+which needs the build prerequisites in :ref:`install-source`. Windows users are
+better served by Docker — see :doc:`quickstart`.
+
+What you get
+~~~~~~~~~~~~
+
+Both interfaces, from the one package:
+
+.. code-block:: bash
+
+  forefire -v
+
+.. code-block:: python
+
+  import pyforefire as forefire
+
+  ff = forefire.ForeFire()
+  ff.execute("FireDomain[sw=(0,0,0);ne=(10000,10000,0);t=0]")
+  ff.addLayer("propagation", "Iso", "propagationModel")
+  ff.execute("startFire[loc=(5000,5000,0.0)]")
+  ff.execute("step[dt=1000]")
+  print(ff.execute("print[]"))
+
+.. note::
+
+  The distribution on PyPI is called ``forefire``; the importable module keeps
+  its historical name, ``pyforefire``.
+
+What you do not get
+~~~~~~~~~~~~~~~~~~~
+
+Published wheels are built with three options turned off, so a few things are
+only available in a source build:
+
+- **MPI coupling.** Fire-atmosphere runs with Meso-NH need
+  ``FOREFIRE_ENABLE_MPI``, so they need a source build.
+- **CPU tuning.** Wheels are built without ``-march=native``, so that they run
+  on any machine of the right architecture. A source build with
+  ``FOREFIRE_NATIVE_ARCH=ON`` will be faster on the machine that built it.
+- **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS``.
+
+.. _install-source:
+
+Build from source
+-----------------
+
+A native build, in exchange for managing the dependencies yourself. Two routes:
+the install script (Debian/Ubuntu only), or manual steps (any Unix-like
+system).
 
 Prerequisites
--------------
+~~~~~~~~~~~~~
 
-If you choose the **manual build steps** (Option 2), or if you simply want to understand what tools are needed, you must ensure the following are installed on your system:
+- **A C++ compiler**, such as ``g++``. On Debian/Ubuntu this comes with
+  ``build-essential``.
+- **CMake** 3.15 or newer, and **Make**.
+- **NetCDF — both the C library and the legacy C++4 API.** The C++4 API is a
+  separate package from the C library on every distribution, and it is the one
+  people usually miss.
 
-- **C++ Compiler:** A modern C++ compiler (like `g++`). Package typically called `build-essential` or similar.
-- **CMake:** Build system generator (`cmake`).
-- **Make:** Build tool (`make`).
-- **NetCDF Libraries:** ForeFire requires NetCDF support. The specific package needed is the C++ interface.
+  .. list-table::
+    :header-rows: 1
+    :widths: 25 75
 
-  - On **Debian/Ubuntu**, the install script uses `libnetcdf-c++4-dev`.
-  - On other systems, find the equivalent package (e.g., `netcdf-cxx-devel`, `netcdf-cxx4`).
-  - *Note: Ensure this is the correct/intended library. Older docs might mention `libnetcdf-cxx-legacy-dev`. Verify which one is actually required by the current CMake setup.*
+    * - System
+      - Packages
+    * - Debian/Ubuntu
+      - ``apt install libnetcdf-dev libnetcdf-c++4-dev``
+    * - Fedora/RHEL
+      - ``dnf install netcdf-devel netcdf-cxx4-devel``
+    * - macOS (Homebrew)
+      - ``brew install netcdf netcdf-cxx``
 
-Build Options
--------------
+  The library is named ``netcdf_c++4`` everywhere except Homebrew, which calls
+  it ``netcdf-cxx4`` (``netcdf-cxx`` in older bottles); CMake looks for all
+  three. The older ``libnetcdf-cxx-legacy-dev`` package is a *different*,
+  pre-C++4 API and will not work.
 
-**Option 1: Using the Install Script (Recommended for Debian/Ubuntu)**
+  If NetCDF is installed somewhere CMake does not search, point at it with
+  ``-DNETCDF_HOME=/path/to/netcdf`` (and ``-DNETCDF_CXX_HOME=...`` if the C++
+  API lives elsewhere).
 
-The repository provides a convenience script (`install-forefire.sh`) that automates the process on Debian-based systems like Ubuntu.
+Option 1: the install script (Debian/Ubuntu)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``install-forefire.sh`` automates the process on Debian-based systems.
 
 1.  **Clone the repository:**
 
@@ -39,27 +144,33 @@ The repository provides a convenience script (`install-forefire.sh`) that automa
 
   .. warning::
 
-    This script requires `sudo` privileges to install system packages using `apt`. Review the script if you have concerns.
+    This script requires ``sudo`` privileges to install system packages using
+    ``apt``. Review the script if you have concerns.
 
   .. code-block:: bash
 
     sudo bash install-forefire.sh
 
-**What the Install Script Does:**
+**What the install script does:**
 
-- **Updates Package Lists and Installs Dependencies:** Runs `apt-get update` and installs prerequisites listed above
-- **Builds ForeFire:** using CMake and Make.
-- **Reports Install Location:** Prints the location of the built binaries (usually `$PROJECT_ROOT/bin`).
-- **(Optional) Updates PATH:**
+- **Installs dependencies:** runs ``apt-get update`` and installs the
+  prerequisites listed above.
+- **Builds ForeFire** using CMake and Make.
+- **Reports the install location:** usually ``$PROJECT_ROOT/bin``.
+- **(Optional) updates PATH:**
 
-  - Prompts the user if they want to add the ForeFire `bin` directory to their PATH permanently.
-  - If 'yes', it appends `export PATH=` and `export FOREFIREHOME=` lines to the user's `~/.bashrc` file.
-  - It tries to detect the correct user's home directory even when run with `sudo` (using `$SUDO_USER`).
-  - **Note:** This only modifies `.bashrc`. If you use a different shell (like `zsh` or `fish`), you will need to configure the PATH manually (see below).
+  - Prompts you before doing anything, and only if you agree appends
+    ``export PATH=`` and ``export FOREFIREHOME=`` lines to ``~/.bashrc``.
+  - It detects the invoking user's home directory even under ``sudo``, via
+    ``$SUDO_USER``.
+  - **Note:** this only modifies ``.bashrc``. For ``zsh`` or ``fish``,
+    configure the PATH manually (see below).
 
-**Option 2: Manual Build Steps (All Linux/Unix-like Systems)**
+Option 2: manual build (any Linux/Unix-like system)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't want to use the install script.
+Use this if you are not on Debian/Ubuntu, prefer manual control, or do not
+want to run the install script.
 
 1.  **Clone the repository:**
 
@@ -68,55 +179,104 @@ Use this method if you are not on Debian/Ubuntu, prefer manual control, or don't
     git clone https://github.com/forefireAPI/forefire.git
     cd forefire
 
-2.  **Install Prerequisites Manually:**
+2.  **Install the prerequisites** for your system, from the table above.
 
-  Use your system's package manager to install `cmake`, `make`, a C++ compiler (`build-essential` or equivalent), and the required NetCDF C++ development library (e.g., `libnetcdf-c++4-dev`, `netcdf-cxx-devel`, etc.).
-  Example for Debian/Ubuntu (if not using the script):
-  
-  .. code-block:: bash
-
-    sudo apt update
-    sudo apt install build-essential cmake libnetcdf-c++4-dev # Verify package name!
-
-3.  **Create a build directory and run CMake & Make:**
+3.  **Configure and build:**
 
   .. code-block:: bash
 
-    mkdir build
-    cd build
-    cmake ..
-    make
+    cmake -S . -B build
+    cmake --build build -j
 
-The main executable `forefire` will be located at `../bin/forefire` (relative to the `build` directory). Check installation with
-  
+  The executable lands in ``bin/forefire``. Check it with:
+
   .. code-block:: bash
 
-    cd .. # Go back to the root of the repository
     ./bin/forefire -v
 
-4. **Making ForeFire Executable System-Wide (Manual PATH setup)**
+Build options
+~~~~~~~~~~~~~
 
-  If you built from source (manually or via the script but declined the automatic PATH update, or use a shell other than bash), the `forefire` executable is in the `bin` directory within the repository. To run it easily from any location, add this directory to your system's PATH environment variable.
+The build is driven by ``FOREFIRE_*`` CMake options; pass them at configure
+time, for example ``cmake -S . -B build -DFOREFIRE_ENABLE_MPI=OFF``.
 
-  **For the current terminal session:**
+.. list-table::
+  :header-rows: 1
+  :widths: 30 15 55
 
-  .. code-block:: bash
+  * - Option
+    - Default
+    - Effect
+  * - ``FOREFIRE_ENABLE_MPI``
+    - ON
+    - Fire-atmosphere coupling with Meso-NH, when MPI is found. Replaces the
+      compiler with the MPI wrapper.
+  * - ``FOREFIRE_NATIVE_ARCH``
+    - ON
+    - ``-march=native``. Turn it off for a binary you intend to move to
+      another machine.
+  * - ``FOREFIRE_BUILD_PYTHON``
+    - OFF
+    - Build the ``pyforefire`` extension module.
+  * - ``FOREFIRE_STATIC_CORE``
+    - OFF
+    - Link the core statically.
+  * - ``FOREFIRE_BUILD_TOOLS``
+    - ON
+    - Build the ``ANN_test`` helper, needed by ``tests/runANN``.
+  * - ``FOREFIRE_CHECK_LFS``
+    - ON
+    - Fail early if the Git LFS test fixtures were not pulled.
+  * - ``FOREFIRE_BUILD_TESTS``
+    - ON
+    - Build the C++ unit tests and register them with CTest.
+  * - ``FOREFIRE_ENABLE_WARNINGS``
+    - ON
+    - Compile ForeFire's own sources with ``-Wall -Wextra``.
+  * - ``FOREFIRE_WARNINGS_AS_ERRORS``
+    - OFF
+    - Fail the build on a compiler warning.
+  * - ``FOREFIRE_SANITIZE``
+    - *(empty)*
+    - Sanitizers to build with, passed to ``-fsanitize=``, for example
+      ``address,undefined``.
 
-    # Execute this from the root of the forefire repository
-    export PATH=$PATH:`pwd`/bin
+Wheel builds flip six of these: MPI, native-arch, tools, tests and the LFS
+check off, Python and the static core on. That is what makes a wheel run on a
+machine other than the one that built it.
 
-  **Permanently:**
+``TESTING.md`` at the repository root covers the test suites and the sanitizer
+build in detail.
 
-  Add the following line to your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`, or `~/.config/fish/config.fish`). Replace `/path/to/forefire` with the actual absolute path to the cloned repository.
+Making ForeFire available system-wide
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: bash
+After a source build, ``forefire`` lives in the repository's ``bin``
+directory. To run it from anywhere, add that directory to your PATH.
 
-    export PATH="/path/to/forefire/bin:$PATH"
+**For the current terminal session:**
 
-  *Optional:* The install script also sets `export FOREFIREHOME="/path/to/forefire"`. You may want to add this line as well, as some scripts or components might potentially use it.
+.. code-block:: bash
 
-  .. code-block:: bash
+  # Execute this from the root of the forefire repository
+  export PATH=$PATH:`pwd`/bin
 
-    export FOREFIREHOME="/path/to/forefire"
+**Permanently:**
 
-  After editing your configuration file, either restart your terminal or reload the configuration (e.g., `source ~/.bashrc`).
+Add the following to your shell's configuration file (``~/.bashrc``,
+``~/.zshrc``, ``~/.profile``, or ``~/.config/fish/config.fish``), replacing
+``/path/to/forefire`` with the absolute path to the cloned repository.
+
+.. code-block:: bash
+
+  export PATH="/path/to/forefire/bin:$PATH"
+
+*Optional:* the install script also sets ``FOREFIREHOME``, which some scripts
+and components use to locate the repository.
+
+.. code-block:: bash
+
+  export FOREFIREHOME="/path/to/forefire"
+
+Then restart your terminal or reload the configuration, for example with
+``source ~/.bashrc``.

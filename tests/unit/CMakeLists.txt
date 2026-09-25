@@ -17,7 +17,9 @@ add_executable(forefire_unit_tests
 
 target_link_libraries(forefire_unit_tests PRIVATE forefireL)
 target_include_directories(forefire_unit_tests PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}")
+# SYSTEM, so the warning flags below stop at code this project maintains.
+target_include_directories(forefire_unit_tests SYSTEM PRIVATE
     "${PROJECT_SOURCE_DIR}/third_party")
 
 if(_ff_warning_flags)

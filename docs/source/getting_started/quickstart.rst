@@ -1,15 +1,62 @@
 Quick Start
 ===========
 
-This guide shows the quickest way to get the standard **ForeFire example simulation running** using its interactive web console, powered by Docker. This method bundles all dependencies, so you don't need to install them on your host system, and is the only way to run ForeFire on Windows.
+Your first simulation, two ways: from a pip install in about a minute, or in
+Docker with the interactive web console.
+
+.. _quickstart-pip:
+
+The one-minute version, with pip
+--------------------------------
+
+On Linux or macOS on Apple Silicon, nothing needs to be compiled and no
+dependencies need to be installed on your system:
+
+.. code-block:: bash
+
+  pip install forefire
+
+Then run a simulation from Python:
+
+.. code-block:: python
+
+  import pyforefire as forefire
+
+  ff = forefire.ForeFire()
+  ff.execute("FireDomain[sw=(0,0,0);ne=(10000,10000,0);t=0]")
+  ff.addLayer("propagation", "Iso", "propagationModel")
+  ff.execute("startFire[loc=(5000,5000,0.0)]")
+  ff.execute("step[dt=1000]")
+  print(ff.execute("print[]"))
+
+``print[]`` returns the state of the simulation as text — one ``FireNode``
+entry per node of the front, each with its location, velocity and time. The
+same commands work in the interactive interpreter, which the same install
+provides:
+
+.. code-block:: bash
+
+  forefire
+
+See :doc:`installation` for which platforms have wheels, and
+:doc:`/user_guide/forefire_script` for what these commands mean.
+
+.. _quickstart-docker:
+
+The full example, with Docker
+-----------------------------
+
+This runs the standard **ForeFire example simulation** in its interactive web
+console. It bundles all dependencies, so nothing is installed on your host
+system, and it is the only way to run ForeFire on Windows.
 
 Prerequisites
--------------
+~~~~~~~~~~~~~
 - Docker installed and running on your system.
 - Git installed (for cloning the repository).
 
 Steps
------
+~~~~~
 
 1.  **Clone the ForeFire repository:** Open your terminal and run:
 

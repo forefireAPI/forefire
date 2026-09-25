@@ -77,6 +77,17 @@ std::string commandHelp = R"(
      - 'vel': Velocity vector (vx,vy,vz) associated with the trigger
      - 't': Time at which the trigger is activated;
 
+## emit
+    emit[layer=<flux_layer>;loc=(x,y,z);radius=<m>;duration=<seconds>;flux=<per_m2>]
+    Injects a flux into an existing flux layer, over an area, for a time span starting at the current domain time
+    Example: emit[layer=heatFlux;loc=(5000,5000,0);radius=50;duration=600;frp=120]
+    Arguments:
+     - 'layer': Name of the flux layer to emit into, as given to addLayer. 'name' is accepted as an alias
+     - 'loc': Centre of the emission in domain coordinates. Alternatives: 'lonlat' in WGS84, or a 'sw'/'ne' box, or a 'swlonlat'/'nelonlat' box
+     - 'radius': Radius in metres, giving a disc of area pi*r^2. Alternatives: 'surface' or 'area' in m2, or the area of the sw/ne box
+     - 'duration': Length of the emission in seconds, required. It starts at the current domain time
+     - 'flux': The emitted quantity per square metre per second, in the layer's own units. Alternatives, any one of: 'frp' in MW, converted using the FRPToWatts parameter and divided by the area; 'value' or 'val', a power divided by the area; 'total', an energy divided by area and duration;
+
 ## goTo
     goTo[t=seconds]
     Advances the simulation to the specified time
@@ -179,11 +190,9 @@ std::string commandHelp = R"(
      - 'filename.ff': Filename containing simulation commands to execute
 
 ## clear
-    clear
-    Clears all simulation data
-    Example: clear
-    Arguments:
-     - Clears the simulation data to reset the state
+    clear[]
+    Frees the fire domain and cancels every scheduled event. Parameters are kept, so a new FireDomain can be created without setting them again
+    Example: clear[]
 
 ## systemExec
     systemExec[command=<system_command>]
@@ -199,10 +208,6 @@ std::string commandHelp = R"(
     Arguments:
      - 'host': Hostname or IP address for the server
      - 'port': Port number on which the server will listen;
-
-## clear
-    clear[]
-    clears-up memory except parameters, no more schedueled events or fire domain.
 
 ## quit
     quit[]

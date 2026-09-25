@@ -41,6 +41,8 @@ public:
 	virtual ~FFVector();
 	/*! \brief Copy-constructor */
 	FFVector(const FFVector&);
+	/*! \brief Copy-assignment */
+	FFVector& operator=(const FFVector&);
 
 	/*!  \brief overloaded operator +  */
 	friend const FFVector operator+(const FFVector&, const FFVector&);

@@ -64,25 +64,32 @@ We welcome code contributions, from bug fixes to new features.
     Implement your code changes, following existing coding style and conventions where possible.
 6.  **Add Tests (if applicable):**
 
-    For new features or significant bug fixes, please add corresponding tests or update existing ones. See the [Testing Documentation](https://forefire.readthedocs.io/en/latest/developer_guide/testing.html) *(Placeholder: Link to testing section once created)* for details on how to run tests. Ensure all tests pass locally.
+    For new features or significant bug fixes, please add corresponding tests or update existing ones. See [TESTING.md](TESTING.md) for what each suite covers, how to run it, and which ones CI validates. Ensure all tests pass locally.
     ```bash
-    # Example command to run tests (adjust as needed)
+    # The C++ unit tests
+    cmake -S . -B build && cmake --build build -j
+    ctest --test-dir build --output-on-failure
+
+    # The script-driven suites (runff, runANN)
     cd tests && bash run.bash
     ```
-7.  **Commit Changes:**
+7.  **Record the Change:**
+
+    Add an entry under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), in the section that fits (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`). Write it for someone upgrading: what changed for them, not what you edited. Skip this for changes with no user-visible effect, such as a typo fix or an internal refactor.
+8.  **Commit Changes:**
 
     Commit your changes with clear and concise commit messages.
     ```bash
     git add .
     git commit -m "feat: Implement new flux model calculation"
     ```
-8.  **Push to Your Fork:**
+9.  **Push to Your Fork:**
 
     Push your branch to your GitHub fork.
     ```bash
     git push origin my-feature-branch
     ```
-9.  **Open a Pull Request (PR):**
+10. **Open a Pull Request (PR):**
 
     Go to the `forefireAPI/forefire` repository on GitHub and open a Pull Request from your branch to the `dev` branch (or `master` if that's the target).
     *   Provide a clear description of the changes in the PR.

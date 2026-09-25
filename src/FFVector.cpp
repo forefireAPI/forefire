@@ -44,6 +44,14 @@ FFVector::~FFVector() {
 FFVector::FFVector(const FFVector& v) : vx(v.vx), vy(v.vy), vz(v.vz){
 	// nothing else to do
 }
+// Same reason as FFPoint::operator=: the copy-constructor above deprecates the
+// implicit assignment, and the three components own no memory.
+FFVector& FFVector::operator=(const FFVector& v){
+	vx = v.vx;
+	vy = v.vy;
+	vz = v.vz;
+	return *this;
+}
 
 // overloading operators
 const FFVector operator+(const FFVector& left, const FFVector& right){

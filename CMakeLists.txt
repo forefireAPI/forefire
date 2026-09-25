@@ -300,6 +300,11 @@ endif()
 target_include_directories(forefireL PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/include")
+# SYSTEM and PRIVATE: vendored headers are ours to use but not ours to fix, so
+# the warning flags below must not apply to them, and nothing outside this
+# library includes them.
+target_include_directories(forefireL SYSTEM PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 # Threads is explicit because a static core does not drag libpthread in for
 # its consumers the way the shared library does.
 find_package(Threads REQUIRED)

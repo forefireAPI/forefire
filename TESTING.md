@@ -32,7 +32,7 @@ They need no Python and no test data. Configure with
 
 ## Running the Core Test (`runff`)
 
-The primary automated test, validated in our CI pipeline, is located in `tests/runff/`. This test verifies core simulation, save/reload functionality, and NetCDF/KML output generation against reference files.
+The primary physics regression test, validated in CI by `main.yml` and `macos.yml`, is located in `tests/runff/`. This test verifies core simulation, save/reload functionality, and NetCDF/KML output generation against reference files.
 
 **To run this test manually:**
 
@@ -111,9 +111,86 @@ which is the point — it is the failing test the work in #175 has to make pass.
 Wiring it into CI belongs with the last step of that issue, once it can pass
 for the right reason.
 
+## Running the ANN Test (`runANN`)
+
+Validated in CI by `main.yml`. It is the only coverage for
+`ANNPropagationModel` and `BMapLoggerForANNTraining`: both read a `.ffann`
+network in their constructor and abort without one, so the C++ unit suite
+cannot construct them.
+
+It runs the trained network in `Rothermel.ffann` over the 1424 inputs in
+`modelrun.csv` and checks the root mean squared error against what the
+propagation model produced.
+
+**To run it manually**, after building (`ANN_test` needs
+`-DFOREFIRE_BUILD_TOOLS=ON`, which is the default outside wheel builds):
+
+```bash
+cd tests/runANN
+bash run.bash
+```
+
+Add `print` to `ANN_test` for a per-input dump:
+
+```bash
+../../bin/ANN_test Rothermel.ffann modelrun.csv print
+```
+
+The tolerance is calibrated between a working network and a useless one:
+
+| | RMSE |
+| --- | --- |
+| trained network | 0.0235 |
+| predicting the mean of every output | 0.0966 |
+| normalisation weights scaled by 1% | 17817 |
+| **tolerance** | **0.05** |
+
+Note the fixture is weak: the expected outputs take four distinct values
+spanning 1.1 in 12412, which is why the gap between a working network and a
+constant one is so narrow. Replacing `modelrun.csv` with inputs that produce a
+real spread of rates of spread would make this a much stronger check.
+
+## Running the Landscape Generator Test (`test_genforefirecase.py`)
+
+Covers `tools/preprocessing/genForeFireCase.py`, which writes the NetCDF
+landscape file a simulation runs on. It builds a landscape, hands it to
+ForeFire, ignites it and steps, so it exercises the writer and the reader
+together rather than the writer alone. It also pins the field axis order,
+where the 3-D and 4-D paths were previously broken.
+
+**To run it manually**, after installing the Python package as above:
+
+```bash
+./.venv/bin/python tests/python/test_genforefirecase.py
+```
+
+It needs `numpy` and `netCDF4`, writes only into a temporary directory, and
+takes a few seconds. Without a built `pyforefire` the load-and-simulate case
+skips and the rest still run, so it is usable while iterating on the writer.
+
+The test doubles as the worked example for the tool.
+
 ## Other Tests
 
-The `tests/` directory contains other subdirectories (`mnh_*`, `runANN`) for testing specific features like coupled simulations. A main `tests/run.bash` script exists but is not currently fully validated in CI. Refer to specific subdirectories for details if needed.
+`tests/run.bash` runs every suite that its environment allows: `runff` and
+`runANN` always, the `mnh_*` coupled cases when `SRC_MESONH` is set, and
+`tests/python/` when `PYTHONEXE` is set. It is not itself invoked by CI, which
+runs the suites individually.
+
+`tests/python/test_validate.py` covers the `forefire-validate` landscape
+checker. It loads the checker straight from source and exercises its pure
+decision logic, so it needs neither the compiled `_pyforefire` extension nor
+`netCDF4`; the one test that reads a real `.nc` is skipped when `netCDF4` is
+absent. `run.bash` runs it after the examples.
+
+```bash
+python3 tests/python/test_validate.py
+```
+
+`tests/python/` also holds `idealizedwind.py`, `farsite_flat.py` and
+`percolation.py`. They are examples rather than tests — they produce plots and
+assert nothing — and are not run anywhere. They are the closest thing to
+worked examples in the repository, so keeping them executable is worthwhile.
 
 ## Sanitizers
 
