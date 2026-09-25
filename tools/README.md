@@ -9,7 +9,7 @@ to couple the simulation with MesoNH you should also edit the &NAM_FOREFIRE name
 
 List of preprocessing scripts:
 - ***clickImageToLocation.py*** sets the coordinates for the Init.ff file 
-- ***genForeFireCase.py*** contains routines for  addFieldToNcFile
+- ***genForeFireCase.py*** writes the **NetCDFfile** landscape (fuel, elevation, wind, flux models) from numpy arrays
 - ***genPrepIdeal.py*** creates the  .nam for mesonh ideal case ???
 - ***kmlDomain.py*** extracts kml files from a netcdf file
 - ***PGD2Init.py*** creates the **InitFile**=Init.ff in the **ForeFireDataDirectory** directory
@@ -19,15 +19,24 @@ List of preprocessing scripts:
 
 ### genForeFireCase
 
-Contains the preprocessing routine *FiretoNC*: 
-to be used in order to generate a packed data landscape data in cdf format for ForeFire.
+Lives in `preprocessing/genForeFireCase.py` and contains the preprocessing
+routine *FiretoNC*, used to generate a packed data landscape in cdf format for
+ForeFire.
+
 **Usage:** FiretoNC(filename, file name
          domainProperties, the domain extension (map matching forefire parameters SWx, SWy, SWz, Lx, Ly, Lz, t0, Lt)
-     parametersProperties, the other optional properties you may want to put in the list
+     parametersProperties, the simulation date and duration. All of date, duration, refYear, refDay, year, month and day are required
              fuelModelMap, a numpy integer array containing the indexes of fuel type
            elevation=None, a numpy real array with the elevation
                 wind=None, a map with a "zonal" and "meridian" numpy real array values
        fluxModelMap=None): a map with a ("table" and "name" ) and fMap "data" numpy int array values containing indices to the corresponding flux model
+
+Field arrays are indexed outermost axis first: `(NY, NX)`, or `(NZ, NY, NX)`
+and `(NT, NZ, NY, NX)` when they vary with height or time — the same
+convention `prealCF2Case.py` uses.
+
+`tests/python/test_genforefirecase.py` builds a landscape, loads it and runs a
+short simulation; it doubles as a worked example.
 
 
 ### PGD2Init

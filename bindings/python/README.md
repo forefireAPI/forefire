@@ -133,6 +133,22 @@ For examples that use real-world data (fuel, topography, wind), see the scripts
 in the [`tests/python/`](https://github.com/forefireAPI/forefire/tree/master/tests/python)
 directory of the main repository.
 
+### Validating a landscape file
+
+A landscape `.nc` and its fuel table have to agree: every fuel index in the
+raster must be defined in the table, or the simulation fails or produces wrong
+results without saying why. The `forefire-validate` command checks this up
+front:
+
+```bash
+forefire-validate landscape.nc fuels.csv
+```
+
+It reports any fuel index present in the raster but missing from the table,
+flags a fuel/elevation shape mismatch, and warns when elevation or wind is
+absent. Reading the `.nc` needs the `netCDF4` package (`pip install netCDF4`);
+it is not pulled in by the wheel automatically.
+
 ---
 
 ## Development

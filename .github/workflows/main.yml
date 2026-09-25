@@ -69,3 +69,12 @@ jobs:
         run: |
           cd tests/runff
           bash ff-run.bash # Execute the complete test logic script
+
+      # The only coverage for ANNPropagationModel and BMapLoggerForANNTraining:
+      # both read a .ffann network in their constructor and abort without one,
+      # so the unit suite cannot reach them. ANN_test is built by the step
+      # above, since FOREFIRE_BUILD_TOOLS defaults on outside wheel builds.
+      - name: Run 'runANN' Test Script
+        run: |
+          cd tests/runANN
+          bash run.bash

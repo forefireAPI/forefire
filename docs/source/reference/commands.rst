@@ -336,6 +336,62 @@ Triggers a change in simulation data at a specific time and location. Can be use
    trigger[fuelType=wind;vel=(5.0,2.0,0.0);t=1800] # Trigger new wind at t=1800s
 
 
+.. _cmd-emit:
+
+``emit``
+~~~~~~~~
+
+.. code-block:: none
+
+   emit[layer=<flux_layer>;loc=(x,y,z);radius=<metres>;duration=<seconds>;flux=<per_m2_per_s>]
+
+Injects a flux into an existing flux layer, over an area, for a time span
+starting at the domain's current time. The layer must already exist — create it
+with :ref:`addLayer <cmd-addLayer>` first.
+
+It lets a source that is not the simulated fire front contribute to a flux
+layer. The ``frp`` form takes fire radiative power in megawatts, the unit
+satellite products report.
+
+**Arguments:**
+
+*   ``layer=<flux_layer>``: Name of the flux layer to emit into, as given to ``addLayer``. ``name=`` is accepted as an alias. **Required.**
+*   ``duration=<seconds>``: Length of the emission, in seconds, starting at the domain's current time. **Required.**
+
+*Where* — give exactly one of:
+
+*   ``loc=(x,y,z)``: Centre, in domain coordinates.
+*   ``lonlat=(lon,lat,z)``: Centre, in WGS84.
+*   ``sw=(x,y,z)`` with ``ne=(x,y,z)``: A box, in domain coordinates. Its centre and area are used.
+*   ``swlonlat=(lon,lat,z)`` with ``nelonlat=(lon,lat,z)``: The same, in WGS84.
+
+*Over what area* — from the box if one was given, otherwise:
+
+*   ``radius=<metres>``: A disc, of area ``pi * r²``.
+*   ``surface=<m2>`` or ``area=<m2>``: The area directly.
+
+*How much* — give exactly one of:
+
+*   ``flux=<per_m2_per_s>``: The emitted quantity per square metre per second, in the layer's own units — W/m² for a heat flux layer.
+*   ``frp=<MW>``: Fire radiative power in megawatts, converted to watts through the ``FRPToWatts`` parameter (1e7 if it is not set) and divided by the area.
+*   ``value=<power>`` or ``val=<power>``: A total power, divided by the area.
+*   ``total=<energy>``: A total energy, divided by the area and the duration.
+
+**Example:**
+
+.. code-block:: none
+
+   addLayer[name=heatFlux;type=flux;modelName=heatFluxBasic]
+   emit[layer=heatFlux;lonlat=(9.05,41.95,0);radius=50;duration=600;frp=120]
+
+.. note::
+
+   Every failure is reported on standard output and the command returns an
+   error: no active ``FireDomain``, an unknown layer name, a missing
+   ``duration``, a missing location, or a magnitude given as ``frp``/``value``/
+   ``total`` with no usable area.
+
+
 .. _cmd-print:
 
 ``print``
@@ -486,7 +542,7 @@ Executes ForeFire commands contained within the specified script file. The filen
 
    clear[]
 
-Clears all simulation data (domain, fronts, nodes, loaded data) and scheduled events, resetting the simulation state. Parameters are generally kept.
+Frees the fire domain — with its fronts, nodes and loaded data — and cancels every scheduled event. Parameters are kept, so a new ``FireDomain`` can be created without setting them again.
 
 **Example:**
 

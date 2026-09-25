@@ -32,6 +32,16 @@ FFPoint::~FFPoint(){
 FFPoint::FFPoint(const FFPoint& p) : x(p.x), y(p.y), z(p.z) {
 	// nothing else to do
 }
+// Spelled out rather than left implicit: declaring the copy-constructor above
+// deprecates the implicit assignment, so every `a = b` on an FFPoint raises
+// -Wdeprecated-copy. The three coordinates own no memory, so copying them is
+// exactly what the implicit version did.
+FFPoint& FFPoint::operator=(const FFPoint& p){
+	x = p.x;
+	y = p.y;
+	z = p.z;
+	return *this;
+}
 
 // overloading operators
 const FFPoint operator+(const FFPoint& left, const FFPoint& right){

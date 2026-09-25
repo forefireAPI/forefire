@@ -81,7 +81,26 @@ Generating a suitable ``landscape.nc`` file typically involves standard Geograph
     *   **Clip** the layers to your desired simulation domain boundaries.
     *   **Convert** the final processed layers into a single NetCDF file with appropriate variable names.
 
-3.  **ForeFire Helpers (Potentially):** Previous versions of ForeFire included Python helper scripts (e.g., `genForeFireCase.py`). While the status of V2 helpers is pending, tools might exist or be developed to assist in this NetCDF creation process. Consult the documentation sections on available tools once updated.
+3.  **ForeFire Helpers:** ``tools/preprocessing/genForeFireCase.py`` writes the file for you from numpy arrays, which is usually easier than assembling the NetCDF by hand:
+
+    .. code-block:: python
+
+       import numpy as np
+       from genForeFireCase import FiretoNC
+
+       FiretoNC("landscape.nc",
+                domainProperties={'SWx': 0., 'SWy': 0., 'SWz': 0.,
+                                  'Lx': 1000., 'Ly': 1000., 'Lz': 0.,
+                                  't0': 0., 'Lt': np.inf},
+                parametersProperties={'date': "2026-08-12T12:00:00Z",
+                                      'duration': 3600,
+                                      'refYear': 2026, 'refDay': 224,
+                                      'year': 2026, 'month': 8, 'day': 12},
+                fuelModelMap=fuel,        # (NY, NX) integer fuel indices
+                elevation=elevation,      # (NY, NX) metres
+                wind={"zonal": windU, "meridian": windV})
+
+    Field arrays are indexed outermost axis first: ``(NY, NX)``, or ``(NZ, NY, NX)`` and ``(NT, NZ, NY, NX)`` when they vary with height or time. Every key shown under ``parametersProperties`` is required.
 
 Loading in ForeFire
 -------------------

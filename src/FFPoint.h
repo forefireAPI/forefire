@@ -40,6 +40,9 @@ public:
 	/*! \brief Copy-constructor
 	 *  \param[in] 'p' : point to be copied */
 	FFPoint(const FFPoint& p);
+	/*! \brief Copy-assignment
+	 *  \param[in] 'p' : point to be copied */
+	FFPoint& operator=(const FFPoint& p);
 
 	/*!  \brief overloaded operator +  */
 	friend const FFPoint operator+(const FFPoint&, const FFPoint&);
