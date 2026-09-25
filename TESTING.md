@@ -210,13 +210,23 @@ ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build-asan --output-on-failure
 check. Other values are passed straight through — `undefined`, or
 `address,undefined` for both — but only `address` is currently verified clean.
 
-**`detect_leaks=0` is deliberate, not a workaround.** ForeFire reports zero
-ASan *errors* — no use-after-free, no overflow, no double free — on either test
-path, which is what makes a blocking job possible. It does leak: nothing owns a
-`PropagationModel` (#159), so every one is reported. Leaving leak detection on
-would produce a permanently failing job that everyone learns to ignore. The CI
-workflow runs the leak check anyway as an informational step, so the number
-stays visible, and it can be made blocking once #159 lands.
+ForeFire reports zero ASan *errors* — no use-after-free, no overflow, no double
+free — on either test path, which is what makes a blocking job possible.
+
+**Leaks are blocking for the unit suite and informational for `runff`.** The
+unit suite reports none: #159 gave the propagation and flux models, the
+propagative layer and two orphaned constant-layer arrays an owner, which took
+it from about 4.7 MB to zero. Running the suite with leak detection on is
+therefore a check rather than a report:
+
+```bash
+ASAN_OPTIONS=detect_leaks=1 ctest --test-dir build-asan --output-on-failure
+```
+
+`runff` still leaks about 200 kB over 783 allocations, on paths a full
+simulation reaches and the unit suite does not, so its leak check runs without
+gating the build. Closing those is what would let it join the gate; until then
+the figure stays visible in the job log.
 
 Note that the sanitizer build writes `bin/forefire` and `lib/libforefireL.so`
 like any other build, so it replaces a release build in the source tree.

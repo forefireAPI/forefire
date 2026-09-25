@@ -9,6 +9,7 @@
 add_executable(forefire_unit_tests
     main.cpp
     model_sandbox.cpp
+    test_domain_ownership.cpp
     test_flux_models.cpp
     test_http_server.cpp
     test_model_registry.cpp
@@ -27,7 +28,8 @@ endif()
 
 # doctest groups its cases into suites; registering one CTest entry per suite
 # keeps `ctest` output useful without needing doctest's CMake integration.
-foreach(_suite "model registry" "propagation models" "flux models" "http server")
+foreach(_suite "model registry" "propagation models" "flux models" "http server"
+                "domain ownership")
     string(REPLACE " " "_" _suite_id "${_suite}")
     add_test(NAME "unit.${_suite_id}"
              COMMAND forefire_unit_tests --test-suite=${_suite} --no-skipped-summary)

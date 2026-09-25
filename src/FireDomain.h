@@ -309,6 +309,16 @@ public:
 	bool addPropagativeLayer(string);
 	size_t getFreePropModelIndex();
 
+	/*! \brief indices this domain put into the shared model tables
+	 *
+	 * propModelsTable and fluxModelsTable are static, so an entry cannot be
+	 * freed just because some domain is going away — only the domain that
+	 * registered it may. These record which ones are ours. */
+	std::vector<size_t> ownedPropModelIndices;
+	std::vector<size_t> ownedFluxModelIndices;
+	/*! \brief deletes this domain's models and clears their table entries */
+	void releaseOwnedModels();
+
 	/* Mesh properties */
     /*-----------------*/
 	FFPoint SWLngLat; /*!< SouthWest Corner of the mesh */
