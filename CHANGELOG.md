@@ -58,6 +58,8 @@ Merged since v2.5.0, not yet released.
 - `StringRepresentation` kept its output buffer, current level and GeoJSON
   cursor in file-scope globals shared by every instance. They are now members.
   ([#178])
+- `clear[]` no longer crashes after a simulation whose fire front stopped
+  everywhere, for instance an ignition in non-burnable fuel. ([#194])
 
 ### Changed
 
@@ -189,3 +191,4 @@ repository stays easy to return to.
 [#178]: https://github.com/forefireAPI/forefire/pull/178
 [#180]: https://github.com/forefireAPI/forefire/pull/180
 [#183]: https://github.com/forefireAPI/forefire/pull/183
+[#194]: https://github.com/forefireAPI/forefire/pull/194

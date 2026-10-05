@@ -71,6 +71,7 @@ FFEvent* TimeTable::getUpcomingEvent(){
 		decrement();
 	} else if ( size() == 1 ) {
 		// this is the only event left
+		head = nullptr;
 		decrement();
 	} else {
 		// no events left to be treated (size=0)
