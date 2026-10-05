@@ -65,6 +65,10 @@ Merged since v2.5.0, not yet released.
   the wheel. ([#154])
 - Free-threaded (`cp314t`) wheels are no longer published, because the core is
   not yet thread-safe; CPython 3.14 is declared supported. ([#155])
+- `import pyforefire` no longer loads matplotlib; it is imported only when
+  `printToPathe` or `plot_simulation` is called. `plt`, `cm`, `mpath`,
+  `mpatches` and `ListedColormap` are no longer reachable as `pyforefire`
+  attributes. ([#193])
 
 ## [v2.5.0] — 2026-08-11
 
@@ -189,3 +193,4 @@ repository stays easy to return to.
 [#178]: https://github.com/forefireAPI/forefire/pull/178
 [#180]: https://github.com/forefireAPI/forefire/pull/180
 [#183]: https://github.com/forefireAPI/forefire/pull/183
+[#193]: https://github.com/forefireAPI/forefire/pull/193

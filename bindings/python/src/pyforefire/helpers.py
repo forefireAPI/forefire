@@ -1,15 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.path as mpath
-import matplotlib.patches as mpatches
-import matplotlib.cm as cm
 import math
 
 import struct
 import zlib
 
 
-from matplotlib.colors import ListedColormap
 
 def get_fuels_table(propagation_model):
     if propagation_model == 'RothermelAndrews2018':
@@ -367,6 +362,7 @@ def printToPathe(linePrinted):
     """
     Compute the current results of simulation to pathes.
     """
+    import matplotlib.path as mpath
     fronts = linePrinted.split("FireFront")
     pathes = []
     for front in fronts[1:]:
@@ -539,6 +535,10 @@ def plot_simulation(pathes, fuel_map, elevation_map, myExtents, scalMap = None):
     Used for plot 4 axis graph, with Heatflux, Fuels, Altitude plotted under simulation, 
     and Statistics for the last axis.
     """
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import matplotlib.cm as cm
+    from matplotlib.colors import ListedColormap
     #import seaborn as sns
     # Create a figure with 2 axis (2 subplots)
     fig, ax = plt.subplots(figsize=(10,7), dpi=120)
