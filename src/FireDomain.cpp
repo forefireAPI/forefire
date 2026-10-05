@@ -326,13 +326,18 @@
 			infrontiers.pop_back();
 		}
 	
+		// The models this domain registered go back before the broker does:
+		// they hold a pointer to it, and freeing the broker first would leave
+		// a destructor reaching through a dangling pointer.
+		releaseOwnedModels();
+
 		// Deleting data broker and layers
 		if (dataBroker) {
 			delete dataBroker;
 			dataBroker = nullptr;
 		}
 		if (propagativeLayer) {
-			//delete propagativeLayer;
+			delete propagativeLayer;
 			propagativeLayer = nullptr;
 		}
 	
@@ -695,20 +700,44 @@
 		 params->setParameter(model->getName() + ".keys", properties);
 		 //cout<< "loading"<< model->getName()<<index<<endl;
 		 propModelsTable[index] = model;
+		 // The table is shared, so remember which entries are ours to release.
+		 ownedPropModelIndices.push_back((size_t) index);
 	 }
- 
+
 	 void FireDomain::registerFluxModel(const int& index, FluxModel* model){
-		  
+
 		 fluxModelsTable[index] = model;
+		 ownedFluxModelIndices.push_back((size_t) index);
+	 }
+
+	 /*! \brief frees the models this domain put in the shared tables */
+	 void FireDomain::releaseOwnedModels(){
+		 for ( size_t i = 0; i < ownedPropModelIndices.size(); i++ ){
+			 const size_t index = ownedPropModelIndices[i];
+			 delete propModelsTable[index];
+			 propModelsTable[index] = 0;
+		 }
+		 ownedPropModelIndices.clear();
+
+		 for ( size_t i = 0; i < ownedFluxModelIndices.size(); i++ ){
+			 const size_t index = ownedFluxModelIndices[i];
+			 delete fluxModelsTable[index];
+			 fluxModelsTable[index] = 0;
+		 }
+		 ownedFluxModelIndices.clear();
 	 }
  
 	 bool FireDomain::addPropagativeLayer(string mname){
 		 /* searching if there exists a propagation model with associated name */
 		 /* affecting it to free index */
 		 size_t mindex = getFreePropModelIndex();
+		 if ( mindex >= NUM_MAX_PROPMODELS ) return false;
 		 PropagationModel* model = propModelInstanciation(mindex, mname);
 		 if ( model == 0 ) return false;
 		 /* Instantiating a flux layer related to this model */
+		 // Replacing an earlier layer: the old one is this domain's to free,
+		 // and nothing else refers to it.
+		 delete propagativeLayer;
 		 propagativeLayer = new PropagativeLayer<double>("ROSlayer", mindex);
 		 return true;
 	 }
@@ -827,6 +856,7 @@
  
 		 // Otherwise, searching for the model in the available ones
 		 size_t mindex = getFreeFluxModelIndex();
+		 if ( mindex >= NUM_MAX_FLUXMODELS ) return false;
 		 string fmname = "";
 		 if ( lname == "heatFlux" ) fmname = "heatFluxBasic";
 		 if ( lname == "vaporFlux" ) fmname = "vaporFluxBasic";
@@ -856,7 +886,16 @@
  
 	 size_t FireDomain::getFreePropModelIndex(){
 		 size_t mindex = NUM_MAX_PROPMODELS - 1;
-		 while ( propModelsTable[mindex] != 0 ) mindex--;
+		 // Bounded: mindex is unsigned, so walking off the bottom of a full
+		 // table wrapped round to SIZE_MAX and read far out of bounds.
+		 while ( propModelsTable[mindex] != 0 ){
+			 if ( mindex == 0 ){
+				 cerr<<"ERROR: no free propagation model slot, max is "
+					 <<NUM_MAX_PROPMODELS<<endl;
+				 return NUM_MAX_PROPMODELS;
+			 }
+			 mindex--;
+		 }
 		 return mindex;
 	 }
  
@@ -864,8 +903,12 @@
 		 size_t mindex = 0;
 		 while ( fluxModelsTable[mindex] != 0 ){
 			 if(mindex >= NUM_MAX_FLUXMODELS -1){
-				 cout<<"ERROR No mor flx models allowed, max:"<< NUM_MAX_FLUXMODELS<<endl;
-				 return mindex;
+				 // Returning an out-of-range index rather than an occupied
+				 // one: the caller used to get a live slot back and quietly
+				 // overwrite the model already in it.
+				 cerr<<"ERROR: no free flux model slot, max is "
+					 <<NUM_MAX_FLUXMODELS<<endl;
+				 return NUM_MAX_FLUXMODELS;
 			 }
 			 mindex++;
 		 }
@@ -2778,13 +2821,18 @@
  
 		 /* initializations for the propagation model */
 		 propagativeLayer = nullptr;
-		 for ( size_t i = 0; i < NUM_MAX_PROPMODELS; i++ ) propModelsTable[i] = 0;
- 
+		 // The model tables are NOT wiped here. They are static, shared by
+		 // every domain in the process, and clearing them on construction
+		 // dropped whatever an existing domain had registered: a second
+		 // FireDomain (Command.cpp creates one for the coupled master) left
+		 // the first one's PropagativeLayer holding an index that was either
+		 // empty or, once the new domain registered, pointing at the new
+		 // domain's model. Both tables are static storage and so already
+		 // start out null. Each domain now releases its own entries in the
+		 // destructor instead.
+
 		 ostringstream infile;
 		 infile << params->GetPath(params->getParameter("NetCDFfile"));
-	 
-		/* initializations for the flux models */
-		 for ( size_t i = 0; i < NUM_MAX_FLUXMODELS; i++ ) fluxModelsTable[i] = NULL;
  
  
 		 /* loading the layers for atmospheric variables and coupling variables */

@@ -122,46 +122,47 @@ TEST_CASE("every model can be destroyed") {
     // derived destructor as well is a double free, and this case is what says
     // so: run it under a build that reintroduces one and it aborts.
     //
-    // Nothing deletes a model in a normal run — FireDomain keeps them in
-    // propModelsTable and fluxModelsTable and never frees either — so these
-    // destructors are reached only from here. That is precisely why the double
-    // free survived: the code that trips it does not otherwise run.
-    ModelSandbox sandbox;
-
+    // The models are freed by ~FireDomain, which is what owns them: it records
+    // the entries it put in the shared model tables and releases those. So
+    // each model gets its own sandbox here, and destroying the sandbox is the
+    // destruction under test. Deleting one by hand instead would be the double
+    // free this case exists to catch.
     const std::vector<std::string>& props = propagationModels();
     for (size_t i = 0; i < props.size(); i++) {
         CAPTURE(props[i]);
+        ModelSandbox sandbox;
         PropagationModel* model = sandbox.propagation(props[i]);
         REQUIRE(model != 0);
-        delete model;
     }
 
     const std::vector<std::string>& fluxes = fluxModels();
     for (size_t i = 0; i < fluxes.size(); i++) {
         CAPTURE(fluxes[i]);
+        ModelSandbox sandbox;
         FluxModel* model = sandbox.flux(fluxes[i]);
         REQUIRE(model != 0);
-        delete model;
     }
 }
 
-TEST_CASE("destroying a model does not disturb the next one") {
+TEST_CASE("destroying a domain's models does not disturb the next domain") {
     // A double free often shows up as the *next* allocation coming back
     // corrupted rather than as an immediate abort, so allocate across the
     // destruction and check the new model is intact.
+    std::vector<std::string> wanted;
+    size_t count = 0;
+    {
+        ModelSandbox sandbox;
+        PropagationModel* first = sandbox.propagation("Rothermel");
+        REQUIRE(first != 0);
+        wanted = first->wantedProperties;
+        count = first->numProperties;
+    }
+
     ModelSandbox sandbox;
-
-    PropagationModel* first = sandbox.propagation("Rothermel");
-    REQUIRE(first != 0);
-    const std::vector<std::string> wanted = first->wantedProperties;
-    const size_t count = first->numProperties;
-    delete first;
-
     PropagationModel* second = sandbox.propagation("Rothermel");
     REQUIRE(second != 0);
     CHECK(second->numProperties == count);
     CHECK(second->wantedProperties == wanted);
-    delete second;
 }
 
 TEST_CASE("property registration order is stable within a model") {

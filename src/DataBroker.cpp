@@ -1062,7 +1062,9 @@ namespace libforefire
 			XYZTDataLayer<double> *layer = new XYZTDataLayer<double>(name, SWCorner, timeOrigin, spatialExtent, Lt,
 																	 nx, ny, nz, nt, data);
 
-			// delete[] data;
+			// FFArray copies the values into storage of its own, so this
+			// array is ours to free and nothing refers to it afterwards.
+			delete[] data;
 			registerLayer(name, layer);
 		}
 		else if (layertype == "flux")
@@ -1081,7 +1083,8 @@ namespace libforefire
 			FluxLayer<double> *layer = new FluxLayer<double>(name,
 															 atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy, domain->getCells(),
 															 data, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt);
-			// delete[] data;
+			// Copied by FFArray, same as above.
+			delete[] data;
 			registerFluxModel(newFluxmodel);
 
 			registerFluxLayer(name, layer);

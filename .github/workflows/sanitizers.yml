@@ -9,11 +9,12 @@ name: 🧼 Sanitizers (Linux)
 # overflow, no double free, on either path. There is no backlog to clear
 # first, and the point of turning it on now is to keep it that way. See #162.
 #
-# Leaks are a separate matter and are deliberately NOT blocking: nothing owns
-# a PropagationModel (#159), so ASan reports every one as leaked. Making that
-# fail the build would produce a permanently red job, which teaches everyone
-# to ignore it. The leak check runs anyway, as an informational step, so the
-# number stays visible and can be made blocking once #159 lands.
+# Leaks are blocking for the unit suite. They were not when this job landed —
+# nothing owned a PropagationModel, so ASan reported every one as leaked, about
+# 4.7 MB in all. #159 gave the models, the propagative layer and two orphaned
+# constant-layer arrays an owner, which took the unit suite to zero, so the
+# gate went on. runff still leaks ~200 kB on paths the unit suite does not
+# reach, so its leak check stays informational until those are found too.
 #
 # A separate workflow rather than a job in main.yml because it needs its own
 # build: install-forefire.sh builds with -O3 -flto -fomit-frame-pointer, which
@@ -55,13 +56,16 @@ jobs:
           cmake -S . -B build-asan -DFOREFIRE_SANITIZE=address
           cmake --build build-asan -j"$(nproc)"
 
-      # Errors are blocking. detect_leaks=0 is the whole reason this can be:
-      # see the note at the top about #159.
+      # Leaks are blocking here: the unit suite reports none since the model
+      # and layer ownership fix in #159, and this is what keeps it that way.
       - name: Unit tests under ASan
         env:
-          ASAN_OPTIONS: detect_leaks=0
+          ASAN_OPTIONS: detect_leaks=1
         run: ctest --test-dir build-asan --output-on-failure
 
+      # runff still leaks about 200 kB over 783 allocations, on paths a single
+      # simulation reaches and the unit suite does not, so its leak check stays
+      # informational below. Errors are blocking here as they always were.
       - name: runff under ASan
         env:
           ASAN_OPTIONS: detect_leaks=0
@@ -69,13 +73,14 @@ jobs:
           cd tests/runff
           bash ff-run.bash
 
-      # Informational only. Prints what is leaking so the figure stays visible
-      # without gating the build on a known ownership gap.
-      - name: Leak report (informational)
+      # Informational only, and only for runff now. Keeps the figure visible so
+      # the remaining ownership gaps can be found and this can join the gate.
+      - name: runff leak report (informational)
         continue-on-error: true
         env:
           ASAN_OPTIONS: detect_leaks=1
         run: |
-          echo "::group::Unit suite leaks"
-          ctest --test-dir build-asan --output-on-failure || true
+          echo "::group::runff leaks"
+          cd tests/runff
+          bash ff-run.bash || true
           echo "::endgroup::"
