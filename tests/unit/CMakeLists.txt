@@ -12,7 +12,8 @@ add_executable(forefire_unit_tests
     test_flux_models.cpp
     test_http_server.cpp
     test_model_registry.cpp
-    test_propagation_models.cpp)
+    test_propagation_models.cpp
+    test_quit_command.cpp)
 
 target_link_libraries(forefire_unit_tests PRIVATE forefireL)
 target_include_directories(forefire_unit_tests PRIVATE
@@ -27,8 +28,15 @@ endif()
 
 # doctest groups its cases into suites; registering one CTest entry per suite
 # keeps `ctest` output useful without needing doctest's CMake integration.
-foreach(_suite "model registry" "propagation models" "flux models" "http server")
+foreach(_suite "model registry" "propagation models" "flux models" "http server"
+                "quit command")
     string(REPLACE " " "_" _suite_id "${_suite}")
     add_test(NAME "unit.${_suite_id}"
              COMMAND forefire_unit_tests --test-suite=${_suite} --no-skipped-summary)
+    # Requiring doctest's closing line, not just a zero exit status. A test
+    # that ends the process mid-run — which is exactly what quit[] used to do,
+    # with exit(0) — otherwise reports as a pass, because ctest sees 0 and the
+    # summary that never printed is not something it looks for.
+    set_tests_properties("unit.${_suite_id}" PROPERTIES
+                         PASS_REGULAR_EXPRESSION "\\[doctest\\] Status: SUCCESS!")
 endforeach()
