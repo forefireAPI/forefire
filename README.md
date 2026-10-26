@@ -26,8 +26,8 @@
 - 📚 **Full Documentation:** [forefire.readthedocs.io](https://forefire.readthedocs.io/en/latest/)
 - 🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
 - 🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
-- 📝 **Changelog:** [CHANGELOG.md](CHANGELOG.md) — what each release changed
-- 🧪 **Testing:** [TESTING.md](TESTING.md) — how to run each test suite
+- 📝 **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+- 🧪 **Testing:** [TESTING.md](TESTING.md)
 
 ## Features
 
