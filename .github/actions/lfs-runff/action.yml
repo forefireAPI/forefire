@@ -1,0 +1,22 @@
+name: Fetch runff LFS data
+description: >
+  Pulls only the LFS files tests/runff reads (~4 MB of the ~61 MB in LFS),
+  cached by object id so a run downloads nothing unless they change.
+  Checkout must run with `lfs: false` first.
+
+runs:
+  using: composite
+  steps:
+    - name: LFS cache key
+      id: key
+      shell: bash
+      run: echo "key=lfs-runff-$(git lfs ls-files -l -I 'tests/runff/*' | cut -d' ' -f1,3 | git hash-object --stdin)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@v4
+      with:
+        path: .git/lfs
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Pull runff LFS data
+      shell: bash
+      run: git lfs pull --include="tests/runff/*"

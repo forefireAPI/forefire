@@ -15,12 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Make install script executable
         run: chmod +x ./install-forefire-osx.sh
 
       - name: Build ForeFire using macOS install script
+        # The LFS check would curl back the LFS files the step above skips.
+        env:
+          FOREFIRE_CHECK_LFS: "OFF"
         run: ./install-forefire-osx.sh
 
       - name: Check ForeFire version
