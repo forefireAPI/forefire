@@ -2,9 +2,11 @@ name: 📦 Build & Test Docker Image
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master" ]
     tags: [ 'v*.*.*' ]
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master" ]
   workflow_dispatch:
 

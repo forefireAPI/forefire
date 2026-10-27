@@ -2,11 +2,13 @@ name: 🐍 Build Python wheels
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - "master"
     tags:
       - "v*"
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master" ]
   release:
     types: [ published ]

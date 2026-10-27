@@ -22,10 +22,12 @@ name: 🧼 Sanitizers (Linux)
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - "master"
       - "dev"
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master", "dev" ]
   workflow_dispatch:
 

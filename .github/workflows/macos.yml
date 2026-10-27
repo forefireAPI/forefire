@@ -2,9 +2,11 @@ name: 🧪 Test Native (macOS)
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - brew
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master", "dev" ]
   workflow_dispatch:
 
