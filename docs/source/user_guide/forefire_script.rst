@@ -28,7 +28,7 @@ Basic Syntax
   - Arguments are typically key-value pairs separated by an equals sign ``=``.
   - Multiple arguments within the brackets are separated by semicolons ``;``.
   - Some commands might take positional arguments (like :ref:`loadData <cmd-loadData>`) or have optional arguments (prefixed with `opt:` in the :doc:`Command Reference </reference/commands>`).
-- **Comments:** Lines beginning with a hash symbol ``#`` are treated as comments and are ignored by the interpreter.
+- **Comments:** Lines beginning with a hash symbol ``#`` are treated as comments and are ignored by the interpreter. A ``#`` after a command on the same line is not a comment: ForeFire prints ``unknown post operator`` and does not run the command. Put comments on their own line.
 - **Whitespace:** Leading and trailing whitespace on a line is generally ignored, except for indentation (see below).
 
 Indentation for Hierarchy (FireFront / FireNode)
@@ -93,8 +93,8 @@ While the exact commands depend on the simulation, a common workflow within a ``
 
   .. code-block:: none
 
-    # Simple point ignition
-    startFire[lonlat=(9.1, 42.2); t=0] # Using geographic coordinates
+    # Simple point ignition, using geographic coordinates
+    startFire[lonlat=(9.1,42.2,0);t=0]
 
     # --- OR ---
 
@@ -111,25 +111,26 @@ While the exact commands depend on the simulation, a common workflow within a ``
   .. code-block:: none
 
     # Set initial wind (applied from t=0 if not in landscape file)
-    trigger[fuelType=wind;vel=(3.0, -1.0, 0.0);t=0]
+    trigger[wind;vel=(3.0,-1.0,0.0)]
 
-    # Change wind later in the simulation
-    trigger[fuelType=wind;vel=(0.0, 5.0, 0.0);t=3600] # New wind at 1 hour
+    # Change wind later in the simulation: new wind at 1 hour
+    trigger[wind;vel=(0.0,5.0,0.0)]@t=3600
 
 6.  **Advance Simulation Time:** Run the simulation forward.
 
   .. code-block:: none
 
-    # Run until a specific absolute simulation time
-    goTo[t=7200] # Run until t = 2 hours
+    # Run until a specific absolute simulation time (t = 2 hours)
+    goTo[t=7200]
 
     # --- OR ---
 
-    # Run in discrete steps (useful for periodic output)
-    # step[dt=600] # Run for 10 minutes
-    # print[front_t600.geojson]@t=600 # Output using scheduler
-    # step[dt=600] # Run for another 10 minutes
+    # Run in discrete steps (useful for periodic output),
+    # with outputs scheduled at t=600 and t=1200
+    # print[front_t600.geojson]@t=600
     # print[front_t1200.geojson]@t=1200
+    # step[dt=600]
+    # step[dt=600]
     # ...
 
 7.  **Generate Outputs:** Save the simulation results.
@@ -140,10 +141,11 @@ While the exact commands depend on the simulation, a common workflow within a ``
     print[final_front.geojson]
 
     # Save final arrival time map to NetCDF
-    save[] # Uses default filename pattern ForeFire.<domainID>.nc
+    # (uses default filename pattern ForeFire.<domainID>.nc)
+    save[]
 
     # Plot a specific variable to an image
-    # plot[parameter=arrival_time_of_front;filename=arrival_map.png]
+    # plot[parameter=arrival_time;filename=arrival_map.png]
 
 
 Complete Example (`real_case.ff`)
