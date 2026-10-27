@@ -105,7 +105,7 @@ Merged since v2.5.0, not yet released.
 - A fuel map loaded with `loadData` that does not overlap the domain is now
   stretched over it, as the warning says and as the other layers already were.
   It was left at its own extent, so the whole domain read the fuel of its first
-  cell.
+  cell. ([#220])
 
 ### Changed
 
@@ -259,6 +259,7 @@ repository stays easy to return to.
 [#197]: https://github.com/forefireAPI/forefire/pull/197
 [#194]: https://github.com/forefireAPI/forefire/pull/194
 [#196]: https://github.com/forefireAPI/forefire/issues/196
+[#220]: https://github.com/forefireAPI/forefire/pull/220
 [#202]: https://github.com/forefireAPI/forefire/pull/202
 [#199]: https://github.com/forefireAPI/forefire/pull/199
 [#179]: https://github.com/forefireAPI/forefire/pull/179
