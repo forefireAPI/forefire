@@ -38,7 +38,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true # runff reads data.nc, which is stored in LFS
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Install Dependencies
         run: |
@@ -53,7 +55,7 @@ jobs:
         # FOREFIRE_SANITIZE also switches the compile flags to -g -O1
         # -fno-omit-frame-pointer, so the stack traces are readable.
         run: |
-          cmake -S . -B build-asan -DFOREFIRE_SANITIZE=address
+          cmake -S . -B build-asan -DFOREFIRE_SANITIZE=address -DFOREFIRE_CHECK_LFS=OFF
           cmake --build build-asan -j"$(nproc)"
 
       # Leaks are blocking here: the unit suite reports none since the model

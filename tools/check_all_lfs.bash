@@ -5,6 +5,13 @@
 set -e
 set -o pipefail
 
+# CI fetches only the LFS files its tests read (tests/runff); without this the
+# check would curl the other ~57 MB back on every configure.
+if [ "${FOREFIRE_CHECK_LFS:-ON}" = "OFF" ]; then
+    echo "LFS check skipped (FOREFIRE_CHECK_LFS=OFF)"
+    exit 0
+fi
+
 BASE_URL="https://github.com/forefireAPI/forefire/raw/refs/heads/master"
 
 # File list: md5:path

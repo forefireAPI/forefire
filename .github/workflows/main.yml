@@ -16,7 +16,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true # we use LFS to store large files (e.g. data.nc)
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Verify LFS test asset (data.nc)
         run: |
@@ -38,7 +40,8 @@ jobs:
           pip3 install --no-cache-dir lxml xarray netCDF4
 
       - name: ForeFire build
-        run: sudo bash ./install-forefire.sh -y
+        # The LFS check would curl back the LFS files the step above skips.
+        run: sudo env FOREFIRE_CHECK_LFS=OFF bash ./install-forefire.sh -y
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
