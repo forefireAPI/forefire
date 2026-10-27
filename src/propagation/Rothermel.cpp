@@ -208,7 +208,7 @@ double Rothermel::getSpeed(double* valueOf){
 
 	double B = 0.02526*pow(lsd, 0.54);
 
-	double E = 0.715* exp(-3.59*(10E-4 * lsd));
+	double E = 0.715* exp(-3.59e-4 * lsd);
 
 	double Ir = Rprime*Wn*lDeltaH*Etam*Etas;
 	double Uf = 0.9*Ir;
