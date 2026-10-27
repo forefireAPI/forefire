@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 # The front is compared by shape, not node by node: the number of nodes
 # changes with the CPU (630 on the Linux runner, 636 on macOS, 637 elsewhere
 # for the same case), while the shape stays put: the runners land 16-30 m and
-# 0.01-0.34% of area from the reference, the pre-#195 front 416 m and 37%.
+# 0.01-0.34% of area from it, the front before the Rothermel fix 416 m and 37%.
 # --- Configuration ---
 MAX_DISTANCE_M = 50.0      # symmetric Hausdorff distance, about two cells of ForeFire.0.nc
 MAX_AREA_REL_DIFF = 0.01   # relative difference of the enclosed area
