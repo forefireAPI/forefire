@@ -485,30 +485,6 @@
 	 FFPoint& FireDomain::getNECorner(){
 		 return NECorner;
 	 }
-	 double& FireDomain::SWCornerX(){
-		 return SWCorner.getX();
-	 }
-	 double& FireDomain::SWCornerY(){
-		 return SWCorner.getY();
-	 }
-	 double& FireDomain::NWCornerX(){
-		 return NWCorner.getX();
-	 }
-	 double& FireDomain::NWCornerY(){
-		 return NWCorner.getY();
-	 }
-	 double& FireDomain::NECornerX(){
-		 return NECorner.getX();
-	 }
-	 double& FireDomain::NECornerY(){
-		 return NECorner.getY();
-	 }
-	 double& FireDomain::SECornerX(){
-		 return SECorner.getX();
-	 }
-	 double& FireDomain::SECornerY(){
-		 return SECorner.getY();
-	 }
  
 	 double& FireDomain::getPerimeterResolution(){
 		 return perimeterResolution;

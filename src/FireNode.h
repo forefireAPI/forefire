@@ -154,10 +154,10 @@ public:
 	virtual ~FireNode();
 
 	/*!  \brief Accessors to the location of the FireNode  */
-	FFPoint getLoc();
-	double getX();
-	double getY();
-	double getZ();
+	FFPoint getLoc(){ return location; }
+	double getX(){ return location.getX(); }
+	double getY(){ return location.getY(); }
+	double getZ(){ return location.getZ(); }
 	/*!  \brief Object initialization */
 	void initialize(FFPoint&,  FFVector&, double&, double&, double = 0.
 			, FireDomain* = 0, FireFront* = 0, FireNode* = 0);

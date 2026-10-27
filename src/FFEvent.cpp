@@ -85,20 +85,8 @@ int operator!=(const FFEvent& left, const FFEvent& right){
 	return !(left==right);
 }
 
-double FFEvent::getTime() const{
-	return eventTime;
-}
-
 ForeFireAtom* FFEvent::getAtom(){
 	return atom;
-}
-
-FFEvent* FFEvent::getNext(){
-	return next;
-}
-
-FFEvent* FFEvent::getPrev(){
-	return prev;
 }
 
 void FFEvent::setNewTime(double t){

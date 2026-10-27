@@ -15,17 +15,6 @@ namespace libforefire{
 const double FFPoint::Pi = 3.141592653589793;
 
 // constructors and destructor
-FFPoint::FFPoint(){
-	x = 0.;
-	y = 0.;
-	z = 0.;
-}
-
-FFPoint::FFPoint(const double x0,const  double y0,const  double z0){
-	x = x0;
-	y = y0;
-	z = z0;
-}
 FFPoint::~FFPoint(){
 	// TODO
 }
@@ -81,29 +70,11 @@ int operator!=(const FFPoint& left, const FFPoint& right){
 }
 
 // Accessors
-double& FFPoint::getX(){
-	return x;
-}
-double& FFPoint::getY(){
-	return y;
-}
-double& FFPoint::getZ(){
-	return z;
-}
 FFPoint& FFPoint::getLoc(){
 	return *this;
 }
 
 // Mutators
-void FFPoint::setX(const double& x0){
-	x = x0;
-}
-void FFPoint::setY(const double& y0){
-	y = y0;
-}
-void FFPoint::setZ(const double& z0){
-	z = z0;
-}
 void FFPoint::setLoc(const double& x0, const double& y0, const double& z0){
 	x = x0;
 	y = y0;

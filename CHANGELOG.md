@@ -124,6 +124,9 @@ Merged since v2.5.0, not yet released.
   reports an error and the coupled run continues. ([#181])
 - `stb_image_write.h` moved to `third_party/`, with its version, origin and
   MIT / public-domain licence recorded. ([#192])
+- One-line accessors called from the propagation loops (`FireNode`, `FFPoint`,
+  `FFEvent`, `FireDomain` corners) are defined in their headers so they can be
+  inlined, which makes simulations faster with identical output.
 
 ## [v2.5.0] — 2026-08-11
 

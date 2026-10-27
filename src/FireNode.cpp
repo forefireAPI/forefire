@@ -286,18 +286,6 @@ FireNode::State FireNode::getState(){
 	return currentState;
 }
 
-FFPoint FireNode::getLoc(){
-	return location;
-}
-double FireNode::getX(){
-	return location.getX();
-}
-double FireNode::getY(){
-	return location.getY();
-}
-double FireNode::getZ(){
-	return location.getZ();
-}
 FFPoint FireNode::getNextLoc(){
 	return nextloc;
 }
