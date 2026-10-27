@@ -126,7 +126,7 @@ Merged since v2.5.0, not yet released.
   MIT / public-domain licence recorded. ([#192])
 - One-line accessors called from the propagation loops (`FireNode`, `FFPoint`,
   `FFEvent`, `FireDomain` corners) are defined in their headers so they can be
-  inlined, which makes simulations faster with identical output.
+  inlined, which makes simulations faster with identical output. ([#221])
 
 ## [v2.5.0] — 2026-08-11
 
@@ -266,6 +266,7 @@ repository stays easy to return to.
 [#189]: https://github.com/forefireAPI/forefire/pull/189
 [#190]: https://github.com/forefireAPI/forefire/pull/190
 [#192]: https://github.com/forefireAPI/forefire/pull/192
+[#221]: https://github.com/forefireAPI/forefire/pull/221
 [#203]: https://github.com/forefireAPI/forefire/pull/203
 [#205]: https://github.com/forefireAPI/forefire/issues/205
 [#171]: https://github.com/forefireAPI/forefire/issues/171
