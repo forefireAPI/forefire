@@ -1,13 +1,15 @@
 std::string commandHelp = R"(
 ## FireDomain
-    FireDomain[sw=(x,y,z);ne=(x,y,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ;opt:BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667)]
+    FireDomain[sw=(x,y,z);ne=(x,y,z);t=seconds]
     Create the main FireDomain; fronts and nodes will be created within this FireDomain
-    Example: FireDomain[sw=(0,0,0);ne=(64000,64000,0);BBoxWSEN=(lonWest,latSouth,lonEast,latNorth);t=2400]
+    Example: FireDomain[sw=(0,0,0);ne=(64000,64000,0);t=2400]
     Arguments:
     - 'sw': Southwest point (x,y,z) in meters
     - 'ne': Northeast point (x,y,z) in meters
-    - 't': Time associated with the fire domain in seconds or as an absolute ISO GMT date
-    - 'opt:BBoxWSEN': Optional WGS coordinates for the north-oriented bounding box (lonWest,latSouth,lonEast,latNorth)
+    - 't': Time associated with the fire domain in seconds (no 'date=' here)
+    To georeference the domain, set BBoxWSEN before creating it, e.g.
+    setParameter[BBoxWSEN=8.36215875,41.711125,9.1366311,42.28667]
+    FireDomain does not read BBoxWSEN; without the parameter the domain is placed at DefaultSWLngLat (Corsica)
 
 
 ##     FireFront
@@ -45,12 +47,12 @@ std::string commandHelp = R"(
      - 'nowplus': Delta duration in seconds for the scheduled command to execute;
 
 ## startFire
-    startFire[loc=(x,y,z)|lonlat=(lon,lat);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
+    startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
     Creates the smallest possible triangular fire front at the specified location and time
-    Example: startFire[loc=(0.0,0.0,0.0),t=0.]
+    Example: startFire[loc=(0.0,0.0,0.0);t=0.]
     Arguments:
      - 'loc': Starting location of the fire (coordinates x,y,z)
-     - 'lonlat': WGS coordinates of the ignition point
+     - 'lonlat': WGS coordinates of the ignition point (lon,lat,z); all three values are required
      - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date);
 
 ## step
@@ -67,15 +69,15 @@ std::string commandHelp = R"(
 
 
 ## trigger
-    trigger[fuelIndice=<value>;loc=(x,y,z);fuelType=<int|wind>;vel=(vx,vy,vz);t=<time>]
+    trigger[wind;vel=(vx,vy,vz)]
+    trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
     Triggers a change in simulation data, such as fuel or dynamic wind conditions
-    Example: trigger[fuelIndice=3;loc=(10,20,0);fuelType=1;vel=(0.5,0.5,0);t=10]
+    The first argument, alone without '=', selects the change. Schedule it with @t=, a 't=' inside the brackets is not read
+    Example: trigger[wind;vel=(5.0,2.0,0.0)]@t=1800
+    Example: trigger[fuelIndice;loc=(10,20,0);fuelType=1]
     Arguments:
-     - 'fuelIndice': Fuel index value
-     - 'loc': Location (x,y,z) where the trigger is applied
-     - 'fuelType': Fuel type as an integer, or 'wind' for dynamic wind trigger
-     - 'vel': Velocity vector (vx,vy,vz) associated with the trigger
-     - 't': Time at which the trigger is activated;
+     - 'wind': Sets the wind to 'vel', the vector (vx,vy,vz) in m/s
+     - 'fuelIndice': Sets the fuel index at 'loc' (x,y,z) to the integer 'fuelType';
 
 ## emit
     emit[layer=<flux_layer>;loc=(x,y,z);radius=<m>;duration=<seconds>;flux=<per_m2>]
@@ -120,11 +122,11 @@ std::string commandHelp = R"(
      - the UTC date;
 
 ## plot
-    plot[parameter=(speed|arrival_time_of_front|fuel|altitude|slope|windU|windV|Rothermel);
+    plot[parameter=(speed|arrival_time|fuel|altitude|slope|windU|windV|Rothermel);
     filename=<fname.png/jpg/nc/asc>; 
     opt:range=(min,max); 
-    opt:area=(BBoxWSEN=(w_lon,s_lat,e_lon,n_lat) | BBoxLBRT=(leftX,bottomY,rightX,topY | active)); 
-    opt:size=(eni,enj); 
+    opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat) | opt:BBoxLBRT=(leftX,bottomY,rightX,topY) | opt:BBoxLBRT=active; 
+    opt:size=eni,enj; 
     opt:cmap=<colormap>; 
     opt:histbins=<integer>; 
     opt:projectionOut=(json|<fname.kml>)]
@@ -139,15 +141,15 @@ std::string commandHelp = R"(
     - 'projectionOut=<fname.kml>': Saves a KML file with a GroundOverlay referencing the generated image.
 
     Example:
-    plot[parameter=speed;filename=out.png;opt:range=(0,0.1);opt:area=(BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667));opt:cmap=viridis;opt:histbins=50]
+    plot[parameter=speed;filename=out.png;range=(0,0.1);BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667);cmap=viridis;histbins=50]
 
-    Arguments:
-    - 'parameter': Simulation parameter to plot (speed | arrival_time_of_front | fuel | altitude | slope | windU | windV | Rothermel)
+    Arguments ('opt:' marks an optional argument, do not type it):
+    - 'parameter': Simulation parameter to plot (speed | arrival_time | fuel | altitude | slope | windU | windV | Rothermel)
     - 'filename': Output file name. The extension (.png, .jpg, .nc, .asc) selects the output format.
     - 'opt:range': Optional data range for the plot in the format (min,max).
-    - 'opt:area': Optional area specification. Use 'BBoxWSEN' for geographic coordinates (west_lon, south_lat, east_lon, north_lat) or
-                'BBoxLBRT' for Cartesian coordinates (leftX, bottomY, rightX, topY), or use 'active' for the active domain subset.
-    - 'opt:size': Optional matrix size as a comma-separated pair (eni,enj). If not provided, default resolution is used.
+    - 'opt:BBoxWSEN' / 'opt:BBoxLBRT': Optional area. 'BBoxWSEN' for geographic coordinates (west_lon, south_lat, east_lon, north_lat),
+                'BBoxLBRT' for Cartesian coordinates (leftX, bottomY, rightX, topY), or 'BBoxLBRT=active' for the active domain subset.
+    - 'opt:size': Optional matrix size as a comma-separated pair eni,enj, without parentheses. If not provided, default resolution is used.
     - 'opt:cmap': Optional colormap (e.g., viridis, turbo, fuel).
     - 'opt:histbins': Optional integer specifying the number of histogram bins between min and max.
     - 'opt:projectionOut': Optional projection output. Use 'json' for a JSON string of domain boundaries, or a filename ending in .kml

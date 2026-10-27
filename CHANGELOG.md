@@ -106,9 +106,18 @@ Merged since v2.5.0, not yet released.
   stretched over it, as the warning says and as the other layers already were.
   It was left at its own extent, so the whole domain read the fuel of its first
   cell. ([#220])
+- `Rothermel` wrote the wind exponent coefficient as `3.59*10E-4`, which is
+  3.59e-3 in C++, ten times the 3.59e-4 of Rothermel (1972), so wind raised
+  the rate of spread too little. Results with wind
+  change: +6% on the `runff` fuel at 5 m/s, several times more in loose fuel
+  beds such as sparse shrub. The `runff` references and the unit test pin are
+  regenerated. ([#195])
 
 ### Changed
 
+- Release builds compile with `-ffp-contract=off`, so the compiler no longer
+  fuses multiply-adds (FMA) where the CPU allows it. `-march=native` and ARM
+  builds now give the same simulation results as x86 builds without it.
 - Linux wheels are built against a NetCDF without DAP and HDF4, roughly halving
   the wheel. ([#154])
 - Free-threaded (`cp314t`) wheels are no longer published, because the core is
@@ -128,6 +137,9 @@ Merged since v2.5.0, not yet released.
   reports an error and the coupled run continues. ([#181])
 - `stb_image_write.h` moved to `third_party/`, with its version, origin and
   MIT / public-domain licence recorded. ([#192])
+- One-line accessors called from the propagation loops (`FireNode`, `FFPoint`,
+  `FFEvent`, `FireDomain` corners) are defined in their headers so they can be
+  inlined, which makes simulations faster with identical output. ([#221])
 
 ## [v2.5.0] — 2026-08-11
 
@@ -260,6 +272,7 @@ repository stays easy to return to.
 [#194]: https://github.com/forefireAPI/forefire/pull/194
 [#196]: https://github.com/forefireAPI/forefire/issues/196
 [#220]: https://github.com/forefireAPI/forefire/pull/220
+[#195]: https://github.com/forefireAPI/forefire/pull/195
 [#202]: https://github.com/forefireAPI/forefire/pull/202
 [#199]: https://github.com/forefireAPI/forefire/pull/199
 [#179]: https://github.com/forefireAPI/forefire/pull/179
@@ -268,6 +281,7 @@ repository stays easy to return to.
 [#189]: https://github.com/forefireAPI/forefire/pull/189
 [#190]: https://github.com/forefireAPI/forefire/pull/190
 [#192]: https://github.com/forefireAPI/forefire/pull/192
+[#221]: https://github.com/forefireAPI/forefire/pull/221
 [#203]: https://github.com/forefireAPI/forefire/pull/203
 [#205]: https://github.com/forefireAPI/forefire/issues/205
 [#171]: https://github.com/forefireAPI/forefire/issues/171

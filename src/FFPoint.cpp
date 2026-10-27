@@ -14,35 +14,6 @@ namespace libforefire{
 
 const double FFPoint::Pi = 3.141592653589793;
 
-// constructors and destructor
-FFPoint::FFPoint(){
-	x = 0.;
-	y = 0.;
-	z = 0.;
-}
-
-FFPoint::FFPoint(const double x0,const  double y0,const  double z0){
-	x = x0;
-	y = y0;
-	z = z0;
-}
-FFPoint::~FFPoint(){
-	// TODO
-}
-FFPoint::FFPoint(const FFPoint& p) : x(p.x), y(p.y), z(p.z) {
-	// nothing else to do
-}
-// Spelled out rather than left implicit: declaring the copy-constructor above
-// deprecates the implicit assignment, so every `a = b` on an FFPoint raises
-// -Wdeprecated-copy. The three coordinates own no memory, so copying them is
-// exactly what the implicit version did.
-FFPoint& FFPoint::operator=(const FFPoint& p){
-	x = p.x;
-	y = p.y;
-	z = p.z;
-	return *this;
-}
-
 // overloading operators
 const FFPoint operator+(const FFPoint& left, const FFPoint& right){
 	return FFPoint(left.x+right.x,left.y+right.y,left.z+right.z);
@@ -81,29 +52,11 @@ int operator!=(const FFPoint& left, const FFPoint& right){
 }
 
 // Accessors
-double& FFPoint::getX(){
-	return x;
-}
-double& FFPoint::getY(){
-	return y;
-}
-double& FFPoint::getZ(){
-	return z;
-}
 FFPoint& FFPoint::getLoc(){
 	return *this;
 }
 
 // Mutators
-void FFPoint::setX(const double& x0){
-	x = x0;
-}
-void FFPoint::setY(const double& y0){
-	y = y0;
-}
-void FFPoint::setZ(const double& z0){
-	z = z0;
-}
 void FFPoint::setLoc(const double& x0, const double& y0, const double& z0){
 	x = x0;
 	y = y0;
