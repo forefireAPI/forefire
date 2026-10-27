@@ -58,12 +58,3 @@ jobs:
         run: |
           cd tests/runff
           bash ff-run.bash
-
-      - name: Upload runff outputs
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: runff-outputs-${{ runner.os }}
-          path: |
-            tests/runff/real_case.kml
-            tests/runff/ForeFire.0.nc

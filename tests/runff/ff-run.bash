@@ -33,17 +33,16 @@ echo "Verifying KML output..."
 if ! command -v python3 &> /dev/null; then echo "Error: python3 required."; exit 1; fi
 if [ ! -f compare_kml.py ]; then echo "Error: compare_kml.py not found."; exit 1; fi
 
-# Both comparisons run even if the first fails, so a failing run shows both.
-STATUS=0
-python3 compare_kml.py "$GENERATED_KML" "$REFERENCE_KML" || STATUS=1
+python3 compare_kml.py "$GENERATED_KML" "$REFERENCE_KML"
+echo "KML verification passed."
 
 echo "Verifying NetCDF output..."
 if [ ! -f compare_nc.py ]; then echo "Error: compare_nc.py not found."; exit 1; fi
 # Check if the NetCDF file was created (likely by the first run)
 if [ ! -f "$GENERATED_NC" ]; then echo "Error: Expected NetCDF output file '$GENERATED_NC' not found."; exit 1; fi
 
-python3 compare_nc.py "$GENERATED_NC" "$REFERENCE_NC" || STATUS=1
+python3 compare_nc.py "$GENERATED_NC" "$REFERENCE_NC"
+echo "NetCDF verification passed."
 
-if [ "$STATUS" -ne 0 ]; then echo "runff verification failed."; exit 1; fi
 echo "All KML and NetCDF verifications passed for runff test."
 exit 0

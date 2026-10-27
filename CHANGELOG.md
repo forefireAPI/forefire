@@ -109,6 +109,9 @@ Merged since v2.5.0, not yet released.
   regenerated. ([#195])
 
 ### Changed
+- Release builds compile with `-ffp-contract=off`, so the compiler no longer
+  fuses multiply-adds (FMA) where the CPU allows it. `-march=native` and ARM
+  builds now give the same simulation results as x86 builds without it.
 
 - Linux wheels are built against a NetCDF without DAP and HDF4, roughly halving
   the wheel. ([#154])

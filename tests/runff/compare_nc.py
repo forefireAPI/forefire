@@ -1,46 +1,52 @@
 # tests/runff/compare_nc.py
 import sys
-import numpy as np
 import xarray as xr
 
-# Arrival times are compared cell by cell, but a few cells along the front may
-# burn on one CPU and not on another, or burn a little earlier, as the front
-# itself differs slightly between machines (see compare_kml.py).
 # --- Configuration ---
-VARIABLE = "arrival_time_of_front"
-UNBURNT = -9999
-MAX_TIME_DIFF_S = 30.0         # a burnt cell differs if its arrival time moves more
-MAX_DIFFERING_FRACTION = 0.01  # share of burnt cells allowed to differ
+# Adjust tolerance as needed. Start with something reasonable.
+RELATIVE_TOLERANCE = 1e-5
+ABSOLUTE_TOLERANCE = 1e-8
 # ---
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python compare_nc.py <generated_nc_file> <reference_nc_file>", file=sys.stderr)
-        sys.exit(2)
-    file1_path, file2_path = sys.argv[1], sys.argv[2]
+        sys.exit(2) # Exit code for usage error
+
+    file1_path = sys.argv[1]
+    file2_path = sys.argv[2]
+
+    ds1 = None # Initialize to None
+    ds2 = None # Initialize to None
     try:
-        with xr.open_dataset(file1_path, cache=False) as ds1, xr.open_dataset(file2_path, cache=False) as ds2:
-            t1, t2 = ds1[VARIABLE].values, ds2[VARIABLE].values
-    except Exception as e:
-        print(f"Error reading NetCDF: {e}", file=sys.stderr)
-        sys.exit(1)
-    if t1.shape != t2.shape:
-        print(f"Error: {VARIABLE} has shape {t1.shape} vs {t2.shape}", file=sys.stderr)
-        sys.exit(1)
+        # Open datasets using xarray. Ensure they are closed afterwards.
+        ds1 = xr.open_dataset(file1_path, cache=False)
+        ds2 = xr.open_dataset(file2_path, cache=False)
 
-    burnt1, burnt2 = t1 != UNBURNT, t2 != UNBURNT
-    both = burnt1 & burnt2
-    only_one = int((burnt1 ^ burnt2).sum())
-    time_diff = np.abs(t1[both] - t2[both])
-    late = int((time_diff > MAX_TIME_DIFF_S).sum())
-    burnt = int((burnt1 | burnt2).sum())
-    fraction = (only_one + late) / burnt if burnt else 0.0
+        # Compare the datasets numerically with tolerance
+        # This compares all data variables by default.
+        # Use `equal = ds1.equals(ds2)` for exact bit-wise comparison (usually too strict)
+        # Use `identical = ds1.identical(ds2)` for exact comparison including attributes etc. (also often too strict)
+        xr.testing.assert_allclose(ds1, ds2, rtol=RELATIVE_TOLERANCE, atol=ABSOLUTE_TOLERANCE)
 
-    print(f"Burnt cells: {int(burnt1.sum())} vs {int(burnt2.sum())}, {only_one} burnt in only one, "
-          f"{late} more than {MAX_TIME_DIFF_S:.0f} s apart (max diff {time_diff.max() if time_diff.size else 0:.1f} s); "
-          f"{fraction:.2%} of burnt cells differ (max {MAX_DIFFERING_FRACTION:.0%})")
-    if fraction <= MAX_DIFFERING_FRACTION:
         print(f"NetCDF comparison successful: {file1_path} matches {file2_path} within tolerance.")
-        sys.exit(0)
-    print(f"NetCDF comparison failed: {file1_path} differs from {file2_path}.", file=sys.stderr)
-    sys.exit(1)
+        sys.exit(0) # Success
+
+    except FileNotFoundError as e:
+        print(f"Error: NetCDF file not found - {e}", file=sys.stderr)
+        sys.exit(1)
+    except AssertionError as e:
+        # This exception is raised by xr.testing.assert_allclose on failure
+        print(f"NetCDF comparison failed: {file1_path} differs from {file2_path}.", file=sys.stderr)
+        print(f"Details from xarray: {e}", file=sys.stderr)
+        sys.exit(1) # Failure - Datasets are different
+    except Exception as e:
+        # Catch other potential errors (e.g., invalid NetCDF format)
+        print(f"An unexpected error occurred during NetCDF comparison: {e}", file=sys.stderr)
+        sys.exit(1) # Failure
+    finally:
+        # Ensure datasets are closed to release file handles
+        if ds1 is not None:
+            ds1.close()
+        if ds2 is not None:
+            ds2.close()
