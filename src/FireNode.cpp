@@ -286,13 +286,6 @@ FireNode::State FireNode::getState(){
 	return currentState;
 }
 
-FireNode* FireNode::getNext(){
-	return nextInFront;
-}
-FireNode* FireNode::getPrev(){
-	return previousInFront;
-}
-
 FFPoint FireNode::getLoc(){
 	return location;
 }

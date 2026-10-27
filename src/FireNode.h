@@ -185,9 +185,9 @@ public:
 	string getStateString(State);
 
 	/*!  \brief Accessor to next FireNode in the fire front  */
-	FireNode* getNext();
+	FireNode* getNext(){ return nextInFront; }
 	/*!  \brief Accessor to previous FireNode in the fire front  */
-	FireNode* getPrev();
+	FireNode* getPrev(){ return previousInFront; }
 
 	/*!  \brief front depth getter */
 	double getFrontDepth();
