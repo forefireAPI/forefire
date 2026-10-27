@@ -256,7 +256,7 @@ elseif(FOREFIRE_SANITIZE)
 else()
     # uncomment if want to debug
     # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -funroll-loops -ftree-vectorize -fno-strict-aliasing")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffp-contract=off -flto -fomit-frame-pointer -finline-functions -funroll-loops -ftree-vectorize -fno-strict-aliasing")
     if(FOREFIRE_NATIVE_ARCH)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     endif()
