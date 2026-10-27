@@ -1506,7 +1506,7 @@ namespace libforefire
 								  domain->NECornerY() - domain->SWCornerY(), 10000.);
 			double t0 = 0;
 			double Dt = 10000000.;
-			FuelDataLayer<double> *newlayer = new FuelDataLayer<double>(property, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt, fuelMap);
+			FuelDataLayer<double> *newlayer = new FuelDataLayer<double>(property, SWC, t0, ext, Dt, nx, ny, nz, nt, fuelMap);
 			delete[] fuelMap;
 			return newlayer;
 		}

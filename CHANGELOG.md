@@ -102,6 +102,10 @@ Merged since v2.5.0, not yet released.
   dividing by it in eq. C7, which drove the radiant fraction to zero. It now
   matches `Balbi2020.py` in `wildfire_ROS_models`, and its rate of spread is
   floored at zero on a downslope with no wind. ([#196])
+- A fuel map loaded with `loadData` that does not overlap the domain is now
+  stretched over it, as the warning says and as the other layers already were.
+  It was left at its own extent, so the whole domain read the fuel of its first
+  cell.
 
 ### Changed
 
