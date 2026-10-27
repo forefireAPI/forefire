@@ -81,6 +81,15 @@ jobs:
           cd tests/runff
           bash ff-run.bash # Execute the complete test logic script
 
+      - name: Upload runff outputs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: runff-outputs-${{ runner.os }}
+          path: |
+            tests/runff/real_case.kml
+            tests/runff/ForeFire.0.nc
+
       # The only coverage for ANNPropagationModel and BMapLoggerForANNTraining:
       # both read a .ffann network in their constructor and abort without one,
       # so the unit suite cannot reach them. ANN_test is built by the step
