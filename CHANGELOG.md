@@ -102,6 +102,10 @@ Merged since v2.5.0, not yet released.
   dividing by it in eq. C7, which drove the radiant fraction to zero. It now
   matches `Balbi2020.py` in `wildfire_ROS_models`, and its rate of spread is
   floored at zero on a downslope with no wind. ([#196])
+- A fuel map loaded with `loadData` that does not overlap the domain is now
+  stretched over it, as the warning says and as the other layers already were.
+  It was left at its own extent, so the whole domain read the fuel of its first
+  cell. ([#220])
 - `Rothermel` wrote the wind exponent coefficient as `3.59*10E-4`, which is
   3.59e-3 in C++, ten times the 3.59e-4 of Rothermel (1972), so wind raised
   the rate of spread too little. Results with wind
@@ -267,6 +271,7 @@ repository stays easy to return to.
 [#197]: https://github.com/forefireAPI/forefire/pull/197
 [#194]: https://github.com/forefireAPI/forefire/pull/194
 [#196]: https://github.com/forefireAPI/forefire/issues/196
+[#220]: https://github.com/forefireAPI/forefire/pull/220
 [#195]: https://github.com/forefireAPI/forefire/pull/195
 [#202]: https://github.com/forefireAPI/forefire/pull/202
 [#199]: https://github.com/forefireAPI/forefire/pull/199
