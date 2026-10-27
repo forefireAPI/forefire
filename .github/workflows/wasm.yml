@@ -1,9 +1,13 @@
 name: 🌐 Build WASM
 
-# Builds the WebAssembly module (issue #171) and runs the Node smoke test. The
-# .wasm is built here rather than committed: it is a megabyte of generated
+# Builds the WebAssembly module (issue #171) and runs the Node smoke test. On
+# dev it also publishes the browser demo to GitHub Pages, from the same build.
+# The .wasm is built here rather than committed: it is a megabyte of generated
 # output, and a stale binary next to live sources is worse than a two minute
 # build.
+#
+# The github-pages environment has to allow dev as a deployment branch
+# (Settings → Environments → github-pages).
 
 on:
   push:
@@ -63,3 +67,40 @@ jobs:
 
       - name: Smoke test under Node
         run: node bindings/wasm/smoke.mjs bin/forefire.mjs
+
+      # The demo is published from dev only.
+      - name: Assemble the site
+        if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+        run: |
+          mkdir -p _site
+          cp bin/forefire.mjs bin/forefire.wasm _site/
+          cp bindings/wasm/index.html bindings/wasm/worker.mjs \
+             bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs _site/
+          # Pages serves through Jekyll unless told otherwise, which would
+          # swallow files it does not recognise.
+          touch _site/.nojekyll
+
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build-wasm
+    if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # One deployment at a time; queued runs supersede rather than race.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
