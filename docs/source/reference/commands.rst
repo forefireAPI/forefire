@@ -8,6 +8,12 @@ This page lists the commands available in the ForeFire interpreter. Commands are
 .. note::
    Some commands like ``FireFront`` and ``FireNode`` rely on **indentation** (spaces) when used in a script file to define their hierarchical relationship (e.g., a ``FireNode`` belongs to a ``FireFront``, which belongs to a ``FireDomain``). This is indicated in their descriptions.
 
+.. note::
+   In the syntax lines below, ``opt:`` only marks an argument as optional. Do not type it: write ``cmap=turbo``, not ``opt:cmap=turbo``. An argument whose name ForeFire does not recognise is ignored without any message.
+
+.. warning::
+   A ``#`` starts a comment only at the beginning of a line. Do not put a comment after a command on the same line: ForeFire reads everything after the closing ``]`` as a schedule operator, prints ``unknown post operator`` and does not run the command.
+
 List of Commands
 ----------------
 
@@ -18,7 +24,7 @@ List of Commands
 
 .. code-block:: none
 
-   FireDomain[sw=(x,y,z);ne=(x,y,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ;opt:BBoxWSEN=(lonWest,latSouth,lonEast,latNorth)]
+   FireDomain[sw=(x,y,z);ne=(x,y,z);t=seconds]
 
 Create the main FireDomain. Fronts and nodes will be created within this FireDomain.
 
@@ -26,14 +32,16 @@ Create the main FireDomain. Fronts and nodes will be created within this FireDom
 
 *   ``sw=(x,y,z)``: Southwest corner coordinates (x,y,z) in meters.
 *   ``ne=(x,y,z)``: Northeast corner coordinates (x,y,z) in meters.
-*   ``t=seconds|date=YYYY-MM-DDTHH:MM:SSZ``: Time associated with the fire domain, either in seconds since simulation start or as an absolute ISO 8601 GMT date/time.
-*   ``opt:BBoxWSEN=(lonWest,latSouth,lonEast,latNorth)``: (Optional) WGS84 coordinates for the north-oriented bounding box (west longitude, south latitude, east longitude, north latitude).
+*   ``t=seconds``: Time associated with the fire domain, in seconds. ``FireDomain`` does not accept a ``date=`` argument.
+
+**Georeferencing:** ``FireDomain`` reads no other argument. To place the domain on the map, set the ``BBoxWSEN`` parameter (west longitude, south latitude, east longitude, north latitude, in WGS84, without parentheses) **before** creating the domain. Without it, the domain is placed at the default reference point (``DefaultSWLngLat``, in Corsica), and ``lonlat`` ignitions and GeoJSON/KML outputs end up there.
 
 **Example:**
 
 .. code-block:: none
 
-   FireDomain[sw=(0,0,0);ne=(64000,64000,0);BBoxWSEN=(8.36215875,41.711125,9.1366311,42.28667);t=2400]
+   setParameter[BBoxWSEN=8.36215875,41.711125,9.1366311,42.28667]
+   FireDomain[sw=(0,0,0);ne=(64000,64000,0);t=2400]
 
 
 .. _cmd-FireFront:
@@ -43,7 +51,7 @@ Create the main FireDomain. Fronts and nodes will be created within this FireDom
 
 .. code-block:: none
 
-       FireFront[id=<front_id>;domain=<domain_id>;t=<time>]  # Example indentation
+       FireFront[id=<front_id>;domain=<domain_id>;t=<time>]
 
 Creates a FireFront within a FireDomain or another FireFront.
 
@@ -71,7 +79,7 @@ Creates a FireFront within a FireDomain or another FireFront.
 
 .. code-block:: none
 
-           FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds;opt:domain=<domain_id>;opt:id=<node_id>;opt:fdepth=<meters>;opt:kappa=<factor>;opt:state=<state_name>;opt:frontId=<front_id>] # Example indentation
+           FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds;opt:domain=<domain_id>;opt:id=<node_id>;opt:fdepth=<meters>;opt:kappa=<factor>;opt:state=<state_name>;opt:frontId=<front_id>]
 
 Creates a FireNode (a point marker on the fire line) within a FireFront.
 
@@ -120,8 +128,10 @@ Schedule operator to trigger the preceding command at a specific time `t` or aft
 
 .. code-block:: none
 
-   print[]@t=1200          # Schedule a print command to run at sim time t=1200 seconds
-   save[]@nowplus=600     # Schedule a save command to run at current sim time + 600 seconds
+   # Print the state at sim time t=1200 seconds
+   print[]@t=1200
+   # Save the map at current sim time + 600 seconds
+   save[]@nowplus=600
 
 
 .. _cmd-startFire:
@@ -131,14 +141,14 @@ Schedule operator to trigger the preceding command at a specific time `t` or aft
 
 .. code-block:: none
 
-   startFire[loc=(x,y,z)|lonlat=(lon,lat);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
+   startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
 
 Creates the smallest possible triangular fire front (an ignition point) at the specified location and time.
 
 **Arguments:**
 
 *   ``loc=(x,y,z)``: Starting location using Cartesian coordinates (x,y,z) in meters.
-*   ``lonlat=(lon,lat)``: Starting location using WGS84 coordinates (longitude, latitude). *Use either loc or lonlat.*
+*   ``lonlat=(lon,lat,z)``: Starting location using WGS84 coordinates (longitude, latitude, height). All three values are required: ``lonlat=(lon,lat)`` is not read and no fire is started. *Use either loc or lonlat.*
 *   ``t=seconds|date=YYYY-MM-DDTHH:MM:SSZ``: Time when the fire is started, either in seconds since simulation start or as an absolute ISO 8601 GMT date/time.
 
 **Example:**
@@ -146,7 +156,7 @@ Creates the smallest possible triangular fire front (an ignition point) at the s
 .. code-block:: none
 
    startFire[loc=(0.0,0.0,0.0);t=0.]
-   startFire[lonlat=(9.0,42.0);date=2024-07-15T10:00:00Z]
+   startFire[lonlat=(9.0,42.0,0);date=2024-07-15T10:00:00Z]
 
 
 .. _cmd-step:
@@ -168,7 +178,8 @@ Advances the simulation forward by the specified time duration `dt`.
 
 .. code-block:: none
 
-   step[dt=600]  # Run simulation for 600 seconds (10 minutes)
+   # Run simulation for 600 seconds (10 minutes)
+   step[dt=600]
 
 
 .. _cmd-goTo:
@@ -190,7 +201,8 @@ Advances the simulation until it reaches the specified absolute simulation time 
 
 .. code-block:: none
 
-   goTo[t=3600]  # Run simulation until t = 3600 seconds
+   # Run simulation until t = 3600 seconds
+   goTo[t=3600]
 
 
 .. _cmd-setParameter:
@@ -306,7 +318,8 @@ Adds a data layer to the DataBroker. Useful for adding constant value layers or 
 
 .. code-block:: none
 
-   addLayer[name=windU;value=5.0]  # Add constant Eastward wind component
+   # Add constant Eastward wind component
+   addLayer[name=windU;value=5.0]
    addLayer[name=heatFlux;type=flux;modelName=heatFluxBasic;value=3]
 
 
@@ -317,23 +330,22 @@ Adds a data layer to the DataBroker. Useful for adding constant value layers or 
 
 .. code-block:: none
 
-   trigger[fuelIndice=<value>;loc=(x,y,z);fuelType=<int|wind>;vel=(vx,vy,vz);t=<time>]
+   trigger[wind;vel=(vx,vy,vz)]
+   trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
 
-Triggers a change in simulation data at a specific time and location. Can be used for dynamic fuel changes or injecting wind conditions.
+Changes simulation data. The first argument, written alone without ``=``, selects what is changed. The change applies when the command runs; to apply it at a given time, schedule it with :ref:`@ <cmd-@>`. A ``t=`` inside the brackets is not read.
 
-**Arguments:**
+**Forms:**
 
-*   ``fuelIndice=<value>``: Fuel index value.
-*   ``loc=(x,y,z)``: Location (x,y,z) where the trigger is applied.
-*   ``fuelType=<int|wind>``: Can be a fuel type integer or the keyword `wind` for dynamic wind trigger.
-*   ``vel=(vx,vy,vz)``: Velocity vector (vx,vy,vz) associated with the trigger (used for wind).
-*   ``t=<time>``: Time (in seconds) at which the trigger is activated.
+*   ``wind;vel=(vx,vy,vz)``: Sets the wind to the vector (vx,vy,vz), in m/s.
+*   ``fuelIndice;loc=(x,y,z);fuelType=<int>``: Sets the fuel index at location (x,y,z) to the integer ``fuelType``.
 
 **Example:**
 
 .. code-block:: none
 
-   trigger[fuelType=wind;vel=(5.0,2.0,0.0);t=1800] # Trigger new wind at t=1800s
+   # New wind at t=1800s
+   trigger[wind;vel=(5.0,2.0,0.0)]@t=1800
 
 
 .. _cmd-emit:
@@ -419,8 +431,10 @@ Prints a representation of the current simulation state (primarily the fire fron
 .. code-block:: none
 
    setParameter[dumpMode=geojson]
-   print[front_state_t1200.geojson]  # Save front state at current time as GeoJSON
-   print[]                           # Print state to console in current dumpMode
+   # Save front state at current time as GeoJSON
+   print[front_state_t1200.geojson]
+   # Print state to console in current dumpMode
+   print[]
 
 
 .. _cmd-save:
@@ -449,8 +463,10 @@ Saves simulation state or landscape data to a NetCDF file.
 
 .. code-block:: none
 
-   save[]  # Save arrival time map to ForeFire.<domainID>.nc
-   save[filename=landscape_snapshot.nc;fields=(altitude,fuel,windU)] # Save specific layers
+   # Save arrival time map to ForeFire.<domainID>.nc
+   save[]
+   # Save specific layers
+   save[filename=landscape_snapshot.nc;fields=(altitude,fuel,windU)]
 
 
 .. _cmd-plot:
@@ -460,23 +476,23 @@ Saves simulation state or landscape data to a NetCDF file.
 
 .. code-block:: none
 
-   plot[parameter=(param_name);filename=<fname.png/jpg/nc/asc>;opt:range=(min,max);opt:area=(area_spec);opt:size=(eni,enj);opt:cmap=<map_name>;opt:histbins=<N>;opt:projectionOut=(json|<fname.kml>)]
+   plot[parameter=<param_name>;filename=<fname.png/jpg/nc/asc>;opt:range=(min,max);opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)|opt:BBoxLBRT=(leftX,bottomY,rightX,topY)|opt:BBoxLBRT=active;opt:size=eni,enj;opt:cmap=<map_name>;opt:histbins=<N>;opt:projectionOut=(json|<fname.kml>)]
 
 Generates a plot or data export of a specified simulation parameter. Output format depends on the `filename` extension.
 
 **Arguments:**
 
-*   ``parameter=(param_name)``: Parameter to plot/export. Examples: `speed`, `arrival_time_of_front`, `fuel`, `altitude`, `slope`, `windU`, `windV`, `Rothermel`.
+*   ``parameter=<param_name>``: Parameter to plot/export. Examples: `speed`, `arrival_time`, `fuel`, `altitude`, `slope`, `windU`, `windV`, `Rothermel`.
 *   ``filename=<fname>``: Output filename. Extension determines format:
     *   `.png`, `.jpg`: Image file.
     *   `.nc`: NetCDF file with data matrix and coordinates.
     *   `.asc`: ASCII grid file for GIS.
 *   ``opt:range=(min,max)``: (Optional) Data range for colormap/histogram.
-*   ``opt:area=(area_spec)``: (Optional) Area to plot/export. Options:
-    *   `BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)`: Geographic WGS84 bounding box.
-    *   `BBoxLBRT=(leftX,bottomY,rightX,topY)`: Cartesian coordinate bounding box.
-    *   `active`: Only the active (computationally relevant) part of the domain.
-*   ``opt:size=(eni,enj)``: (Optional) Output matrix dimensions (pixels/grid cells), where `eni` is width and `enj` is height. Uses default resolution if omitted.
+*   Area to plot/export (Optional, give at most one; the whole domain is used if omitted):
+    *   ``opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)``: Geographic WGS84 bounding box.
+    *   ``opt:BBoxLBRT=(leftX,bottomY,rightX,topY)``: Cartesian coordinate bounding box.
+    *   ``opt:BBoxLBRT=active``: Only the active (computationally relevant) part of the domain.
+*   ``opt:size=eni,enj``: (Optional) Output matrix dimensions (pixels/grid cells), where `eni` is width and `enj` is height, written without parentheses. Uses default resolution if omitted.
 *   ``opt:cmap=<map_name>``: (Optional) Colormap name (e.g., `viridis`, `turbo`, `jet`, `fuel`).
 *   ``opt:histbins=<N>``: (Optional) Number of bins for histogram (if applicable to output format).
 *   ``opt:projectionOut=(json|<fname.kml>)``: (Optional) Output projection info:
@@ -487,8 +503,8 @@ Generates a plot or data export of a specified simulation parameter. Output form
 
 .. code-block:: none
 
-   plot[parameter=arrival_time_of_front;filename=arrival.png;opt:area=active;opt:cmap=turbo]
-   plot[parameter=fuel;filename=fuel_map.nc;opt:area=(BBoxWSEN=(8.5,41.8,9.0,42.2))]
+   plot[parameter=arrival_time;filename=arrival.png;BBoxLBRT=active;cmap=turbo]
+   plot[parameter=fuel;filename=fuel_map.nc;BBoxWSEN=(8.5,41.8,9.0,42.2)]
 
 
 .. _cmd-computeSpeed:

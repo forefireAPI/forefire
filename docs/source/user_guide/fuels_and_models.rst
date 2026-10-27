@@ -25,7 +25,8 @@ ForeFire includes several built-in propagation models. Below are the primary mod
   .. code-block:: bash
 
     setParameter[propagationModel=Iso]
-    setParameter[Iso.speed=0.5]  # Sets spread to 0.5 meters/second
+    # Sets spread to 0.5 meters/second
+    setParameter[Iso.speed=0.5]
 
 **Rothermel**
 ^^^^^^^^^^^^^
