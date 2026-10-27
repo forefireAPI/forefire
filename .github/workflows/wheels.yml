@@ -14,9 +14,11 @@ on:
     types: [ published ]
   workflow_dispatch:
 
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
 concurrency:
-  group: wheels-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-wheels:
