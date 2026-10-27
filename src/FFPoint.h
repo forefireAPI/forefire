@@ -35,14 +35,6 @@ public:
 	FFPoint() : x(0.), y(0.), z(0.) {}
 	/*! \brief 3d Constructor */
 	FFPoint(double x0, double y0, double z0) : x(x0), y(y0), z(z0) {}
-	/*! \brief Destructor */
-	virtual ~FFPoint();
-	/*! \brief Copy-constructor
-	 *  \param[in] 'p' : point to be copied */
-	FFPoint(const FFPoint& p);
-	/*! \brief Copy-assignment
-	 *  \param[in] 'p' : point to be copied */
-	FFPoint& operator=(const FFPoint& p);
 
 	/*!  \brief overloaded operator +  */
 	friend const FFPoint operator+(const FFPoint&, const FFPoint&);
