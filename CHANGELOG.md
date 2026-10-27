@@ -102,6 +102,11 @@ Merged since v2.5.0, not yet released.
   dividing by it in eq. C7, which drove the radiant fraction to zero. It now
   matches `Balbi2020.py` in `wildfire_ROS_models`, and its rate of spread is
   floored at zero on a downslope with no wind. ([#196])
+- `Rothermel` used `10E-4` (that is, 1e-3) instead of 3.59e-4 in the wind
+  exponent E, so wind raised the rate of spread too little. Results with wind
+  change: +6% on the `runff` fuel at 5 m/s, several times more in loose fuel
+  beds such as sparse shrub. The `runff` references and the unit test pin are
+  regenerated. ([#195])
 
 ### Changed
 
@@ -255,6 +260,7 @@ repository stays easy to return to.
 [#197]: https://github.com/forefireAPI/forefire/pull/197
 [#194]: https://github.com/forefireAPI/forefire/pull/194
 [#196]: https://github.com/forefireAPI/forefire/issues/196
+[#195]: https://github.com/forefireAPI/forefire/pull/195
 [#202]: https://github.com/forefireAPI/forefire/pull/202
 [#199]: https://github.com/forefireAPI/forefire/pull/199
 [#179]: https://github.com/forefireAPI/forefire/pull/179
