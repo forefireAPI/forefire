@@ -11,12 +11,20 @@ name: 🔬 Model Invariants (Linux)
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - "master"
       - "dev"
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master", "dev" ]
   workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   invariants:
