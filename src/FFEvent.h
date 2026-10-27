@@ -36,10 +36,10 @@ public:
 	/*!  \brief overloaded operator !=  */
 	friend int operator!=(const FFEvent&, const FFEvent&);
 
-	double getTime() const;
+	double getTime() const{ return eventTime; }
 	ForeFireAtom* getAtom();
-	FFEvent* getNext();
-	FFEvent* getPrev();
+	FFEvent* getNext(){ return next; }
+	FFEvent* getPrev(){ return prev; }
 
 	void setNewTime(double);
 	void setNext(FFEvent*);
