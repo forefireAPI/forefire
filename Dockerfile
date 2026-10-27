@@ -29,6 +29,7 @@ COPY --link app/ ./app/
 # tools/check_all_lfs.bash and references tools/runANN/ANNTest.cpp.
 COPY --link tools/ ./tools/
 COPY --link src/ ./src/
+COPY --link third_party/ ./third_party/
 
 # -march=native is off: this image is published and has to run on CPUs other
 # than the builder's. The LFS check and the unit tests are off too: tests/ is
