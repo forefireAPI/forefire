@@ -12,7 +12,7 @@ runs:
       shell: bash
       run: echo "key=lfs-runff-$(git lfs ls-files -l -I 'tests/runff/*' | cut -d' ' -f1,3 | git hash-object --stdin)" >> "$GITHUB_OUTPUT"
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: .git/lfs
         key: ${{ steps.key.outputs.key }}
