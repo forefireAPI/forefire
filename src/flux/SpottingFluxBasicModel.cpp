@@ -100,7 +100,6 @@ SpottingFluxBasicModel::SpottingFluxBasicModel(
 
 /* destructor (shoudn't be modified) */
 SpottingFluxBasicModel::~SpottingFluxBasicModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

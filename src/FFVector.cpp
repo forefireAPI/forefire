@@ -38,12 +38,6 @@ FFVector::FFVector(FFPoint p1, FFPoint p2) {
 	vy = p2.getY()-p1.getY();
 	vz = p2.getZ()-p1.getZ();
 }
-FFVector::~FFVector() {
-	// TODO Auto-generated destructor stub
-}
-FFVector::FFVector(const FFVector& v) : vx(v.vx), vy(v.vy), vz(v.vz){
-	// nothing else to do
-}
 
 // overloading operators
 const FFVector operator+(const FFVector& left, const FFVector& right){

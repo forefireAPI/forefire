@@ -78,7 +78,6 @@ HeatFluxBasicModel::HeatFluxBasicModel(
 
 /* destructor (shoudn't be modified) */
 HeatFluxBasicModel::~HeatFluxBasicModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

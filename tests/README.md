@@ -1,18 +1,27 @@
 # ForeFire test suite
 
-Five sets of tests, one per directory, covering the different interfaces and
+Six sets of tests, one per directory, covering the different interfaces and
 use-cases of ForeFire.
 
 | Directory | What it covers | Needs |
 | --- | --- | --- |
+| `unit` | C++ tests of one model at a time, without running a simulation, covering every registered propagation and flux model | Nothing beyond the build; see `unit/README.md` |
 | `mnh_ideal` | ForeFire / **Meso-NH** coupling on an idealised atmospheric case | `SRC_MESONH` set; Meso-NH compiled with the ForeFire library in its `exe` directory |
 | `mnh_real_nested` | ForeFire / **Meso-NH** coupling on a real nested case | Same as above |
 | `python` | The Python bindings, through two example simulations | `PYTHONEXE` set to a Python interpreter that can `import pyforefire` |
 | `runANN` | The built-in feed-forward network evaluator, on a network fitted to Rothermel | `bin/ANN_test`, built by default (`-DFOREFIRE_BUILD_TOOLS=ON`) |
 | `runff` | The command-line interpreter: run a case, save and reload state, export KML and GeoJSON | ForeFire only |
 
-`TESTING.md` at the repository root describes `runff` — the suite CI actually
-gates on — in more detail.
+`TESTING.md` at the repository root describes each of these in more detail,
+along with the sanitizer build.
+
+The `unit` suite is not run by `run.bash` below — it is a CTest suite, built
+with everything else:
+
+```bash
+cmake -S . -B build && cmake --build build -j
+ctest --test-dir build --output-on-failure
+```
 
 ## Prerequisites
 
@@ -89,9 +98,15 @@ are demonstrations of the API rather than tests of the physics.
 compares ForeFire against a FARSITE case, and needs `flatland.lcp`, which is
 not in the repository — `python/README.md` has the download URL.
 
-`test_wheel.py` is not part of this suite either. It is the smoke test
-cibuildwheel runs against a built wheel, and is meant to be run against an
-installed `forefire`, never from the source tree.
+Three test scripts sit here too, and `run.bash` runs none of them:
+
+| File | What it checks | Where it runs |
+| --- | --- | --- |
+| `test_moisture_invariants.py` | That rate of spread responds to dead fuel moisture the way the spread equations require, for every model that reads it | CI, `invariants.yml` |
+| `test_threading.py` | That eight concurrent simulations each reproduce the result they give alone | By hand only — it is the failing reproduction for [#175](https://github.com/forefireAPI/forefire/issues/175), and needs a free-threaded CPython |
+| `test_wheel.py` | The cibuildwheel smoke test: the module imports, its vendored NetCDF resolves, the models registered, a trivial simulation advances | cibuildwheel, against an *installed* wheel |
+
+`TESTING.md` gives the command line for each.
 
 ### `runANN`
 
@@ -103,10 +118,13 @@ It needs no machine-learning framework. `ANN_test` is a ForeFire tool built
 from `tools/runANN/ANNTest.cpp`, and the `.ffann` format is read by ForeFire's
 own evaluator.
 
-> **This suite currently fails.** `run.bash` diffs its output against
-> `result.txt.ref`, which is not in the repository, so it exits non-zero on the
-> second line every time. See
-> [issue #163](https://github.com/forefireAPI/forefire/issues/163).
+The check is the root mean squared error between what the network predicts and
+what the propagation model produced, against a tolerance of 0.05. That
+tolerance sits between the trained network (about 0.024) and a predictor that
+ignores its inputs and returns the mean (0.097), so a network that stopped
+working would fail. It needs no reference file — the earlier version diffed
+against a `result.txt.ref` that was never committed, and so failed on its
+second line every time it ran.
 
 ### `runff`
 

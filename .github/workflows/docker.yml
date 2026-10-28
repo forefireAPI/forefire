@@ -2,11 +2,19 @@ name: 📦 Build & Test Docker Image
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master" ]
     tags: [ 'v*.*.*' ]
   pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master" ]
   workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -23,10 +31,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -34,7 +44,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -45,7 +55,7 @@ jobs:
 
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           # Only push if the ref starts with 'refs/tags/'

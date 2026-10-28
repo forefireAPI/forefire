@@ -75,7 +75,6 @@ VaporFluxFromObsModel::VaporFluxFromObsModel(
 
 /* destructor (shoudn't be modified) */
 VaporFluxFromObsModel::~VaporFluxFromObsModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

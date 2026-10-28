@@ -15,6 +15,7 @@
 #include <atomic>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <cctype>
 #include <sys/stat.h>
@@ -384,7 +385,7 @@ namespace http_command {
                             path = altPath;
                         }
                     } else {
-                        cout << "FOREFIREHOME not set. File not found: " << path << std::endl;
+                        std::cout << "FOREFIREHOME not set. File not found: " << path << std::endl;
                     }
                 }
                 if (fileExists(path)) {

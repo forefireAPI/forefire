@@ -17,8 +17,6 @@ namespace libforefire {
 
 
 	
-SimulationParameters* SimulationParameters::instance = 0;
-
 string SimulationParameters::undefined = "1234567890";
 double SimulationParameters::doubleUndefined = 1234567890.;
 int SimulationParameters::intUndefined = 1234567890;
@@ -26,7 +24,13 @@ size_t SimulationParameters::sizeUndefined = 1234567890;
 
 
 SimulationParameters* SimulationParameters::GetInstance(){
-	if ( instance == 0 ) instance =  new SimulationParameters;
+	// A function-local static: C++11 onwards guarantees its initialisation
+	// runs exactly once even if several threads arrive here together. The
+	// previous `if (instance == 0) instance = new ...` let two threads both
+	// see null and both construct, leaving them with different parameter
+	// objects. Never deleted, matching the previous behaviour; the parameters
+	// live for the whole process.
+	static SimulationParameters* const instance = new SimulationParameters();
 	return instance;
 }
 

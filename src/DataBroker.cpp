@@ -42,10 +42,12 @@ namespace libforefire
 
 	DataBroker::~DataBroker()
 	{
-		// Deleting layers
+		// Deleting layers. loadData lists the domain's propagative layer here
+		// too, so it can be looked up, but the domain frees that one (#205).
 		while (!layers.empty())
 		{
-			delete layers.back();
+			if (layers.back() != domain->getPropagativeLayer())
+				delete layers.back();
 			layers.pop_back();
 		}
 		// Deleting atmospheric and parallel data
@@ -147,7 +149,16 @@ namespace libforefire
 					}
 				}
 				else
-				if ((model->wantedProperties)[prop].substr(0, 5) == "moist")
+				// Only the "moist." group, i.e. the five NFDRS-style dead and
+				// live moistures FarsitePropagationModel registers as
+				// moist.ones / moist.tens / moist.hundreds / moist.liveh /
+				// moist.livew. getMoisturesProperties fills five slots, so it
+				// is only correct for a model that reserved five of them.
+				// The shorter prefix "moist" also caught the singular
+				// "moisture", which reserves one slot, so every property a
+				// model registered after it was written four slots too late
+				// -- and the last four ran off the end of the array.
+				if ((model->wantedProperties)[prop].substr(0, 6) == "moist.")
 				{
 					if (!moistAsked)
 					{
@@ -315,7 +326,8 @@ namespace libforefire
 			DataLayer<double> *oldlayer = ilayer->second;
 			layersMap.erase(name);
 			layers.remove(oldlayer);
-			delete oldlayer;
+			if (oldlayer != domain->getPropagativeLayer())
+				delete oldlayer;
 			//}
 		}
 
@@ -818,9 +830,33 @@ namespace libforefire
 		return 5;
 	}
 
+	/*! \brief moisture to use when a model asks for it but no layer supplies it
+
+	 * Returns the moistures.ones parameter, which is the value such a model
+	 * received before the "moist" prefix fix, so no simulation silently
+	 * changes its numbers. Warns once, because a model that wants a moisture
+	 * field and is given a constant is almost certainly misconfigured.
+	 */
+	double DataBroker::fallbackMoisture()
+	{
+		static bool warned = false;
+		double m = params->isValued("moistures.ones")
+					   ? params->getDouble("moistures.ones")
+					   : 0.032;
+		if (!warned)
+		{
+			warned = true;
+			cout << "WARNING: a model requires the 'moisture' property but no "
+					"moisture layer was loaded; falling back to the constant "
+					"moistures.ones = " << m << endl;
+		}
+		return m;
+	}
+
 	int DataBroker::getMoisture(FireNode *fn, PropagationModel *model, int keynum)
 	{
-		(model->properties)[keynum] = moistureLayer->getValueAt(fn);
+		(model->properties)[keynum] =
+			moistureLayer ? moistureLayer->getValueAt(fn) : fallbackMoisture();
 		return 1;
 	}
 
@@ -933,7 +969,8 @@ namespace libforefire
 	int DataBroker::getMoisture(FFPoint loc, const double &t, FluxModel *model,
 								int keynum)
 	{
-		(model->properties)[keynum] = moistureLayer->getValueAt(loc, t);
+		(model->properties)[keynum] =
+			moistureLayer ? moistureLayer->getValueAt(loc, t) : fallbackMoisture();
 		return 1;
 	}
 
@@ -1028,7 +1065,9 @@ namespace libforefire
 			XYZTDataLayer<double> *layer = new XYZTDataLayer<double>(name, SWCorner, timeOrigin, spatialExtent, Lt,
 																	 nx, ny, nz, nt, data);
 
-			// delete[] data;
+			// FFArray copies the values into storage of its own, so this
+			// array is ours to free and nothing refers to it afterwards.
+			delete[] data;
 			registerLayer(name, layer);
 		}
 		else if (layertype == "flux")
@@ -1047,7 +1086,8 @@ namespace libforefire
 			FluxLayer<double> *layer = new FluxLayer<double>(name,
 															 atmoSWCorner, atmoNECorner, atmosphericNx, atmosphericNy, domain->getCells(),
 															 data, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt);
-			// delete[] data;
+			// Copied by FFArray, same as above.
+			delete[] data;
 			registerFluxModel(newFluxmodel);
 
 			registerFluxLayer(name, layer);
@@ -1064,6 +1104,19 @@ namespace libforefire
 			std::cout << "addConstantLayer: Unknown layer type " << layertype << std::endl;
 		}
 	}
+
+#ifdef FF_NO_NETCDF
+
+	void DataBroker::loadFromNCFile(std::string filename)
+	{
+		// The empty-filename early return matches the NetCDF path: the command
+		// layer calls this with no file on every session setup.
+		if (filename.empty()) return;
+		cout << "loadFromNCFile: this build has no NetCDF support, ignoring "
+			 << filename << endl;
+	}
+
+#else
 
 	void DataBroker::loadFromNCFile(std::string filename)
 	{
@@ -1453,7 +1506,7 @@ namespace libforefire
 								  domain->NECornerY() - domain->SWCornerY(), 10000.);
 			double t0 = 0;
 			double Dt = 10000000.;
-			FuelDataLayer<double> *newlayer = new FuelDataLayer<double>(property, SWCorner, timeOrigin, spatialExtent, Lt, nx, ny, nz, nt, fuelMap);
+			FuelDataLayer<double> *newlayer = new FuelDataLayer<double>(property, SWC, t0, ext, Dt, nx, ny, nz, nt, fuelMap);
 			delete[] fuelMap;
 			return newlayer;
 		}
@@ -1641,5 +1694,7 @@ namespace libforefire
 		delete[] tmp;
 		return data;
 	}
+
+#endif /* FF_NO_NETCDF */
 
 }

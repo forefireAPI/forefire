@@ -74,7 +74,6 @@ VaporFluxNominalModel::VaporFluxNominalModel(
 
 /* destructor (shoudn't be modified) */
 VaporFluxNominalModel::~VaporFluxNominalModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

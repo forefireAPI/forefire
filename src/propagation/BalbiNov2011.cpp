@@ -188,6 +188,13 @@ double BalbiNov2011::getSpeed(double* valueOf){
 	double A0 = (lX0*lDeltaH)/(4*lCp*(lTi-lTa));
 	/* double xsi = ((lMl-lMd)*((lSigmal/lSigmad)*(lDeltah/lDeltaH))); */
         double xsi = ((lMl-lMd)*((Sd/Sl)*(lDeltah/lDeltaH))); // cf. Santoni et al., 2011
+	// xsi is the share of the combustion energy spent vaporising the moisture
+	// the live fuel carries *in excess of* the dead fuel. When the dead fuel
+	// is the wetter of the two it goes negative, so (1-xsi) exceeds 1 and both
+	// the radiant term A and the flame temperature T are amplified rather than
+	// damped -- and R00 goes as T^4. Wetter dead fuel must never speed a fire
+	// up; its own penalty is already carried by the 1/(1 + a*Md) factor.
+	if (xsi < 0.) xsi = 0.;
 	double A  = cosCurv * (nu*A0 / (1 + a * lMd)) * (1-xsi);
 	double T = lTa + ( lDeltaH*(1-lX0)*(1-xsi) )     / ((lstoch+1)*Cpa);
 	double R00 = (B*T*T*T*T)   / (lCp*(lTi-lTa));

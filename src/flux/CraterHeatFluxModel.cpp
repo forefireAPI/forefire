@@ -112,7 +112,6 @@ CraterHeatFluxModel::CraterHeatFluxModel(
 
 /* destructor (shoudn't be modified) */
 CraterHeatFluxModel::~CraterHeatFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

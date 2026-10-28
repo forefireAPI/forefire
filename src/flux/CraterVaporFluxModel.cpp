@@ -93,7 +93,6 @@ CraterVaporFluxModel::CraterVaporFluxModel(
 
 /* destructor (shoudn't be modified) */
 CraterVaporFluxModel::~CraterVaporFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

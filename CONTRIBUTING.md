@@ -64,9 +64,13 @@ We welcome code contributions, from bug fixes to new features.
     Implement your code changes, following existing coding style and conventions where possible.
 6.  **Add Tests (if applicable):**
 
-    For new features or significant bug fixes, please add corresponding tests or update existing ones. See [TESTING.md](TESTING.md) for what each suite covers and how to run it. Ensure all tests pass locally.
+    For new features or significant bug fixes, please add corresponding tests or update existing ones. See [TESTING.md](TESTING.md) for what each suite covers, how to run it, and which ones CI validates. Ensure all tests pass locally.
     ```bash
-    # Example command to run tests (adjust as needed)
+    # The C++ unit tests
+    cmake -S . -B build && cmake --build build -j
+    ctest --test-dir build --output-on-failure
+
+    # The script-driven suites (runff, runANN)
     cd tests && bash run.bash
     ```
 7.  **Record the Change:**

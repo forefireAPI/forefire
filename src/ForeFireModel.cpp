@@ -17,11 +17,17 @@ ForeFireModel::ForeFireModel(const int & mindex, DataBroker* db)
 	numProperties = 0;
 	numFuelProperties = 0;
 	fuelPropertiesTable = 0;
+	// Only the models that register at least one property allocate this, so
+	// without an explicit null the destructor of a model that registers none
+	// deletes whatever the member happened to be built over. Iso and
+	// heatFluxBasic are both in that group.
+	properties = 0;
 }
 
 ForeFireModel::~ForeFireModel() {
 	if ( properties != 0 ) delete [] properties;
-	if ( fuelPropertiesTable != 0 ) delete [] fuelPropertiesTable;
+	// DataBroker::extractFuelProperties allocates this with a scalar new.
+	if ( fuelPropertiesTable != 0 ) delete fuelPropertiesTable;
 }
 
 void ForeFireModel::setDataBroker(DataBroker* db){

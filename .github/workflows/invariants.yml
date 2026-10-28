@@ -1,0 +1,65 @@
+name: 🔬 Model Invariants (Linux)
+
+# Complements the runff test in main.yml. That one compares ForeFire against
+# frozen ForeFire output, so it cannot distinguish a physics fix from a
+# physics regression. This one asserts properties that follow from the
+# published spread equations and holds no reference data.
+#
+# It is a separate workflow because it needs the pyforefire extension, which
+# install-forefire.sh does not build: outside a wheel build, CMakeLists
+# defaults FOREFIRE_BUILD_PYTHON to OFF.
+
+on:
+  push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches:
+      - "master"
+      - "dev"
+  pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches: [ "master", "dev" ]
+  workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  invariants:
+    name: Dead fuel moisture invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # No `lfs: true` here, unlike main.yml. The suite builds its fuel, wind,
+      # temperature and moisture layers in memory and needs no fixtures.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake python3 python3-pip python3-venv
+          # NetCDF C++ legacy API for the build, C base at runtime
+          sudo apt-get install -y --no-install-recommends \
+            libnetcdf-dev libnetcdf-c++4-dev
+
+      - name: Build and install pyforefire
+        # A venv keeps this clear of PEP 668 externally-managed system Python.
+        # pip's build isolation pulls scikit-build-core and pybind11 from
+        # pyproject.toml, and numpy comes in as a runtime dependency.
+        run: |
+          python3 -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install .
+
+      - name: Check pyforefire imports
+        run: ./.venv/bin/python -c "import pyforefire; print(pyforefire.__file__)"
+
+      - name: Run dead fuel moisture invariants
+        run: ./.venv/bin/python tests/python/test_moisture_invariants.py
+
+      - name: Run the worker process runner test
+        run: ./.venv/bin/python tests/python/test_runner.py

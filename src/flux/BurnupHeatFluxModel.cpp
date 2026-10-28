@@ -88,7 +88,6 @@ BurnupHeatFluxModel::BurnupHeatFluxModel(
 
 /* destructor (shoudn't be modified) */
 BurnupHeatFluxModel::~BurnupHeatFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

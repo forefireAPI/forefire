@@ -112,7 +112,6 @@ ForeFireV1VaporFluxModel::ForeFireV1VaporFluxModel(
 
 /* destructor (shoudn't be modified) */
 ForeFireV1VaporFluxModel::~ForeFireV1VaporFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

@@ -135,6 +135,15 @@ double RothermelAndrews2018::getSpeed(double* valueOf){
 
 	if (wv < 0) wv = 0;
 
+	// The moisture damping coefficient below is only defined for moisture
+	// contents under the moisture of extinction: its cubic reaches zero at
+	// mf/me == 1 and turns negative past it, which would drive the reaction
+	// intensity RI negative, then the wind limit `wv = 0.9 * RI` negative,
+	// then pow(wv, B) to NaN for the non-integer B. A NaN survives the
+	// `R <= 0` test below and reaches FireNode::velocity. Fuel at or above
+	// its moisture of extinction simply does not carry fire.
+	if (mf >= me) return 0;
+
 	if(wo > 0){
 		double Beta_op = 3.348 * pow(fpsa, -0.8189);  // Optimum packing ratio
 		double ODBD = wo / fd; // Ovendry bulk density
@@ -162,7 +171,9 @@ double RothermelAndrews2018::getSpeed(double* valueOf){
         double denominator = (ODBD * EHN * QIG);
         double R = numerator / denominator; // WC and SC will be zero at slope = wind = 0
 
-		if(R <= 0.0) {
+		// Negated rather than `R <= 0.0` so that a NaN, which compares false
+		// against every bound, is caught here instead of being returned.
+		if(!(R > 0.0)) {
 			return 0;
 		}else{
 			return R * ftminToms;

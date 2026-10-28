@@ -11,6 +11,8 @@
 
 #include "include/Futils.h"
 
+#include <atomic>
+
 using namespace std;
 
 namespace libforefire{
@@ -33,7 +35,13 @@ namespace libforefire{
 class ForeFireAtom {
 private:
 
-	static long instanceNRCount; /*!< Instance Count */
+	/*! \brief Instance count, the source of every atom's id.
+	 *
+	 * Atomic because objects are created from more than one thread once the
+	 * GIL is out of the way, and a plain `++` there is a data race that can
+	 * hand the same id to two atoms.
+	 */
+	static std::atomic<long> instanceNRCount;
 
 	double time; /*!< current time of the object */
 	double updateTime; /*!< next update time */
@@ -103,7 +111,10 @@ public:
 		return getIDfromLongs((long) did/domainMult(),(long) did%domainMult());
 	}
 	void getNewID(const long& domainId){
-		numID = getIDfromLongs(domainId,instanceNRCount++);
+		// relaxed: ids only have to be distinct, not ordered against other
+		// memory operations.
+		numID = getIDfromLongs(domainId,
+				instanceNRCount.fetch_add(1, std::memory_order_relaxed));
 	}
 
 	/*! \brief Pure virtual function for inpus */

@@ -757,6 +757,14 @@ void FireFront::merge(FireNode* fna, FireNode* fnb){
 				if ( outputs ) cout<<"trashing in FireFront::merge : "<<curfn->toString()<<endl;
 				domain->addToTrashNodes(curfn);
 			}
+			/* The other part, from pa, still belongs to this front: trash it too */
+			curfn = pa;
+			for ( size_t numfn = getNumFN(pa); numfn > 0; numfn-- ){
+				next = curfn->getNext();
+				if ( outputs ) cout<<"trashing in FireFront::merge : "<<curfn->toString()<<endl;
+				domain->addToTrashNodes(curfn);
+				curfn = next;
+			}
 			domain->addToTrashFronts(this);
 
 			// Scanning the region for burning status

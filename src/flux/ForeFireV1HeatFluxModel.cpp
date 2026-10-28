@@ -116,7 +116,6 @@ ForeFireV1HeatFluxModel::ForeFireV1HeatFluxModel(
 
 /* destructor (shoudn't be modified) */
 ForeFireV1HeatFluxModel::~ForeFireV1HeatFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

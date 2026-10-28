@@ -18,8 +18,6 @@ namespace libforefire {
 
 class SimulationParameters {
 
-    static SimulationParameters* instance; /*!< Singleton-type class */
-
     /*! values for undefined parameters */
     static string undefined;
 	static double doubleUndefined;

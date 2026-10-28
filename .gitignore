@@ -53,7 +53,7 @@ tests/python/FF_FS4roslog.csv
 tests/python/ros_computation.py
 tests/python/ros_sampling.py
 tests/python/test_logdb.csv
-tests/runff/altitude.png
+tests/runff/*.png
 tests/runff/httpConnectInfo.txt
 tests/python/log.txt
 tests/python/runROS.bash

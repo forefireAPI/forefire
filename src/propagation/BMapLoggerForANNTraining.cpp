@@ -79,9 +79,6 @@ BMapLoggerForANNTraining::BMapLoggerForANNTraining(const int & mindex, DataBroke
 
 
 BMapLoggerForANNTraining::~BMapLoggerForANNTraining() {
-    if (properties) {
-        delete[] properties;
-    }
         if (csvfile.is_open()) {
         csvfile.close();
     }

@@ -49,6 +49,36 @@ def test_import():
     return pyforefire
 
 
+def test_no_domain(pyforefire):
+    """Calls that need a domain must raise before FireDomain[...], not segfault.
+
+    Runs before test_simulation: the domain is process-wide, so once one
+    exists a new ForeFire() sees it too.
+    """
+    import numpy as np
+
+    ff = pyforefire.ForeFire()
+    calls = {
+        "ff[key]": lambda: ff["noSuchKey"],
+        "addLayer": lambda: ff.addLayer("propagation", "Iso", "propagationModel"),
+        "addScalarLayer": lambda: ff.addScalarLayer(
+            "data", "windU", 0, 0, 0, 10, 10, 0, np.zeros((1, 1, 2, 2))
+        ),
+        "addIndexLayer": lambda: ff.addIndexLayer(
+            "table", "fuel", 0, 0, 0, 10, 10, 0, np.zeros((1, 1, 2, 2), dtype=np.int32)
+        ),
+        "getDoubleArray": lambda: ff.getDoubleArray("windU"),
+    }
+    for name, call in calls.items():
+        try:
+            call()
+        except RuntimeError as e:
+            assert "FireDomain" in str(e), f"{name} raised an unrelated error: {e}"
+        else:
+            raise AssertionError(f"{name} did not raise without a FireDomain")
+    print(f"{len(calls)} calls raised cleanly without a FireDomain")
+
+
 def test_simulation(pyforefire):
     """Burn an isotropic circle and check the front actually grew."""
     ff = pyforefire.ForeFire()
@@ -86,6 +116,7 @@ def test_helpers():
 
 def main():
     pyforefire = test_import()
+    test_no_domain(pyforefire)
     test_simulation(pyforefire)
     test_helpers()
     print("\nOK: forefire wheel smoke test passed")

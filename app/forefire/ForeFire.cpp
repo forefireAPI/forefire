@@ -85,12 +85,14 @@ int ForeFire::startShell(int argc, char* argv[]) {
         string listenCommand = "listenHTTP[]";
         executor.ExecuteCommand(listenCommand);
 
-        // Keep the main thread alive indefinitely
+        // Keep the main thread alive while the server runs. `quit[]` used to
+        // end the process from inside the library; now it asks, and this is
+        // the loop that answers, so a served quit[] still stops the server.
         cout << "(Press Ctrl+C to exit)" << endl;
-        while (true) {
-            sleep(3600);
+        while (!Command::quitRequested()) {
+            sleep(1);
         }
-        
+
         return 0;
 
     } else {
@@ -160,6 +162,10 @@ void ForeFire::FFShell(ifstream* inputStream) {
             if (line.empty())
                 continue;
             executor.ExecuteCommand(line);
+            // `quit[]` no longer ends the process from inside the library, so
+            // the shell is what leaves on request.
+            if (Command::quitRequested())
+                break;
         }
     }
 }

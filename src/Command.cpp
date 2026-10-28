@@ -29,6 +29,7 @@ namespace libforefire
     double Command::endTime = 0;
 
     bool Command::firstCommand = true;
+    bool Command::quitAsked = false;
     thread_local bool Command::remoteCommand = false;
     size_t Command::refTabs = 0;
 
@@ -88,6 +89,9 @@ namespace libforefire
     {
 
         size_t n = argCount(arg);
+#ifndef FF_NO_NETCDF
+        // The two-argument form reads the domain extent out of a MesoNH PGD
+        // file, so it exists only where NetCDF does.
         if (n == 2)
         {
            
@@ -175,6 +179,7 @@ namespace libforefire
 
             }
         }
+#endif /* FF_NO_NETCDF */
         if (n >= 3)
         {
             FFPoint SW = getPoint("sw", arg);
@@ -1117,13 +1122,14 @@ namespace libforefire
                 }
                 catch (...)
                 {
-                    if (getDomain()->commandOutputs)
-                    {
-                        cout << getDomain()->getDomainID() << ": "
-                             << "**** ERROR IN SAFE TOPOLOGY MODE, QUITING ****" << endl;
-                    }
-                    // TODO supersafe mode ?
-                    quit(arg, numTabs);
+                    // Reports an error rather than ending the process. This
+                    // used to call quit(), so an internal failure here took
+                    // the host down with exit status 0 — a coupled run or a
+                    // batch job recorded success while having stopped early.
+                    // The caller now sees the failure and chooses.
+                    cerr << getDomain()->getDomainID() << ": "
+                         << "**** ERROR IN SAFE TOPOLOGY MODE ****" << endl;
+                    return error;
                 }
             }
         }
@@ -2431,6 +2437,11 @@ namespace libforefire
 
         while (std::getline(*inputStream, line))
         {
+            // A `quit[]` earlier in the script stops the file here rather than
+            // ending the process, so the caller still gets to return normally.
+            if (quitAsked)
+                break;
+
             if (!inTripleQuote)
             {
                 /* Skip comments and empty lines when *not* inside a multiline literal   */
@@ -2494,6 +2505,18 @@ namespace libforefire
         }
         return normal;
     }
+
+#ifdef FF_NO_NETCDF
+
+    // saveData writes a landscape file, which is NetCDF end to end; there is no
+    // partial behaviour to keep when NetCDF is compiled out.
+    int Command::saveData(const std::string &arg, size_t &numTabs)
+    {
+        std::cout << "saveData: this build has no NetCDF support" << std::endl;
+        return error;
+    }
+
+#else
 
     int Command::saveData(const std::string &arg, size_t &numTabs)
     {
@@ -2829,6 +2852,8 @@ namespace libforefire
         }
     }
 
+#endif /* FF_NO_NETCDF */
+
     int Command::loadData(const string &arg, size_t &numTabs)
     {
 
@@ -2858,6 +2883,11 @@ namespace libforefire
         if (args.size() == 2)
         {
 
+#ifdef FF_NO_NETCDF
+            cout << "loadData: reading a domain from " << path
+                 << " needs NetCDF, which this build has no support for" << endl;
+            return error;
+#else
             simParam->setParameter("NetCDFfile", args[0]);
             try
             {
@@ -2943,6 +2973,7 @@ namespace libforefire
             }
 
             ExecuteCommand(com);
+#endif /* FF_NO_NETCDF */
         }
         if (args.size() == 1)
         {
@@ -2967,13 +2998,38 @@ namespace libforefire
 
     int Command::quit(const string &arg, size_t &numTabs)
     {
-        
+        // No exit() here. `quit` is in the command table, so it is reachable
+        // from the Python binding and from the HTTP server, and a library
+        // that ends its host's process skips every destructor, `finally` and
+        // atexit handler on the way out — and used to do it with status 0, so
+        // a batch run reported success having done nothing. The session is
+        // released and the request is recorded; whoever is driving the shell
+        // decides what to do about it.
         delete currentSession.fd;
+        currentSession.fd = 0;
         delete currentSession.outStrRep;
+        currentSession.outStrRep = 0;
         delete currentSession.sim;
-        delete currentSession.params;
-        exit(0);
+        currentSession.sim = 0;
+
+        // currentSession.params is deliberately not deleted: it is the
+        // SimulationParameters singleton, owned by GetInstance() and shared
+        // with every other holder. Deleting it left GetInstance() handing out
+        // a dangling pointer, which only went unnoticed because exit()
+        // followed on the next line.
+
+        quitAsked = true;
         return normal;
+    }
+
+    bool Command::quitRequested()
+    {
+        return quitAsked;
+    }
+
+    void Command::clearQuitRequest()
+    {
+        quitAsked = false;
     }
 
     void Command::setOstringstream(ostringstream *oss)
@@ -3678,6 +3734,10 @@ namespace libforefire
 
     void Command::writeNetCDF(const char *filename, const string &varName, const std::vector<std::vector<double>> &matrix, const vector<double> &latitudes, const vector<double> &longitudes)
     {
+#ifdef FF_NO_NETCDF
+        std::cerr << "writeNetCDF: this build has no NetCDF support, "
+                  << filename << " not written" << std::endl;
+#else
         try
         {
             // Create (or replace) the NetCDF file using NetCDF-4 mode.
@@ -3721,6 +3781,7 @@ namespace libforefire
         {
             std::cerr << "Error writing NetCDF file: " << e.what() << std::endl;
         }
+#endif /* FF_NO_NETCDF */
     }
     void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double NEY)
     {

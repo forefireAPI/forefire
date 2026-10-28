@@ -1,0 +1,96 @@
+name: 🧼 Sanitizers (Linux)
+
+# AddressSanitizer over both test paths: the unit suite, which constructs and
+# destroys every propagation and flux model one call at a time, and runff,
+# which runs a full simulation with a reload and NetCDF and KML output.
+#
+# This is a blocking check from the day it lands, which is only possible
+# because ForeFire reports zero ASan errors today — no use-after-free, no
+# overflow, no double free, on either path. There is no backlog to clear
+# first, and the point of turning it on now is to keep it that way. See #162.
+#
+# Leaks are blocking for the unit suite. They were not when this job landed —
+# nothing owned a PropagationModel, so ASan reported every one as leaked, about
+# 4.7 MB in all. #159 gave the models, the propagative layer and two orphaned
+# constant-layer arrays an owner, which took the unit suite to zero, so the
+# gate went on. runff still leaks ~200 kB on paths the unit suite does not
+# reach, so its leak check stays informational until those are found too.
+#
+# A separate workflow rather than a job in main.yml because it needs its own
+# build: install-forefire.sh builds with -O3 -flto -fomit-frame-pointer, which
+# is the opposite of what a sanitizer wants.
+
+on:
+  push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches:
+      - "master"
+      - "dev"
+  pull_request:
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches: [ "master", "dev" ]
+  workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  address-sanitizer:
+    name: AddressSanitizer
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake python3 python3-pip
+          sudo apt-get install -y --no-install-recommends \
+            libnetcdf-dev libnetcdf-c++4-dev
+          pip3 install --no-cache-dir --break-system-packages lxml xarray netCDF4
+
+      - name: Build with AddressSanitizer
+        # FOREFIRE_SANITIZE also switches the compile flags to -g -O1
+        # -fno-omit-frame-pointer, so the stack traces are readable.
+        run: |
+          cmake -S . -B build-asan -DFOREFIRE_SANITIZE=address -DFOREFIRE_CHECK_LFS=OFF
+          cmake --build build-asan -j"$(nproc)"
+
+      # Leaks are blocking here: the unit suite reports none since the model
+      # and layer ownership fix in #159, and this is what keeps it that way.
+      - name: Unit tests under ASan
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+        run: ctest --test-dir build-asan --output-on-failure
+
+      # runff still leaks about 200 kB over 783 allocations, on paths a single
+      # simulation reaches and the unit suite does not, so its leak check stays
+      # informational below. Errors are blocking here as they always were.
+      - name: runff under ASan
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: |
+          cd tests/runff
+          bash ff-run.bash
+
+      # Informational only, and only for runff now. Keeps the figure visible so
+      # the remaining ownership gaps can be found and this can join the gate.
+      - name: runff leak report (informational)
+        continue-on-error: true
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+        run: |
+          echo "::group::runff leaks"
+          cd tests/runff
+          bash ff-run.bash || true
+          echo "::endgroup::"

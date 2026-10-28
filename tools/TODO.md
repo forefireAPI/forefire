@@ -1,5 +1,4 @@
 Things to do
-- Document all code and make the doxygen/readthedocs clean
 - clean the Python bindings links and pathes, retest
 - numerical unit test for FF in 2D : circles, area round, ellipses, mass conservation for heat fluxes
 - numerical tests for fuel models in 2D.. slopes, wind. Best would be 1 model 10 slopes for same wind. Simple ones.

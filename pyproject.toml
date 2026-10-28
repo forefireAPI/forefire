@@ -42,6 +42,10 @@ dependencies = [
 # See the install rule for `forefire` in CMakeLists.txt for why the binary is
 # not shipped as a wheel script directly.
 forefire = "pyforefire._cli:main"
+# Check a landscape .nc against a fuel table. Reading the .nc needs netCDF4,
+# which is intentionally not a hard dependency; the command asks for it if the
+# file has to be read.
+forefire-validate = "pyforefire._validate:main"
 
 [project.urls]
 Homepage = "https://forefire.univ-corse.fr/"

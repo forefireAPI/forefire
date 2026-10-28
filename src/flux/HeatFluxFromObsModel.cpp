@@ -152,7 +152,6 @@ HeatFluxFromObsModel::HeatFluxFromObsModel(
 
 /* destructor (shoudn't be modified) */
 HeatFluxFromObsModel::~HeatFluxFromObsModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

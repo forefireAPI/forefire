@@ -2,11 +2,19 @@ name: 🧪 Test Native (macOS)
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - brew
   pull_request:
-    branches: [ "master" ]  
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches: [ "master", "dev" ]
   workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-native-macos:
@@ -15,16 +23,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Make install script executable
         run: chmod +x ./install-forefire-osx.sh
 
       - name: Build ForeFire using macOS install script
+        # The LFS check would curl back the LFS files the step above skips.
+        env:
+          FOREFIRE_CHECK_LFS: "OFF"
         run: ./install-forefire-osx.sh
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
+
+      # Also the check that the recorded rates of spread survive a different
+      # compiler and a different CPU.
+      - name: Run C++ unit tests
+        run: ctest --test-dir build --output-on-failure
 
       - name: Install Python test dependencies
         run: pip3 install --break-system-packages lxml xarray netCDF4

@@ -2,12 +2,20 @@ name: 🧪 Test Native (Linux)
 
 on:
   push:
+    paths-ignore: [ "docs/**", "**/*.md" ]
     branches:
       - "master"
-      # - "dev"
+      - "dev"
   pull_request:
-    branches: [ "master" ]
+    paths-ignore: [ "docs/**", "**/*.md" ]
+    branches: [ "master", "dev" ]
   workflow_dispatch:
+
+# A new push to a PR cancels its older run. Pushes to branches, tags and
+# releases each get their own group, so none is ever queued or dropped.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-native:
@@ -16,7 +24,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          lfs: true # we use LFS to store large files (e.g. data.nc)
+          lfs: false # only tests/runff is needed, fetched below
+
+      - uses: ./.github/actions/lfs-runff
 
       - name: Verify LFS test asset (data.nc)
         run: |
@@ -38,10 +48,23 @@ jobs:
           pip3 install --no-cache-dir lxml xarray netCDF4
 
       - name: ForeFire build
-        run: sudo bash ./install-forefire.sh -y
+        # The LFS check would curl back the LFS files the step above skips.
+        run: sudo env FOREFIRE_CHECK_LFS=OFF bash ./install-forefire.sh -y
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
+
+      # The unit tests are built by install-forefire.sh along with everything
+      # else (FOREFIRE_BUILD_TESTS defaults on outside wheel builds), so this
+      # only has to run them. They cover the propagation and flux models one
+      # call at a time, which is what runff below cannot reach: it exercises a
+      # single case through Rothermel.
+      - name: Run C++ unit tests
+        run: |
+          # The build step above runs under sudo, so build/ is root-owned and
+          # ctest cannot create build/Testing/Temporary as the runner user.
+          sudo chown -R "$(id -u):$(id -g)" build
+          ctest --test-dir build --output-on-failure
 
       - name: Add Build/Runtime Diagnostics
         run: |
@@ -57,3 +80,12 @@ jobs:
         run: |
           cd tests/runff
           bash ff-run.bash # Execute the complete test logic script
+
+      # The only coverage for ANNPropagationModel and BMapLoggerForANNTraining:
+      # both read a .ffann network in their constructor and abort without one,
+      # so the unit suite cannot reach them. ANN_test is built by the step
+      # above, since FOREFIRE_BUILD_TOOLS defaults on outside wheel builds.
+      - name: Run 'runANN' Test Script
+        run: |
+          cd tests/runANN
+          bash run.bash

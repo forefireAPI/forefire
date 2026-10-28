@@ -223,7 +223,7 @@ double Balbi2020::getSpeed(double* valueOf){
         double p = (2/lr00)/ltau0 ;  // derived from expression between C7 and C8 
 
         // Radiant fractor
-        double Chi = lChi0 /(1+p*((R*ltau0*cos(lalpha))/2*ls)) ;  // eq. C7 
+        double Chi = lChi0 /(1+p*((R*ltau0*cos(lalpha))/(2*ls))) ;  // eq. C7 
         //print("Radiant Fraction ", Chi)
 
         // Mean Flame Temperature
@@ -265,12 +265,14 @@ double Balbi2020::getSpeed(double* valueOf){
 			}
         stopcondition = (abs(error) > maxEps);
 	}
+    // eq. 27 makes Rc negative on a downslope with no wind, and Rb no longer
+    // covers it once Chi is right: a fire spreads slowly there, not backwards.
     if (flag==1){
-        return Rnew;
+        return max(0., Rnew);
 	}
 	
 	//cout << "R "<< R << " not convergent " << error <<  endl;
-    return R+error/2;
+    return max(0., R+error/2);
 }
 
 } /* namespace libforefire */

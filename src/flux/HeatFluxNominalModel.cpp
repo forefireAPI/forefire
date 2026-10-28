@@ -75,7 +75,6 @@ HeatFluxNominalModel::HeatFluxNominalModel(
 
 /* destructor (shoudn't be modified) */
 HeatFluxNominalModel::~HeatFluxNominalModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

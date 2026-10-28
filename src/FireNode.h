@@ -154,10 +154,10 @@ public:
 	virtual ~FireNode();
 
 	/*!  \brief Accessors to the location of the FireNode  */
-	FFPoint getLoc();
-	double getX();
-	double getY();
-	double getZ();
+	FFPoint getLoc(){ return location; }
+	double getX(){ return location.getX(); }
+	double getY(){ return location.getY(); }
+	double getZ(){ return location.getZ(); }
 	/*!  \brief Object initialization */
 	void initialize(FFPoint&,  FFVector&, double&, double&, double = 0.
 			, FireDomain* = 0, FireFront* = 0, FireNode* = 0);
@@ -185,9 +185,9 @@ public:
 	string getStateString(State);
 
 	/*!  \brief Accessor to next FireNode in the fire front  */
-	FireNode* getNext();
+	FireNode* getNext(){ return nextInFront; }
 	/*!  \brief Accessor to previous FireNode in the fire front  */
-	FireNode* getPrev();
+	FireNode* getPrev(){ return previousInFront; }
 
 	/*!  \brief front depth getter */
 	double getFrontDepth();

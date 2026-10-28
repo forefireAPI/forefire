@@ -23,7 +23,7 @@ to couple the simulation with MesoNH you should also edit the &NAM_FOREFIRE name
 
 List of scripts:
 - ***clickImageToLocation.py *** sets the coordinates for the Init.ff file 
-- ***genForeFireCase.py*** contains routines for  addFieldToNcFile
+- ***genForeFireCase.py*** writes the **NetCDFfile** landscape (fuel, elevation, wind, flux models) from numpy arrays
 - ***genPrepIdeal.py*** creates the  .nam for mesonh ideal case ???
 - ***prealCF2Case.py*** creates the **NetCDFfile**=data.nc file in the **ForeFireDataDirectory** directory
 - ***pngs2bmap.py*** creates the burning map file **BMapFiles** starting from kml contours
@@ -35,7 +35,7 @@ Contains the preprocessing routine *FiretoNC*:
 to be used in order to generate a packed data landscape data in cdf format for ForeFire.
 Usage: FiretoNC(filename, file name
          domainProperties, the domain extension (map matching forefire parameters SWx, SWy, SWz, Lx, Ly, Lz, t0, Lt)
-     parametersProperties, the other optional properties you may want to put in the list
+     parametersProperties, the simulation date and duration. All of date, duration, refYear, refDay, year, month and day are required
              fuelModelMap, a numpy integer array containing the indexes of fuel type
            elevation=None, a numpy real array with the elevation
                 wind=None, a map with a "zonal" and "meridian" numpy real array values

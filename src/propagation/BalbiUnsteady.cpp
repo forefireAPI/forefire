@@ -176,6 +176,10 @@ double BalbiUnsteady::getSpeed(double* valueOf){
 	double r0 = lsd*lr00;
 	double A0 = (lX0*lDeltaH)/(4*lCp*(lTi-lTa));
 	double xsi = ((lMl-lMd)*((lSigmal/lSigmad)*(lDeltah/lDeltaH)));
+	// See BalbiNov2011.cpp: a dead fuel wetter than the live fuel drives xsi
+	// negative, amplifying the radiant term and the flame temperature (R00 ~ T^4)
+	// instead of damping them. Wetter dead fuel must never speed a fire up.
+	if (xsi < 0.) xsi = 0.;
 	double A  = (nu*A0/(1+a*lMd))*(1-xsi);
 	double T = lTa + (lDeltaH*(1-lX0)*(1-xsi))/((lstoch+1)*Cpa);
 	double R00 = (B*T*T*T*T)/(lCp*(lTi-lTa));

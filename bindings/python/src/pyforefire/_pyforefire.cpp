@@ -10,6 +10,16 @@ Command* pyxecutor;
 Command::Session* session;
 SimulationParameters* params;
 
+// Every call below that reads the domain would dereference a null pointer
+// before FireDomain[...] has run, so raise a Python exception instead.
+static FireDomain* requireDomain() {
+	FireDomain* fd = pyxecutor->getDomain();
+	if (fd == nullptr) {
+		throw std::runtime_error("no FireDomain yet: execute FireDomain[...] first");
+	}
+	return fd;
+}
+
 
 PLibForeFire::PLibForeFire() {
 	pyxecutor = new Command();
@@ -61,7 +71,7 @@ void PLibForeFire::createDomain( int id
 
 void PLibForeFire::addLayer(char *type, char* layername, char* keyname){
 
-	pyxecutor->getDomain()->addLayer(string(type),string(layername),string(keyname));
+	requireDomain()->addLayer(string(type),string(layername),string(keyname));
 }
 
 void PLibForeFire::setInt(char* name, int val){
@@ -102,7 +112,7 @@ bool PLibForeFire::isValued(char *name){
 
 py::object PLibForeFire::getDataMatrixPy(char *name) {
     // Get the 2D data matrix using the string name.
-    std::vector<std::vector<double>> matrix = pyxecutor->getDomain()->getDataMatrix(string(name));
+    std::vector<std::vector<double>> matrix = requireDomain()->getDataMatrix(string(name));
     
     // Check if the matrix equals the sentinel value, i.e. a 1x1 matrix with -9999.
     if (matrix.size() == 1 && matrix[0].size() == 1 && matrix[0][0] == -9999) {
@@ -144,7 +154,7 @@ void PLibForeFire::addScalarLayer(char *type, char *name, double x0 , double y0,
 	size_t nk = nnz;
 	size_t nl = nnl;
 
- 	pyxecutor->getDomain()->addScalarLayer(type, lname, x0, y0, t0, width, height, timespan, ni, nj, nk, nl, values.mutable_data());
+ 	requireDomain()->addScalarLayer(type, lname, x0, y0, t0, width, height, timespan, ni, nj, nk, nl, values.mutable_data());
 
 }
 
@@ -159,18 +169,18 @@ void PLibForeFire::addIndexLayer(char *type, char *name, double x0 , double y0, 
 	size_t nk = nnz;
 	size_t nl = nnl;
 
- 	pyxecutor->getDomain()->addIndexLayer(ltype, lname, x0, y0, t0, width, height, timespan, ni, nj, nk, nl, values.mutable_data());
+ 	requireDomain()->addIndexLayer(ltype, lname, x0, y0, t0, width, height, timespan, ni, nj, nk, nl, values.mutable_data());
 }
 
 py::array_t<double> PLibForeFire::getDoubleArray(char* name){
-	double lTime = pyxecutor->getDomain()->getSimulationTime();
+	double lTime = requireDomain()->getSimulationTime();
 
 	return PLibForeFire::getDoubleArray(name, lTime);
 }
 
 py::array_t<double> PLibForeFire::getDoubleArray(char* name, double t){
 	string lname(name);
-	FluxLayer<double>* myFluxLayer = pyxecutor->getDomain()->getFluxLayer(lname);
+	FluxLayer<double>* myFluxLayer = requireDomain()->getFluxLayer(lname);
 
 		if ( myFluxLayer ){
 			FFArray<double>* srcD;
@@ -207,7 +217,7 @@ py::array_t<double> PLibForeFire::getDoubleArray(char* name, double t){
 			return arr;
 		}
 
-	DataLayer<double>* myDataLayer = pyxecutor->getDomain()->getDataLayer(lname);
+	DataLayer<double>* myDataLayer = requireDomain()->getDataLayer(lname);
 
 		if ( myDataLayer ){
 			FFArray<double>* srcD;
@@ -377,7 +387,7 @@ PYBIND11_MODULE(_pyforefire, m) {
                 }
             } else {
                 // Parameter is not set: check for a data matrix with the given key.
-                std::vector<std::vector<double>> matrix = pyxecutor->getDomain()->getDataMatrix(const_cast<char*>(key.c_str()));
+                std::vector<std::vector<double>> matrix = requireDomain()->getDataMatrix(const_cast<char*>(key.c_str()));
                 // If the returned matrix is the sentinel (1x1 with -9999), consider it non-existent.
                 if (matrix.size() == 1 && matrix[0].size() == 1 && matrix[0][0] == -9999) {
                     throw std::runtime_error("Parameter '" + key + "' does not exist.");

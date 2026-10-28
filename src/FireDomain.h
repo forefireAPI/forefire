@@ -309,6 +309,16 @@ public:
 	bool addPropagativeLayer(string);
 	size_t getFreePropModelIndex();
 
+	/*! \brief indices this domain put into the shared model tables
+	 *
+	 * propModelsTable and fluxModelsTable are static, so an entry cannot be
+	 * freed just because some domain is going away — only the domain that
+	 * registered it may. These record which ones are ours. */
+	std::vector<size_t> ownedPropModelIndices;
+	std::vector<size_t> ownedFluxModelIndices;
+	/*! \brief deletes this domain's models and clears their table entries */
+	void releaseOwnedModels();
+
 	/* Mesh properties */
     /*-----------------*/
 	FFPoint SWLngLat; /*!< SouthWest Corner of the mesh */
@@ -409,14 +419,14 @@ public:
 	void increaseNumIterationAtmoModel();
 	PropagativeLayer<double>* getPropagativeLayer();
 	/* Shortcuts to simulation parameters */
-	double& SWCornerX();
-	double& SWCornerY();
-	double& NWCornerX();
-	double& NWCornerY();
-	double& NECornerX();
-	double& NECornerY();
-	double& SECornerX();
-	double& SECornerY();
+	double& SWCornerX(){ return SWCorner.getX(); }
+	double& SWCornerY(){ return SWCorner.getY(); }
+	double& NWCornerX(){ return NWCorner.getX(); }
+	double& NWCornerY(){ return NWCorner.getY(); }
+	double& NECornerX(){ return NECorner.getX(); }
+	double& NECornerY(){ return NECorner.getY(); }
+	double& SECornerX(){ return SECorner.getX(); }
+	double& SECornerY(){ return SECorner.getY(); }
 	void readMultiDomainMetadata();
 	void pushMultiDomainMetadataInList(size_t id, double lastTime, size_t atmoNX, size_t atmoNY, double nswx, double nswy, double nnex, double nney);
 

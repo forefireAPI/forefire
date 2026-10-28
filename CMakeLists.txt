@@ -31,6 +31,7 @@ if(DEFINED SKBUILD)
     set(_ff_default_static ON)
     set(_ff_default_tools OFF)
     set(_ff_default_lfs OFF)
+    set(_ff_default_tests OFF)
 else()
     set(_ff_wheel_build OFF)
     set(_ff_default_mpi ON)
@@ -39,14 +40,41 @@ else()
     set(_ff_default_static OFF)
     set(_ff_default_tools ON)
     set(_ff_default_lfs ON)
+    set(_ff_default_tests ON)
+endif()
+
+# Emscripten has no NetCDF and no reason for one: a browser build reads its
+# data from JS typed arrays. Detecting it here rather than making the caller
+# pass the flags keeps `emcmake cmake` a one-liner.
+if(EMSCRIPTEN)
+    set(_ff_default_mpi OFF)
+    set(_ff_default_native OFF)
+    set(_ff_default_python OFF)
+    set(_ff_default_static ON)
+    set(_ff_default_tools OFF)
+    set(_ff_default_lfs OFF)
+    set(_ff_default_netcdf OFF)
+    set(_ff_default_cli OFF)
+    set(_ff_default_tests OFF)
+else()
+    set(_ff_default_netcdf ON)
+    set(_ff_default_cli ON)
 endif()
 
 option(FOREFIRE_ENABLE_MPI "Enable MPI coupling when MPI is available" ${_ff_default_mpi})
+option(FOREFIRE_ENABLE_NETCDF "Build the NetCDF-backed I/O paths" ${_ff_default_netcdf})
+option(FOREFIRE_BUILD_CLI "Build the interactive forefire command line shell" ${_ff_default_cli})
+option(FOREFIRE_BUILD_WASM "Build the Emscripten/embind module" ${EMSCRIPTEN})
 option(FOREFIRE_NATIVE_ARCH "Optimise for the build machine's CPU (-march=native)" ${_ff_default_native})
 option(FOREFIRE_BUILD_PYTHON "Build the pyforefire Python extension module" ${_ff_default_python})
 option(FOREFIRE_STATIC_CORE "Build the ForeFire core as a static library" ${_ff_default_static})
 option(FOREFIRE_BUILD_TOOLS "Build the ANN_test helper executable" ${_ff_default_tools})
 option(FOREFIRE_CHECK_LFS "Run the Git LFS data integrity check at configure time" ${_ff_default_lfs})
+option(FOREFIRE_BUILD_TESTS "Build the C++ unit tests, registered with CTest" ${_ff_default_tests})
+option(FOREFIRE_ENABLE_WARNINGS "Compile ForeFire's own sources with -Wall -Wextra" ON)
+option(FOREFIRE_WARNINGS_AS_ERRORS "Fail the build on a compiler warning" OFF)
+set(FOREFIRE_SANITIZE "" CACHE STRING
+    "Sanitizers to build with, passed to -fsanitize= (e.g. address, undefined, address,undefined)")
 
 # ----------------------------------
 # Set C++ Standard
@@ -130,7 +158,12 @@ endif()
 # detection logic below lives in exactly one place.
 add_library(forefire_netcdf INTERFACE)
 
-if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ} AND DEFINED ENV{FF_STATIC})
+if(NOT FOREFIRE_ENABLE_NETCDF)
+    # FF_NO_NETCDF compiles out every NetCDF-backed path; each entry point keeps
+    # a stub that reports the missing support (see DataBroker.h).
+    message(STATUS "NetCDF support disabled (FOREFIRE_ENABLE_NETCDF=OFF)")
+    target_compile_definitions(forefire_netcdf INTERFACE FF_NO_NETCDF)
+elseif(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ} AND DEFINED ENV{FF_STATIC})
     message(STATUS "MESONH and XYZ environment variables are set. FF_STATIC too, static NetCDF.")
     set(MESONH $ENV{SRC_MESONH})
     set(XYZ $ENV{XYZ})
@@ -154,7 +187,7 @@ if(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ} AND DEFINED ENV{FF_STATIC})
             message(FATAL_ERROR "Required static library not found: ${lib}")
         endif()
     endforeach()
-    target_include_directories(forefire_netcdf INTERFACE "${NETCDF_HOME}/include")
+    target_include_directories(forefire_netcdf SYSTEM INTERFACE "${NETCDF_HOME}/include")
     target_link_libraries(forefire_netcdf INTERFACE
         ${NETCDF_LIB}
         ${NETCDF_CXX_LIB}
@@ -200,7 +233,9 @@ else()
 
     message(STATUS "NetCDF C:   ${NETCDF_LIBRARY} (headers: ${NETCDF_INCLUDE_DIR})")
     message(STATUS "NetCDF C++: ${NETCDF_CXX_LIBRARY} (headers: ${NETCDF_CXX_INCLUDE_DIR})")
-    target_include_directories(forefire_netcdf INTERFACE ${NETCDF_CXX_INCLUDE_DIR} ${NETCDF_INCLUDE_DIR})
+    # SYSTEM: the NetCDF C++4 headers trip -Wunused-variable, and that is not a
+    # warning anyone here can act on.
+    target_include_directories(forefire_netcdf SYSTEM INTERFACE ${NETCDF_CXX_INCLUDE_DIR} ${NETCDF_INCLUDE_DIR})
     target_link_libraries(forefire_netcdf INTERFACE ${NETCDF_CXX_LIBRARY} ${NETCDF_LIBRARY})
 endif()
 
@@ -213,13 +248,52 @@ endif()
 # ----------------------------------
 if(MPI_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -DMPI_COUPLING")
+elseif(FOREFIRE_SANITIZE)
+    # A sanitizer build wants frame pointers and debug info; the release set
+    # below strips both, and -flto makes the reports harder to read besides.
+    # -O1 keeps the suites quick enough to run in CI.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fno-omit-frame-pointer")
 else()
     # uncomment if want to debug
     # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -fomit-frame-pointer -finline-functions -funroll-loops -ftree-vectorize -fno-strict-aliasing")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffp-contract=off -flto -fomit-frame-pointer -finline-functions -funroll-loops -ftree-vectorize -fno-strict-aliasing")
     if(FOREFIRE_NATIVE_ARCH)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     endif()
+endif()
+
+# Sanitizers have to reach the link line as well as the compile line, and the
+# shared library too: the core is where the allocations happen.
+if(FOREFIRE_SANITIZE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${FOREFIRE_SANITIZE}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${FOREFIRE_SANITIZE}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=${FOREFIRE_SANITIZE}")
+    message(STATUS "Sanitizers enabled: -fsanitize=${FOREFIRE_SANITIZE}")
+endif()
+
+# Warnings are a target property rather than a global flag on purpose: they
+# should apply to code this project writes, not to pybind11's headers or to
+# whatever a consumer compiles against the installed library.
+set(_ff_warning_flags "")
+if(FOREFIRE_ENABLE_WARNINGS)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        list(APPEND _ff_warning_flags -Wall -Wextra)
+    elseif(MSVC)
+        list(APPEND _ff_warning_flags /W4)
+    endif()
+endif()
+if(FOREFIRE_WARNINGS_AS_ERRORS AND _ff_warning_flags)
+    if(MSVC)
+        list(APPEND _ff_warning_flags /WX)
+    else()
+        list(APPEND _ff_warning_flags -Werror)
+    endif()
+endif()
+
+if(EMSCRIPTEN)
+    # Emscripten defaults to -fno-exceptions; the command parser signals bad
+    # input by throwing, so every translation unit needs them enabled.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 endif()
 
 # ----------------------------------
@@ -258,10 +332,18 @@ endif()
 target_include_directories(forefireL PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/include")
+# SYSTEM and PRIVATE: vendored headers are ours to use but not ours to fix, so
+# the warning flags below must not apply to them, and nothing outside this
+# library includes them.
+target_include_directories(forefireL SYSTEM PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 # Threads is explicit because a static core does not drag libpthread in for
 # its consumers the way the shared library does.
 find_package(Threads REQUIRED)
 target_link_libraries(forefireL PUBLIC forefire_netcdf Threads::Threads)
+if(_ff_warning_flags)
+    target_compile_options(forefireL PRIVATE ${_ff_warning_flags})
+endif()
 
 # ----------------------------------
 # Test Executable
@@ -274,8 +356,61 @@ endif()
 # ----------------------------------
 # Main Project Executable
 # ----------------------------------
-add_executable(forefire app/forefire/ForeFire.cpp app/forefire/AdvancedLineEditor.cpp)
-target_link_libraries(forefire PRIVATE forefireL)
+# The shell is termios-driven and has no meaning in a browser, so a WASM build
+# skips it and ships the embind module below instead.
+if(FOREFIRE_BUILD_CLI)
+    add_executable(forefire app/forefire/ForeFire.cpp app/forefire/AdvancedLineEditor.cpp)
+    target_link_libraries(forefire PRIVATE forefireL)
+    if(_ff_warning_flags)
+        target_compile_options(forefire PRIVATE ${_ff_warning_flags})
+    endif()
+endif()
+
+# ----------------------------------
+# Unit Tests
+# ----------------------------------
+if(FOREFIRE_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests/unit)
+endif()
+
+# ----------------------------------
+# WebAssembly Module
+# ----------------------------------
+if(FOREFIRE_BUILD_WASM)
+    add_executable(forefire_wasm bindings/wasm/forefire_wasm.cpp)
+    target_link_libraries(forefire_wasm PRIVATE forefireL)
+    # Two things are non-obvious here. embind refuses to compile below C++17,
+    # so this one translation unit moves up while the core stays on C++11 —
+    # both sit on the same libc++. And the output is an ES module, which Node
+    # only recognises from a .js file when a package.json says so, hence .mjs.
+    set_target_properties(forefire_wasm PROPERTIES
+        OUTPUT_NAME "forefire"
+        SUFFIX ".mjs"
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON)
+    target_link_options(forefire_wasm PRIVATE
+        "--bind"
+        # A single ES module plus its .wasm, so a static page can import it.
+        "-sMODULARIZE=1"
+        "-sEXPORT_ES6=1"
+        "-sEXPORT_NAME=createForeFire"
+        "-sENVIRONMENT=web,worker,node"
+        # The domain allocates its grids up front and can grow well past the
+        # 16 MB default; the fire domain sizes are not known at build time.
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sINITIAL_MEMORY=64MB"
+        "-sSTACK_SIZE=4MB"
+        # C++ exceptions are load-bearing here: BadOption and friends are how
+        # the command parser reports bad input.
+        "-fexceptions"
+        # There is no main(): the module is driven entirely through embind.
+        # FS stays exported so callers can stage fuels.csv and read back what
+        # print[<file>] writes.
+        "-sEXPORTED_RUNTIME_METHODS=['FS']"
+        "-sFORCE_FILESYSTEM=1")
+    target_compile_options(forefire_wasm PRIVATE "-fexceptions")
+endif()
 
 # ----------------------------------
 # Python Extension Module
@@ -319,7 +454,9 @@ if(NOT _ff_wheel_build)
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")  # Adjust as necessary
 
     # Specify installation directories
-    install(TARGETS forefire RUNTIME DESTINATION bin)
+    if(FOREFIRE_BUILD_CLI)
+        install(TARGETS forefire RUNTIME DESTINATION bin)
+    endif()
     if(NOT FOREFIRE_STATIC_CORE)
         # With a static core there is no libforefireL to install: it is linked
         # straight into the executables.

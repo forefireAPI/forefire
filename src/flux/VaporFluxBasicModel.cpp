@@ -77,7 +77,6 @@ VaporFluxBasicModel::VaporFluxBasicModel(
 
 /* destructor (shoudn't be modified) */
 VaporFluxBasicModel::~VaporFluxBasicModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

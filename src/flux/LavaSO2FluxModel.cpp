@@ -98,7 +98,6 @@ LavaSO2FluxModel::LavaSO2FluxModel(
 
 /* destructor (shoudn't be modified) */
 LavaSO2FluxModel::~LavaSO2FluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

@@ -100,7 +100,6 @@ FactorChemFluxModel::FactorChemFluxModel(
 
 /* destructor (shoudn't be modified) */
 FactorChemFluxModel::~FactorChemFluxModel() {
-	if ( properties != 0 ) delete properties;
 }
 
 /* accessor to the name of the model */

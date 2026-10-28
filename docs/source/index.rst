@@ -25,6 +25,7 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    user_guide/basic_configuration
    user_guide/fuels_and_models
    user_guide/landscape_file
+   user_guide/python_arrays
    user_guide/forefire_script
    user_guide/core_concepts
 

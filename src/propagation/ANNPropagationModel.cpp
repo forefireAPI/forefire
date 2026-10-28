@@ -73,9 +73,6 @@ ANNPropagationModel::ANNPropagationModel(const int & mindex, DataBroker* db)
 
 
 ANNPropagationModel::~ANNPropagationModel() {
-    if (properties) {
-        delete[] properties;
-    }
 }
 
 /* accessor to the name of the model */

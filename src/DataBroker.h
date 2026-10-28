@@ -22,9 +22,15 @@
 #include "FFArrays.h"
 #include "ParallelData.h"
 #include "SimulationParameters.h"
+// FF_NO_NETCDF drops every NetCDF-backed code path. The umbrella header is
+// included in exactly this one place, and the `using namespace` below drags it
+// into every translation unit that reaches DataBroker.h, so the guard here is
+// what makes a NetCDF-free build (Emscripten, slim wheels) possible at all.
+#ifndef FF_NO_NETCDF
 #include <netcdf>
 using namespace netCDF;
 using namespace netCDF::exceptions;
+#endif
 
 using namespace std;
 
@@ -146,6 +152,8 @@ class DataBroker {
 	static int getDummy(FireNode*, PropagationModel*, int);
 	/*! \brief predefined function for getting the fuel parameters at firenode location */
 	static int getFuelProperties(FireNode*, PropagationModel*, int);
+	/*! \brief constant moisture used when no moisture layer is loaded */
+	static double fallbackMoisture();
 	/*! \brief predefined function for getting the moisture at firenode location */
 
 	static int getMoisturesProperties(FireNode *, PropagationModel *, int );
@@ -203,6 +211,7 @@ class DataBroker {
 	bool isRelevantData(FFPoint&, FFPoint&);
 
 
+#ifndef FF_NO_NETCDF
 	/*! \brief loading a NCXYZTDataLayer from an NcFile */
 	XYZTDataLayer<double>* constructXYZTLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \brief loading a FuelDataLayer from an NcFile */
@@ -214,6 +223,7 @@ class DataBroker {
 	/*! \transpose data from fortran netcdf*/
 	double* readAndTransposeFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t& ,bool  ,  int );
 	int*    readAndTransposeIntFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t&, bool ,  int );
+#endif
 
 public:
 

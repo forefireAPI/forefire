@@ -227,10 +227,26 @@ time, for example ``cmake -S . -B build -DFOREFIRE_ENABLE_MPI=OFF``.
   * - ``FOREFIRE_CHECK_LFS``
     - ON
     - Fail early if the Git LFS test fixtures were not pulled.
+  * - ``FOREFIRE_BUILD_TESTS``
+    - ON
+    - Build the C++ unit tests and register them with CTest.
+  * - ``FOREFIRE_ENABLE_WARNINGS``
+    - ON
+    - Compile ForeFire's own sources with ``-Wall -Wextra``.
+  * - ``FOREFIRE_WARNINGS_AS_ERRORS``
+    - OFF
+    - Fail the build on a compiler warning.
+  * - ``FOREFIRE_SANITIZE``
+    - *(empty)*
+    - Sanitizers to build with, passed to ``-fsanitize=``, for example
+      ``address,undefined``.
 
-Wheel builds flip all six: MPI, native-arch, tools and the LFS check off,
-Python and the static core on. That is what makes a wheel run on a machine
-other than the one that built it.
+Wheel builds flip six of these: MPI, native-arch, tools, tests and the LFS
+check off, Python and the static core on. That is what makes a wheel run on a
+machine other than the one that built it.
+
+``TESTING.md`` at the repository root covers the test suites and the sanitizer
+build in detail.
 
 Making ForeFire available system-wide
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
