@@ -34,12 +34,12 @@ def arrival_time(ff, path, bbox=None):
     Row 0 is the south edge, and cells the front has not reached are `inf`.
     `bbox=(left, bottom, right, top)` in domain coordinates crops the map to
     that area at the same resolution; by default it covers the whole domain.
-    The map is written to `path` by the kernel's `plot` command, as an ASCII
-    grid with one row per x, then read back.
+    The map is written to `path` by the kernel's `plot` command, as an ESRI
+    ASCII grid with the north row first, then read back.
     """
     area = "" if bbox is None else ";BBoxLBRT=({},{},{},{})".format(*bbox)
     ff.execute(f"plot[parameter=arrival_time;filename={path}{area}]")
-    return np.loadtxt(path, skiprows=6, ndmin=2).T
+    return np.flipud(np.loadtxt(path, skiprows=6, ndmin=2))
 
 
 def _set_parameters(ff, member):
