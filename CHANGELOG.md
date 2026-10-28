@@ -10,6 +10,16 @@ Entries below v2.5.0 were reconstructed from the release notes and the commit
 history, so they summarise each release rather than list every change. The
 `Full Changelog` link on each version gives the complete commit range.
 
+## [Unreleased]
+
+### Fixed
+
+- Commands that need a domain print an error when there is none, instead of
+  segfaulting: `FireNode`, `FireFront`, `startFire`, `goTo`, `save[]`,
+  `trigger[fuel]`, `trigger[fuelIndice]`, any command scheduled with `@t` or
+  `@nowplus`, and a `FireDomain[...]` with missing options. A script whose
+  `loadData` failed used to crash on the next `startFire`.
+
 ## [v2.6.0] — 2026-10-26
 
 ### Added
@@ -233,6 +243,7 @@ The V2 release: the HTTP interface, and alignment with Meso-NH V4.7.2.
 Tagged before the sources were moved into `src/`, so that this point in the
 repository stays easy to return to.
 
+[Unreleased]: https://github.com/forefireAPI/forefire/compare/v2.6.0...dev
 [v2.6.0]: https://github.com/forefireAPI/forefire/releases/tag/v2.6.0
 [v2.5.0]: https://github.com/forefireAPI/forefire/releases/tag/v2.5.0
 [v2.4.2]: https://github.com/forefireAPI/forefire/releases/tag/v2.4.2

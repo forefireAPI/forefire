@@ -254,6 +254,8 @@ namespace libforefire
 
     int Command::startFire(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("startFire"))
+            return error;
         double t = getDomain()->getTime();
         SimulationParameters *simParam = SimulationParameters::GetInstance();
     
@@ -676,6 +678,8 @@ namespace libforefire
 
     int Command::createFireFront(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("FireFront"))
+            return error;
 
         size_t n = argCount(arg);
         if (n >= 1)
@@ -731,6 +735,8 @@ namespace libforefire
 
     int Command::addFireNode(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("FireNode"))
+            return error;
 
         if (lastReadLoc == 0)
             lastReadLoc = new FFPoint(-numeric_limits<double>::infinity(), -numeric_limits<double>::infinity(), 0);
@@ -977,6 +983,8 @@ namespace libforefire
 
     int Command::goTo(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("goTo"))
+            return error;
 
         /* Advancing simulation to the prescribed time */
         endTime = getFloat("t", arg); 
@@ -1930,6 +1938,8 @@ namespace libforefire
         }
         else
         {
+            if (!domainExists("save"))
+                return error;
             getDomain()->saveArrivalTimeNC(); // Default save operation if no arguments provided
         }
 
@@ -2160,6 +2170,8 @@ namespace libforefire
 
         if (tmpArgs[0] == "fuel")
         {
+            if (!domainExists("trigger[fuel]"))
+                return error;
 
             if (getDomain()->getDataBroker() != 0)
             {
@@ -2180,6 +2192,8 @@ namespace libforefire
         }
         if (tmpArgs[0] == "fuelIndice")
         {
+            if (!domainExists("trigger[fuelIndice]"))
+                return error;
             if (getDomain()->getDataBroker() != 0)
             {
                 FFPoint loc = getPoint("loc", arg);
@@ -2991,7 +3005,8 @@ namespace libforefire
         delete currentSession.fd;
         currentSession.fd =nullptr;
        //delete currentSession.outStrRep;
-        currentSession.sim->getSchedule()->clear();
+        if (currentSession.sim != nullptr)
+            currentSession.sim->getSchedule()->clear();
        // delete currentSession.params;
         return normal;
     }
@@ -3365,6 +3380,12 @@ namespace libforefire
         {
             if (postcmd.size() > 1)
             {
+                // Scheduled commands go to the domain's time table.
+                if (!domainExists(scmd + " scheduled with @"))
+                {
+                    command.clear();
+                    return;
+                }
                 string atCommand = line.substr(0, line.rfind("]") + 1);
                 string whenCommand = line.substr(line.rfind("]") + 1, -1);
                 double whenDouble = getFloat("@t", whenCommand);
@@ -3393,6 +3414,9 @@ namespace libforefire
                 }
                 else
                 {
+                    // The domain ID, when there is a domain, prefixes the error messages.
+                    auto where = []()
+                    { return getDomain() ? to_string(getDomain()->getDomainID()) + ": " : string(); };
                     try
                     {
                         // calling the right function
@@ -3401,26 +3425,26 @@ namespace libforefire
                     }
                     catch (BadOption &)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "argument(s) '" << command[1] << "' is (are) not fit for command '"
                              << command[0] << "'" << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
                     }
                     catch (MissingOption &mo)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "command '" << command[0] << "' misses "
                              << mo.num << " options." << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
                     }
                     catch (MissingTime &)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "you have to specify a time for that command (as in 't=0.')" << endl;
                     }
                     catch (...)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << " PROBLEM: Command associated to " << line << " ended in error" << endl;
                     }
                 }
@@ -3524,6 +3548,15 @@ namespace libforefire
             return currentSession.fdp;
         }
         return currentSession.fd;
+    }
+
+    bool Command::domainExists(const string &command)
+    {
+        if (getDomain() != nullptr)
+            return true;
+        cout << "Error: " << command << " needs a domain, create one first with "
+             << "FireDomain[...] or loadData[...]" << endl;
+        return false;
     }
 
     string Command::dumpString()
