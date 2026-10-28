@@ -25,6 +25,9 @@ history, so they summarise each release rather than list every change. The
   layers.
 - The `BMap` layer holds the arrival times again; its recomputation had been
   commented out, so `getDoubleArray("BMap")` returned zeros.
+- `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid: one row per y,
+  north first, at full precision. It used to write one row per x and round
+  values to six significant digits.
 
 ## [v2.6.0] — 2026-10-26
 

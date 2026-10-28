@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <cmath> 
 #include <fstream>
+#include <limits>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -3825,9 +3826,10 @@ namespace libforefire
             return;
         }
 
-        // Determine the number of rows and columns.
-        size_t nrows = matrix.size();
-        size_t ncols = (nrows > 0) ? matrix[0].size() : 0;
+        // The matrix is indexed [x][y] from the south-west corner, while an
+        // ASCII grid has one row per y, from north to south.
+        size_t ncols = matrix.size();
+        size_t nrows = (ncols > 0) ? matrix[0].size() : 0;
 
         // Compute the cell size.
         // Here we assume that (NEX - SWX) corresponds to the total width of the matrix.
@@ -3841,13 +3843,15 @@ namespace libforefire
         out << "cellsize      " << cellsize << "\n";
         out << "NODATA_value  -9999\n";
 
-        // Write the matrix data row by row.
-        for (size_t i = 0; i < nrows; i++)
+        // Write the matrix data row by row, at full precision.
+        out.precision(std::numeric_limits<double>::max_digits10);
+        for (size_t row = 0; row < nrows; row++)
         {
-            for (size_t j = 0; j < ncols; j++)
+            size_t j = nrows - 1 - row;
+            for (size_t i = 0; i < ncols; i++)
             {
                 out << matrix[i][j];
-                if (j < ncols - 1)
+                if (i < ncols - 1)
                     out << " ";
             }
             out << "\n";

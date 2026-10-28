@@ -12,7 +12,9 @@
  *
  * A domain built after clear[] used to crash on its first startFire.
  *
- * The BMap layer, which holds the arrival times, was never filled.
+ * The arrival times can be read two ways, and both used to be wrong: the BMap
+ * layer was never filled, and plot[...;filename=*.asc] wrote one row per x,
+ * at six significant digits, instead of an ASCII grid.
  */
 
 #include "doctest/doctest.h"
@@ -20,7 +22,11 @@
 #include "Command.h"
 
 #include <cmath>
+#include <cstdio>
+#include <fstream>
+#include <limits>
 #include <string>
+#include <vector>
 
 using libforefire::Command;
 using libforefire::FFArray;
@@ -41,6 +47,26 @@ void burnOffCentre(Command& executor) {
     REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
     run(executor, "startFire[loc=(300,800,0)]");
     run(executor, "goTo[t=300]");
+}
+
+struct AsciiGrid {
+    size_t ncols = 0, nrows = 0;
+    double xll = 0, yll = 0, cellsize = 0;
+    std::vector<std::vector<std::string>> rows; /* as written, north first */
+};
+
+AsciiGrid readAsciiGrid(const std::string& path) {
+    AsciiGrid grid;
+    std::ifstream in(path);
+    std::string key;
+    double nodata;
+    in >> key >> grid.ncols >> key >> grid.nrows >> key >> grid.xll >> key >> grid.yll
+       >> key >> grid.cellsize >> key >> nodata;
+    grid.rows.assign(grid.nrows, std::vector<std::string>(grid.ncols));
+    for (auto& row : grid.rows)
+        for (auto& value : row)
+            in >> value;
+    return grid;
 }
 
 } /* anonymous namespace */
@@ -107,6 +133,46 @@ TEST_CASE("the BMap layer holds the domain's arrival times") {
     }
     CHECK(burnt > 0);
     CHECK(mismatched == 0);
+}
+
+TEST_CASE("plot writes arrival times as an ASCII grid, north row first") {
+    Command executor;
+    burnOffCentre(executor);
+    const std::string path = "ff_test_arrival_time.asc";
+    run(executor, "plot[parameter=arrival_time;filename=" + path + "]");
+    AsciiGrid grid = readAsciiGrid(path);
+    std::remove(path.c_str());
+
+    CHECK(grid.ncols == 200);
+    CHECK(grid.nrows == 100);
+    CHECK(grid.cellsize == doctest::Approx(10.));
+    REQUIRE(grid.rows.size() == grid.nrows);
+
+    /* The earliest cell is where the fire started. */
+    size_t bestRow = 0, bestCol = 0;
+    double earliest = std::numeric_limits<double>::infinity();
+    for (size_t r = 0; r < grid.nrows; r++) {
+        for (size_t c = 0; c < grid.ncols; c++) {
+            double t = std::stod(grid.rows[r][c]);
+            if (t < earliest) {
+                earliest = t;
+                bestRow = r;
+                bestCol = c;
+            }
+        }
+    }
+    double x = grid.xll + (bestCol + 0.5) * grid.cellsize;
+    double y = grid.yll + (grid.nrows - bestRow - 0.5) * grid.cellsize;
+    CHECK(x == doctest::Approx(300.).epsilon(0.1));
+    CHECK(y == doctest::Approx(800.).epsilon(0.1));
+
+    /* Values round-trip exactly, so no arrival time is rounded. */
+    auto matrix = Command::getDomain()->getDataMatrix("arrival_time");
+    size_t inexact = 0;
+    for (size_t r = 0; r < grid.nrows; r++)
+        for (size_t c = 0; c < grid.ncols; c++)
+            if (std::stod(grid.rows[r][c]) != matrix[c][grid.nrows - 1 - r]) inexact++;
+    CHECK(inexact == 0);
 }
 
 } /* TEST_SUITE */
