@@ -8,7 +8,8 @@ unchanged (see issue #175).
 The worker is a fresh interpreter (`python -m pyforefire._worker <fd>`) rather
 than a fork of the caller, because the caller may have threads. Requests and
 replies are pickled over a socket pair. The worker's stdout and stderr are the
-caller's, so kernel output still shows up where it did before.
+caller's unless redirected, so kernel output still shows up where it did
+before.
 
 `fork()` does fork, but the worker rather than the caller: the worker has no
 threads, and its copy starts with the whole simulation state, which is what an
@@ -84,14 +85,21 @@ class ForeFireRunner:
 
     Calls on one runner are serialised by a lock. Separate runners do not
     share anything and can be driven from separate threads.
+
+    `stdout` and `stderr` redirect the kernel's output as in
+    `subprocess.Popen`, for example `subprocess.DEVNULL` or an open file.
+    By default it goes to the caller's own streams. A fork keeps the streams
+    of the runner it was forked from.
     """
 
-    def __init__(self):
+    def __init__(self, stdout=None, stderr=None):
         parent, child = socket.socketpair()
         try:
             process = subprocess.Popen(
                 [sys.executable, "-m", "pyforefire._worker", str(child.fileno())],
                 pass_fds=(child.fileno(),),
+                stdout=stdout,
+                stderr=stderr,
             )
         finally:
             child.close()

@@ -66,3 +66,6 @@ jobs:
 
       - name: Run the worker process runner test
         run: ./.venv/bin/python tests/python/test_runner.py
+
+      - name: Run the ensemble test
+        run: ./.venv/bin/python tests/python/test_ensemble.py

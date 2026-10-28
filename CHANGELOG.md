@@ -14,10 +14,18 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- `pyforefire.run_ensemble` runs one simulation per member in parallel
+  worker processes and returns their arrival-time maps;
+  `pyforefire.burn_probability` turns them into a burn-probability map. A
+  User Guide page shows a wind ensemble end to end. ([#172])
 - `ForeFireRunner.fork()` returns a new runner holding a copy of the
   simulation, so ensemble members can branch from one spin-up instead of
   rerunning it. The worker forks itself, which takes a few milliseconds where
   a new runner takes about 80. ([#172])
+- `ForeFireRunner(stdout=..., stderr=...)` redirects the kernel's output, as
+  in `subprocess.Popen`. ([#172])
+- `pyforefire.arrival_time(ff, path, bbox=None)` reads the arrival-time map
+  as an array, through the `plot` command. ([#172])
 
 ### Fixed
 

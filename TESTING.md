@@ -125,6 +125,19 @@ are separate processes. CI runs it in the Model Invariants workflow.
 ./.venv/bin/python tests/python/test_runner.py
 ```
 
+## Running the Ensemble Test (`test_ensemble.py`)
+
+Checks `pyforefire.run_ensemble` and `pyforefire.burn_probability` (#172).
+Unperturbed members, forked or not, must reproduce the deterministic arrival
+times exactly; a perturbation applied to forks must show in the probability
+map, and a parameter read at construction must take effect with `fork=False`.
+Probabilities must stay in [0, 1] and never decrease with time. CI runs it in
+the Model Invariants workflow.
+
+```bash
+./.venv/bin/python tests/python/test_ensemble.py
+```
+
 ## Running the ANN Test (`runANN`)
 
 Validated in CI by `main.yml`. It is the only coverage for
