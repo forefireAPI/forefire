@@ -19,6 +19,10 @@ history, so they summarise each release rather than list every change. The
   `trigger[fuel]`, `trigger[fuelIndice]`, any command scheduled with `@t` or
   `@nowplus`, and a `FireDomain[...]` with missing options. A script whose
   `loadData` failed used to crash on the next `startFire`.
+- `clear[]` followed by a new domain no longer crashes on the first
+  `startFire`. The destroyed domain's layers stayed in the `DataBroker`
+  shortcuts, so the new domain never created its own altitude and wind
+  layers.
 
 ## [v2.6.0] — 2026-10-26
 
