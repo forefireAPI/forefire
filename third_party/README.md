@@ -20,8 +20,7 @@ The unit-test framework, used by `tests/unit/`. A single header, taken
 unmodified from
 <https://github.com/doctest/doctest/blob/v2.5.3/doctest/doctest.h>.
 
-The 2.5 series gates its C++17 features behind `DOCTEST_CPLUSPLUS` checks, so
-it still builds under the project's `CMAKE_CXX_STANDARD 11`.
+It builds under the project's `CMAKE_CXX_STANDARD 17`.
 
 To update it, replace the file with a newer tagged release and run
 `ctest --test-dir build`. Nothing in `tests/unit/` uses anything beyond
