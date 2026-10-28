@@ -130,16 +130,14 @@ T BurningMapLayer<T>::getNearestData(FFPoint loc){
 template<typename T>
 void BurningMapLayer<T>::getMatrix(
 		FFArray<T>** matrix, const double& t){
-		//	cout << "getting matrix lmayer  "<<nx<<"BMAPS"<<ny<<endl;
-	/*if ( t != latestCall ){
-
+	if ( t != latestCall ){
 		for ( size_t i=0; i < nx; i++ ){
 			for ( size_t j=0; j < ny; j++ ){
 				(*arrivalTimes)(i,j) = domain->getArrivalTime(i, j);
 			}
 		}
 		latestCall = t;
-	}*/
+	}
 	// Affecting the computed matrix to the desired array
 	*matrix = arrivalTimes;
 }

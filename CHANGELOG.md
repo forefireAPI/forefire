@@ -23,6 +23,8 @@ history, so they summarise each release rather than list every change. The
   `startFire`. The destroyed domain's layers stayed in the `DataBroker`
   shortcuts, so the new domain never created its own altitude and wind
   layers.
+- The `BMap` layer holds the arrival times again; its recomputation had been
+  commented out, so `getDoubleArray("BMap")` returned zeros.
 
 ## [v2.6.0] — 2026-10-26
 

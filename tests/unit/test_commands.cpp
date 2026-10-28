@@ -1,6 +1,7 @@
 /**
  * @file test_commands.cpp
- * @brief Commands without a domain, and a domain built after clear[].
+ * @brief Commands without a domain, a domain built after clear[], and the
+ *        arrival-time exports.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  *
@@ -10,6 +11,8 @@
  * of the case is the assertion that matters.
  *
  * A domain built after clear[] used to crash on its first startFire.
+ *
+ * The BMap layer, which holds the arrival times, was never filled.
  */
 
 #include "doctest/doctest.h"
@@ -20,6 +23,7 @@
 #include <string>
 
 using libforefire::Command;
+using libforefire::FFArray;
 
 namespace {
 
@@ -81,6 +85,28 @@ TEST_CASE("a domain built after clear[] burns like the first one") {
     }
     CHECK(burnt[0] > 0);
     CHECK(burnt[1] == burnt[0]);
+}
+
+TEST_CASE("the BMap layer holds the domain's arrival times") {
+    Command executor;
+    burnOffCentre(executor);
+    auto* domain = Command::getDomain();
+    auto* layer = domain->getDataLayer("BMap");
+    REQUIRE(layer != nullptr);
+
+    FFArray<double>* bmap = nullptr;
+    layer->getMatrix(&bmap, domain->getSimulationTime());
+    REQUIRE(bmap != nullptr);
+    size_t burnt = 0, mismatched = 0;
+    for (size_t i = 0; i < bmap->getDim("x"); i++) {
+        for (size_t j = 0; j < bmap->getDim("y"); j++) {
+            double expected = domain->getArrivalTime(i, j);
+            if (std::isfinite(expected)) burnt++;
+            if ((*bmap)(i, j) != expected) mismatched++;
+        }
+    }
+    CHECK(burnt > 0);
+    CHECK(mismatched == 0);
 }
 
 } /* TEST_SUITE */
