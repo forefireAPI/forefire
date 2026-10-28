@@ -419,7 +419,6 @@ namespace libforefire
 	void DataBroker::createEmptyTwoTimeArrayLayer(const string &name,  FFPoint &Forigin,  double addTime, const double dx, const double dy )
 	{
 
-		FFArray<double>* xARR  = new FFArray<double>(name, 0., atmosphericNy, atmosphericNy);
 		FFArray<double>*  xARRDT = new FFArray<double>(name, 0., atmosphericNx+2, atmosphericNy+2);
 		FFArray<double>*  xARRT = new FFArray<double>("Old"+name, 0., atmosphericNx+2, atmosphericNy+2);
 		TwoTimeArrayLayer<double> *xLAY = new TwoTimeArrayLayer<double>(name,

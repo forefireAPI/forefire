@@ -295,7 +295,7 @@ namespace libforefire
 			{0.01, 0.00},
 			{0.01, 0.00}};
 		double fined = 0.0, finel = 0.0, wmfd = 0.0, fdmois = 0.0, w = 0.0, wo = 0.0, sum3 = 0.0;
-		double sum1 = 0.0, sum2 = 0.0, rm, sigma = 0.0, rhob;
+		double sum1 = 0.0, sum2 = 0.0, sigma = 0.0, rhob;
 		double xir, rbqig = 0, xi = 0, wlim, rat, betaop, aa, gammax = 0.0, gamma = 0;
 		double a[4][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
 		double f[4][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
