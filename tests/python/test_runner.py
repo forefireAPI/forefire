@@ -20,14 +20,23 @@ STEPS = 5
 RUNNERS = 8
 
 
-def run_simulation(ff):
-    """One self-contained simulation. Returns its fire node count."""
+def start_simulation(ff):
     ff.execute(f"FireDomain[sw=(0,0,0);ne=({SIZE},{SIZE},0);t=0]")
     ff.addLayer("propagation", "Iso", "propagationModel")
     ff.execute(f"startFire[loc=({SIZE / 2},{SIZE / 2},0)]")
-    for _ in range(STEPS):
+
+
+def advance(ff, steps):
+    """Step `steps` times. Returns the fire node count."""
+    for _ in range(steps):
         ff.execute("step[dt=100]")
     return ff.execute("print[]").count("FireNode")
+
+
+def run_simulation(ff):
+    """One self-contained simulation. Returns its fire node count."""
+    start_simulation(ff)
+    return advance(ff, STEPS)
 
 
 def test_matches_in_process(baseline):
@@ -128,6 +137,58 @@ def test_worker_death():
     return failures
 
 
+def test_fork(baseline):
+    """A fork continues the simulation exactly, and independently."""
+    import pyforefire
+
+    failures = []
+    with pyforefire.ForeFireRunner() as runner:
+        start_simulation(runner)
+        advance(runner, 2)
+        runner["perimeterResolution"] = 7.5
+        with runner.fork() as copy:
+            got = advance(copy, STEPS - 2)
+            if got != baseline:
+                failures.append(f"the fork produced {got} fire nodes, expected {baseline}")
+            if copy["perimeterResolution"] != 7.5:
+                failures.append("the fork did not inherit a parameter set before it")
+            copy["perimeterResolution"] = 3.0
+            if runner["perimeterResolution"] != 7.5:
+                failures.append("setting a parameter on the fork changed the original")
+            with copy.fork() as grandcopy:
+                if grandcopy["perimeterResolution"] != 3.0:
+                    failures.append("a fork of a fork did not inherit the fork's state")
+        got = advance(runner, STEPS - 2)
+        if got != baseline:
+            failures.append(f"the original produced {got} fire nodes after forking, expected {baseline}")
+    return failures
+
+
+def test_fork_outlives_original():
+    """Closing or killing one side of a fork leaves the other running."""
+    import pyforefire
+
+    failures = []
+    runner = pyforefire.ForeFireRunner()
+    start_simulation(runner)
+    copy = runner.fork()
+    runner.close()
+    if advance(copy, 1) == 0:
+        failures.append("the fork lost its front when the original closed")
+    other = copy.fork()
+    os.kill(copy._process.pid, signal.SIGKILL)
+    try:
+        copy.execute("print[]")
+        failures.append("a call on a killed fork did not raise")
+    except pyforefire.WorkerDied:
+        pass
+    copy.close()
+    if advance(other, 1) == 0:
+        failures.append("a fork stopped answering when its parent was killed")
+    other.close()
+    return failures
+
+
 def main():
     import pyforefire
 
@@ -140,13 +201,15 @@ def main():
     failures += test_parameters()
     failures += test_errors_are_raised_here()
     failures += test_worker_death()
+    failures += test_fork(baseline)
+    failures += test_fork_outlives_original()
 
     if failures:
         print(f"\nFAILED with {len(failures)} problem(s):")
         for f in failures:
             print(f"  - {f}")
         return 1
-    print(f"OK: {RUNNERS} concurrent runners matched the baseline; errors and crashes surfaced")
+    print(f"OK: {RUNNERS} concurrent runners and forks matched the baseline; errors and crashes surfaced")
     return 0
 
 

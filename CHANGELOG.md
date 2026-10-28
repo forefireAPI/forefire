@@ -12,6 +12,13 @@ history, so they summarise each release rather than list every change. The
 
 ## [Unreleased]
 
+### Added
+
+- `ForeFireRunner.fork()` returns a new runner holding a copy of the
+  simulation, so ensemble members can branch from one spin-up instead of
+  rerunning it. The worker forks itself, which takes a few milliseconds where
+  a new runner takes about 80. ([#172])
+
 ### Fixed
 
 - Commands that need a domain print an error when there is none, instead of
@@ -303,3 +310,4 @@ repository stays easy to return to.
 [#203]: https://github.com/forefireAPI/forefire/pull/203
 [#205]: https://github.com/forefireAPI/forefire/issues/205
 [#171]: https://github.com/forefireAPI/forefire/issues/171
+[#172]: https://github.com/forefireAPI/forefire/issues/172

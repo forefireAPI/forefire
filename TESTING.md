@@ -116,9 +116,10 @@ for the right reason.
 Checks `pyforefire.ForeFireRunner`, which runs each simulation in its own
 worker process (#175). Eight runners driven from threads must each reproduce
 the in-process fire node count; exceptions in the worker must reach the
-caller, and a killed worker must raise `WorkerDied`. It needs no free-threaded
-interpreter, because the runners are separate processes. CI runs it in the
-Model Invariants workflow.
+caller, and a killed worker must raise `WorkerDied`. A fork taken mid-run must
+finish with the same count, and changes on either side of a fork must not reach
+the other (#172). It needs no free-threaded interpreter, because the runners
+are separate processes. CI runs it in the Model Invariants workflow.
 
 ```bash
 ./.venv/bin/python tests/python/test_runner.py
