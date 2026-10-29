@@ -527,7 +527,7 @@ namespace libforefire
 			neededProperties.erase(it);
 	}
 
-	void DataBroker::insureLayersExistence()
+	void DataBroker::insureLayersExistence(bool switchNodeComputations)
 	{
 		/* checking the layers needed for the propagation and flux models */
 		while (!neededProperties.empty())
@@ -576,22 +576,28 @@ namespace libforefire
 				}
 				else if (neededProperties.back().find("epth") != string::npos)
 				{
-					int fdepth = 1;
-					FireNode::setFrontDepthComputation(fdepth);
-					/* checking that a heat flux layer is present for burn checks.
-					 * If not, instantiating a HeatFluxBasicModel */
-					if (heatFluxLayer == 0 and !domain->addFluxLayer("heatFlux"))
+					if (switchNodeComputations)
 					{
-						cout
-							<< "WARNING: heat flux layer could not be found within ForeFire framework, this should"
-							<< " cause serious problems for the simulation as front depth is required"
-							<< endl;
+						int fdepth = 1;
+						FireNode::setFrontDepthComputation(fdepth);
+						/* checking that a heat flux layer is present for burn checks.
+						 * If not, instantiating a HeatFluxBasicModel */
+						if (heatFluxLayer == 0 and !domain->addFluxLayer("heatFlux"))
+						{
+							cout
+								<< "WARNING: heat flux layer could not be found within ForeFire framework, this should"
+								<< " cause serious problems for the simulation as front depth is required"
+								<< endl;
+						}
 					}
 				}
 				else if (neededProperties.back().find("urvature") != string::npos)
 				{
-					int curv = 1;
-					FireNode::setCurvatureComputation(curv);
+					if (switchNodeComputations)
+					{
+						int curv = 1;
+						FireNode::setCurvatureComputation(curv);
+					}
 				}
 				else
 				{
@@ -713,8 +719,10 @@ namespace libforefire
 	{
 		// A model registered after the domain was built (addLayer, or a fuel
 		// table layer) still has its needs pending: create its layers now.
+		// Front depth and curvature stay as frontDepthComputation and
+		// curvatureComputation set them, as they did before this check.
 		if (!neededProperties.empty())
-			insureLayersExistence();
+			insureLayersExistence(false);
 		size_t nfilled = 0;
 		if (optimizedPropDataBroker[model->index])
 		{
@@ -740,7 +748,7 @@ namespace libforefire
 	void DataBroker::getFluxData(FluxModel *model, FFPoint &loc, const double &t)
 	{
 		if (!neededProperties.empty())
-			insureLayersExistence();
+			insureLayersExistence(false);
 		size_t nfilled = 0;
 		if (optimizedFluxDataBroker[model->index])
 		{

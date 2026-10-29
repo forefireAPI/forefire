@@ -64,6 +64,22 @@ TEST_CASE("a model added after the domain is built gets the wind layers it needs
     CHECK(broker->hasLayer("windV"));
 }
 
+TEST_CASE("a model added late leaves front depth computation as the parameters set it") {
+    ModelSandbox sandbox;
+    FireDomain* domain = sandbox.fireDomain();
+    TimeTable schedule;
+    domain->setTimeTable(&schedule);
+    REQUIRE(domain->getFluxLayer("heatFlux") == nullptr);
+
+    // Balbi2015 asks for frontDepth. Switching its computation on would also
+    // add a heat flux layer, and change the model's speeds.
+    PropagationModel* model = sandbox.propagation("Balbi2015");
+    REQUIRE(model != nullptr);
+    domain->getDataBroker()->getPropagationData(model, addNode(domain));
+
+    CHECK(domain->getFluxLayer("heatFlux") == nullptr);
+}
+
 TEST_CASE("a second live domain gets its own altitude and wind layers") {
     // The first domain stays alive, its layers set up, while the second is built.
     ModelSandbox first;
