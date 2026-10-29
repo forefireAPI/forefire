@@ -7,7 +7,8 @@ name: 🌐 Build WASM
 # build.
 #
 # The github-pages environment has to allow dev as a deployment branch
-# (Settings → Environments → github-pages).
+# (Settings → Environments → github-pages). Forks publish only when their own
+# Pages is set to deploy from GitHub Actions; most forks have no Pages at all.
 
 on:
   push:
@@ -32,6 +33,11 @@ permissions:
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      publish: ${{ steps.pages.outputs.publish }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -76,9 +82,21 @@ jobs:
       - name: Smoke test under Node
         run: node bindings/wasm/smoke.mjs bin/forefire.mjs
 
-      # The demo is published from dev only.
-      - name: Assemble the site
+      # The demo is published from dev only. The official repo always
+      # publishes, so a Pages misconfiguration there fails loudly.
+      - name: Decide whether to publish
+        id: pages
         if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REPOSITORY" = forefireAPI/forefire ] ||
+             [ "$(gh api "repos/$GITHUB_REPOSITORY/pages" -q .build_type 2>/dev/null)" = workflow ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Assemble the site
+        if: steps.pages.outputs.publish == 'true'
         run: |
           mkdir -p _site
           cp bin/forefire.mjs bin/forefire.wasm _site/
@@ -86,14 +104,14 @@ jobs:
              bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs _site/
 
       - name: Upload artifact
-        if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+        if: steps.pages.outputs.publish == 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
   deploy:
     needs: build-wasm
-    if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+    if: needs.build-wasm.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write
