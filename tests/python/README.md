@@ -59,11 +59,23 @@ python tests/python/test_moisture_invariants.py        # -v for every probe
 
 Checks `pyforefire.ForeFireRunner`: eight simulations, each in its own worker
 process and driven from a thread, must match the in-process node count, and
-worker errors and crashes must surface as Python exceptions. Run in CI by
-`invariants.yml`. Manually:
+worker errors and crashes must surface as Python exceptions. Forks taken
+mid-run must match too, and stay independent. Run in CI by `invariants.yml`.
+Manually:
 
 ```bash
 python tests/python/test_runner.py
+```
+
+### `test_ensemble.py`
+
+Checks `pyforefire.run_ensemble` and `pyforefire.burn_probability`:
+unperturbed members reproduce the deterministic arrival times, perturbations
+show in the probability map, and probabilities stay in [0, 1] and never
+decrease with time. Run in CI by `invariants.yml`. Manually:
+
+```bash
+python tests/python/test_ensemble.py
 ```
 
 ### `test_threading.py`
