@@ -79,8 +79,11 @@ set(FOREFIRE_SANITIZE "" CACHE STRING
 # ----------------------------------
 # Set C++ Standard
 # ----------------------------------
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# ISO C++17, not gnu++17: no GNU extensions leak into the core, so GCC, Clang
+# and Emscripten all compile the same language.
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ----------------------------------
 # MPI Detection
@@ -380,10 +383,10 @@ endif()
 if(FOREFIRE_BUILD_WASM)
     add_executable(forefire_wasm bindings/wasm/forefire_wasm.cpp)
     target_link_libraries(forefire_wasm PRIVATE forefireL)
-    # Two things are non-obvious here. embind refuses to compile below C++17,
-    # so this one translation unit moves up while the core stays on C++11 —
-    # both sit on the same libc++. And the output is an ES module, which Node
+    # Two things are non-obvious here. The output is an ES module, which Node
     # only recognises from a .js file when a package.json says so, hence .mjs.
+    # (embind needs C++17; the whole project is on it now, so the core and this
+    # translation unit no longer sit on different standards.)
     set_target_properties(forefire_wasm PROPERTIES
         OUTPUT_NAME "forefire"
         SUFFIX ".mjs"

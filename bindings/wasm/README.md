@@ -250,8 +250,9 @@ index with, the same shuffle `_pyforefire.cpp` performs.
   COOP/COEP headers, which is exactly the deployment complexity a static page
   is meant to avoid. Nothing in the engine's simulation path threads today —
   only the HTTP server does, and it is not reachable here.
-- **The embind translation unit is C++17**; the core stays C++11. embind
-  refuses to compile below C++17, and mixing is fine against one libc++.
+- **C++17 throughout.** embind refuses to compile below C++17, and the whole
+  project now targets C++17, so the core and the embind translation unit sit on
+  the same standard.
 - **No file I/O worth the name.** `FS` is exported so a caller can stage
   `fuels.csv` or read back what `print[<file>]` writes, but there is no landscape
   file support at all — arrays are the only way in.
