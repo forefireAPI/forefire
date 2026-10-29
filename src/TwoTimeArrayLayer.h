@@ -103,7 +103,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -147,14 +147,14 @@ T TwoTimeArrayLayer<T>::getValueAt(FFPoint loc, const double& time){
 }
 
 template<typename T>
-size_t TwoTimeArrayLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t TwoTimeArrayLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t TwoTimeArrayLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t TwoTimeArrayLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
@@ -263,7 +263,7 @@ T TwoTimeArrayLayer<T>::bilinearInterp(FFPoint loc, const double& time){
 }
 
 template<typename T>
-void TwoTimeArrayLayer<T>::getMatrix(FFArray<T>** matrix, const double& time){
+void TwoTimeArrayLayer<T>::getMatrix(FFArray<T>** matrix, const double& /*time*/){
 	*matrix = arrayt2;
 }
 
@@ -287,8 +287,8 @@ template<typename T> void TwoTimeArrayLayer<T>::loadMultiWindBin(string filePatt
 }
 
 template<typename T>
-void TwoTimeArrayLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& newTime){
+void TwoTimeArrayLayer<T>::setMatrix(string& /*mname*/, double* inMatrix
+		, const size_t& sizein, size_t& /*sizeout*/, const double& newTime){
 				
 	if ( tmpMatrix->getSize() == sizein ){
 			/* Information concerning the whole domain */
@@ -315,8 +315,8 @@ string TwoTimeArrayLayer<T>::print(){
 
 
 template<typename T>
-void TwoTimeArrayLayer<T>::dumpAsBinary(string filename, const double& t
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void TwoTimeArrayLayer<T>::dumpAsBinary(string /*filename*/, const double& /*t*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 
 
 /*   If outputs needs to be sync with outputs (no live debug)

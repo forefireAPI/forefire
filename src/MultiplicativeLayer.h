@@ -75,7 +75,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -115,19 +115,19 @@ T MultiplicativeLayer<T>::getValueAt(FFPoint loc, const double& time){
 }
 
 template<typename T>
-size_t MultiplicativeLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t MultiplicativeLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t MultiplicativeLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* props, size_t curItem){
+size_t MultiplicativeLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*props*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-T MultiplicativeLayer<T>::getNearestData(FFPoint loc){
+T MultiplicativeLayer<T>::getNearestData(FFPoint /*loc*/){
 	cout<<"MultiplicativeLayer<T>::getNearestData() "
 			<<"shouldn't have been called"<<endl;
 	return 0.;
@@ -152,8 +152,8 @@ void MultiplicativeLayer<T>::getMatrix(
 }
 
 template<typename T>
-void MultiplicativeLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void MultiplicativeLayer<T>::setMatrix(string& /*mname*/, double* inMatrix
+		, const size_t& sizein, size_t& /*sizeout*/, const double& /*time*/){
 	if ( matrix->getSize() == sizein ){
 		matrix->copyDataFromFortran(inMatrix);
 	} else {
@@ -173,8 +173,8 @@ string MultiplicativeLayer<T>::print2D(size_t i, size_t j){
 }
 
 template<typename T>
-void MultiplicativeLayer<T>::dumpAsBinary(string filename, const double& time
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void MultiplicativeLayer<T>::dumpAsBinary(string filename, const double& /*time*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 	/* writing the matrix in a binary file */
 	ostringstream outputfile;
 	outputfile<<filename<<"."<<this->getKey();

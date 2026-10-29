@@ -86,7 +86,7 @@ namespace libforefire
         currentLevel--;
     }
 
-    int Command::createDomain(const string &arg, size_t &numTabs)
+    int Command::createDomain(const string &arg, size_t &/*numTabs*/)
     {
 
         size_t n = argCount(arg);
@@ -253,7 +253,7 @@ namespace libforefire
         }
     }
 
-    int Command::startFire(const string &arg, size_t &numTabs)
+    int Command::startFire(const string &arg, size_t &/*numTabs*/)
     {
         if (!domainExists("startFire"))
             return error;
@@ -1148,7 +1148,7 @@ namespace libforefire
         return normal;
     }
 
-    int Command::printSimulation(const string &arg, size_t &numTabs)
+    int Command::printSimulation(const string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == 0)
             return normal;
@@ -1198,7 +1198,7 @@ namespace libforefire
         }
         return normal;
     }
-    int Command::systemExec(const string &arg, size_t &numTabs)
+    int Command::systemExec(const string &arg, size_t &/*numTabs*/)
     {
         // No shell commands from the network, even through include[] or @t=.
         if (remoteCommand)
@@ -1312,7 +1312,7 @@ namespace libforefire
 
         return std::vector<double>{minVal, maxVal};
     }
-    int Command::plotSimulation(const std::string &arg, size_t &numTabs)
+    int Command::plotSimulation(const std::string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == nullptr)
             return normal;
@@ -1830,7 +1830,7 @@ namespace libforefire
         return normal;
     }
 
-    int Command::addLayer(const std::string &arg, size_t &numTabs)
+    int Command::addLayer(const std::string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == nullptr)
             return normal;
@@ -1961,7 +1961,7 @@ namespace libforefire
         return normal;
     }
 
-    int Command::computeModelSpeed(const std::string &cmd, size_t &numTabs)
+    int Command::computeModelSpeed(const std::string &cmd, size_t &/*numTabs*/)
     {
         // Expected cmd format: "ModelKey;value1;value2;value3;..."
 
@@ -2032,7 +2032,7 @@ namespace libforefire
 
         return normal;
     }
-    int Command::setParameter(const string &arg, size_t &numTabs)
+    int Command::setParameter(const string &arg, size_t &/*numTabs*/)
     {
         // Getting all the arguments, using the 'tokenize' function
         // Returns strings of the form 'arg=...'
@@ -2136,7 +2136,7 @@ namespace libforefire
         }
     }
 
-    int Command::triggerValue(const string &arg, size_t &numTabs)
+    int Command::triggerValue(const string &arg, size_t &/*numTabs*/)
     {
 
         vector<string> tmpArgs;
@@ -2241,7 +2241,7 @@ namespace libforefire
         return error;
     }
 
-    int Command::emit(const string &arg, size_t &numTabs)
+    int Command::emit(const string &arg, size_t &/*numTabs*/)
     {
         FireDomain *domain = currentSession.fd;//getDomain();
         if (domain == 0)
@@ -2486,7 +2486,7 @@ namespace libforefire
         }
     }
     
-    int Command::include(const string &arg, size_t &numTabs)
+    int Command::include(const string &arg, size_t &/*numTabs*/)
     {
         /* the commands are read from a defined file
          *  testing for the presence of the file */
@@ -2508,7 +2508,7 @@ namespace libforefire
 
     // saveData writes a landscape file, which is NetCDF end to end; there is no
     // partial behaviour to keep when NetCDF is compiled out.
-    int Command::saveData(const std::string &arg, size_t &numTabs)
+    int Command::saveData(const std::string &/*arg*/, size_t &/*numTabs*/)
     {
         std::cout << "saveData: this build has no NetCDF support" << std::endl;
         return error;
@@ -2516,7 +2516,7 @@ namespace libforefire
 
 #else
 
-    int Command::saveData(const std::string &arg, size_t &numTabs)
+    int Command::saveData(const std::string &arg, size_t &/*numTabs*/)
     {
         // Check for an argument
         if (arg.empty())
@@ -2852,7 +2852,7 @@ namespace libforefire
 
 #endif /* FF_NO_NETCDF */
 
-    int Command::loadData(const string &arg, size_t &numTabs)
+    int Command::loadData(const string &arg, size_t &/*numTabs*/)
     {
 
         if (arg.size() == 0)
@@ -2984,7 +2984,7 @@ namespace libforefire
         return normal;
     }
 
-    int Command::clear(const string &arg, size_t &numTabs)
+    int Command::clear(const string &/*arg*/, size_t &/*numTabs*/)
     {
         delete currentSession.fd;
         currentSession.fd =nullptr;
@@ -2995,7 +2995,7 @@ namespace libforefire
         return normal;
     }
 
-    int Command::quit(const string &arg, size_t &numTabs)
+    int Command::quit(const string &/*arg*/, size_t &/*numTabs*/)
     {
         // No exit() here. `quit` is in the command table, so it is reachable
         // from the Python binding and from the HTTP server, and a library
@@ -3454,7 +3454,7 @@ namespace libforefire
     }
   
 
-    int Command::listenHTTP(const std::string &arg, size_t &numTabs)
+    int Command::listenHTTP(const std::string &arg, size_t &/*numTabs*/)
     {
 
         // ID 1 is for the Fortran MPI rank 1
@@ -3749,7 +3749,7 @@ namespace libforefire
         stbi_write_png(hist_filename.c_str(), width, height, 4, histogram.data(), width * 4);
     }
 
-    void Command::writeNetCDF(const char *filename, const string &varName, const std::vector<std::vector<double>> &matrix, const vector<double> &latitudes, const vector<double> &longitudes)
+    void Command::writeNetCDF(const char *filename, [[maybe_unused]] const string &varName, [[maybe_unused]] const std::vector<std::vector<double>> &matrix, [[maybe_unused]] const vector<double> &latitudes, [[maybe_unused]] const vector<double> &longitudes)
     {
 #ifdef FF_NO_NETCDF
         std::cerr << "writeNetCDF: this build has no NetCDF support, "
@@ -3800,7 +3800,7 @@ namespace libforefire
         }
 #endif /* FF_NO_NETCDF */
     }
-    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double NEY)
+    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double /*NEY*/)
     {
         std::ofstream out(filename);
         if (!out)

@@ -267,7 +267,7 @@ void FFArray<T>::loadBinAtLoc(std::ifstream&  FileIn, size_t startI, size_t star
 
 
 template<typename T>
-void FFArray<T>::setDataAtLoc(T* matrix, size_t nnx, size_t nny,size_t startI, size_t startJ,size_t domFsize){
+void FFArray<T>::setDataAtLoc(T* matrix, size_t nnx, size_t nny,size_t startI, size_t startJ,size_t /*domFsize*/){
 
 	size_t mi =(nny+2);
 	//cout <<"UUUUat "<<startI<<" - "<<startJ<< " nx:"<<nx<<" nnx"<<nnx<< " ny:"<<ny<<" nny"<<nny<<endl;

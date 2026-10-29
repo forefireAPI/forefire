@@ -2208,7 +2208,7 @@
 		 fn->makeTrash();
 	 }
  
-	 void FireDomain::stopOutgoingNode(FireNode* fn, FFPoint& loc, double& t){
+	 void FireDomain::stopOutgoingNode(FireNode* fn, FFPoint& loc, double& /*t*/){
 		 if ( fn->getDomainID() == getDomainID() ){
 			 debugOutput<<getDomainID()<<": stopping outgoing "<<fn->toShort()<<endl;
 			 fn->setNextLoc(loc);

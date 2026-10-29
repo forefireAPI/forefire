@@ -111,7 +111,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -177,37 +177,37 @@ int PropagativeLayer<T>::getModelIndexAt(FireNode* fn){
 }
 
 template<typename T>
-T PropagativeLayer<T>::getValueAt(FireNode* fn){
+T PropagativeLayer<T>::getValueAt(FireNode* /*fn*/){
 	cout<<"WARNING: PropagativeLayer<T>::getValueAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;
 }
 
 template<typename T>
-T PropagativeLayer<T>::getValueAt(FFPoint loc, const double& t){
+T PropagativeLayer<T>::getValueAt(FFPoint /*loc*/, const double& /*t*/){
 	cout<<"WARNING: PropagativeLayer<T>::getValueAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;
 }
 
 template<typename T>
-size_t PropagativeLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t PropagativeLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	cout<<"WARNING: PropagativeLayer<T>::getValuesAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;
 }
 
 template<typename T>
-size_t PropagativeLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t PropagativeLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	cout<<"WARNING: PropagativeLayer<T>::getValuesAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;
 }
 
 template<typename T>
-void PropagativeLayer<T>::getMatrix(FFArray<T>** lmatrix, const double& t){
+void PropagativeLayer<T>::getMatrix(FFArray<T>** lmatrix, const double& /*t*/){
 
 
 
@@ -255,8 +255,8 @@ void PropagativeLayer<T>::getMatrix(FFArray<T>** lmatrix, const double& t){
 }
 
 template<typename T>
-void PropagativeLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void PropagativeLayer<T>::setMatrix(string& /*mname*/, double* /*inMatrix*/
+		, const size_t& /*sizein*/, size_t& /*sizeout*/, const double& /*time*/){
 	cout<<"WARNING: PropagativeLayer<T>::setMatrix() "
 			<<"shouldn't have been called"<<endl;
 }
@@ -269,15 +269,15 @@ string PropagativeLayer<T>::print(){
 }
 
 template<typename T>
-string PropagativeLayer<T>::print2D(size_t i, size_t j){
+string PropagativeLayer<T>::print2D(size_t /*i*/, size_t /*j*/){
 	cout<<"WARNING: PropagativeLayer<T>::print2D() "
 			<<"shouldn't have been called"<<endl;
 	return "";
 }
 
 template<typename T>
-void PropagativeLayer<T>::dumpAsBinary(string filename, const double& time
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void PropagativeLayer<T>::dumpAsBinary(string /*filename*/, const double& /*time*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 	cout<<"WARNING: PropagativeLayer<T>::dumpAsBinary() "
 			<<"shouldn't have been called"<<endl;
 }

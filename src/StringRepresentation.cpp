@@ -241,7 +241,7 @@ void StringRepresentation::visit(FireNode* fn) {
 
 // postVisitInner: called after a FireFront's nodes but before processing its internals.
 // For GEOJSON mode, reverse the current ring to mimic the Python [::-1] behavior.
-void StringRepresentation::postVisitInner(FireFront* ff) {
+void StringRepresentation::postVisitInner(FireFront* /*ff*/) {
     if (dumpMode == JSON_MODE) {
        // outputstr << "\"" << endl << "\t}";
     }
@@ -265,7 +265,7 @@ void StringRepresentation::postVisitInner(FireFront* ff) {
 
 // postVisitAll: called at the very end after processing internals.
 // For GEOJSON mode, if finishing a top–level FireFront (currentLevel==1), build and output its Feature.
-void StringRepresentation::postVisitAll(FireFront* ff) {
+void StringRepresentation::postVisitAll(FireFront* /*ff*/) {
     if (dumpMode == JSON_MODE) {
         // (JSON mode unchanged)
     }
@@ -322,8 +322,8 @@ void StringRepresentation::postVisitAll(FireFront* ff) {
     }
 }
 
-void StringRepresentation::postVisitInner(FireDomain* fd) { }
-void StringRepresentation::postVisitAll(FireDomain* fd) { }
+void StringRepresentation::postVisitInner(FireDomain* /*fd*/) { }
+void StringRepresentation::postVisitAll(FireDomain* /*fd*/) { }
 
 string StringRepresentation::dumpStringRepresentation() {
     // Set dump mode based on simulation parameters.

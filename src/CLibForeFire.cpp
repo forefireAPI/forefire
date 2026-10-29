@@ -81,7 +81,7 @@ void MNHCreateDomain(const int id
 		, const double lat, const double lon
 		, const int mdimx, const double* meshx
 		, const int mdimy, const double* meshy
-		, const int mdimz, const double* zgrid
+		, const int mdimz, const double* /*zgrid*/
 		, const double dt){
 
 	/* Defining the Fire Domain */
@@ -623,7 +623,7 @@ void executeMNHCommand(const char* cmd){
 	executor.ExecuteCommand(scmd);
 }
 
-void FFPutString(const char* mname, char* str){
+void FFPutString(const char* /*mname*/, char* /*str*/){
 	// NOT TO BE CALLED
 }
 
@@ -643,13 +643,13 @@ void FFGetInt(const char* mname, int* n){
 	SimulationParameters::GetInstance()->setInt(name, *n);
 }
 
-void FFPutIntArray(const char* mname, int* x,
-		size_t sizein, size_t sizeout){
+void FFPutIntArray(const char* /*mname*/, int* /*x*/,
+		size_t /*sizein*/, size_t /*sizeout*/){
 	// TODO
 }
 
-void FFGetIntArray(const char* mname, double time
-		, int* x, int sizein, int sizeout){
+void FFGetIntArray(const char* /*mname*/, double /*time*/
+		, int* /*x*/, int /*sizein*/, int /*sizeout*/){
 	// TODO
 }
 
@@ -664,7 +664,7 @@ void FFGetDouble(const char* mname, double* x){
 }
 
 void FFPutDoubleArray(const char* mname, double* x,
-		size_t sizein, size_t sizeout){
+		size_t /*sizein*/, size_t /*sizeout*/){
 	string tmpname(mname);
 	// searching for concerned layer
 			
@@ -698,7 +698,7 @@ void FFPutDoubleArray(const char* mname, double* x,
 
 
 void FFDumpDoubleArray(size_t nmodel, size_t nip, const char* mname, double t
-		, double* x, size_t sizein, size_t ni, size_t nj, size_t nk, size_t sizeout){
+		, double* x, size_t sizein, size_t ni, size_t nj, size_t nk, size_t /*sizeout*/){
 
 	string tmpname(mname);
 	ostringstream outputfile;
