@@ -349,7 +349,6 @@ void FluxLayer<T>::addEmission(const FFPoint& center, double area, double startT
 
 template<typename T>
 void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
-	int domID = params->getInt("mpirank");
 
 
 	if ( t != latestCallGetMatrix ){
@@ -361,7 +360,6 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 		pruneEmissions(t);
 		
 	
-		double sumAdded = 0.0;
 		for ( size_t i = 0; i < nx; i++ ){
 			for ( size_t j = 0; j < ny; j++ ){
 				double base = cells[i][j].applyModelsOnBmap(fluxName, latestCallGetMatrix, t, modelCount);
@@ -369,14 +367,8 @@ void FluxLayer<T>::getMatrix(FFArray<T>** matrix, const double& t){
 				double cy = SWCorner.getY() + ( (double)j + 0.5 ) * dy;
 				double added = emissionContributionAt(cx, cy, t);
 				(*flux)(i,j) = base + added;
-				sumAdded += (added+base);
 			}
 		}
-		if ((domID == 1 ) && (fluxName == "heatFlux" )){
-			double diffN =   t - latestCallGetMatrix ;
-			//cout<<"ID "<<domID<<".  "<<this->getKey()	<<" has "<<sumAdded<<" at time "<< t <<" and "<< latestCallGetMatrix << " and " << diffN<< endl;
-		} 
-
 		latestCallGetMatrix = t;
 	}
 	// Affecting the computed matrix to the desired array

@@ -1415,8 +1415,6 @@
 	 // Checking whether a location is still burning
 	 bool FireDomain::isBurnt(FFPoint& loc, const double& t){
 		 /* the location is considered to be burnt if at < t*/
-		 double at = getArrivalTime(loc);
-		
 		 return t>getArrivalTime(loc);
 
 		

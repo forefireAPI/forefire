@@ -2235,23 +2235,6 @@ namespace libforefire
             return error;
         }
 
-        auto isoToSeconds = [&](const string &iso) -> double
-        {
-            if (iso == stringError)
-                return FLOATERROR;
-            SimulationParameters *simParam = SimulationParameters::GetInstance();
-            int year = 0, yday = 0;
-            double secs = 0.;
-            if (!simParam->ISODateDecomposition(iso, secs, year, yday))
-            {
-                return FLOATERROR;
-            }
-            return simParam->SecsBetween(simParam->getDouble("refTime"),
-                                         simParam->getInt("refYear"),
-                                         simParam->getInt("refDay"),
-                                         secs, year, yday);
-        };
-
         auto parsePointString = [&](const string &raw, bool lonlat) -> FFPoint
         {
             if (raw == stringError || raw.size() < 2)

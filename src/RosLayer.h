@@ -48,7 +48,7 @@ public:
 	RosLayer() : DataLayer<T>() {};
 	/*! \brief Constructor with all necessary information */
 	RosLayer(string name,FFPoint& atmoSWCorner, FFPoint& atmoNECorner,  const size_t& nnx, const size_t& nny, FDCell** FDcells)
-	: DataLayer<T>(name), SWCorner(atmoSWCorner), NECorner(atmoNECorner), nx(nnx), ny(nny), cells(FDcells) {
+	: DataLayer<T>(name), nx(nnx), ny(nny), SWCorner(atmoSWCorner), NECorner(atmoNECorner), cells(FDcells) {
 		size = nx*ny;
 		rosMap = new FFArray<T>("Ros", 0., nx, ny);
 		latestCall = -1.;
