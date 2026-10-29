@@ -40,8 +40,40 @@ namespace libforefire
 		commonInitialization();
 	}
 
+	namespace
+	{
+		// Nulls a static layer shortcut that points into `owned`.
+		template <typename L>
+		void forgetIfOwned(L *&shortcut, const list<DataLayer<double> *> &owned)
+		{
+			for (DataLayer<double> *layer : owned)
+			{
+				if (layer == shortcut)
+				{
+					shortcut = 0;
+					return;
+				}
+			}
+		}
+	}
+
 	DataBroker::~DataBroker()
 	{
+		// The static shortcuts outlive this broker. Left pointing at the
+		// layers deleted below, they make the next domain's broker believe
+		// its altitude and wind layers exist, and skip creating them.
+		forgetIfOwned(fuelLayer, layers);
+		forgetIfOwned(moistureLayer, layers);
+		forgetIfOwned(temperatureLayer, layers);
+		forgetIfOwned(dummyLayer, layers);
+		forgetIfOwned(altitudeLayer, layers);
+		forgetIfOwned(forcedArrivalTimeLayer, layers);
+		forgetIfOwned(slopeLayer, layers);
+		forgetIfOwned(windULayer, layers);
+		forgetIfOwned(windVLayer, layers);
+		forgetIfOwned(PwindULayer, layers);
+		forgetIfOwned(PwindVLayer, layers);
+
 		// Deleting layers. loadData lists the domain's propagative layer here
 		// too, so it can be looked up, but the domain frees that one (#205).
 		while (!layers.empty())

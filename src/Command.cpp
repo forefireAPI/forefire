@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <cmath> 
 #include <fstream>
+#include <limits>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -254,6 +255,8 @@ namespace libforefire
 
     int Command::startFire(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("startFire"))
+            return error;
         double t = getDomain()->getTime();
         SimulationParameters *simParam = SimulationParameters::GetInstance();
     
@@ -676,6 +679,8 @@ namespace libforefire
 
     int Command::createFireFront(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("FireFront"))
+            return error;
 
         size_t n = argCount(arg);
         if (n >= 1)
@@ -731,6 +736,8 @@ namespace libforefire
 
     int Command::addFireNode(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("FireNode"))
+            return error;
 
         if (lastReadLoc == 0)
             lastReadLoc = new FFPoint(-numeric_limits<double>::infinity(), -numeric_limits<double>::infinity(), 0);
@@ -977,6 +984,8 @@ namespace libforefire
 
     int Command::goTo(const string &arg, size_t &numTabs)
     {
+        if (!domainExists("goTo"))
+            return error;
 
         /* Advancing simulation to the prescribed time */
         endTime = getFloat("t", arg); 
@@ -1930,6 +1939,8 @@ namespace libforefire
         }
         else
         {
+            if (!domainExists("save"))
+                return error;
             getDomain()->saveArrivalTimeNC(); // Default save operation if no arguments provided
         }
 
@@ -2160,6 +2171,8 @@ namespace libforefire
 
         if (tmpArgs[0] == "fuel")
         {
+            if (!domainExists("trigger[fuel]"))
+                return error;
 
             if (getDomain()->getDataBroker() != 0)
             {
@@ -2180,6 +2193,8 @@ namespace libforefire
         }
         if (tmpArgs[0] == "fuelIndice")
         {
+            if (!domainExists("trigger[fuelIndice]"))
+                return error;
             if (getDomain()->getDataBroker() != 0)
             {
                 FFPoint loc = getPoint("loc", arg);
@@ -2974,7 +2989,8 @@ namespace libforefire
         delete currentSession.fd;
         currentSession.fd =nullptr;
        //delete currentSession.outStrRep;
-        currentSession.sim->getSchedule()->clear();
+        if (currentSession.sim != nullptr)
+            currentSession.sim->getSchedule()->clear();
        // delete currentSession.params;
         return normal;
     }
@@ -3348,6 +3364,12 @@ namespace libforefire
         {
             if (postcmd.size() > 1)
             {
+                // Scheduled commands go to the domain's time table.
+                if (!domainExists(scmd + " scheduled with @"))
+                {
+                    command.clear();
+                    return;
+                }
                 string atCommand = line.substr(0, line.rfind("]") + 1);
                 string whenCommand = line.substr(line.rfind("]") + 1, -1);
                 double whenDouble = getFloat("@t", whenCommand);
@@ -3376,6 +3398,9 @@ namespace libforefire
                 }
                 else
                 {
+                    // The domain ID, when there is a domain, prefixes the error messages.
+                    auto where = []()
+                    { return getDomain() ? to_string(getDomain()->getDomainID()) + ": " : string(); };
                     try
                     {
                         // calling the right function
@@ -3384,26 +3409,26 @@ namespace libforefire
                     }
                     catch (BadOption &)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "argument(s) '" << command[1] << "' is (are) not fit for command '"
                              << command[0] << "'" << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
                     }
                     catch (MissingOption &mo)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "command '" << command[0] << "' misses "
                              << mo.num << " options." << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
                     }
                     catch (MissingTime &)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << "you have to specify a time for that command (as in 't=0.')" << endl;
                     }
                     catch (...)
                     {
-                        cout << getDomain()->getDomainID() << ": "
+                        cout << where()
                              << " PROBLEM: Command associated to " << line << " ended in error" << endl;
                     }
                 }
@@ -3507,6 +3532,15 @@ namespace libforefire
             return currentSession.fdp;
         }
         return currentSession.fd;
+    }
+
+    bool Command::domainExists(const string &command)
+    {
+        if (getDomain() != nullptr)
+            return true;
+        cout << "Error: " << command << " needs a domain, create one first with "
+             << "FireDomain[...] or loadData[...]" << endl;
+        return false;
     }
 
     string Command::dumpString()
@@ -3775,9 +3809,10 @@ namespace libforefire
             return;
         }
 
-        // Determine the number of rows and columns.
-        size_t nrows = matrix.size();
-        size_t ncols = (nrows > 0) ? matrix[0].size() : 0;
+        // The matrix is indexed [x][y] from the south-west corner, while an
+        // ASCII grid has one row per y, from north to south.
+        size_t ncols = matrix.size();
+        size_t nrows = (ncols > 0) ? matrix[0].size() : 0;
 
         // Compute the cell size.
         // Here we assume that (NEX - SWX) corresponds to the total width of the matrix.
@@ -3791,13 +3826,15 @@ namespace libforefire
         out << "cellsize      " << cellsize << "\n";
         out << "NODATA_value  -9999\n";
 
-        // Write the matrix data row by row.
-        for (size_t i = 0; i < nrows; i++)
+        // Write the matrix data row by row, at full precision.
+        out.precision(std::numeric_limits<double>::max_digits10);
+        for (size_t row = 0; row < nrows; row++)
         {
-            for (size_t j = 0; j < ncols; j++)
+            size_t j = nrows - 1 - row;
+            for (size_t i = 0; i < ncols; i++)
             {
                 out << matrix[i][j];
-                if (j < ncols - 1)
+                if (i < ncols - 1)
                     out << " ";
             }
             out << "\n";

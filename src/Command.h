@@ -309,6 +309,8 @@ public:
 
 	/*! \brief accessor to the domain */
 	static FireDomain* getDomain();
+	/*! \brief true if a domain exists, otherwise prints why `command` cannot run */
+	static bool domainExists(const string& command);
 	/*! \brief command to redirect the ostringstream */
 	static void setOstringstream(ostringstream*);
 
