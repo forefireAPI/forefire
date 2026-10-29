@@ -537,15 +537,16 @@ namespace libforefire
 			{
 				if (neededProperties.back().find("normalWind") != string::npos)
 				{
-
-					if (windULayer == 0)
+					// This broker's own layers: the static shortcuts may point
+					// at another domain's that is still alive.
+					if (!hasLayer("windU"))
 					{
 						double val = 0.;
 						if (params->isValued("windU"))
 							val = params->getDouble("windU");
 						addConstantLayer("windU", "data", "", val, domain->getSWCorner(), domain->getNECorner() - domain->getSWCorner());
 					}
-					if (windVLayer == 0)
+					if (!hasLayer("windV"))
 					{
 						double val = 0.;
 						if (params->isValued("windV"))
@@ -606,7 +607,7 @@ namespace libforefire
 		}
 
 		/* checking the layers that are always needed */
-		if (altitudeLayer == 0)
+		if (!hasLayer("altitude"))
 		{
 			double val = 0.;
 			if (params->isValued("altitude"))
@@ -710,6 +711,10 @@ namespace libforefire
 
 	void DataBroker::getPropagationData(PropagationModel *model, FireNode *fn)
 	{
+		// A model registered after the domain was built (addLayer, or a fuel
+		// table layer) still has its needs pending: create its layers now.
+		if (!neededProperties.empty())
+			insureLayersExistence();
 		size_t nfilled = 0;
 		if (optimizedPropDataBroker[model->index])
 		{
@@ -734,6 +739,8 @@ namespace libforefire
 
 	void DataBroker::getFluxData(FluxModel *model, FFPoint &loc, const double &t)
 	{
+		if (!neededProperties.empty())
+			insureLayersExistence();
 		size_t nfilled = 0;
 		if (optimizedFluxDataBroker[model->index])
 		{
