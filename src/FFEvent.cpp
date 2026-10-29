@@ -115,12 +115,12 @@ void FFEvent::insertAfter(FFEvent* ev){
 	ev->setPrev(this);
 }
 
-void FFEvent::makeInput(FFEvent* ev){
+void FFEvent::makeInput(FFEvent* /*ev*/){
 	input = true;
 	output = false;
 }
 
-void FFEvent::makeOutput(FFEvent* ev){
+void FFEvent::makeOutput(FFEvent* /*ev*/){
 	input = false;
 	output = true;
 }

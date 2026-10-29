@@ -172,7 +172,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief initialize latestCallGetMatrix for the beginning of the simulation */
 	void setFirstCall(const double&);
 	/*! \brief getter to the pointer on the FFArray */
@@ -313,16 +313,16 @@ T FluxLayer<T>::getNearestData(FFPoint loc, double t){
 }
 
 template<typename T>
-size_t FluxLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t FluxLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	cout<<"WARNING: FluxLayer<T>::getValuesAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;
 }
 
 template<typename T>
-size_t FluxLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t FluxLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	cout<<"WARNING: FluxLayer<T>::getValuesAt() "
 			<<"shouldn't have been called"<<endl;
 	return 0;

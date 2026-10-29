@@ -47,7 +47,7 @@ public:
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 
-	void setValueAt(FFPoint p ,  double vt, T value){};
+	void setValueAt(FFPoint /*p*/ ,  double /*vt*/, T /*value*/){};
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
 
@@ -116,25 +116,25 @@ T GradientDataLayer<T>::getValueAt(FFPoint loc, const double& time) {
     return maxGradient;
 }
 template<typename T>
-size_t GradientDataLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t GradientDataLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t GradientDataLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t GradientDataLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
 void GradientDataLayer<T>::getMatrix(
-		FFArray<T>** matrix, const double& time){
+		FFArray<T>** /*matrix*/, const double& /*time*/){
 }
 
 template<typename T>
-void GradientDataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void GradientDataLayer<T>::setMatrix(string& /*mname*/, double* /*inMatrix*/
+		, const size_t& /*sizein*/, size_t& /*sizeout*/, const double& /*time*/){
 	// writing the incoming data in matrix
 	// should not be done with this type of layer
 }
@@ -145,8 +145,8 @@ string GradientDataLayer<T>::print(){
 }
 
 template<typename T>
-void GradientDataLayer<T>::dumpAsBinary(string filename, const double& time
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void GradientDataLayer<T>::dumpAsBinary(string /*filename*/, const double& /*time*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 
 }
 

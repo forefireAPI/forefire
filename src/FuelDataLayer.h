@@ -242,7 +242,7 @@ size_t FuelDataLayer<T>::getPos(FFPoint& loc, double& t){
 
 template<typename T>
 void FuelDataLayer<T>::getMatrix(
-		FFArray<T>** lmatrix, const double& time){
+		FFArray<T>** lmatrix, const double& /*time*/){
 			double res = 10;
 			double ddx = res;
 			int nnx = (NECornerX - SWCornerX) / res;
@@ -274,8 +274,8 @@ void FuelDataLayer<T>::getMatrix(
 }
 
 template<typename T>
-void FuelDataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void FuelDataLayer<T>::setMatrix(string& /*mname*/, double* /*inMatrix*/
+		, const size_t& /*sizein*/, size_t& /*sizeout*/, const double& /*time*/){
 	// writing the incoming data in matrix
 	// should not be done with this type of layer
 }

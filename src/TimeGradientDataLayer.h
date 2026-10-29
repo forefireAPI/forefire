@@ -47,7 +47,7 @@ public:
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 
-	void setValueAt(FFPoint p ,  double vt, T value){};
+	void setValueAt(FFPoint /*p*/ ,  double /*vt*/, T /*value*/){};
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
 
@@ -88,31 +88,31 @@ T TimeGradientDataLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T TimeGradientDataLayer<T>::getValueAt(FFPoint loc, const double& time){
+T TimeGradientDataLayer<T>::getValueAt(FFPoint /*loc*/, const double& /*time*/){
 	cout << "this call shouln't be used in a gradient layer" << endl;
 	return 0.;
 }
 
 template<typename T>
-size_t TimeGradientDataLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t TimeGradientDataLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t TimeGradientDataLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t TimeGradientDataLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
 void TimeGradientDataLayer<T>::getMatrix(
-		FFArray<T>** matrix, const double& time){
+		FFArray<T>** /*matrix*/, const double& /*time*/){
 }
 
 template<typename T>
-void TimeGradientDataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void TimeGradientDataLayer<T>::setMatrix(string& /*mname*/, double* /*inMatrix*/
+		, const size_t& /*sizein*/, size_t& /*sizeout*/, const double& /*time*/){
 	// writing the incoming data in matrix
 	// should not be done with this type of layer
 }
@@ -123,8 +123,8 @@ string TimeGradientDataLayer<T>::print(){
 }
 
 template<typename T>
-void TimeGradientDataLayer<T>::dumpAsBinary(string filename, const double& time
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void TimeGradientDataLayer<T>::dumpAsBinary(string /*filename*/, const double& /*time*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 
 }
 

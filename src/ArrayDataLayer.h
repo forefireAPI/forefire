@@ -112,7 +112,7 @@ public:
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
 
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -146,7 +146,7 @@ T Array3DdataLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T Array3DdataLayer<T>::getValueAt(FFPoint loc, const double& time){
+T Array3DdataLayer<T>::getValueAt(FFPoint loc, const double& /*time*/){
 	if ( interp == nearestData ) return getNearestData(loc);
 	if ( interp == bilinear ) return bilinearInterp(loc);
 	cout<<"WARNING: unknown interpolation method in "
@@ -161,14 +161,14 @@ FFPoint& getOriginPoint();
 FFPoint& getSpan();
 
 template<typename T>
-size_t Array3DdataLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t Array3DdataLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t Array3DdataLayer<T>::getValuesAt(FFPoint loc, const double&
-		, FluxModel* model, size_t curItem){
+size_t Array3DdataLayer<T>::getValuesAt(FFPoint /*loc*/, const double&
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
@@ -244,13 +244,13 @@ T Array3DdataLayer<T>::bilinearInterp(FFPoint loc){
 
 template<typename T>
 void Array3DdataLayer<T>::getMatrix(
-		FFArray<T>** matrix, const double& time){
+		FFArray<T>** matrix, const double& /*time*/){
 	*matrix = array;
 }
 
 template<typename T>
-void Array3DdataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void Array3DdataLayer<T>::setMatrix(string& /*mname*/, double* inMatrix
+		, const size_t& sizein, size_t& /*sizeout*/, const double& /*time*/){
 	if ( array->getSize() == sizein ){
 		// copying data from atmospheric matrix
 		array->copyDataFromFortran(inMatrix);
@@ -376,7 +376,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -417,7 +417,7 @@ T Array2DdataLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T Array2DdataLayer<T>::getValueAt(FFPoint loc, const double& time){
+T Array2DdataLayer<T>::getValueAt(FFPoint loc, const double& /*time*/){
 	if ( interp == nearestData ) return getNearestData(loc);
 	if ( interp == bilinear ) return bilinearInterp(loc);
 	cout<<"WARNING: unknown interpolation method in "
@@ -426,14 +426,14 @@ T Array2DdataLayer<T>::getValueAt(FFPoint loc, const double& time){
 }
 
 template<typename T>
-size_t Array2DdataLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t Array2DdataLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t Array2DdataLayer<T>::getValuesAt(FFPoint loc, const double&
-		, FluxModel* model, size_t curItem){
+size_t Array2DdataLayer<T>::getValuesAt(FFPoint /*loc*/, const double&
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
@@ -506,13 +506,13 @@ T Array2DdataLayer<T>::bilinearInterp(FFPoint loc){
 
 template<typename T>
 void Array2DdataLayer<T>::getMatrix(
-		FFArray<T>** matrix, const double& time){
+		FFArray<T>** matrix, const double& /*time*/){
 	*matrix = array;
 }
 
 template<typename T>
-void Array2DdataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void Array2DdataLayer<T>::setMatrix(string& /*mname*/, double* inMatrix
+		, const size_t& sizein, size_t& /*sizeout*/, const double& /*time*/){
 	if ( array->getSize() == sizein ){
 		// copying data from atmospheric matrix
 		array->copyDataFromFortran(inMatrix);

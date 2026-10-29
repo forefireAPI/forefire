@@ -201,7 +201,7 @@ double FDCell::getBurningRatio(const double& t){
 	return numBurningCells/mapSize;
 }
 
-double FDCell::getMaxSpeed(const double& t){
+double FDCell::getMaxSpeed(const double& /*t*/){
 
 	FFPoint center;
 	center.setX(SWCorner.getX()+0.5*dx);
@@ -300,7 +300,7 @@ double FDCell::applyModelsOnBmap(string layername, const double& bt, const doubl
 }
 
 void FDCell::interpolateArrivalTimes(Array2DdataLayer<double>* bmap
-		, const int& year, const int& day, const int& time){
+		, const int& /*year*/, const int& /*day*/, const int& /*time*/){
 	if ( arrivalTimes != 0 ) delete arrivalTimes;
 	arrivalTimes = new BurningMap(SWCorner, NECorner, mapSizeX, mapSizeY);
 	bool relevant = false;

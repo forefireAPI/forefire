@@ -422,7 +422,7 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 }
 
 template<typename T>
-void XYZTDataLayer<T>::setValueAt(FFPoint loc,  double t, T value){
+void XYZTDataLayer<T>::setValueAt(FFPoint /*loc*/,  double /*t*/, T /*value*/){
 
 	cout<<"WARNING: setting value not implemented"<<endl;
 
@@ -431,7 +431,7 @@ void XYZTDataLayer<T>::setValueAt(FFPoint loc,  double t, T value){
 
 template<typename T>
 size_t XYZTDataLayer<T>::getValuesAt(
-		FireNode* fn, PropagationModel* model, size_t curItem){
+		FireNode* /*fn*/, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
@@ -462,13 +462,13 @@ FFPoint XYZTDataLayer<T>::posToIndices(FFPoint& loc){
 
 template<typename T>
 void XYZTDataLayer<T>::getMatrix(
-		FFArray<T>** matrix, const double& time){
+		FFArray<T>** matrix, const double& /*time*/){
 	*matrix = array;
 }
 
 template<typename T>
-void XYZTDataLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void XYZTDataLayer<T>::setMatrix(string& /*mname*/, double* /*inMatrix*/
+		, const size_t& /*sizein*/, size_t& /*sizeout*/, const double& /*time*/){
 	// writing the incoming (array in matrix
 	// should not be done with this type of layer
 }
@@ -523,7 +523,7 @@ void XYZTDataLayer<T>::dumpAsBinary(string filename, const double& time
 }
 
 template<typename T>
-void XYZTDataLayer<T>::setProjectionDirVector(FFVector& stimuliScaler, FFPoint& stimuliLocation){
+void XYZTDataLayer<T>::setProjectionDirVector(FFVector& stimuliScaler, FFPoint& /*stimuliLocation*/){
 		if ( interp == 	InterpolationBilinearCoeff ){
 			interDirScaler=stimuliScaler.getVx();
 			interDirRatio=stimuliScaler.getVy();

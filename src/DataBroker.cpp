@@ -830,7 +830,7 @@ namespace libforefire
 		return numberOfValuesFilled;
 	}
 
-	int DataBroker::getMoisturesProperties(FireNode *fn, PropagationModel *model, int keynum)
+	int DataBroker::getMoisturesProperties(FireNode */*fn*/, PropagationModel *model, int keynum)
 	{   //
 		double m_ones = 0.032;
 		double m_liveh =  0.7;
@@ -1026,8 +1026,8 @@ namespace libforefire
 		return 1;
 	}
 
-	void DataBroker::getMatrix(string matrixName, const FFPoint &SWCorner,
-							   const FFPoint &NECorner, const double &t, FFArray<double> **matrix)
+	void DataBroker::getMatrix(string matrixName, const FFPoint &/*SWCorner*/,
+							   const FFPoint &/*NECorner*/, const double &t, FFArray<double> **matrix)
 	{
 		ilayer = layersMap.find(matrixName);
 		if (ilayer != layersMap.end())
@@ -1495,15 +1495,15 @@ namespace libforefire
 		}
 	}
 
-	PropagativeLayer<double> *DataBroker::constructPropagativeLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
-																	double timeOrigin, double Lt, int dimTSelected /* = -1 */)
+	PropagativeLayer<double> *DataBroker::constructPropagativeLayer(NcVar &/*values*/, FFPoint &/*SWCorner*/, FFPoint &/*spatialExtent*/,
+																	double /*timeOrigin*/, double /*Lt*/, int /*dimTSelected*/ /* = -1 */)
 	{
 		cout << "DataBroker::constructPropagativeLayerFromFile " << " from netCDF Not Implemented" << endl;
 		return NULL;
 	}
 
 	FuelDataLayer<double> *DataBroker::constructFuelLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
-														  double timeOrigin, double Lt, int dimTSelected)
+														  double timeOrigin, double Lt, int /*dimTSelected*/)
 	{
 
 		size_t nx = 0, ny = 0, nz = 0, nt = 0;
@@ -1544,7 +1544,7 @@ namespace libforefire
 	}
 
 	FluxLayer<double> *DataBroker::constructFluxLayer(NcVar &values, FFPoint &SWCorner, FFPoint &spatialExtent,
-													  double timeOrigin, double Lt, int dimTSelected /* = -1 */)
+													  double timeOrigin, double Lt, int /*dimTSelected*/ /* = -1 */)
 	{
 
 		/* Sending the information on the models to the domain */

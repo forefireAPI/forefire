@@ -69,7 +69,7 @@ public:
 	size_t getValuesAt(FireNode*, PropagationModel*, size_t);
 	/*! \brief directly stores the desired values in a given array */
 	size_t getValuesAt(FFPoint, const double&, FluxModel*, size_t);
-	void setValueAt(FFPoint loc,  double tval, T value){};
+	void setValueAt(FFPoint /*loc*/,  double /*tval*/, T /*value*/){};
 	/*! \brief getter to the pointer on the FFArray */
 	void getMatrix(FFArray<T>**, const double&);
 	/*! \brief stores data from a fortran array into the FFArray */
@@ -104,24 +104,24 @@ T BurningRatioLayer<T>::getValueAt(FireNode* fn){
 }
 
 template<typename T>
-T BurningRatioLayer<T>::getValueAt(FFPoint loc, const double& time){
+T BurningRatioLayer<T>::getValueAt(FFPoint loc, const double& /*time*/){
 	return getNearestData(loc);
 }
 
 template<typename T>
-size_t BurningRatioLayer<T>::getValuesAt(FireNode* fn
-		, PropagationModel* model, size_t curItem){
+size_t BurningRatioLayer<T>::getValuesAt(FireNode* /*fn*/
+		, PropagationModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-size_t BurningRatioLayer<T>::getValuesAt(FFPoint loc, const double& t
-		, FluxModel* model, size_t curItem){
+size_t BurningRatioLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
+		, FluxModel* /*model*/, size_t /*curItem*/){
 	return 0;
 }
 
 template<typename T>
-T BurningRatioLayer<T>::getNearestData(FFPoint loc){
+T BurningRatioLayer<T>::getNearestData(FFPoint /*loc*/){
 	cout<<"BurningRatioLayer<T>::getNearestData() "
 			<<"shouldn't have been called"<<endl;
 	return 0.;
@@ -156,8 +156,8 @@ void BurningRatioLayer<T>::getMatrix(
 }
 
 template<typename T>
-void BurningRatioLayer<T>::setMatrix(string& mname, double* inMatrix
-		, const size_t& sizein, size_t& sizeout, const double& time){
+void BurningRatioLayer<T>::setMatrix(string& /*mname*/, double* inMatrix
+		, const size_t& sizein, size_t& /*sizeout*/, const double& /*time*/){
 	if ( ratioMap->getSize() == sizein ){
 		ratioMap->copyDataFromFortran(inMatrix);
 	} else {
@@ -177,8 +177,8 @@ string BurningRatioLayer<T>::print2D(size_t i, size_t j){
 }
 
 template<typename T>
-void BurningRatioLayer<T>::dumpAsBinary(string filename, const double& time
-		, FFPoint& SWC, FFPoint& NEC, size_t& nnx, size_t& nny){
+void BurningRatioLayer<T>::dumpAsBinary(string filename, const double& /*time*/
+		, FFPoint& /*SWC*/, FFPoint& /*NEC*/, size_t& /*nnx*/, size_t& /*nny*/){
 	/* writing the matrix in a binary file */
 	ostringstream outputfile;
 	outputfile<<filename<<"."<<this->getKey();
