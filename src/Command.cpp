@@ -3457,28 +3457,13 @@ namespace libforefire
     int Command::listenHTTP(const std::string &arg, size_t &/*numTabs*/)
     {
 
-        // ID 1 is for the Fortran MPI rank 1
-        int MPIMODE = 1;
-        int STANDALONEMODE = 0;
-        int listenMode = STANDALONEMODE;
         size_t defaultport = 8000;
         size_t port = defaultport;
         std::string defaultHostname = "localhost";
 
-        if (currentSession.fd != 0)
+        if (currentSession.fd != 0 && getDomain()->getDomainID() != 0)
         {
-            if (getDomain()->getDomainID() != 0)
-            {
-                return normal;
-            }
-            else
-            {
-                if (currentSession.fdp != 0)
-                {
-                    listenMode = MPIMODE;
-                 
-                }
-            }
+            return normal;
         }
 
         // Local only by default; listenHTTP[0.0.0.0:8000] to open it to the network.
