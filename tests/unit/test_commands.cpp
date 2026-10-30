@@ -15,6 +15,10 @@
  * The arrival times can be read two ways, and both used to be wrong: the BMap
  * layer was never filled, and plot[...;filename=*.asc] wrote one row per x,
  * at six significant digits, instead of an ASCII grid.
+ *
+ * A front reaching the domain edge over a gridded altitude used to fill the
+ * whole arrival map at one time: the slope past the edge was NaN, and so
+ * were the node positions it moved.
  */
 
 #include "doctest/doctest.h"
@@ -173,6 +177,39 @@ TEST_CASE("plot writes arrival times as an ASCII grid, north row first") {
         for (size_t c = 0; c < grid.ncols; c++)
             if (std::stod(grid.rows[r][c]) != matrix[c][grid.nrows - 1 - r]) inexact++;
     CHECK(inexact == 0);
+}
+
+TEST_CASE("a front that reaches the edge on sloping ground leaves the far side unburnt") {
+    Command executor;
+    run(executor, "clear[]");
+    run(executor, "FireDomain[sw=(0,0,0);ne=(1000,1000,0);t=0]");
+    auto* domain = Command::getDomain();
+    REQUIRE(domain != nullptr);
+    REQUIRE(domain->addPropagativeLayer("Iso"));
+
+    /* 2 x 2 altitude rising 100 m to the east, cell centres at 250 and 750 */
+    std::vector<double> altitude = {0., 0., 100., 100.};
+    double x0 = 0, y0 = 0, t0 = 0, width = 1000, height = 1000, timespan = 0;
+    size_t nx = 2, ny = 2, nz = 1, nt = 1;
+    REQUIRE(domain->addScalarLayer("data", "altitude", x0, y0, t0, width, height, timespan,
+                                   nx, ny, nz, nt, altitude.data()));
+
+    run(executor, "startFire[loc=(900,500,0)]");
+    run(executor, "goTo[t=200]");
+
+    /* Iso spreads at 1 m/s: the front is past the east edge, 300 m short of
+     * the west third. */
+    auto matrix = domain->getDataMatrix("arrival_time");
+    size_t burnt = 0, burntInWestThird = 0;
+    for (size_t i = 0; i < matrix.size(); i++) {
+        for (size_t j = 0; j < matrix[i].size(); j++) {
+            if (!std::isfinite(matrix[i][j])) continue;
+            burnt++;
+            if (i < matrix.size() / 3) burntInWestThird++;
+        }
+    }
+    CHECK(burnt > 0);
+    CHECK(burntInWestThird == 0);
 }
 
 } /* TEST_SUITE */

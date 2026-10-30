@@ -204,6 +204,24 @@ TEST_CASE("Farsite reads the wind in m/s") {
     CHECK(oneMetrePerSecond / calm == doctest::Approx(1.0 + phiw).epsilon(1e-6));
 }
 
+TEST_CASE("Farsite does not spread over a cell with no fuel") {
+    // A non-burnable cell has no fuel load at all, and Farsite divided zero
+    // by zero for it. The NaN stopped the node for good, even if fuel was
+    // one step further on.
+    ModelSandbox sandbox;
+    PropagationModel* model = sandbox.propagation("Farsite");
+    REQUIRE(model != 0);
+
+    Inputs inputs(model);
+    inputs.set("normalWind", 1.0);
+    inputs.set("slope", 0.2);
+    inputs.set("moist.ones", 0.05);
+
+    const double ros = speedOf(model, inputs);
+    CHECK(std::isfinite(ros));
+    CHECK(ros == doctest::Approx(0.0));
+}
+
 TEST_CASE("spread is finite and non-negative over a wind and slope sweep") {
     ModelSandbox sandbox;
     const std::vector<std::string>& names = standardFuelModels();
