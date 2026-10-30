@@ -35,7 +35,7 @@ endif()
 
 # doctest groups its cases into suites; registering one CTest entry per suite
 # keeps `ctest` output useful without needing doctest's CMake integration.
-foreach(_suite "model registry" "propagation models" "flux models" "http server" "topology" "fire front" "timetable" "quit command" "commands" "data broker" "data layers")
+foreach(_suite "model registry" "propagation models" "flux models" "http server" "topology" "fire front" "timetable" "quit command" "commands" "data broker" "data layers" "domain ownership")
     string(REPLACE " " "_" _suite_id "${_suite}")
     add_test(NAME "unit.${_suite_id}"
              COMMAND forefire_unit_tests --test-suite=${_suite} --no-skipped-summary)
