@@ -18,6 +18,10 @@ history, so they summarise each release rather than list every change. The
   worker processes and returns their arrival-time maps;
   `pyforefire.burn_probability` turns them into a burn-probability map. A
   User Guide page shows a wind ensemble end to end. ([#172])
+- `pyforefire.dice`, `pyforefire.brier_score` and `pyforefire.reliability`
+  score an ensemble against an observed burnt area: the overlap of each
+  member, the error of the probability map, and how often each probability
+  bin actually burnt. ([#172])
 - `ForeFireRunner.fork()` returns a new runner holding a copy of the
   simulation, so ensemble members can branch from one spin-up instead of
   rerunning it. The worker forks itself, which takes a few milliseconds where
