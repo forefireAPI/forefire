@@ -1,0 +1,24 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wildfire_ROS_models"
+version = "0.1.0"
+description = "A package for wildfire ROS model development, benchmarking and testing"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+authors = [
+    { name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr" }
+]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "SALib",
+]
+
+[project.urls]
+Homepage = "https://github.com/forefireAPI/wildfire_ROS_models/"
