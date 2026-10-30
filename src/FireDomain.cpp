@@ -1364,6 +1364,14 @@
  
 	 // Computing the propagation speed of a given firenode
 	 double FireDomain::getPropagationSpeed(FireNode* fn) {
+		 if ( propagativeLayer == nullptr ){
+			 // A domain built without loadData: pick the model as loadData does
+			 string propagationModel = params->getParameter("propagationModel");
+			 if ( !addPropagativeLayer(propagationModel) ){
+				 cout<<"PROBLEM: Unable to retrieve propagation model "<<propagationModel<<endl;
+				 return 0.;
+			 }
+		 }
 		 int modelIndex = propagativeLayer->getModelIndexAt(fn);
  
 		 return propModelsTable[modelIndex]->getSpeedForNode(fn) * propagationSpeedAdjustmentFactor;

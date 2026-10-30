@@ -175,4 +175,22 @@ TEST_CASE("plot writes arrival times as an ASCII grid, north row first") {
     CHECK(inexact == 0);
 }
 
+TEST_CASE("a domain built without a propagation layer spreads with the propagationModel parameter") {
+    // loadData picks the model from the propagationModel parameter, but a
+    // bare FireDomain[...] had no propagation layer and goTo segfaulted.
+    Command executor;
+    run(executor, "clear[]");
+    run(executor, "setParameter[propagationModel=Iso]");
+    run(executor, "FireDomain[sw=(0,0,0);ne=(1000,1000,0);t=0]");
+    REQUIRE(Command::getDomain() != nullptr);
+    run(executor, "startFire[loc=(500,500,0)]");
+    run(executor, "goTo[t=100]");
+
+    size_t burnt = 0;
+    for (const auto& column : Command::getDomain()->getDataMatrix("arrival_time"))
+        for (double t : column)
+            if (std::isfinite(t)) burnt++;
+    CHECK(burnt > 0);
+}
+
 } /* TEST_SUITE */
