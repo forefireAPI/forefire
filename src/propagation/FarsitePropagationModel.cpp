@@ -9,6 +9,7 @@
 #include "../PropagationModel.h"
 #include "../FireDomain.h"
 #include <cstring>
+#include <algorithm>
 #include <cmath>
 
 using namespace std;
@@ -181,8 +182,8 @@ namespace libforefire
 		//-----------------------------------------------------------------------------
 		// 2) Read actual values from valueOf
 		//-----------------------------------------------------------------------------
-		double windspd = valueOf[idx_wind]; // wind speed in miles per hout
-		double slope = valueOf[idx_slope]; // degrees with 0 as flat
+		double windspd = valueOf[idx_wind]; // wind along the normal, m/s
+		double slope = valueOf[idx_slope]; // tangent of the slope along the normal
 		// moinstures variables
 		double m_ones = valueOf[idx_m_ones];  
 		double m_liveh = valueOf[idx_m_liveh]; 
@@ -284,9 +285,11 @@ namespace libforefire
 			{fuel_heatd, 0.0},
 			{fuel_heatd, 0.0}};
 
-		// Convert wind m/s → ft/min, slope → tangent
-		double wind = windspd * 88.0;
-		double slopex = slope*2;//std::tan(slope * PI / 180.0);
+		// Farsite takes the wind in mph (x88 to ft/min) and the slope in degrees
+		// (tan). ForeFire gives m/s and a tangent. As in Rothermel, a backing
+		// wind or a downslope does not speed the fire up.
+		double wind = std::max(windspd, 0.0) * 196.850394; // m/s -> ft/min
+		double slopex = std::max(slope, 0.0);
 
 		// Now replicate the rest of your rate-of-spread logic:
 		double seff[4][2] = {
