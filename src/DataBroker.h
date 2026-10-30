@@ -271,7 +271,7 @@ public:
 	void initializeAtmosphericLayers(const double&);
 
 	/*! \brief insuring the presence of all needed layers */
-	void insureLayersExistence();
+	void insureLayersExistence(bool switchNodeComputations = true);
 
 	/*! \brief initialize flux layers */
 	void initFluxLayers(const double&);
