@@ -75,6 +75,7 @@ sdist.exclude = [
   "tests",
   "tools/cache",
   "tools/htdocs",
+  "tools/wildfire_ROS_models",
   "*.svg",
 ]
 sdist.include = ["tests/python/test_wheel.py"]
