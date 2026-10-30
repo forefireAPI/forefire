@@ -54,6 +54,22 @@ const std::vector<std::string>& standardFuelModels() {
     return names;
 }
 
+/** Farsite with FM1 (short grass) as in STDfarsiteFuelsTable, 6% dead
+ *  moisture. Farsite reads its own fuel columns, in its own units. */
+void fillShortGrass(Inputs& inputs) {
+    inputs.set("fuel.h1", 0.74);
+    inputs.set("fuel.sav1", 3500.0);
+    inputs.set("fuel.savlh", 1800.0);
+    inputs.set("fuel.savlw", 1500.0);
+    inputs.set("fuel.depth", 1.0);
+    inputs.set("fuel.xmext", 0.12);
+    inputs.set("fuel.heatd", 8000.0);
+    inputs.set("fuel.heatl", 8000.0);
+    inputs.set("moist.ones", 0.06);
+    inputs.set("moist.tens", 0.07);
+    inputs.set("moist.hundreds", 0.08);
+}
+
 } /* anonymous namespace */
 
 TEST_SUITE("propagation models") {
@@ -118,6 +134,74 @@ TEST_CASE("no fuel depth means no spread") {
         CHECK(std::isfinite(ros));
         CHECK(ros == doctest::Approx(0.0));
     }
+}
+
+TEST_CASE("Farsite speeds up upslope only") {
+    // The slope factor squares the slope, so a downslope used to speed the
+    // fire up exactly as much as the matching upslope (#231).
+    ModelSandbox sandbox;
+    PropagationModel* model = sandbox.propagation("Farsite");
+    REQUIRE(model != 0);
+    Inputs inputs(model);
+    fillShortGrass(inputs);
+
+    inputs.set("slope", 0.0);
+    const double flat = speedOf(model, inputs);
+    inputs.set("slope", 0.3);
+    const double up = speedOf(model, inputs);
+    inputs.set("slope", -0.3);
+    const double down = speedOf(model, inputs);
+
+    CHECK(flat > 0.0);
+    CHECK(up > flat);
+    CHECK(down == doctest::Approx(flat));
+}
+
+TEST_CASE("Farsite against the wind spreads as in calm air") {
+    // A negative normal wind went through pow() as NaN, which also dropped
+    // the slope effect.
+    ModelSandbox sandbox;
+    PropagationModel* model = sandbox.propagation("Farsite");
+    REQUIRE(model != 0);
+    Inputs inputs(model);
+    fillShortGrass(inputs);
+    inputs.set("slope", 0.3);
+
+    inputs.set("normalWind", 0.0);
+    const double calm = speedOf(model, inputs);
+    inputs.set("normalWind", -3.0);
+    const double backing = speedOf(model, inputs);
+    inputs.set("normalWind", 3.0);
+    const double heading = speedOf(model, inputs);
+
+    CHECK(backing == doctest::Approx(calm));
+    CHECK(heading > calm);
+}
+
+TEST_CASE("Farsite reads the wind in m/s") {
+    // Farsite's own code takes mph and multiplies by 88 to get ft/min; the
+    // port kept the 88 while ForeFire passes m/s, 196.85 ft/min each.
+    ModelSandbox sandbox;
+    PropagationModel* model = sandbox.propagation("Farsite");
+    REQUIRE(model != 0);
+    Inputs inputs(model);
+    fillShortGrass(inputs);
+
+    // Rothermel's wind factor at 1 m/s, phiw = C * 196.85^B * (beta/betaop)^-E
+    inputs.set("normalWind", 0.0);
+    const double calm = speedOf(model, inputs);
+    inputs.set("normalWind", 1.0);
+    const double oneMetrePerSecond = speedOf(model, inputs);
+    REQUIRE(calm > 0.0);
+
+    const double sigma = 3500.0;
+    const double b = 0.02526 * std::pow(sigma, 0.54);
+    const double c = 7.47 * std::exp(-0.133 * std::pow(sigma, 0.55));
+    const double e = 0.715 * std::exp(-0.000359 * sigma);
+    const double beta = 0.74 * 0.04591 / 32.0;           // load / particle density, 1 ft deep
+    const double betaop = 3.348 / std::pow(sigma, 0.8189);
+    const double phiw = c * std::pow(196.850394, b) * std::pow(beta / betaop, -e);
+    CHECK(oneMetrePerSecond / calm == doctest::Approx(1.0 + phiw).epsilon(1e-6));
 }
 
 TEST_CASE("spread is finite and non-negative over a wind and slope sweep") {
