@@ -153,7 +153,7 @@ public:
 		dy = extent.getY()/ny;
 		dz = extent.getZ()/nz;
 		dt = 0;
-		if((timespan < 3600*24)&&	(nt>1)){	 
+		if(nt>1){
 			dt = timespan/(nt-1);
 		}
  
@@ -356,7 +356,13 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 		}
 
 		if ( interp == InterpolationBilinearT ){
-					int it = (int) (t-startTime)/dt;
+					// Slices sit at startTime + k*dt; before the first or after
+					// the last, the nearest slice holds.
+					double tt = dt > 0 ? (t-startTime)/dt : 0.;
+					if ( tt < 0. ) tt = 0.;
+					if ( tt > nt-1. ) tt = nt-1.;
+					int it = (int) tt;
+					if ( it > ((int) nt) - 2 ) it = ((int) nt) - 2;
 
 					T tsw1 = getVal(uu,vv,0,it);
 					T tnw1 = getVal(uu,vv+1,0,it);
@@ -372,8 +378,8 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 					T val2 = csw*tsw2 + cse*tse2 + cnw*tnw2 + cne*tne2;
 
 					/* interpolation in time */
-					double at = ( t - it*dt )/dt;
-					return at*val1 + (1.-at)*val2;
+					double at = tt - it;
+					return (1.-at)*val1 + at*val2;
 
 				}
 		if ( interp == 	InterpolationBilinearCoeff ){
