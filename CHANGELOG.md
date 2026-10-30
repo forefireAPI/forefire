@@ -26,6 +26,9 @@ history, so they summarise each release rather than list every change. The
   in `subprocess.Popen`. ([#172])
 - `pyforefire.arrival_time(ff, path, bbox=None)` reads the arrival-time map
   as an array, through the `plot` command. ([#172])
+- Each published release carries the WebAssembly module (`forefire.wasm`,
+  `forefire.mjs`, `worker.mjs`) and its `SHA256SUMS`, so it can be pinned to a
+  version instead of the GitHub Pages copy, which follows `dev`.
 
 ### Fixed
 
