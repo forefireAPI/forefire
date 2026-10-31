@@ -1125,7 +1125,7 @@
 		 size_t maxI = (size_t) ((nec.getX() - SWCornerX())/burningMatrixResX) + 1;
 		 if ( maxI > globalBMapSizeX - 1 ) maxI = globalBMapSizeX - 1;
 		 size_t minJ = 1;
-		 if ( swc.getY() > SWCornerY()/burningMatrixResY )
+		 if ( swc.getY() > SWCornerY()+burningMatrixResY )
 			 minJ = (size_t) ((swc.getY() - SWCornerY())/burningMatrixResY);
 		 size_t maxJ = (size_t) ((nec.getY() - SWCornerY())/burningMatrixResY) + 1;
 		 if ( maxJ > globalBMapSizeY - 1 ) maxJ = globalBMapSizeY - 1;

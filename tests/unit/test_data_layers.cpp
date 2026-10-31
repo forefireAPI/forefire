@@ -1,6 +1,6 @@
 /**
  * @file test_data_layers.cpp
- * @brief XYZTDataLayer interpolation in time.
+ * @brief XYZTDataLayer interpolation in time and near its edges.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
  */
@@ -10,6 +10,7 @@
 #include "FFPoint.h"
 #include "NCXYZTDataLayer.h"
 
+#include <cmath>
 #include <cstddef>
 #include <vector>
 
@@ -28,6 +29,17 @@ double valueAt(const std::vector<double>& slices, double t0, double timespan, do
     FFPoint sw(0., 0., 0.), extent(1000., 1000., 0.);
     XYZTDataLayer<double> layer("windU", sw, t0, extent, timespan, nx, ny, nz, nt, vals.data());
     return layer.getValueAt(FFPoint(500., 500., 0.), t);
+}
+
+// A 2x2 layer over 2 km, 0 in the west cells and 10 in the east ones.
+// Values sit at the cell centres, x = 500 and x = 1500.
+double eastRampAt(double x, double y) {
+    std::vector<double> vals = {0., 0., 10., 10.};   // x is the slowest index
+    FFPoint sw(0., 0., 0.), extent(2000., 2000., 0.);
+    double t0 = 0., timespan = 0.;
+    std::size_t nx = 2, ny = 2, nz = 1, nt = 1;
+    XYZTDataLayer<double> layer("altitude", sw, t0, extent, timespan, nx, ny, nz, nt, vals.data());
+    return layer.getValueAt(FFPoint(x, y, 0.), 0.);
 }
 
 }
@@ -56,6 +68,23 @@ TEST_CASE("outside its time axis a layer holds the first or last slice") {
     const std::vector<double> ramp = {0., 8.};
     CHECK(valueAt(ramp, 1000., 2000., 0.) == doctest::Approx(0.));
     CHECK(valueAt(ramp, 1000., 2000., 5000.) == doctest::Approx(8.));
+}
+
+TEST_CASE("between its edge and the outermost cell centres a layer holds the edge cells") {
+    // This band used to return NaN: half a cell along every edge, a quarter
+    // of a 2x2 layer. A slope taken there turned the front geometry to NaN.
+    // Lookups are nudged by EPSILONX, hence the tolerance mid-ramp.
+    CHECK(eastRampAt(1000., 1000.) == doctest::Approx(5.).epsilon(0.01));
+    CHECK(eastRampAt(1900., 1000.) == doctest::Approx(10.));
+    CHECK(eastRampAt(2000., 1000.) == doctest::Approx(10.));
+    CHECK(eastRampAt(100., 1900.) == doctest::Approx(0.));
+    CHECK(eastRampAt(0., 0.) == doctest::Approx(0.));
+}
+
+TEST_CASE("outside its extent a layer has no data") {
+    CHECK(std::isnan(eastRampAt(2100., 1000.)));
+    CHECK(std::isnan(eastRampAt(-100., 1000.)));
+    CHECK(std::isnan(eastRampAt(1000., 2100.)));
 }
 
 }

@@ -9,6 +9,11 @@ name: 🌐 Build WASM
 # The github-pages environment has to allow dev as a deployment branch
 # (Settings → Environments → github-pages). Forks publish only when their own
 # Pages is set to deploy from GitHub Actions; most forks have no Pages at all.
+#
+# A published release gets the module attached (forefire.wasm, forefire.mjs,
+# worker.mjs and their SHA256SUMS), so users can pin a version instead of the
+# Pages copy, which changes on every push to dev. It runs on release rather
+# than on the tag because the release is created by hand after the tag.
 
 on:
   push:
@@ -19,6 +24,8 @@ on:
   pull_request:
     paths-ignore: [ "docs/**", "**/*.md" ]
     branches: [ "master", "dev" ]
+  release:
+    types: [ published ]
   workflow_dispatch:
 
 # A new push to a PR cancels its older run. Pushes to branches, tags and
@@ -82,6 +89,16 @@ jobs:
       - name: Smoke test under Node
         run: node bindings/wasm/smoke.mjs bin/forefire.mjs
 
+      - name: Upload the module for the release
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-release
+          path: |
+            bin/forefire.wasm
+            bin/forefire.mjs
+            bindings/wasm/worker.mjs
+
       # The demo is published from dev only. The official repo always
       # publishes, so a Pages misconfiguration there fails loudly.
       - name: Decide whether to publish
@@ -127,3 +144,28 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  release-assets:
+    needs: build-wasm
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the module
+        uses: actions/download-artifact@v8
+        with:
+          name: wasm-release
+          path: wasm
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        working-directory: wasm
+        run: |
+          # The artifact keeps bin/ and bindings/wasm/; the release wants them flat.
+          find . -mindepth 2 -type f -exec mv {} . \;
+          sha256sum forefire.wasm forefire.mjs worker.mjs > SHA256SUMS
+          gh release upload "$TAG" forefire.wasm forefire.mjs worker.mjs SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" --clobber

@@ -320,21 +320,23 @@ T XYZTDataLayer<T>::getValueAt(FFPoint loc, const double& t){
 
 
 
-		double ud = indices.getX() + EPSILONX;
-		double vd = indices.getY() + EPSILONX;
+		// No data outside the layer. Values sit at cell centres: between
+		// the layer edge and the outermost centres, the outermost cells hold.
+		if ( nx < 2 or ny < 2 ) return NAN;
+		if ( indices.getX() < -0.5 - EPSILONX ) return NAN;
+		if ( indices.getX() > nx - 0.5 + EPSILONX ) return NAN;
+		if ( indices.getY() < -0.5 - EPSILONX ) return NAN;
+		if ( indices.getY() > ny - 0.5 + EPSILONX ) return NAN;
+
+		double ud = min(max(indices.getX() + EPSILONX, 0.), nx - 1.);
+		double vd = min(max(indices.getY() + EPSILONX, 0.), ny - 1.);
 
 		int uu = (int) ceil(ud-1);
 		int vv = (int) ceil(vd-1);
-/*
 		if ( uu < 0 ) uu = 0;
 		if ( uu > ((int) nx) - 2 ) uu = ((int) nx) - 2;
 		if ( vv < 0 ) vv = 0;
 		if ( vv > ((int) ny) - 2 ) vv = ((int) ny) - 2;
-		*/
-		if (uu < 0) return NAN;
-		if (uu > ((int) nx) - 2) return NAN;
-		if (vv < 0) return NAN;
-		if (vv > ((int) ny) - 2) return	NAN;
 
 		double udif = ud - ((double) uu);
 		double vdif = vd - ((double) vv);

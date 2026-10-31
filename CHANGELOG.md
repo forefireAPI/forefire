@@ -26,6 +26,9 @@ history, so they summarise each release rather than list every change. The
   in `subprocess.Popen`. ([#172])
 - `pyforefire.arrival_time(ff, path, bbox=None)` reads the arrival-time map
   as an array, through the `plot` command. ([#172])
+- Each published release carries the WebAssembly module (`forefire.wasm`,
+  `forefire.mjs`, `worker.mjs`) and its `SHA256SUMS`, so it can be pinned to a
+  version instead of the GitHub Pages copy, which follows `dev`.
 
 ### Fixed
 
@@ -43,6 +46,13 @@ history, so they summarise each release rather than list every change. The
 - `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid: one row per y,
   north first, at full precision. It used to write one row per x and round
   values to six significant digits.
+- The Farsite model reads the wind in m/s and the slope as a tangent, like the
+  other Rothermel models, and slope only speeds up spread uphill. It used to
+  read the wind as if it were in mph and double the slope, so downhill spread
+  was boosted as much as uphill, and a headwind gave NaN and dropped the slope
+  term. This changes Farsite results: about 5 times more wind effect and 4
+  times less slope effect for fuel model 1, so settings tuned on the old
+  behaviour need tuning again. ([#242])
 
 ## [v2.6.0] — 2026-10-26
 
@@ -319,3 +329,4 @@ repository stays easy to return to.
 [#205]: https://github.com/forefireAPI/forefire/issues/205
 [#171]: https://github.com/forefireAPI/forefire/issues/171
 [#172]: https://github.com/forefireAPI/forefire/issues/172
+[#242]: https://github.com/forefireAPI/forefire/pull/242
