@@ -76,6 +76,33 @@ To plot it:
               origin="lower", extent=(0, L, 0, L), colors="cyan")
    fig.colorbar(im, label="burn probability")
 
+Scoring against an observed fire
+--------------------------------
+
+Given the observed burnt area at time ``t`` as a boolean map ``observed`` on
+the same grid (``[y, x]``, row 0 at the south edge), three helpers score the
+ensemble:
+
+.. code-block:: python
+
+   p = pyforefire.burn_probability(arrivals, t)
+   pyforefire.dice(arrivals <= t, observed)    # overlap of each member, 0 to 1
+   pyforefire.brier_score(p, observed)         # error of the probability map, 0 is perfect
+   frequency, count = pyforefire.reliability(p, observed)
+
+* ``dice`` is 2|A ∩ B| / (|A| + |B|), one value per member.
+* ``brier_score`` is the mean of ``(p - observed)²``. Applied to
+  ``arrivals <= t`` it scores each member alone, so the ensemble can be
+  compared with its members.
+* ``reliability`` gives, for each probability bin (by default 0–0.1, 0.1–0.3,
+  …, 0.9–1), the fraction of its cells that actually burnt. For a reliable
+  ensemble, that fraction lies within the bin: about half of the cells given
+  0.3–0.7 burnt. Stack the maps of several observation times to pool them.
+
+An observed perimeter can be turned into such a map with
+``rasterio.features.rasterize``; flip it with ``np.flipud`` if it comes north
+row first.
+
 What a member may change
 ------------------------
 
