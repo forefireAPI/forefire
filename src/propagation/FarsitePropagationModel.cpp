@@ -237,6 +237,10 @@ namespace libforefire
 		if (fuel_lw > 0.0)
 			nlive++;
 
+		// No fuel (non-burnable cell): no spread, rather than 0/0 below
+		if (ndead == 0 && nlive == 0)
+			return 0.0;
+
 		if (nlive == 0)
 			fuel_dynamic = false;
 

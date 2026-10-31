@@ -185,6 +185,8 @@ void FireNode::timeAdvance(){
 			}
 			// obtaining the speed from the propagation model
 			double localSpeed = domain->getPropagationSpeed(this);
+			// No data here (outside a layer, no fuel): the node stops
+			if ( std::isnan(localSpeed) ) localSpeed = 0.;
 			double newSpeed = localSpeed;
 			/*if(newSpeed > minSpeed){
 				double prevSpeed, nextSpeed;

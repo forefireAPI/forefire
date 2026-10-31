@@ -80,6 +80,11 @@ T GradientDataLayer<T>::getValueAt(FireNode* fn){
 	T nextValue;
 	FFPoint nextLoc = fn->getLoc() + dx*(fn->getNormal().toPoint());
 	nextValue = parent->getValueAt(nextLoc,fn->getUpdateTime());
+	if ( std::isnan(nextValue) ){
+		// Ahead is outside the data (domain edge): look behind instead
+		FFPoint prevLoc = fn->getLoc() - dx*(fn->getNormal().toPoint());
+		return (currentValue - parent->getValueAt(prevLoc,fn->getUpdateTime()))/dx;
+	}
 	return (nextValue - currentValue)/dx;
 }
 
