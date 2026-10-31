@@ -1,4 +1,4 @@
-"""Tests for `pyforefire.run_ensemble` and `pyforefire.burn_probability`.
+"""Tests for `pyforefire.run_ensemble`, `pyforefire.burn_probability` and the scores.
 
     python tests/python/test_ensemble.py
 
@@ -48,6 +48,11 @@ def test_identical_members(reference):
         p = pyforefire.burn_probability(arrivals)
         if not np.array_equal(p, np.isfinite(reference).astype(float)):
             failures.append(f"fork={fork}: probability is not the deterministic burnt area")
+        observed = np.isfinite(reference)
+        if not np.all(pyforefire.dice(np.isfinite(arrivals), observed) == 1):
+            failures.append(f"fork={fork}: a member does not score Dice 1 against the deterministic run")
+        if pyforefire.brier_score(p, observed) != 0:
+            failures.append(f"fork={fork}: Brier score not 0 against the deterministic run")
     return failures
 
 
@@ -120,6 +125,44 @@ def test_member_error():
     return ["a failing member did not raise"]
 
 
+def test_scores():
+    """Dice, Brier and reliability on small hand-made maps."""
+    import pyforefire
+
+    failures = []
+    observed = np.zeros((4, 4), dtype=bool)
+    observed[:2] = True                            # 8 cells
+    burnt = np.zeros((2, 4, 4), dtype=bool)
+    burnt[0, :2] = True                            # the observed area
+    burnt[1, 1:3] = True                           # half of it, plus 4 cells
+    d = pyforefire.dice(burnt, observed)
+    if not np.allclose(d, [1.0, 0.5]):
+        failures.append(f"Dice per member {d}, expected [1, 0.5]")
+    if pyforefire.dice(burnt[0], observed) != 1.0:
+        failures.append("Dice of one map is not a single 1")
+    empty = np.zeros((4, 4), dtype=bool)
+    if pyforefire.dice(empty, empty) != 1.0:
+        failures.append("two empty areas do not match")
+
+    p = burnt.mean(axis=0)                         # 1 on row 1, 0.5 on rows 0 and 2
+    b = pyforefire.brier_score(p, observed)
+    if not np.isclose(b, (4 * 0.25 + 4 * 0.25) / 16):
+        failures.append(f"Brier score {b}, expected 0.125")
+    bm = pyforefire.brier_score(burnt, observed)
+    if not np.allclose(bm, [0, 8 / 16]):
+        failures.append(f"Brier score per member {bm}, expected [0, 0.5]")
+
+    frequency, count = pyforefire.reliability(p, observed, bins=(0, 0.25, 0.75, 1))
+    if list(count) != [4, 8, 4]:
+        failures.append(f"reliability counts {list(count)}, expected [4, 8, 4]")
+    elif not np.allclose(frequency, [0, 0.5, 1]):
+        failures.append(f"reliability frequencies {frequency}, expected [0, 0.5, 1]")
+    frequency, count = pyforefire.reliability(np.ones(3), np.ones(3, dtype=bool), bins=(0, 0.5, 1))
+    if list(count) != [0, 3] or not np.isnan(frequency[0]):
+        failures.append(f"probability 1 not in the last bin, or empty bin not nan: {frequency}, {count}")
+    return failures
+
+
 def main():
     reference = deterministic()
     print(f"deterministic run: {int(np.isfinite(reference).sum())} burnt cells of {reference.size}")
@@ -130,13 +173,14 @@ def main():
     failures += test_construction_parameters()
     failures += test_probability_properties()
     failures += test_member_error()
+    failures += test_scores()
 
     if failures:
         print(f"\nFAILED with {len(failures)} problem(s):")
         for f in failures:
             print(f"  - {f}")
         return 1
-    print("OK: ensembles reproduce the deterministic run, perturbations apply, probabilities are consistent")
+    print("OK: ensembles reproduce the deterministic run, perturbations apply, probabilities and scores are consistent")
     return 0
 
 
