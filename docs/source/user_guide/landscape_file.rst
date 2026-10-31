@@ -17,46 +17,53 @@ The Landscape File **must** be in the **NetCDF (Network Common Data Form)** form
 Required Data Variables
 -----------------------
 
-At a minimum, a functional ForeFire simulation generally requires the following variables to be present within the NetCDF landscape file:
+At a minimum, a functional ForeFire simulation generally requires the following variables to be present within the NetCDF landscape file.
+
+ForeFire reads every variable in the file and dispatches on its ``type`` attribute. A variable without one is skipped, with a message on the console, so a misspelled name is not an error: the layer is simply absent from the simulation.
 
 *   **Fuel Index Map**
 
-    *   **Typical Variable Name(s):** ``fuel``, ``fuel_index``, ``land_cover`` (The exact name might be configurable or expected by default - check standard examples or parameters).
+    *   **Variable name:** ``fuel``, matched **exactly**. ``fuel_index`` and ``land_cover`` are not recognised.
+    *   **Attribute:** ``type = "fuel"``.
     *   **Description:** A 2D array (grid) containing **integer values** representing the fuel type at each location in the simulation domain.
     *   **Crucial Link:** Each unique integer value in this array **must** correspond directly to an ``Index`` value present in the model parameter file (see :doc:`/user_guide/fuels_and_models`) used for the simulation. ForeFire uses this to look up the fuel properties needed for the fire spread calculations. Index `0` is often used for non-burnable areas.
-    *   **Dimensions:** Typically (Y, X) or (latitude, longitude) corresponding to the spatial grid.
+    *   **Dimensions:** read from the variable itself; the axes are ordered outermost first.
 
 *   **Elevation (Digital Elevation Model - DEM)**
 
-    *   **Typical Variable Name(s):** ``altitude``, ``elevation``, ``dem``, ``hgt``.
+    *   **Variable name:** ``altitude``, matched **exactly**. ``elevation``, ``dem`` and ``hgt`` are not recognised, and the simulation then runs without slope.
+    *   **Attribute:** ``type = "data"``.
     *   **Description:** A 2D array containing the elevation (height above sea level) for each grid cell in the domain. This is essential for calculating slope, which significantly impacts fire spread.
     *   **Units:** Meters (m).
-    *   **Dimensions:** Must match the dimensions and grid of the Fuel Index Map.
+    *   **Dimensions:** read from the variable itself. It does **not** have to match the fuel grid: the shipped test case has fuel at 10 m and elevation at 100 m.
 
 Optional Data Variables
 -----------------------
 
 While fuel and elevation are fundamental, Landscape files often contain additional variables to support more complex simulations or specific model requirements:
 
-*   **Wind Components (U and V)**
+*   **Wind**
 
-    *   **Typical Variable Name(s):** ``windU`` / ``wind_u`` / ``U`` (for West-East component), ``windV`` / ``wind_v`` / ``V`` (for South-North component).
-    *   **Description:** 2D or 3D arrays representing the wind speed components across the domain. If 3D, the third dimension is typically time, allowing for dynamic wind conditions.
-    *   **Units:** Meters per second (m/s).
-    *   **Dimensions:** Must match the spatial dimensions (Y, X) of Fuel/Elevation. Time dimension added if applicable.
-    *   **Note:** If wind data is not provided in the landscape file, wind conditions must be specified via other means, such as constant values set via :ref:`parameters <reference-parameters>` or dynamic conditions applied using the :ref:`trigger <cmd-trigger>` command.
+    Two forms are read, both in metres per second (m/s):
+
+    *   a single ``wind`` variable holding both components, with the two leading axes selecting component and level, as in the shipped test case;
+    *   or separate ``windU`` (West-East) and ``windV`` (South-North) variables, matched **exactly**. ``wind_u`` and ``U`` are not recognised.
+
+    Time may be one of the variable's axes, allowing for dynamic wind conditions.
+
+    **Note:** If wind data is not provided in the landscape file, wind conditions must be specified via other means, such as constant values set via :ref:`parameters <reference-parameters>` or dynamic conditions applied using the :ref:`trigger <cmd-trigger>` command.
 
 *   **Other Potential Variables:** Depending on the specific propagation models or simulation setup, other variables might be included or derived:
-    *   ``slope``: Slope steepness (often calculated internally from DEM).
-    *   ``aspect``: Slope direction (often calculated internally from DEM).
+    *   ``slope``: slope steepness, derived internally from ``altitude``. There is no ``aspect`` layer.
     *   Canopy characteristics (if using specific canopy models).
 
 Coordinate System & Domain Definition
 -------------------------------------
 
 *   **Projection:** While ForeFire's internal simulation often works with Cartesian coordinates (meters relative to an origin), the input NetCDF file should ideally contain **projected geospatial data**. Common choices include UTM (Universal Transverse Mercator) zones appropriate for the region of interest. The projection information (e.g., projection string, EPSG code) should ideally be included as global attributes or variable attributes within the NetCDF file if possible, although ForeFire might rely on user-defined domain bounds.
-*   **Grid:** All 2D spatial variables (Fuel, Elevation, Wind) within the file must share the **same grid resolution, spatial extent, and coordinate system**.
-*   **Domain Bounds:** The simulation domain is defined when creating the :ref:`FireDomain <cmd-FireDomain>`. You specify the South-West (SW) and North-East (NE) corners in the *projected Cartesian coordinates* (meters). To align the simulation coordinate system with real-world locations, especially for outputs like GeoJSON or KML, set the WGS84 geographic bounding box with ``setParameter[BBoxWSEN=lonWest,latSouth,lonEast,latNorth]`` **before** creating the ``FireDomain``. ``FireDomain`` itself does not read ``BBoxWSEN``.
+*   **Grid:** Each layer is built from the dimensions of its own variable, so the file does not have to share a single grid: the shipped test case has fuel at 10 m and elevation at 100 m.
+*   **Domain:** The file **must** contain a ``domain`` variable. Without it the load aborts with ``Error: Domain variable not found``. Its attributes carry the extent, ``SWx``, ``SWy``, ``SWz``, ``Lx``, ``Ly``, ``Lz``, ``t0`` and ``Lt``, and :ref:`loadData <cmd-loadData>` builds the :ref:`FireDomain <cmd-FireDomain>` from them, so a landscape file needs no explicit ``FireDomain`` command.
+*   **Geographic alignment:** an optional ``BBoxWSEN`` attribute on the ``domain`` variable gives the WGS84 bounding box of the grid as ``lonWest,latSouth,lonEast,latNorth``. ForeFire reads it to place ``lonlat`` ignitions and to write geo-referenced output. ``WSENLBRT`` carries the same box followed by the vertical extent and the domain size.
 
 Relationship to the Fuels & Models File
 ---------------------------------------
