@@ -115,7 +115,7 @@ namespace libforefire
 
 		/* registering the model in the data broker */
 		dataBroker->registerPropagationModel(this);
-		[[maybe_unused]] double adjustementWind = 1.0;
+		double adjustementWind = 1.0;
 		if (params->isValued("Farsite.adjustementWind"))
 			adjustementWind = params->getDouble("Farsite.adjustementWind");
 
