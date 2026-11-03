@@ -507,7 +507,7 @@ endif()
 # ----------------------------------
 # Printed last, so what this build was configured with is in one place.
 if(FOREFIRE_ENABLE_NETCDF)
-    set(_ff_sum_netcdf "ON   ${NETCDF_CXX_LIBRARY}")
+    set(_ff_sum_netcdf "ON   ${NETCDF_CXX_LIBRARY}${NETCDF_CXX_LIB}")
 else()
     set(_ff_sum_netcdf "OFF")
 endif()
