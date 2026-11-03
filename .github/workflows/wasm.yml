@@ -118,7 +118,7 @@ jobs:
           mkdir -p _site
           cp bin/forefire.mjs bin/forefire.wasm _site/
           cp bindings/wasm/index.html bindings/wasm/worker.mjs \
-             bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs _site/
+             bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs bindings/wasm/overlays.mjs _site/
 
       - name: Upload artifact
         if: steps.pages.outputs.publish == 'true'

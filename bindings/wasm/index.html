@@ -11,7 +11,7 @@
   Copy the page files next to the build outputs and serve the directory over
   http — a file:// page can neither fetch the .wasm nor start a module worker:
 
-      cp bindings/wasm/{index.html,worker.mjs,landscape.mjs,terrain3d.mjs} bin/
+      cp bindings/wasm/{index.html,worker.mjs,landscape.mjs,terrain3d.mjs,overlays.mjs} bin/
       python3 -m http.server -d bin
 -->
 <html lang="en">
@@ -289,6 +289,7 @@
       }
       .linkish:hover { color: var(--ink); }
       #credit { font-size: 11px; color: var(--dim); margin: 0; }
+      #referenceNote { font-size: 11px; color: var(--dim); margin: 0.5rem 0 0; }
 
       @media (max-width: 52rem) {
         body { grid-template-columns: minmax(0, 1fr); overflow: auto; }
@@ -385,6 +386,12 @@
           <button class="chip on" id="showArrival" title="Colour the burnt ground by when it caught fire">Arrival</button>
           <button class="chip on" id="showSpread" title="Colour the front by its rate of spread">Spread</button>
         </div>
+        <div class="chips" style="margin-top: 0.5rem">
+          <button class="chip" id="showGrid" title="DFCI grid squares and their names">DFCI grid</button>
+          <button class="chip" id="showWater" title="Cisterns (squares) and other water points (circles)">Water</button>
+          <button class="chip" id="showTracks" title="DFCI tracks">DFCI tracks</button>
+        </div>
+        <p id="referenceNote" hidden></p>
         <div class="field" id="exagRow" hidden>
           <label>Relief ×<output id="exagOut">2.5</output></label>
           <input id="exag" type="range" min="1" max="6" step="0.5" value="2.5" aria-label="Vertical exaggeration" />
@@ -444,6 +451,7 @@
         CLASS_DEFAULTS,
       } from "./landscape.mjs";
       import { createTerrainView } from "./terrain3d.mjs";
+      import { REFERENCE, drawReference, inFrance } from "./overlays.mjs";
 
       // startFire[lonlat=(8.70, 41.952, 0)] in tests/runff/run.ff.
       const HOME = { lon: 8.7, lat: 41.952, side: 4000 };
@@ -674,8 +682,51 @@
         clearTimeout(reloadTimer);
         // Wait for the gesture to settle rather than hammer the tile hosts;
         // the canvas previews the move with the tiles it already has.
-        reloadTimer = setTimeout(loadLandscape, 350);
+        reloadTimer = setTimeout(() => {
+          loadLandscape();
+          loadReference();
+        }, 350);
       }
+
+      // ---- reference layers --------------------------------------------------
+
+      // For reading the map only: none of this reaches the worker.
+      let reference = {};
+      let referenceToken = 0;
+
+      async function loadReference() {
+        const token = ++referenceToken;
+        const wanted = Object.keys(REFERENCE).filter(isOn);
+        const note = $("referenceNote");
+        note.hidden = wanted.length === 0;
+        reference = Object.fromEntries(Object.entries(reference).filter(([id]) => wanted.includes(id)));
+        dirty = true;
+        if (!wanted.length) return;
+
+        const north = (site.side / 2) / M_PER_DEG_LAT;
+        const east = (site.side / 2) / mPerDegLon(site.lat);
+        const bounds = { west: site.lon - east, south: site.lat - north, east: site.lon + east, north: site.lat + north };
+        if (!inFrance(bounds)) {
+          reference = {};
+          note.textContent = "These layers cover France only.";
+          return;
+        }
+        note.textContent = "Display only: the simulation does not use these layers. Indicative data, not for operational use. IGN BD TOPO, Licence Ouverte.";
+        const got = await Promise.allSettled(wanted.map((id) => REFERENCE[id](bounds, site.side)));
+        if (token !== referenceToken) return; // a newer pan overtook this one
+        got.forEach((result, i) => {
+          if (result.status === "fulfilled") reference[wanted[i]] = result.value;
+          else console.warn("reference layer unavailable:", wanted[i], result.reason);
+        });
+        if (got.some((r) => r.status === "rejected")) note.textContent = "Some reference layers are unavailable.";
+        dirty = true;
+      }
+
+      for (const id of Object.keys(REFERENCE))
+        $(id).addEventListener("click", () => {
+          $(id).classList.toggle("on");
+          loadReference();
+        });
 
       function updateSiteReadout() {
         $("dCentre").textContent = `${site.lat.toFixed(4)}, ${site.lon.toFixed(4)}`;
@@ -938,6 +989,14 @@
           ctx.drawImage(overlay, g.x, g.y, g.w, g.w);
           ctx.restore();
         }
+
+        drawReference(ctx, reference, (lon, lat) => {
+          const s = size / site.side;
+          return [
+            size / 2 + (lon - site.lon) * mPerDegLon(site.lat) * s,
+            size / 2 - (lat - site.lat) * M_PER_DEG_LAT * s,
+          ];
+        });
 
         if (!timeline) {
           drawIgnition(size);

@@ -56,12 +56,12 @@ Headless, under Node:
 node bindings/wasm/smoke.mjs bin/forefire.mjs
 ```
 
-In a browser — copy the four page files next to the build outputs and serve
+In a browser — copy the five page files next to the build outputs and serve
 the directory, since a `file://` page can neither fetch the `.wasm` nor start a
 module worker:
 
 ```sh
-cp bindings/wasm/{index.html,worker.mjs,landscape.mjs,terrain3d.mjs} bin/
+cp bindings/wasm/{index.html,worker.mjs,landscape.mjs,terrain3d.mjs,overlays.mjs} bin/
 python3 -m http.server -d bin
 ```
 
@@ -160,6 +160,15 @@ against the boundary, `burnt-out` otherwise. A slower death, where the
 perimeter survives but stops advancing, is caught by a burnt-area plateau over
 a twelve-step window (`stalled`), and an ignition on bare ground is reported as
 `never-caught` rather than as a fire that stopped.
+
+### Reference layers
+
+`overlays.mjs` draws three optional layers from the IGN Géoplateforme, in France
+only: the DFCI grid with its square names, water points (cisterns as squares,
+the rest as circles) and DFCI tracks. They are **for reading the map and nothing
+else**: they never reach the worker, so a run is the same with them on or off.
+Each is off by default and fetched only when switched on. BD TOPO shows what is
+mapped, not whether a water point is full or a track is passable.
 
 ### 3D terrain
 
