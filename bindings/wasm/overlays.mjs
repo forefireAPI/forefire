@@ -17,21 +17,31 @@ const FRANCE = { west: -5.5, south: 41, east: 10, north: 51.5 };
 // The 1 km grid is only readable on a small domain.
 const FINE_GRID_MAX_SIDE = 8000;
 
-async function features(layer, cql, properties, count = 5000) {
-	const query = new URLSearchParams({
-		SERVICE: "WFS",
-		VERSION: "2.0.0",
-		REQUEST: "GetFeature",
-		OUTPUTFORMAT: "application/json",
-		SRSNAME: "EPSG:4326",
-		TYPENAMES: layer,
-		COUNT: count,
-		cql_filter: cql,
-	});
-	if (properties) query.set("PROPERTYNAME", properties);
-	const response = await fetch(`${WFS}?${query}`);
-	if (!response.ok) throw new Error(`${layer}: HTTP ${response.status}`);
-	return (await response.json()).features;
+// The server caps a response at 5000 features and says nothing about the rest, so
+// a dense area has to be read page by page or it comes back cut off.
+const PAGE = 5000;
+
+async function features(layer, cql, properties) {
+	const all = [];
+	for (let start = 0; ; start += PAGE) {
+		const query = new URLSearchParams({
+			SERVICE: "WFS",
+			VERSION: "2.0.0",
+			REQUEST: "GetFeature",
+			OUTPUTFORMAT: "application/json",
+			SRSNAME: "EPSG:4326",
+			TYPENAMES: layer,
+			COUNT: PAGE,
+			STARTINDEX: start,
+			cql_filter: cql,
+		});
+		if (properties) query.set("PROPERTYNAME", properties);
+		const response = await fetch(`${WFS}?${query}`);
+		if (!response.ok) throw new Error(`${layer}: HTTP ${response.status}`);
+		const page = (await response.json()).features;
+		all.push(...page);
+		if (page.length < PAGE) return all; // a short page is the last one
+	}
 }
 
 const box = (field, b) => `BBOX(${field},${b.south},${b.west},${b.north},${b.east},'${CRS}')`;
