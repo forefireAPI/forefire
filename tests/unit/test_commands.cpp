@@ -28,7 +28,9 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -177,6 +179,29 @@ TEST_CASE("plot writes arrival times as an ASCII grid, north row first") {
         for (size_t c = 0; c < grid.ncols; c++)
             if (std::stod(grid.rows[r][c]) != matrix[c][grid.nrows - 1 - r]) inexact++;
     CHECK(inexact == 0);
+}
+
+TEST_CASE("plot warns when the ASCII cells are not square") {
+    // An ASCII grid carries one cellsize, but plot[...;size=] can ask for cells
+    // that are not square. writeASCII used to compute it from the x extent
+    // alone, so the y spacing the file declares was wrong with no sign of it.
+    Command executor;
+    burnOffCentre(executor);
+    const std::string path = "ff_test_anisotropic.asc";
+
+    std::ostringstream captured;
+    std::streambuf* previous = std::cout.rdbuf(captured.rdbuf());
+    run(executor, "plot[parameter=arrival_time;filename=" + path + ";size=20,20]");
+    std::cout.rdbuf(previous);
+
+    AsciiGrid grid = readAsciiGrid(path);
+    std::remove(path.c_str());
+
+    /* 2000 x 1000 m in 20 x 20 cells: 100 m in x, 50 m in y. */
+    CHECK(grid.ncols == 20);
+    CHECK(grid.nrows == 20);
+    CHECK(grid.cellsize == doctest::Approx(100.));
+    CHECK(captured.str().find("not square") != std::string::npos);
 }
 
 TEST_CASE("a domain built without a propagation layer spreads with the propagationModel parameter") {

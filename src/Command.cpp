@@ -3785,7 +3785,7 @@ namespace libforefire
         }
 #endif /* FF_NO_NETCDF */
     }
-    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double /*NEY*/)
+    void Command::writeASCII(const char *filename, const std::vector<std::vector<double>> &matrix, double SWX, double SWY, double NEX, double NEY)
     {
         std::ofstream out(filename);
         if (!out)
@@ -3799,9 +3799,19 @@ namespace libforefire
         size_t ncols = matrix.size();
         size_t nrows = (ncols > 0) ? matrix[0].size() : 0;
 
-        // Compute the cell size.
-        // Here we assume that (NEX - SWX) corresponds to the total width of the matrix.
-        double cellsize = (ncols > 0) ? (NEX - SWX) / static_cast<double>(ncols) : 0.0;
+        // An ASCII grid carries a single cellsize, but the matrix can hold
+        // cells that are not square (plot[...;size=...]). Writing the x value
+        // alone would place every row at the wrong spacing without a word.
+        double dx = (ncols > 0) ? (NEX - SWX) / static_cast<double>(ncols) : 0.0;
+        double dy = (nrows > 0) ? (NEY - SWY) / static_cast<double>(nrows) : 0.0;
+        if ((ncols > 0) && (nrows > 0) &&
+            (std::abs(dx - dy) > 1e-6 * std::max(std::abs(dx), std::abs(dy))))
+        {
+            std::cout << "WARNING: writeASCII: the cells are not square, the file takes cellsize "
+                      << dx << " from the x extent, while the y extent gives " << dy
+                      << " for " << nrows << " rows" << std::endl;
+        }
+        double cellsize = dx;
 
         // Write the ASCII header.
         out << "ncols         " << ncols << "\n";
