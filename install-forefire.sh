@@ -19,29 +19,57 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo -e "\n========= FOREFIRE INSTALLER ========"
+# --- colours only on a terminal (CI logs stay plain); NO_COLOR turns them off
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-dumb}" != "dumb" ]; then
+  c() { printf '\033[38;5;%sm' "$1"; }
+  BOLD=$'\033[1m'; DIM=$'\033[2m'; RESET=$'\033[0m'
+else
+  c() { :; }
+  BOLD=""; DIM=""; RESET=""
+fi
+
+# Section header: step number, title, and a rule underneath.
+step() {
+  printf '\n\n%s%s[%s/3]%s %s%s%s\n' "$(c 208)" "$BOLD" "$1" "$RESET" "$BOLD" "$2" "$RESET"
+  printf '%s──────────────────────────────────────────%s\n\n' "$(c 208)$DIM" "$RESET"
+}
 
 PROJECT_ROOT="$(pwd)"
-echo "Project Root detected as: $PROJECT_ROOT"
-
-echo -e "\n======== UNIX REQUIREMENTS ==========\n"
-
-apt-get update
-apt install build-essential -y
-apt install libnetcdf-c++4-dev -y
-apt install cmake -y
-
-echo -e "\n======= BUILD WITH CMAKE ==========\n"
-
-# Determine the absolute path to the bin directory.
 BIN_PATH="$PROJECT_ROOT/bin"
+VERSION="$(sed -n 's/.*ff_version *= *"\(v[^"]*\)".*/\1/p' src/include/Version.h 2>/dev/null)"
+
+# --- logo: the FF of the interactive shell, burning from yellow to red
+printf '\n'
+printf '%s               .    *     .%s\n' "$(c 214)$DIM" "$RESET"
+printf '%s            *    .    *      .%s\n' "$(c 208)$DIM" "$RESET"
+printf '%s            ██████╗ ██████╗%s\n' "$(c 226)" "$RESET"
+printf '%s            ██╔═══╝ ██╔═══╝%s\n' "$(c 220)" "$RESET"
+printf '%s            ██████╗ ██████╗%s\n' "$(c 214)" "$RESET"
+printf '%s            ██╔═══╝ ██╔═══╝%s\n' "$(c 208)" "$RESET"
+printf '%s            ██║     ██║%s\n'     "$(c 202)" "$RESET"
+printf '%s            ╚═╝     ╚═╝%s\n'     "$(c 196)" "$RESET"
+printf '\n'
+printf '            %sForeFire installer%s %s%s%s\n' "$BOLD" "$RESET" "$DIM" "${VERSION}" "$RESET"
+printf '            %s%s%s\n' "$DIM" "$PROJECT_ROOT" "$RESET"
+
+step 1 "Linux requirements"
+
+echo "apt-get: build-essential, libnetcdf-c++4-dev, cmake"
+apt-get update -qq
+apt-get install -y -qq build-essential libnetcdf-c++4-dev cmake
+echo "$(c 34)✔$RESET requirements installed"
+
+step 2 "Building ForeFire"
 
 mkdir -p build
 cd build
 cmake ../
 make -j"$(nproc)"
 
-echo -e "\n=== ForeFire has been installed to $BIN_PATH ===\n"
+echo
+echo "$(c 34)✔$RESET ForeFire built in $BIN_PATH"
+
+step 3 "PATH"
 
 # Determine which shell configuration file to update.
 # If the script is run via sudo, use the SUDO_USER's home directory.
@@ -56,26 +84,26 @@ FOREFIREHOME_LINE="export FOREFIREHOME=\"$PROJECT_ROOT\""
 
 # Check if we've already updated the PATH in this file.
 if grep -qF "$BIN_PATH" "$CONFIG_FILE"; then
-  echo "ForeFire already appears in your PATH in $CONFIG_FILE."
+  echo "$(c 34)✔$RESET ForeFire already in your PATH ($CONFIG_FILE)"
 else
   if (( AUTO_ANS )); then
     ans=y
   else
-    read -p "Do you want to add ForeFire to your PATH permanently in $CONFIG_FILE? (y/n): " ans
+    read -p "Add ForeFire to your PATH permanently in $CONFIG_FILE? (y/n): " ans
   fi
-  
+
   if echo "$ans" | grep -qi '^y'; then
     # Append a blank line, a comment, and the export line.
     echo "" >> "$CONFIG_FILE"
     echo "# Add ForeFire to PATH" >> "$CONFIG_FILE"
     echo "$PATH_LINE" >> "$CONFIG_FILE"
     echo "$FOREFIREHOME_LINE" >> "$CONFIG_FILE"
-    echo "ForeFire has been added to your PATH in $CONFIG_FILE."
-    echo "Please run 'source $CONFIG_FILE' or restart your terminal to update your PATH."
+    echo "$(c 34)✔$RESET ForeFire added to your PATH in $CONFIG_FILE"
+    echo "  Run 'source $CONFIG_FILE' or open a new terminal."
   else
-    echo "No changes made. Please add the following line manually to your shell configuration file:"
-    echo "$PATH_LINE"
+    echo "No changes made. Add this line to your shell configuration file:"
+    echo "  $PATH_LINE"
   fi
 fi
 
-echo -e "\n=== ForeFire installation completed ===\n"
+printf '\n\n%s%s🔥 ForeFire is ready.%s Try: %sforefire -v%s\n\n' "$(c 208)" "$BOLD" "$RESET" "$BOLD" "$RESET"
