@@ -3807,7 +3807,7 @@ namespace libforefire
         if ((ncols > 0) && (nrows > 0) &&
             (std::abs(dx - dy) > 1e-6 * std::max(std::abs(dx), std::abs(dy))))
         {
-            std::cout << "writeASCII warning : the cells are not square, the file takes cellsize "
+            std::cout << "WARNING: writeASCII: the cells are not square, the file takes cellsize "
                       << dx << " from the x extent, while the y extent gives " << dy
                       << " for " << nrows << " rows" << std::endl;
         }
