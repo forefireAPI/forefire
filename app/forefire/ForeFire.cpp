@@ -130,28 +130,33 @@ void ForeFire::FFShell(ifstream* inputStream) {
 
     } else {
 
-        const char* logoFF = R"(
-            ██████╗ ██████╗
-            ██╔═══╝ ██╔═══╝
-            ██████╗ ██████╗
-            ██╔═══╝ ██╔═══╝
-            ██║     ██║
-            ╚═╝     ╚═╝
-        )";
-        
-        cout << logoFF << endl;
-        cout << "  =================================================" << endl;
-        cout << "      ForeFire - Wildfire Propagation Simulator" << endl;
-        cout << "  =================================================" << endl;
-        cout << "  Version:   " << ff_version << endl;
-        cout << "  License:   See LICENSE file (ABSOLUTELY NO WARRANTY)" << endl;
-        cout << "  Copyright (C) 2025 CNRS/Univ.Corsica" << endl;
+        // Colours only on a terminal, like install-forefire.sh; NO_COLOR turns them off.
+        const char* term = getenv("TERM");
+        bool colour = isatty(STDOUT_FILENO) && !getenv("NO_COLOR")
+                      && term && string(term) != "dumb";
+        auto fg = [colour](int c) { return colour ? "\033[38;5;" + to_string(c) + "m" : string(); };
+        const string bold  = colour ? "\033[1m" : "";
+        const string dim   = colour ? "\033[2m" : "";
+        const string reset = colour ? "\033[0m" : "";
+
+        // The FF burning from yellow to red, with a few sparks above.
         cout << endl;
-        cout << "  Using the Interactive Shell:" << endl;
-        cout << "  - Press Tab to:" << endl;
-        cout << "      - List all available commands (if the line is empty)." << endl;
-        cout << "      - Auto-complete a command you're typing." << endl;
-        cout << "  - Press Tab a second time on a command name for its detailed help." << endl;
+        cout << fg(214) << dim << "               .    *     ." << reset << endl;
+        cout << fg(208) << dim << "            *    .    *      ." << reset << endl;
+        cout << fg(226) << "            ██████╗ ██████╗" << reset << endl;
+        cout << fg(220) << "            ██╔═══╝ ██╔═══╝" << reset << endl;
+        cout << fg(214) << "            ██████╗ ██████╗" << reset << endl;
+        cout << fg(208) << "            ██╔═══╝ ██╔═══╝" << reset << endl;
+        cout << fg(202) << "            ██║     ██║" << reset << endl;
+        cout << fg(196) << "            ╚═╝     ╚═╝" << reset << endl;
+        cout << endl;
+        cout << "  " << bold << "ForeFire" << reset << " - Wildfire Propagation Simulator  "
+             << fg(208) << ff_version << reset << endl;
+        cout << dim << "  Copyright (C) 2026 CNRS/Univ.Corsica - see LICENSE (ABSOLUTELY NO WARRANTY)" << reset << endl;
+        cout << endl;
+        cout << "  " << fg(208) << "Tab" << reset << "         list all commands, or complete the one you're typing" << endl;
+        cout << "  " << fg(208) << "Tab Tab" << reset << "     detailed help for a command" << endl;
+        cout << "  " << fg(208) << "quit" << reset << "        leave the shell" << endl;
         cout << endl;
 
         std::string line;
