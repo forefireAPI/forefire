@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Run under bash even when called as "sh install-forefire.sh".
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -e
 IFS=$'\n\t'
 

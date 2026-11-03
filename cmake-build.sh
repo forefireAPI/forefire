@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
+# Run under bash even when called as "sh cmake-build.sh".
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 
 #export NETCDF_HOME=$HOME/
 #export ECCODES_HOME=$HOME/
-export NPROC=1
+NPROC="${NPROC:-$(nproc)}"
 
 set -e
 
@@ -13,4 +15,4 @@ mkdir -p build
 cmake -S . -B build
 
 # 3. Build in parallel on all cores
-cmake --build build -- -j"$(NPROC)"
+cmake --build build -- -j"$NPROC"
