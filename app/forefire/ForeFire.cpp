@@ -52,9 +52,13 @@ int ForeFire::startShell(int argc, char* argv[]) {
                 startListenHttpMode = true;
                 goto end_option_parsing;
 
-            case 'v':
-                cout << ff_version << endl;
+            case 'v': {
+                string describe = FF_GIT_DESCRIBE;
+                cout << ff_version;
+                if (!describe.empty()) cout << " (" << describe << ")";
+                cout << endl;
                 return 1;
+            }
             case 'w':
                 FFWebShell(optarg);
                 return 1;
