@@ -14,6 +14,9 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- The browser demo can draw the DFCI grid, water points and DFCI tracks from
+  the IGN Géoplateforme, in France. These layers are display only: they never
+  reach the simulation.
 - `pyforefire.run_ensemble` runs one simulation per member in parallel
   worker processes and returns their arrival-time maps;
   `pyforefire.burn_probability` turns them into a burn-probability map. A
