@@ -84,7 +84,7 @@ string IsotropicIsospeed::getName(){
 /* Model for the propagation velovity of the front */
 /* *********************************************** */
 
-double IsotropicIsospeed::getSpeed(double* valueOf){
+double IsotropicIsospeed::getSpeed([[maybe_unused]] double* valueOf){
 	return speed;
 }
 

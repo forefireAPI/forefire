@@ -124,7 +124,7 @@ string CraterHeatFluxModel::getName(){
 /* ****************** */
 
 double CraterHeatFluxModel::getValue(double* valueOf
-		, const double& bt, const double& et, const double& at){
+		, const double& bt, [[maybe_unused]] const double& et, [[maybe_unused]] const double& at){
 
 	if ( bt - eruptionTime < 0 ) return 0.;
 
