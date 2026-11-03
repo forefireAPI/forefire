@@ -11,7 +11,6 @@ endif()
 set(FOREFIRE_VERSION "${CMAKE_MATCH_1}")
 
 project(forefire VERSION ${FOREFIRE_VERSION})
-message(STATUS "ForeFire version: ${FOREFIRE_VERSION}")
 
 # ----------------------------------
 # Build Options
@@ -92,9 +91,6 @@ if(NOT FOREFIRE_ENABLE_MPI)
     message(STATUS "MPI support disabled (FOREFIRE_ENABLE_MPI=OFF)")
     set(MPI_FOUND FALSE)
 elseif(MPI_C_COMPILER AND MPI_CXX_COMPILER)
-    message(STATUS "Using manually specified MPI compilers:")
-    message(STATUS "  MPI_C_COMPILER: ${MPI_C_COMPILER}")
-    message(STATUS "  MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
     set(CMAKE_C_COMPILER "${MPI_C_COMPILER}")
     set(CMAKE_CXX_COMPILER "${MPI_CXX_COMPILER}")
 
@@ -234,8 +230,6 @@ else()
         endif()
     endforeach()
 
-    message(STATUS "NetCDF C:   ${NETCDF_LIBRARY} (headers: ${NETCDF_INCLUDE_DIR})")
-    message(STATUS "NetCDF C++: ${NETCDF_CXX_LIBRARY} (headers: ${NETCDF_CXX_INCLUDE_DIR})")
     # SYSTEM: the NetCDF C++4 headers trip -Wunused-variable, and that is not a
     # warning anyone here can act on.
     target_include_directories(forefire_netcdf SYSTEM INTERFACE ${NETCDF_CXX_INCLUDE_DIR} ${NETCDF_INCLUDE_DIR})
@@ -308,10 +302,7 @@ if(NOT _ff_wheel_build)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib")
-    message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-    message(STATUS "CMAKE_LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 endif()
-message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 # ----------------------------------
 # Source Files
@@ -495,9 +486,8 @@ if(FOREFIRE_CHECK_LFS)
         ERROR_VARIABLE  LFS_CHECK_ERROR
     )
 
-    if(LFS_CHECK_RESULT EQUAL 0)
-        message(STATUS "✅ LFS data check passed successfully.")
-    else()
+    # Success shows in the summary below; only a failure needs its own message.
+    if(NOT LFS_CHECK_RESULT EQUAL 0)
         message(WARNING "
 ************************************************************
 ⚠️  WARNING: Git LFS data integrity check failed!
@@ -511,3 +501,40 @@ ${LFS_CHECK_ERROR}
 ")
     endif()
 endif()
+
+# ----------------------------------
+# Configuration summary
+# ----------------------------------
+# Printed last, so what this build was configured with is in one place.
+if(FOREFIRE_ENABLE_NETCDF)
+    set(_ff_sum_netcdf "ON   ${NETCDF_CXX_LIBRARY}")
+else()
+    set(_ff_sum_netcdf "OFF")
+endif()
+if(MPI_FOUND)
+    set(_ff_sum_mpi "ON   ${MPI_CXX_COMPILER}")
+else()
+    set(_ff_sum_mpi "OFF")
+endif()
+if(NOT FOREFIRE_CHECK_LFS)
+    set(_ff_sum_lfs "not checked (FOREFIRE_CHECK_LFS=OFF)")
+elseif(LFS_CHECK_RESULT EQUAL 0)
+    set(_ff_sum_lfs "OK")
+else()
+    set(_ff_sum_lfs "FAILED, see the warning above")
+endif()
+string(STRIP "${CMAKE_CXX_FLAGS}" _ff_sum_flags)
+
+message(STATUS "")
+message(STATUS "🔥 ForeFire v${FOREFIRE_VERSION} configuration")
+message(STATUS "  NetCDF ....... ${_ff_sum_netcdf}")
+message(STATUS "  MPI .......... ${_ff_sum_mpi}")
+message(STATUS "  Flags ........ ${_ff_sum_flags}")
+message(STATUS "  CLI shell .... ${FOREFIRE_BUILD_CLI}")
+message(STATUS "  Python ....... ${FOREFIRE_BUILD_PYTHON}")
+message(STATUS "  Unit tests ... ${FOREFIRE_BUILD_TESTS}")
+if(NOT _ff_wheel_build)
+    message(STATUS "  Output ....... ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+endif()
+message(STATUS "  LFS data ..... ${_ff_sum_lfs}")
+message(STATUS "")
