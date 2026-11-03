@@ -4,7 +4,7 @@ if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 
 #export NETCDF_HOME=$HOME/
 #export ECCODES_HOME=$HOME/
-NPROC="${NPROC:-$(nproc)}"
+NPROC="${NPROC:-$(getconf _NPROCESSORS_ONLN)}"
 
 set -e
 

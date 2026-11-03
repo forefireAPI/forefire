@@ -36,7 +36,7 @@ step() {
 
 PROJECT_ROOT="$(pwd)"
 BIN_PATH="$PROJECT_ROOT/bin"
-VERSION="$(sed -n 's/.*ff_version *= *"\(v[^"]*\)".*/\1/p' src/include/Version.h 2>/dev/null)"
+VERSION="$(sed -n 's/.*ff_version *= *"\(v[^"]*\)".*/\1/p' src/include/Version.h 2>/dev/null || true)"
 
 # --- logo: the FF of the interactive shell, burning from yellow to red
 printf '\n'
