@@ -29,9 +29,9 @@ b64f537ae25fad1d002085cc48a6e5d4:tests/mnh_real_nested/PGD_D800mA.nested.nc
 dbe0a29d7f94fc8cbe55470fecf27cc4:tests/mnh_real_nested/RUN12.1.PRUN1.004.des
 cd6cf1c61b5433b425728b0c10a6870f:tests/mnh_real_nested/RUN12.1.PRUN1.004.nc
 fe3a89db4253de28e9c42cea22ec91cc:tests/python/360wind.png.ref
-cb329bea2ea963eccb0815c0471d7bba:tests/runff/ForeFire.0.nc.ref
+badddd3b68c3bf0c011700bf0d3b9880:tests/runff/ForeFire.0.nc.ref
 f66abd2723db31ecaa8a56662c49d972:tests/runff/data.nc
-e6d18d2fe17d41bb0cb702678749e623:tests/runff/real_case.kml.ref
+95149bd450b8b22a1630de1cf284bfdb:tests/runff/real_case.kml.ref
 "
 
 # Cross-platform md5 utility
