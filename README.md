@@ -109,8 +109,11 @@ The easiest way to get started is often using Docker and the interactive console
 3. Run the container interactively
 
     ```bash
-    docker run -it --rm -p 8000:8000 --name ff_interactive forefire
+    docker run -it --rm -p 127.0.0.1:8000:8000 --name ff_interactive forefire
     ```
+    `127.0.0.1:` publishes the port on this machine only. A bare `-p 8000:8000`
+    publishes it on every interface of the host, so anyone on the network could
+    send commands to the server.
 4. Inside the container navigate to test directory and launch the forefire console:
     ```bash
     cd tests/runff

@@ -81,7 +81,9 @@ Steps
   
   .. code-block:: bash
 
-    docker run -it --rm -p 8000:8000 --name ff_interactive forefire
+    docker run -it --rm -p 127.0.0.1:8000:8000 --name ff_interactive forefire
+
+  ``127.0.0.1:`` publishes the port on this machine only. A bare ``-p 8000:8000`` publishes it on every interface of the host, so anyone on the network could send commands to the server.
 
 4.  **Inside the container, navigate to the test directory:**
 
@@ -106,7 +108,7 @@ Steps
     forefire> listenHTTP[0.0.0.0:8000]
 
   You should see the output : `>> ForeFire HTTP command server listening at http://0.0.0.0:8000`, followed by a warning that the server is reachable from the network.
-  Inside a container this is needed: ``listenHTTP[]`` alone only listens on the container's own localhost, which the published port cannot reach.
+  Inside a container this is needed: ``listenHTTP[]`` alone only listens on the container's own localhost, which the published port cannot reach. The warning is about the container's network; with the port published on ``127.0.0.1`` as in step 3, only your machine can reach the server.
 
 7.  **Access the Web Console:**
 
