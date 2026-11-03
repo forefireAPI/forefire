@@ -358,6 +358,20 @@ if(FOREFIRE_BUILD_CLI)
     if(_ff_warning_flags)
         target_compile_options(forefire PRIVATE ${_ff_warning_flags})
     endif()
+    # `forefire -v` also prints the commit it was built from. Read at configure
+    # time, so a commit made without reconfiguring is not picked up. Empty when
+    # there is no git checkout (sdist, tarball).
+    set(FOREFIRE_GIT_DESCRIBE "")
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            OUTPUT_VARIABLE FOREFIRE_GIT_DESCRIBE
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET)
+    endif()
+    target_compile_definitions(forefire PRIVATE "FF_GIT_DESCRIBE=\"${FOREFIRE_GIT_DESCRIBE}\"")
 endif()
 
 # ----------------------------------
