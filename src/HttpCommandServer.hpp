@@ -98,12 +98,16 @@ namespace http_command {
                 << "ForeFire HTTP command server listening at http://" << host << ":" << port
                 << "\033[0m"
                 << std::endl;
-            std::cout << "Development server: do not use in production." << std::endl;
+            std::cout
+                << "\033[31m"   // start red
+                << "WARNING: development server, do not use in production."
+                << "\033[0m"
+                << std::endl;
 
             if (!loopbackOnly) {
                 std::cout
                     << "\033[31m"   // start red
-                    << "WARNING: development server, reachable from the network. Anyone who can reach this port can run ForeFire commands. Use listenHTTP[localhost:" << port << "] unless you need remote access."
+                    << "WARNING: reachable from the network. Anyone who can reach this port can run ForeFire commands. Use listenHTTP[localhost:" << port << "] unless you need remote access."
                     << "\033[0m"
                     << std::endl;
             }
