@@ -2,7 +2,8 @@ name: 🧪 Test Native (macOS)
 
 on:
   pull_request:
-    paths-ignore: [ "docs/**", "**/*.md" ]
+    # commands.md is compiled into the CLI, so it is not ignored like other .md
+    paths: [ "**", "!docs/**", "!**/*.md", "app/forefire/commands.md" ]
     branches: [ "master", "dev" ]
   workflow_dispatch:
 
