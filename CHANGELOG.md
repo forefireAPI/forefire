@@ -34,6 +34,12 @@ history, so they summarise each release rather than list every change. The
   `forefire.mjs`, `worker.mjs`) and its `SHA256SUMS`, so it can be pinned to a
   version instead of the GitHub Pages copy, which follows `dev`.
 
+### Changed
+
+- `listenHTTP[]` prints "Development server: do not use in production." on
+  every start, not only when it listens on the network: the server has no
+  authentication on any address.
+
 ### Fixed
 
 - Commands that need a domain print an error when there is none, instead of

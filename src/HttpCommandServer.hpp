@@ -98,6 +98,7 @@ namespace http_command {
                 << "ForeFire HTTP command server listening at http://" << host << ":" << port
                 << "\033[0m"
                 << std::endl;
+            std::cout << "Development server: do not use in production." << std::endl;
 
             if (!loopbackOnly) {
                 std::cout
