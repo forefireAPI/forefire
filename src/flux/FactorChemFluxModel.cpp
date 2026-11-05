@@ -111,8 +111,8 @@ string FactorChemFluxModel::getName(){
 /* Model for the flux */
 /* ****************** */
 
-double FactorChemFluxModel::getValue(double* valueOf
-		, const double& bt, const double& et, const double& at){
+double FactorChemFluxModel::getValue([[maybe_unused]] double* valueOf
+		, const double& bt, [[maybe_unused]] const double& et, [[maybe_unused]] const double& at){
 	if ( bt - eruptionTime < 0 ) return 0.;
 
 	/* getting the hours since eruption */

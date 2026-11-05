@@ -104,8 +104,8 @@ string CraterVaporFluxModel::getName(){
 /* Model for the flux */
 /* ****************** */
 
-double CraterVaporFluxModel::getValue(double* valueOf
-		, const double& bt, const double& et, const double& at){
+double CraterVaporFluxModel::getValue([[maybe_unused]] double* valueOf
+		, const double& bt, [[maybe_unused]] const double& et, [[maybe_unused]] const double& at){
 
 	if ( bt - eruptionTime < 0 ) return 0.;
 

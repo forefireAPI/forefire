@@ -90,7 +90,7 @@ string HeatFluxBasicModel::getName(){
 /* ***	*************** */
 #include <iostream>
 
-double HeatFluxBasicModel::getValue(double* valueOf
+double HeatFluxBasicModel::getValue([[maybe_unused]] double* valueOf
 		, const double& bt, const double& et, const double& at){
 	/* Mean heat flux released between the time interval [bt, et] */
 	/* The heat flux is supposed to be constant from the arrival time (at)
