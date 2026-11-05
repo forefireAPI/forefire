@@ -26,7 +26,6 @@ List of scripts:
 - ***genForeFireCase.py*** writes the **NetCDFfile** landscape (fuel, elevation, wind, flux models) from numpy arrays
 - ***genPrepIdeal.py*** creates the  .nam for mesonh ideal case ???
 - ***prealCF2Case.py*** creates the **NetCDFfile**=data.nc file in the **ForeFireDataDirectory** directory
-- ***pngs2bmap.py*** creates the burning map file **BMapFiles** starting from kml contours
 - ***kmlDomain.py*** extracts kml files from a netcdf file
 
 ### genForeFireCase
@@ -95,10 +94,5 @@ TO BE IMPLEMENTED:
 - a routine that given the coordinates, extract a colormap for fuels
 - we need to translate the colormap in integer numbers
 
-### pngs2bmap 
-createsthe bmap file **BMapFiles** starting from given kml contours
-TO BE IMPLEMENTED:
-- parameters *otime*,*FLx*,*FLy*,*FSWx* ,*FSWy*,*FSWx*,*FSWy*, *FrefYear*, *FrefDay*, *FrefYear*, *FrefDay*,*NHours* should be all given at the head of the modules
-- finds the kml source files automatically for a given directory 
 
 ```
