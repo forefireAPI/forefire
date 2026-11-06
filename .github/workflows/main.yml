@@ -35,7 +35,7 @@ jobs:
 
       - name: Verify LFS test asset (data.nc)
         run: |
-          bash ./tools/preflight/verify-lfs.sh
+          bash ./scripts/verify-lfs.sh
 
       - name: Install Dependencies (Build + Test)
         run: |

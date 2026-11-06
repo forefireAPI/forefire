@@ -4,7 +4,7 @@ set -euo pipefail
 # Minimal preflight check for Git LFS assets used by quick-start tests
 # Verifies that tests/runff/data.nc is a real NetCDF file (by size) and, if available, via ncdump.
 
-PROJECT_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+PROJECT_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 DATA_FILE_REL="tests/runff/data.nc"
 DATA_FILE="${PROJECT_ROOT_DIR}/${DATA_FILE_REL}"
 
