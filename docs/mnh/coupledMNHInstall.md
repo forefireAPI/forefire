@@ -84,8 +84,8 @@ larger than 15 kB. It does not compare against `ForeFire.0.nc.ref`, and the
 grid size depends on the Meso-NH version (680×680 on 6.0.1, 666×666 reported
 on 6.1). A meaningful check is the comparison in section 5.
 
-`Init.ff` starts `listenHTTP[host=127.0.0.1:8080]`, so port 8080 must be
-free.
+`mnh_real_nested/ForeFire/Init.ff` starts
+`listenHTTP[host=127.0.0.1:8080]`, so port 8080 must be free.
 
 ## 5. Check that a change does not alter coupled results
 

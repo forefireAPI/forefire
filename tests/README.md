@@ -6,7 +6,7 @@ use-cases of ForeFire.
 | Directory | What it covers | Needs |
 | --- | --- | --- |
 | `unit` | C++ tests of one model at a time, without running a simulation, covering every registered propagation and flux model | Nothing beyond the build; see `unit/README.md` |
-| `mnh_ideal` | ForeFire / **Meso-NH** coupling on an idealised atmospheric case | `SRC_MESONH` set; Meso-NH compiled with the ForeFire library in its `exe` directory |
+| `mnh_ideal` | ForeFire / **Meso-NH** coupling on an idealised atmospheric case | Meso-NH profile loaded; Meso-NH compiled with the ForeFire library in its `exe` directory |
 | `mnh_real_nested` | ForeFire / **Meso-NH** coupling on a real nested case | Same as above |
 | `python` | The Python bindings, through two example simulations | `PYTHONEXE` set to a Python interpreter that can `import pyforefire` |
 | `runANN` | The built-in feed-forward network evaluator, on a network fitted to Rothermel | `bin/ANN_test`, built by default (`-DFOREFIRE_BUILD_TOOLS=ON`) |
@@ -34,7 +34,8 @@ ctest --test-dir build --output-on-failure
   check: [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
 
   ```bash
-  export SRC_MESONH=/path/to/your/mesonh
+  # sets SRC_MESONH and XYZ, which the mnh_* scripts use
+  . /path/to/mesonh/conf/profile_mesonh-LXgfortran-R8I4-MNH-V6-0-1-MPIAUTO-O2
   ```
 
 * *(optional)* **A Python interpreter with the bindings available**, for the
