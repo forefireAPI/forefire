@@ -13,7 +13,6 @@ List of preprocessing scripts:
 - ***genPrepIdeal.py*** creates the  .nam for mesonh ideal case ???
 - ***kmlDomain.py*** extracts kml files from a netcdf file
 - ***PGD2Init.py*** creates the **InitFile**=Init.ff in the **ForeFireDataDirectory** directory
-- ***pngs2bmap.py*** creates the burning map file **BMapFiles** starting from kml contours
 - ***prealCF2Case.py*** creates the **NetCDFfile**=data.nc file in the **ForeFireDataDirectory** directory
 
 
@@ -52,12 +51,6 @@ The **InitFile** file contains the location of the fire front at initialization 
     - the **InitFile**=Init.ff file in the **ForeFireDataDirectory**
 
 
-### pngs2bmap 
-
-creates the bmap file **BMapFiles** starting from given kml contours
-TO BE IMPLEMENTED:
-- parameters *otime*,*FLx*,*FLy*,*FSWx* ,*FSWy*,*FSWx*,*FSWy*, *FrefYear*, *FrefDay*, *FrefYear*, *FrefDay*,*NHours* should be all given at the head of the modules
-- finds the kml source files automatically for a given directory  
  
  
 ### prealCF2Case
@@ -136,7 +129,6 @@ List of postprocessing scripts:
 #  Postprocessing Scripts
 
 List of postprocessing scripts:
-- ***bmapToVTK.py***
 - ***ffToGeoJson.py*** 
 - ***pMNHFF2VTK.py***
 
