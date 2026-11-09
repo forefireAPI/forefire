@@ -1,4 +1,3 @@
-. $HOME/runMNH
 export MPIRUN="mpiexec -np 4"
 ncgen -o ForeFire/lpsimple.nc ForeFire/lpsimple.cdl
 mkdir ForeFire/Outputs
