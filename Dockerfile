@@ -25,20 +25,18 @@ WORKDIR /build
 # LICENSE is required by CPack at configure time (CMakeLists includes CPack).
 COPY --link CMakeLists.txt LICENSE pyproject.toml ./
 COPY --link app/ ./app/
-# tools/ is needed at configure time: CMakeLists.txt invokes
-# tools/check_all_lfs.bash and references tools/runANN/ANNTest.cpp.
-COPY --link tools/ ./tools/
 COPY --link src/ ./src/
 COPY --link third_party/ ./third_party/
 
 # -march=native is off: this image is published and has to run on CPUs other
-# than the builder's. The LFS check and the unit tests are off too: tests/ is
-# not copied into this stage, so they could only fail.
+# than the builder's. The LFS check, the unit tests and ANN_test are off
+# too: tests/ and scripts/ are not copied into this stage, so they could only
+# fail.
 #
 # Only libforefireL.so is carried into the runtime stage, and the wheel build
 # below compiles the core again on its own terms, so building the `forefire`
 # and ANN_test executables here as well would just be a wasted compile.
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFOREFIRE_NATIVE_ARCH=OFF -DFOREFIRE_CHECK_LFS=OFF -DFOREFIRE_BUILD_TESTS=OFF \
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFOREFIRE_NATIVE_ARCH=OFF -DFOREFIRE_CHECK_LFS=OFF -DFOREFIRE_BUILD_TESTS=OFF -DFOREFIRE_BUILD_TOOLS=OFF \
  && cmake --build build -j"$(nproc)" --target forefireL
 
 COPY --link bindings/ ./bindings/
