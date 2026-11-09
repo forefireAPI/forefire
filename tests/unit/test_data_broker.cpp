@@ -23,7 +23,7 @@
 #include <string>
 
 #ifndef FF_NO_NETCDF
-// DataBroker.h no longer pulls NetCDF in; the fixture below writes a file.
+// The fixture below writes a NetCDF file.
 #include <netcdf>
 using namespace netCDF;
 #endif
