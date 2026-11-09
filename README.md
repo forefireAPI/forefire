@@ -78,7 +78,9 @@ for a complete example.
 
 Published wheels are built without MPI support. For fire-atmosphere coupling
 with MesoNH, or to tune the build for your CPU, build from source instead
-(see [Build from source](#build-from-source)).
+(see [Build from source](#build-from-source), and
+[`docs/mnh/coupledMNHInstall.md`](docs/mnh/coupledMNHInstall.md) for the
+coupled setup).
 
 ## Quick Start with Docker
 
