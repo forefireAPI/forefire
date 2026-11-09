@@ -13,7 +13,7 @@ Meso-NH 6.0.1. macOS notes, from an older Meso-NH 5.7 setup, are at the end.
 
 ```bash
 sudo apt install build-essential gfortran openmpi-bin libopenmpi-dev \
-                 cmake git git-lfs libnetcdf-dev libnetcdf-c++4-dev
+                 cmake git git-lfs libnetcdf-dev libnetcdf-c++4-dev netcdf-bin
 ```
 
 Use Bash, not Ksh, for everything below. Meso-NH's profile reads
@@ -69,8 +69,8 @@ Two cases ship with ForeFire:
 
 | Case | What it is |
 | --- | --- |
-| `tests/mnh_real_nested` | Pedrógão Grande 2017, two nested domains, 4 MPI processes, 1200 s of simulation (about 7.5 min) |
-| `tests/mnh_ideal` | Idealised relief, single domain |
+| `tests/mnh_real_nested` | Pedrógão Grande 2017, two nested domains, 4 MPI processes, 1200 s of simulation (about 7 min) |
+| `tests/mnh_ideal` | Idealised relief, single domain, a few seconds; needs `ncgen` (from `netcdf-bin`) |
 
 ```bash
 cd tests/mnh_real_nested
