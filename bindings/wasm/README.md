@@ -15,16 +15,12 @@ sitting next to live sources is worse than a two minute build.
 
 ## What made it possible
 
-`#include <netcdf>` sat in `src/DataBroker.h`, and the `using namespace netCDF`
-next to it pulled the dependency into 48 of the 58 files in `src/`.
-`-DFOREFIRE_ENABLE_NETCDF=OFF` (#208) compiles that include out, along with
-every code path behind it, and leaves a stub in each entry point that reports
-the missing support. The command table is unchanged, so a script that reaches
-for NetCDF gets a message instead of a link error.
-
-All the NetCDF code now lives under `src/netcdf/`: the `*_nc.cpp` files hold
-the real implementations and `netcdf_stubs.cpp` the stand-ins, and CMake
-compiles one side or the other. No core header includes `<netcdf>` any more.
+All the NetCDF code lives under `src/netcdf/`, and no core header includes
+`<netcdf>`. The `*_nc.cpp` files there hold the real implementations, and
+`netcdf_stubs.cpp` holds a stand-in for each entry point that reports the
+missing support. `-DFOREFIRE_ENABLE_NETCDF=OFF` (#208) makes CMake compile the
+stubs instead of the `*_nc.cpp` files. The command table is unchanged, so a
+script that reaches for NetCDF gets a message instead of a link error.
 
 Nothing else needed touching. MPI was already behind `MPI_COUPLING`, the HTTP
 server and `popen` are never reached from the WASM entry point, and `termios`

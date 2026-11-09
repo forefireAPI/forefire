@@ -3,7 +3,6 @@
  * @brief Stand-ins for every NetCDF-backed entry point, compiled instead of the *_nc.cpp files when FOREFIRE_ENABLE_NETCDF is OFF (Emscripten, slim builds). Each one reports the missing support and keeps the command table unchanged.
  * @copyright Copyright (C) 2025 ForeFire, Fire Team, SPE, CNRS/Universita di Corsica.
  * @license This program is free software; See LICENSE file for details. (See LICENSE file).
- * @author Jean‑Baptiste Filippi — 2025
  */
 
 #include "Command.h"

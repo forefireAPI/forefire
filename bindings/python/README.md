@@ -196,8 +196,8 @@ simulation advances.
 ## Troubleshooting
 
 - **`NetCDF not found` while building from source:** install the *two* NetCDF
-  packages listed above. The C library alone is not enough; ForeFire's
-  `DataBroker` includes the legacy C++4 header `<netcdf>`, which ships in
+  packages listed above. The C library alone is not enough; the NetCDF code
+  in ForeFire's `src/netcdf/` includes the legacy C++4 header `<netcdf>`, which ships in
   `libnetcdf-c++4-dev` / `netcdf-cxx4-devel` / `netcdf-cxx`.
 - **`Illegal instruction` after copying a self-built install to another
   machine:** it was compiled with `-march=native`. Rebuild with
