@@ -28,7 +28,7 @@ is reachable (it needs Git LFS). Official instructions:
 [compile](https://mesonh.readthedocs.io/en/mnh-6-0/getting_started/compile.html).
 
 ```bash
-tar xzf MNH-V6-0-1.tar.gz -C ~/mesonh
+tar xzf mnh601.tar.gz -C ~/mesonh
 cd ~/mesonh/mesonh-code-PACK-MNH-V6-0-1/src
 export ARCH=LXgfortran VER_MPI=MPIAUTO OPTLEVEL=O2
 ./configure
@@ -44,14 +44,16 @@ scripts use.
 ## 3. Build ForeFire and link it
 
 MPI is on by default in a plain CMake build. Check that the configure output
-says MPI was found: without it the coupled run does not work.
+says MPI was found: without it the coupled run does not work. A warning that
+the Git LFS check failed for files under `tests/runff` does not matter here;
+the `mnh_*` files must be listed as OK.
 
 ```bash
 git clone https://github.com/forefireAPI/forefire.git
 cd forefire
 git lfs pull
 cmake -S . -B build
-cmake --build build -j
+cmake --build build -j 4
 ```
 
 This produces `lib/libforefireL.so`. Meso-NH opens
