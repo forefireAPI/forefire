@@ -158,8 +158,9 @@ endif()
 add_library(forefire_netcdf INTERFACE)
 
 if(NOT FOREFIRE_ENABLE_NETCDF)
-    # FF_NO_NETCDF compiles out every NetCDF-backed path; each entry point keeps
-    # a stub that reports the missing support (see DataBroker.h).
+    # The NetCDF-backed entry points come from src/netcdf/netcdf_stubs.cpp
+    # instead (see Source Files below), each reporting the missing support.
+    # FF_NO_NETCDF stays defined for tests that need a NetCDF file fixture.
     message(STATUS "NetCDF support disabled (FOREFIRE_ENABLE_NETCDF=OFF)")
     target_compile_definitions(forefire_netcdf INTERFACE FF_NO_NETCDF)
 elseif(DEFINED ENV{SRC_MESONH} AND DEFINED ENV{XYZ} AND DEFINED ENV{FF_STATIC})
@@ -308,6 +309,16 @@ endif()
 # Source Files
 # ----------------------------------
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
+# Every NetCDF call lives under src/netcdf/: the *_nc.cpp files hold the real
+# implementations, netcdf_stubs.cpp holds one stand-in per entry point that
+# reports the missing support. Exactly one side is compiled.
+list(FILTER SRC_FILES EXCLUDE REGEX "/src/netcdf/")
+if(FOREFIRE_ENABLE_NETCDF)
+    file(GLOB NETCDF_SRC_FILES src/netcdf/*_nc.cpp)
+    list(APPEND SRC_FILES ${NETCDF_SRC_FILES})
+else()
+    list(APPEND SRC_FILES src/netcdf/netcdf_stubs.cpp)
+endif()
 
 # ----------------------------------
 # Core Library Target

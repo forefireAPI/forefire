@@ -22,6 +22,12 @@
 #include <cstdio>
 #include <string>
 
+#ifndef FF_NO_NETCDF
+// DataBroker.h no longer pulls NetCDF in; the fixture below writes a file.
+#include <netcdf>
+using namespace netCDF;
+#endif
+
 using libforefire::DataBroker;
 using libforefire::FFPoint;
 using libforefire::FFVector;

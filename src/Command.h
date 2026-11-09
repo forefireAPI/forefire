@@ -232,6 +232,14 @@ class Command {
 
 	static void writeASCII(const char *, const std::vector<std::vector<double>>& , double , double , double , double );
     static void writeNetCDF(const char *, const string& , const std::vector<std::vector<double>>& , const vector<double> &, const vector<double> &);
+
+	// NetCDF-backed helpers. Both have a NetCDF implementation in
+	// src/netcdf/Command_nc.cpp and a stub in src/netcdf/netcdf_stubs.cpp;
+	// CMake compiles exactly one of the two, and the stub returns false.
+	/*! \brief reads the XHAT/YHAT axes of a MesoNH PGD file */
+	static bool readPgdGrid(const string& file, std::vector<double>& xhat, std::vector<double>& yhat);
+	/*! \brief reads a landscape file's "domain" attributes and nx/ny into the simulation parameters */
+	static bool loadDomainHeader(const string& name, const string& path);
 	
 
 

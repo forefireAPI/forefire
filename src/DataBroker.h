@@ -22,17 +22,12 @@
 #include "FFArrays.h"
 #include "ParallelData.h"
 #include "SimulationParameters.h"
-// FF_NO_NETCDF drops every NetCDF-backed code path. The umbrella header is
-// included in exactly this one place, and the `using namespace` below drags it
-// into every translation unit that reaches DataBroker.h, so the guard here is
-// what makes a NetCDF-free build (Emscripten, slim wheels) possible at all.
-#ifndef FF_NO_NETCDF
-#include <netcdf>
-using namespace netCDF;
-using namespace netCDF::exceptions;
-#endif
-
 using namespace std;
+
+// Only the files under src/netcdf/ include <netcdf>. The loader helpers below
+// take an NcVar, and a forward declaration is all their signatures need, so
+// this header does not depend on NetCDF being installed.
+namespace netCDF { class NcVar; }
 
 namespace libforefire {
 
@@ -211,19 +206,19 @@ class DataBroker {
 	bool isRelevantData(FFPoint&, FFPoint&);
 
 
-#ifndef FF_NO_NETCDF
+	// Defined in src/netcdf/DataBroker_nc.cpp only; a build without NetCDF
+	// never calls them, so they stay declared but undefined there.
 	/*! \brief loading a NCXYZTDataLayer from an NcFile */
-	XYZTDataLayer<double>* constructXYZTLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	XYZTDataLayer<double>* constructXYZTLayer(netCDF::NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \brief loading a FuelDataLayer from an NcFile */
-	FuelDataLayer<double>* constructFuelLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	FuelDataLayer<double>* constructFuelLayer(netCDF::NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \brief loading a PropagativeLayer from an NcFile */
-	PropagativeLayer<double>* constructPropagativeLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	PropagativeLayer<double>* constructPropagativeLayer(netCDF::NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \brief loading a FluxLayer from an NcFile */
-	FluxLayer<double>* constructFluxLayer(NcVar&, FFPoint&, FFPoint&,double , double , int );
+	FluxLayer<double>* constructFluxLayer(netCDF::NcVar&, FFPoint&, FFPoint&,double , double , int );
 	/*! \transpose data from fortran netcdf*/
-	double* readAndTransposeFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t& ,bool  ,  int );
-	int*    readAndTransposeIntFortranProjectedField(NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t&, bool ,  int );
-#endif
+	double* readAndTransposeFortranProjectedField(netCDF::NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t& ,bool  ,  int );
+	int*    readAndTransposeIntFortranProjectedField(netCDF::NcVar* , const size_t& ,const size_t&  , const size_t& ,const size_t&, bool ,  int );
 
 public:
 

@@ -22,6 +22,10 @@ every code path behind it, and leaves a stub in each entry point that reports
 the missing support. The command table is unchanged, so a script that reaches
 for NetCDF gets a message instead of a link error.
 
+All the NetCDF code now lives under `src/netcdf/`: the `*_nc.cpp` files hold
+the real implementations and `netcdf_stubs.cpp` the stand-ins, and CMake
+compiles one side or the other. No core header includes `<netcdf>` any more.
+
 Nothing else needed touching. MPI was already behind `MPI_COUPLING`, the HTTP
 server and `popen` are never reached from the WASM entry point, and `termios`
 lives only in the CLI shell, which a WASM build does not compile.
