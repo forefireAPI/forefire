@@ -105,7 +105,7 @@ test-command = [
 # x86_64 and aarch64; the C++4 API is built from source by the script below.
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
-before-all = "bash {project}/tools/devops/install-netcdf-manylinux.sh"
+before-all = "bash {project}/scripts/install-netcdf-manylinux.sh"
 
 [tool.cibuildwheel.macos]
 before-all = "brew install netcdf netcdf-cxx"

@@ -117,7 +117,7 @@ model — evaluates it over the fuel, slope and wind combinations in
 `modelrun.csv`, and checks the result.
 
 It needs no machine-learning framework. `ANN_test` is a ForeFire tool built
-from `tools/runANN/ANNTest.cpp`, and the `.ffann` format is read by ForeFire's
+from `tests/runANN/ANNTest.cpp`, and the `.ffann` format is read by ForeFire's
 own evaluator.
 
 The check is the root mean squared error between what the network predicts and

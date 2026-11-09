@@ -343,7 +343,7 @@ endif()
 # Test Executable
 # ----------------------------------
 if(FOREFIRE_BUILD_TOOLS)
-    add_executable(ANN_test tools/runANN/ANNTest.cpp)
+    add_executable(ANN_test tests/runANN/ANNTest.cpp)
     target_link_libraries(ANN_test PRIVATE forefire_netcdf)
 endif()
 
@@ -493,7 +493,7 @@ if(FOREFIRE_CHECK_LFS)
     message(STATUS "Running Git LFS data integrity check...")
 
     execute_process(
-        COMMAND bash tools/check_all_lfs.bash
+        COMMAND bash scripts/check_all_lfs.bash
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         RESULT_VARIABLE LFS_CHECK_RESULT
         OUTPUT_VARIABLE LFS_CHECK_OUTPUT
