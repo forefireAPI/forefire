@@ -30,9 +30,8 @@ ctest --test-dir build --output-on-failure
 * The test fixtures are stored in **Git LFS**. `git lfs pull` if the `.nc`
   files look like short text stubs.
 
-* *(optional)* **Meso-NH**, for the `mnh_*` tests only. Setup, and how to
-  check that a change does not alter coupled results:
-  [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
+* *(optional)* **Meso-NH**, for the `mnh_*` tests only. Setup and the `dev` × PR
+  check: [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
 
   ```bash
   export SRC_MESONH=/path/to/your/mesonh

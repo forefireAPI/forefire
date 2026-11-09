@@ -28,6 +28,7 @@ is reachable (it needs Git LFS). Official instructions:
 [compile](https://mesonh.readthedocs.io/en/mnh-6-0/getting_started/compile.html).
 
 ```bash
+mkdir -p ~/mesonh
 tar xzf mnh601.tar.gz -C ~/mesonh
 cd ~/mesonh/mesonh-code-PACK-MNH-V6-0-1/src
 export ARCH=LXgfortran VER_MPI=MPIAUTO OPTLEVEL=O2
