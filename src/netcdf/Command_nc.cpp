@@ -401,8 +401,6 @@ namespace libforefire
 
     bool Command::readPgdGrid(const string &pgdNcFile, std::vector<double> &xhatValues, std::vector<double> &yhatValues)
     {
-        // A read error is only reported here: the caller checks that both
-        // axes came back with at least two values.
         try
         {
             NcFile dataFile(pgdNcFile.c_str(), NcFile::read);
@@ -418,13 +416,14 @@ namespace libforefire
 
                 YHAT.getVar(&yhatValues[0]);
                 XHAT.getVar(&xhatValues[0]);
+                return true;
             }
         }
         catch (NcException &e)
         {
             std::cerr << e.what() << std::endl;
         }
-        return true;
+        return false;
     }
 
     bool Command::loadDomainHeader(const string &name, const string &path)

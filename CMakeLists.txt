@@ -308,11 +308,11 @@ endif()
 # ----------------------------------
 # Source Files
 # ----------------------------------
-file(GLOB_RECURSE SRC_FILES src/*.cpp)
+file(GLOB_RECURSE SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
 # Every NetCDF call lives under src/netcdf/: the *_nc.cpp files hold the real
 # implementations, netcdf_stubs.cpp holds one stand-in per entry point that
 # reports the missing support. Exactly one side is compiled.
-list(FILTER SRC_FILES EXCLUDE REGEX "/src/netcdf/")
+list(FILTER SRC_FILES EXCLUDE REGEX "^src/netcdf/")
 if(FOREFIRE_ENABLE_NETCDF)
     file(GLOB NETCDF_SRC_FILES src/netcdf/*_nc.cpp)
     list(APPEND SRC_FILES ${NETCDF_SRC_FILES})

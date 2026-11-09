@@ -233,8 +233,9 @@ class Command {
 	static void writeASCII(const char *, const std::vector<std::vector<double>>& , double , double , double , double );
     static void writeNetCDF(const char *, const string& , const std::vector<std::vector<double>>& , const vector<double> &, const vector<double> &);
 
-	// NetCDF readers, stubbed in src/netcdf/netcdf_stubs.cpp. They return false
-	// only when the build has no NetCDF; a read error is printed, not returned.
+	// NetCDF readers, stubbed in src/netcdf/netcdf_stubs.cpp, where both return
+	// false. readPgdGrid also returns false when the file cannot be read;
+	// loadDomainHeader only prints a read error, and loadData carries on.
 	/*! \brief reads the XHAT/YHAT axes of a MesoNH PGD file */
 	static bool readPgdGrid(const string& file, std::vector<double>& xhat, std::vector<double>& yhat);
 	/*! \brief reads a landscape file's "domain" attributes and nx/ny into the simulation parameters */
