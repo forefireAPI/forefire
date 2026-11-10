@@ -1,164 +1,163 @@
-# How to Install Coupled ForeFire with Meso NH; tested on OSX Ventura with Apple Silicon
+# Running ForeFire coupled with Meso-NH
 
-This guide details the steps to install coupled ForeFire with Meso NH on Apple Silicon Macs running OSX Ventura.
+[Meso-NH](https://mesonh.cnrs.fr) is the French atmospheric research model
+(CNRS / Météo-France). Coupled runs load ForeFire as a shared library: at
+every step Meso-NH sends wind to the fire and receives heat and vapour fluxes
+back. This guide sets the coupling up from scratch and shows how to check
+that a change to ForeFire does not alter coupled results.
 
-## Requirements
+Tested on Ubuntu 24.04 (WSL) with GCC/gfortran 13.3, OpenMPI 4.1.6 and
+Meso-NH 6.0.1. macOS notes, from an older Meso-NH 5.7 setup, are at the end.
 
-Before proceeding, ensure the following packages are installed via Homebrew:
-
-- GCC (should be pre-installed)
-- GFortran
-- OpenMPI
-
-Acquire MesoNH from the official depot at [MesoNH Depot](http://mesonh.aero.obs-mip.fr). If encountering Git issues, download the tarball from [MNH-V5-7-0.tar.gz](http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-7-0.tar.gz).
-
-**Important Note:** Utilize Bash instead of Ksh to avoid potential script compatibility issues.
-
-## Configuration Steps
-
-1. **Export Environment Variables**
-
-   Begin by setting the necessary environment variables in your terminal:
-
-   ```bash
-   export ARCH=LXgfortran
-   export VER_MPI=MPIAUTO
-   export OPTLEVEL=O2
-   export MNH_FOREFIRE=1.0
-   ```
-
-2. **Run Configuration Script**
-
-   Navigate to the `src` directory within the MesoNH directory and execute the configuration script:
-
-   ```bash
-   ./configure
-   ```
-
-   This should generate a configuration similar to:
-
-   ```
-   $SRC_MESONH/conf/profile_mesonh-LXgfortran-R8I4-MNH-V5-7-0-FF-MPIAUTO-O2
-   ```
-
-3. **Load the Configuration Profile**
-
-   Load the generated configuration profile by running:
-
-   ```bash
-   . $SRC_MESONH/conf/profile_mesonh-LXgfortran-R8I4-MNH-V5-7-0-FF-MPIAUTO-O2
-   ```
-
-
-## Installation and Configuration
-
-After setting up your environment variables, proceed with the compilation:
+## 1. Prerequisites
 
 ```bash
-make -j 4
+sudo apt install build-essential gfortran openmpi-bin libopenmpi-dev \
+                 cmake git git-lfs libnetcdf-dev libnetcdf-c++4-dev netcdf-bin
 ```
 
-Then installation :
+Use Bash, not Ksh, for everything below. Meso-NH's profile reads
+`SRC_MESONH` before defining it, so do not run with `set -u`.
+
+## 2. Get and build Meso-NH
+
+The 6.0.1 release is on [Zenodo](https://zenodo.org/records/21395048). The
+[CNRS GitLab](https://src.koda.cnrs.fr/mesonh/mesonh-code) also works when it
+is reachable (it needs Git LFS). Official instructions:
+[download](https://mesonh.readthedocs.io/en/mnh-6-0/getting_started/download.html),
+[compile](https://mesonh.readthedocs.io/en/mnh-6-0/getting_started/compile.html).
 
 ```bash
+mkdir -p ~/mesonh
+tar xzf mnh601.tar.gz -C ~/mesonh
+cd ~/mesonh/mesonh-code-PACK-MNH-V6-0-1/src
+export ARCH=LXgfortran VER_MPI=MPIAUTO OPTLEVEL=O2
+./configure
+. ../conf/profile_mesonh-LXgfortran-R8I4-MNH-V6-0-1-MPIAUTO-O2
+make -j 12
 make installmaster
 ```
 
-This command initiates the installation process, and upon completion, you should have a working setup of Meso NH ready for further configuration and compilation of additional components, such as ForeFire.
+The build takes about 15 minutes on 12 cores. Load the profile in every new
+shell before running a case: it sets `SRC_MESONH` and `XYZ`, which the test
+scripts use.
 
-### Compiling ForeFire and Linking with Meso NH
+## 3. Build ForeFire and link it
 
-ForeFire must be compiled separately before being linked. Follow the cmake instruction for forefire, to link, follow the steps below after compiling ForeFire:
+MPI is on by default in a plain CMake build. Check that the configure output
+says MPI was found: without it the coupled run does not work. A warning that
+the Git LFS check failed for files under `tests/runff` does not matter here;
+the `mnh_*` files must be listed as OK.
 
-1. Ensure ForeFire is compiled with a shared library, on osX it should be located at `firefront/lib/libforefireL.dylib`.
-2. Navigate to the Meso NH `exe/` directory and create a symbolic link to the ForeFire library:
+```bash
+git clone https://github.com/forefireAPI/forefire.git
+cd forefire
+git lfs pull
+cmake -S . -B build
+cmake --build build -j 4
+```
 
-   ```bash
-   ln -s PATHTOCOMPILEDFF/lib/libforefireL.dylib libForeFire.so
-   ```
+This produces `lib/libforefireL.so`. Meso-NH opens
+`$SRC_MESONH/exe/libForeFire.so` at run time, so link it there:
 
-Replace `PATHTOCOMPILEDFF` with the actual path to your compiled ForeFire library. This step integrates ForeFire with Meso NH, enabling them to work together seamlessly.
+```bash
+ln -sf "$PWD/lib/libforefireL.so" "$SRC_MESONH/exe/libForeFire.so"
+```
 
-In the `exe/` directory, you should now have manies entries but most importantly :
+## 4. Run a coupled case
 
-- `MESONH-LXgfortran-R8I4-MNH-V5-7-0-FF-MPIAUTO-O2-> $SRC_MESONH/src/dir_obj-LXgfortran-R8I4-MNH-V5-7-0-FF-MPIAUTO-O2/MASTER/MESONH`
+Two cases ship with ForeFire:
 
-And one more, in the same directory for ForeFire: `libForeFire.so -> PATHTOCOMPILEDFF/lib/libforefireL.dylib`
+| Case | What it is |
+| --- | --- |
+| `tests/mnh_real_nested` | Pedrógão Grande 2017, two nested domains, 4 MPI processes, 1200 s of simulation (about 7 min) |
+| `tests/mnh_ideal` | Idealised relief, single domain, a few seconds; needs `ncgen` (from `netcdf-bin`) |
 
-### Running a Simulation
+```bash
+cd tests/mnh_real_nested
+bash clean.bash
+bash run.bash
+```
 
-To run a simulation with ForeFire:
+`run.bash` only checks that `ForeFire/Outputs/ForeFire.0.nc` exists and is
+larger than 15 kB. It does not compare against `ForeFire.0.nc.ref`, and the
+grid size depends on the Meso-NH version (680×680 on 6.0.1, 666×666 reported
+on 6.1). A meaningful check is the comparison in section 5.
 
-1. Navigate to the case directory, for example, the one for case 016_FOREFIRE.
-2. Set the `MPIRUN` environment variable to configure the number of CPUs to use. For instance, to use 2 CPUs, execute:
+`mnh_real_nested/ForeFire/Init.ff` starts
+`listenHTTP[host=127.0.0.1:8080]`, so port 8080 must be free.
 
-   ```bash
-   export MPIRUN="mpirun -np 2"
-   ```
-3. Run the simulation as other KTESTS
+## 5. Check that a change does not alter coupled results
 
-## Fixups for OSX
+Run the same case with ForeFire built from `dev` and from the branch under
+review, and compare the outputs byte for byte.
 
-During the installation and configuration of Meso NH and its components on OSX, you may encounter specific issues that require workarounds. Below are some solutions to common problems:
+1. Build both versions with the same options, each in its own worktree
+   (`git worktree add ../ff-pr <branch>`).
+2. Make a clean copy of the case for each run.
+3. Run `dev`, branch, `dev`, branch, switching the `libForeFire.so` link
+   before each run.
+4. Compare with `cmp` the files in `ForeFire/Outputs`, `MODEL1`, `MODEL2` and
+   the `RUN12.*.FIRE.*.nc` files.
 
-### Fixing libxml2 Configuration Issue
+Two runs of the same build already differ in a few places, so the second
+`dev` run is what separates noise from a real change:
 
-When configuring NetCDF 4.9.2, if you encounter an issue related to libxml2, follow these steps to resolve it:
+- `RUN12.*.FIRE.*.nc`: 7 to 9 bytes, the timestamp in the `history`
+  attribute and the HDF5 header checksum.
+- `MODEL*/output.*.air_density`: meaningless values (NaN, ±10¹⁰) that change
+  on every run. This comes from Meso-NH, not from ForeFire.
 
-1. Install autotools if you haven't already:
+Everything else must be identical. A file that differs between `dev` and the
+branch, but not between the two `dev` runs, is a real difference.
 
-   ```bash
-   brew install autoconf automake libtool
-   ```
+## macOS notes (Meso-NH 5.7)
 
-2. Navigate to the NetCDF C library source directory:
+These come from an earlier setup on Apple Silicon with macOS Ventura and
+Meso-NH 5.7. They may no longer apply to 6.x.
 
-   ```bash
-   cd $SRC_MESONH/src/LIB/netcdf-c-4.9.2/
-   ```
+Install `gcc`, `gfortran` and `open-mpi` with Homebrew. On 5.7, also
+`export MNH_FOREFIRE=1.0` before `./configure`. The library is
+`lib/libforefireL.dylib`; link it as `libForeFire.so` in `$SRC_MESONH/exe`
+all the same.
 
-3. Open `configure.ac` and locate the following line around line 1222:
+### libxml2 error when configuring NetCDF 4.9.2
 
-   ```plaintext
-   if test "x$ISOSX" = xyes && test "x$have_libxml2" = xno; then
-   ```
+```bash
+brew install autoconf automake libtool
+cd $SRC_MESONH/src/LIB/netcdf-c-4.9.2/
+```
 
-4. Modify the line by removing the second `test` keyword, so it reads:
+In `configure.ac`, around line 1222, change
 
-   ```plaintext
-   if test "x$ISOSX" = xyes && "x$have_libxml2" = xno; then
-   ```
+```plaintext
+if test "x$ISOSX" = xyes && test "x$have_libxml2" = xno; then
+```
 
-5. Run `autoreconf` to regenerate the `configure` script from the modified `configure.ac`. This change should allow the configuration process to proceed without the libxml2 error.
+to
 
-### Fixing NetCDF C++ Configuration Hanging Issue
+```plaintext
+if test "x$ISOSX" = xyes && "x$have_libxml2" = xno; then
+```
 
-If the configuration of NetCDF C++ hangs due to a version file issue, perform the following steps:
+then run `autoreconf`.
 
-1. In the `$SRC_MESONH/src/LIB/netcdf-cxx4-4.3.1` directory, you will find a `VERSION` file that incorrectly contains a version number (e.g., "-n 4.4.3"). This file needs to be empty.
+### NetCDF C++ configuration hangs
 
-2. You will need to use two terminals for this fix. In one terminal, navigate to the `$SRC_MESONH/src/LIB/netcdf-cxx4-4.3.1` directory. In the other terminal, run the Meso NH make process.
+`$SRC_MESONH/src/LIB/netcdf-cxx4-4.3.1/VERSION` gets a bad version string
+(e.g. `-n 4.4.3`) and must be empty. While `make` runs in one terminal, empty
+it from another as soon as it appears, after HDF5 and the NetCDF C
+configuration:
 
-3. While the make process is running, frequently clear the `VERSION` file in the first terminal by running:
+```bash
+cat VERSION; echo "" > VERSION
+```
 
-   ```bash
-   cat VERSION; echo "" > VERSION
-   ```
+### `mpirun` loops forever
 
-   This needs to be done quickly between the creation and usage of the `VERSION` file during the make process. Pay attention to the compilation stages: first HDF5 (which takes a few minutes), then a quick NetCDF 9 configuration, followed by the NetCDF C++ configuration where you need to apply the fix.
+The case-insensitive filesystem confuses `Mpirun` with `mpirun`:
 
-### Fixing MPI Run Infinite Loop Issue
-
-On OSX, you might encounter an infinite loop issue with `mpirun` due to case sensitivity in paths. To resolve this:
-
-1. Navigate to the Meso NH bin directory:
-
-   ```bash
-   cd $SRC_MESONH/bin
-   ```
-
-2. Rename `Mpirun` to avoid conflicts with the case-insensitive filesystem of OSX:
-
-   ```bash
-   mv Mpirun NoMpirun
-   ```
+```bash
+cd $SRC_MESONH/bin
+mv Mpirun NoMpirun
+```
