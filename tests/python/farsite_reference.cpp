@@ -16,10 +16,9 @@
  *     fuel ones tens hundreds liveh livew wind_mph slope_tan
  * (moistures as fractions of dry weight, wind at midflame) and writes one line
  * per case on stdout:
- *     rateo phiw phis phiew head lb flank back waf
+ *     rateo phiw phis phiew head lb flank back
  * rateo is the no-wind no-slope spread, head/flank/back the spread rates at
- * the head, flank and back of the ellipse, all in m/min. waf is the
- * unsheltered 20 ft to midflame wind reduction FARSITE applies for this fuel.
+ * the head, flank and back of the ellipse, all in m/min.
  *
  * Build: c++ -O2 -o farsite_reference farsite_reference.cpp
  *
@@ -464,35 +463,6 @@ void Mechanix::ellipse(double iros, double wspeed)
 	back = head - back;			// modifies rates of spread for elliptical dimensions
 }
 
-// fsxwfms2.cpp:462-510, FELocalSite::windreduct, unsheltered branch
-// (canopy cover <= 5%): 20 ft wind to midflame wind.
-static double windreduct(long fuel)
-{
-	double htfuel, htflame, m1, m2;
-	switch (fuel)
-	{
-	case 1: htfuel = 1.0; break;
-	case 2: htfuel = 1.0; break;
-	case 3: htfuel = 2.5; break;
-	case 4: htfuel = 6.0; break;
-	case 5: htfuel = 2.0; break;
-	case 6: htfuel = 2.5; break;
-	case 7: htfuel = 2.5; break;
-	case 8: htfuel = 0.2; break;
-	case 9: htfuel = 0.2; break;
-	case 10: htfuel = 1.0; break;
-	case 11: htfuel = 1.0; break;
-	case 12: htfuel = 2.3; break;
-	case 13: htfuel = 3.0; break;
-	default: htfuel = 0.01; break;
-	}
-	htflame = htfuel;		// from Baughman and Albini 6th conf. FFM 1980
-	m1 = (1.0 + 0.36 * (htfuel / htflame)) /
-		(log((20.0 + 0.36 * htfuel) / (0.13 * htfuel)));
-	m2 = log(((htflame / htfuel + 0.36) / .13)) - 1.0;
-	return m1 * m2;
-}
-
 int main()
 {
 	int fuel;
@@ -523,9 +493,8 @@ int main()
 			flank = m.flank;
 			back = m.head - m.back;
 		}
-		printf("%.12g %.12g %.12g %.12g %.12g %.12g %.12g %.12g %.12g\n",
-			   m.fros, phiw, phis, phiew, head, lb, flank, back,
-			   windreduct(fuel));
+		printf("%.12g %.12g %.12g %.12g %.12g %.12g %.12g %.12g\n",
+			   m.fros, phiw, phis, phiew, head, lb, flank, back);
 	}
 	return 0;
 }

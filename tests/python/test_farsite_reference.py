@@ -94,8 +94,7 @@ def run_reference(exe, rows):
                               for i, a in enumerate(args)))
     out = subprocess.run([exe], input="\n".join(lines) + "\n",
                          capture_output=True, text=True, check=True).stdout
-    keys = ("rateo", "phiw", "phis", "phiew", "head", "lb", "flank", "back",
-            "waf")
+    keys = ("rateo", "phiw", "phis", "phiew", "head", "lb", "flank", "back")
     results = []
     for line in out.splitlines():
         r = dict(zip(keys, map(float, line.split())))
@@ -184,7 +183,7 @@ def _probe_in_process(case):
                 f"loc=({x},{yy},0);vel=({0.01 * math.cos(a)},"
                 f"{0.01 * math.sin(a)},0);t=0;state=init;frontId=2]")
         ff.execute("goTo[t=0.01]")
-        del ff  # closes the log
+        del ff  # log lines end in endl, so the file is already flushed
 
         with open(log) as f:
             header = f.readline().strip().split(";")
