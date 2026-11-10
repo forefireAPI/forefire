@@ -15,17 +15,16 @@ head, the one facing south the back, the ones facing east or west the flanks.
 Two comparisons, both against the reference, never against ForeFire itself:
 
 model     The reference is fed the wind and slope ForeFire handed to the
-          model at the head node. Any gap is in FarsitePropagationModel.cpp
-          or in the fuel table and moistures ForeFire feeds it.
+          model at the head node, converted as the model does (sine to
+          tangent, wind back to horizontal, except with splines). Any gap is
+          in FarsitePropagationModel.cpp or in the fuel table and moistures.
 pipeline  The reference is fed the case as FARSITE sees it: the midflame wind
           and the tangent of the terrain slope. Any gap beyond the model one
           is in how ForeFire derives the normal wind and slope it hands over.
 
-The test fails when the head rate of spread differs beyond REL_TOL in the
-model comparison, or in the pipeline comparison on flat ground. On a slope the
-pipeline gap is known and only reported, unless ``--strict``. Flank, back and
-length-to-breadth are only reported: ForeFire has no ellipse, so a node not
-facing the wind spreads at the no-wind rate.
+The test fails when the head rate of spread differs beyond REL_TOL in either
+comparison. Flank, back and length-to-breadth are only reported: ForeFire has
+no ellipse, so a node not facing the wind spreads at the no-wind rate.
 
 Every case runs in its own interpreter, because a second ``ForeFire()`` in a
 process inherits the first one's parameters (see test_moisture_invariants.py).
@@ -34,7 +33,7 @@ Usage
 -----
     python3 tests/python/test_farsite_reference.py           # summary
     python3 tests/python/test_farsite_reference.py -v        # every case
-    python3 tests/python/test_farsite_reference.py --strict  # sloped pipeline too
+    python3 tests/python/test_farsite_reference.py --scheme splines
 """
 
 import argparse
@@ -137,6 +136,7 @@ def _probe_in_process(case):
         log = os.path.join(tmp, "farsite.csv")
         ff = forefire.ForeFire()
         ff["propagationModel"] = "Farsite"
+        ff["normalScheme"] = case["scheme"]
         ff["fuelsTable"] = "STDfarsiteFuelsTable"
         ff["FarsiteLoggerCSVPath"] = log
         ff["moistures.ones"] = ones
@@ -208,6 +208,15 @@ def pick(rows, which):
     return min(rows, key=lambda r: abs(r["normalWind"]) + abs(r["slope"]))
 
 
+def model_inputs(h, scheme):
+    """The wind and slope getSpeed uses, from the raw values it logged."""
+    if scheme == "splines":
+        return h["normalWind"], h["slope"]
+    s = max(-0.99, min(0.99, h["slope"]))
+    c = math.sqrt(1.0 - s * s)
+    return h["normalWind"] / c, s / c
+
+
 def rel(a, b):
     if a == b:
         return 0.0
@@ -218,8 +227,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print every case, not only the mismatches")
-    parser.add_argument("--strict", action="store_true",
-                        help="also fail on the pipeline gap on a slope")
+    parser.add_argument("--scheme", default="medians",
+                        choices=("medians", "weightedMedians", "splines"),
+                        help="ForeFire normalScheme")
     parser.add_argument("--probe", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
 
@@ -227,7 +237,8 @@ def main(argv=None):
         print(_SENTINEL + json.dumps(_probe_in_process(json.loads(args.probe))))
         return 0
 
-    cases = [{"fuel": f, "moisture": m, "wind": w, "slope": s}
+    cases = [{"fuel": f, "moisture": m, "wind": w, "slope": s,
+              "scheme": args.scheme}
              for f in FUELS for m in MOISTURES for w in WINDS for s in SLOPES]
     with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 2)) as pool:
         logs = list(pool.map(probe, cases))
@@ -236,7 +247,8 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         exe = build_reference(tmp)
         model = run_reference(exe, [
-            (c["fuel"], MOISTURES[c["moisture"]], h["normalWind"], h["slope"])
+            (c["fuel"], MOISTURES[c["moisture"]])
+            + model_inputs(h, args.scheme)
             for c, h in zip(cases, heads)])
         pipeline = run_reference(exe, [
             (c["fuel"], MOISTURES[c["moisture"]], c["wind"],
@@ -255,9 +267,10 @@ def main(argv=None):
             "head(model)": rel(h["ROS"], mo["head"]),
             "head(pipeline)": rel(h["ROS"], pi["head"]),
         }
-        bad = [k for k in ("R0", "phiew", "head(model)") if errs[k] > REL_TOL]
-        if errs["head(pipeline)"] > REL_TOL and (args.strict or c["slope"] == 0):
-            bad.append("head(pipeline)")
+        # The spline normals do not point at the head: report that gap only.
+        checked = [k for k in errs
+                   if not (k == "head(pipeline)" and args.scheme == "splines")]
+        bad = [k for k in checked if errs[k] > REL_TOL]
         if bad:
             failures.append((c, bad))
         if args.verbose or bad:
@@ -276,8 +289,7 @@ def main(argv=None):
         ratios = [h["ROS"] / pi["head"] for c, h, pi in sloped
                   if c["slope"] == deg]
         print(f"slope {deg:.0f} deg, ForeFire head / FARSITE head: "
-              f"{min(ratios):.3f} to {max(ratios):.3f}"
-              + ("" if args.strict else " (reported, not asserted)"))
+              f"{min(ratios):.3f} to {max(ratios):.3f}")
     return 1 if failures else 0
 
 

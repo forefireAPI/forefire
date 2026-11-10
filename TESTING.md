@@ -216,8 +216,8 @@ python3 tests/python/test_validate.py
 
 `tests/python/test_farsite_reference.py` compares the Farsite model with the
 FARSITE reference code (`mbedward/farsite`) over the 13 fuel models. It needs
-a C++ compiler and is not run by CI. Gaps on slope and at flank/back are
-reported; `--strict` makes the slope gap fail.
+a C++ compiler and is not run by CI. Flank and back are reported, not
+asserted. `--scheme splines` runs it with that normal scheme.
 
 ```bash
 ./.venv/bin/python tests/python/test_farsite_reference.py
