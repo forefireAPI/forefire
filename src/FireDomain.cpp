@@ -7,6 +7,7 @@
  */
 
  #include "FireDomain.h"
+#include "fftile.h"
  #include "BurningMapLayer.h"
  
  #include <sys/stat.h>
@@ -1364,6 +1365,9 @@
  
 	 // Computing the propagation speed of a given firenode
 	 double FireDomain::getPropagationSpeed(FireNode* fn) {
+         if (auto tiles = dataBroker->getFFTileManager()) {
+             if (tiles->sample(FFTileField::Fuel,fn->getX(),fn->getY()) == 0) return 0.;
+         }
 		 if ( propagativeLayer == nullptr ){
 			 // A domain built without loadData: pick the model as loadData does
 			 string propagationModel = params->getParameter("propagationModel");
@@ -2828,7 +2832,12 @@
 
 		 }
 
-		 dataBroker->loadFromNCFile(infile.str());
+		 if (params->isValued("fftilesPath")) {
+             auto source = params->getParameter("fftilesPath");
+             dataBroker->loadFFTiles(fftileIsHTTP(source) ? source : params->GetPath(source));
+         }
+         else
+             dataBroker->loadFromNCFile(infile.str());
 
 		 if ( params->isValued("metersPerDegreeLat") ){
 			 metersPerDegreeLat = params->getDouble("metersPerDegreeLat");
@@ -2919,18 +2928,33 @@
 
 
 	double FireDomain::getXFromLon(double lon) {
+        return getXFromLon(lon,SWCorner.getY());
+    }
+
+    double FireDomain::getXFromLon(double lon, double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) {
+            auto lat = tiles->coordinates.geographic(tiles->coordinates.x,y)[0];
+            return tiles->coordinates.cartesian(lat,lon)[0];
+        }
 		return (lon - getRefLongitude()) * getMetersPerDegreesLon();
 	}
 	
 	double FireDomain::getYFromLat(double lat) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.cartesian(lat,tiles->coordinates.longitude)[1];
 		return (lat - getRefLatitude()) * getMetersPerDegreeLat();
 	}
 	
 	double FireDomain::getLonFromX(double x) {
+        return getLonFromX(x,SWCorner.getY());
+    }
+
+    double FireDomain::getLonFromX(double x, double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.geographic(x,y)[1];
 		return x / getMetersPerDegreesLon() + getRefLongitude();
 	}
 	
 	double FireDomain::getLatFromY(double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.geographic(tiles->coordinates.x,y)[0];
 		return y / getMetersPerDegreeLat() + getRefLatitude();
 	}
 

@@ -59,3 +59,10 @@ tests/python/log.txt
 tests/python/runROS.bash
 simulation_result.geojson
 paper/paper.pdf
+
+# Local legacy tile downloads and conversion artifacts
+/test_input_tiles/
+/test_output_tiles/
+
+# Compressed tiles fetched from registered HTTP services
+**/tiles-cache/

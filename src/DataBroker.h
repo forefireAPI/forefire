@@ -10,6 +10,7 @@
 #define DATABROKER_H_
 
 #include "DataLayer.h"
+#include <memory>
 #include "GradientDataLayer.h"
 #include "TimeGradientDataLayer.h"
 #include "NCXYZTDataLayer.h"
@@ -37,6 +38,7 @@ using namespace std;
 namespace libforefire {
 
 class FireDomain;
+class FFTileManager;
 class FluxModel;
 template<typename T> class MultiplicativeLayer;
 
@@ -55,6 +57,7 @@ template<typename T> class MultiplicativeLayer;
 class DataBroker {
 
 	// Information concerning the fire model
+	std::shared_ptr<FFTileManager> tileManager;
 	FireDomain* domain; /*!< pointers to the domain */
 	static SimulationParameters* params;
 
@@ -255,6 +258,8 @@ public:
 
 	/*! \brief loadFromNCFile function for NetCDF files */
 	void loadFromNCFile(string);
+	void loadFFTiles(const std::string& directory);
+	std::shared_ptr<FFTileManager> getFFTileManager() const { return tileManager; }
 
 	/*! \brief reading a table from an ascii file */
 	void readTableFromAsciiFile(string, vector<map<string, double> >&);

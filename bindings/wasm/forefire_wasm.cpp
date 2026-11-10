@@ -6,8 +6,8 @@
  * in bindings/python: one Command per instance, commands driven as strings,
  * gridded inputs handed over as typed arrays instead of NumPy arrays.
  *
- * Everything here assumes FF_NO_NETCDF, so there is no file-backed landscape
- * loading: the caller builds the domain and its layers from JS.
+ * NetCDF is disabled. Landscapes can arrive as arrays or as compressed
+ * .fftile files staged by the asynchronous browser transport into MEMFS.
  */
 
 #include <emscripten/bind.h>
@@ -19,6 +19,9 @@
 
 #include "Command.h"
 #include "FireDomain.h"
+#include "fftile.h"
+#include <stdexcept>
+#include <cmath>
 #include "include/Version.h"
 
 using namespace libforefire;
@@ -150,6 +153,56 @@ public:
 									 timespan, nnx, nny, nnz, nnt, owned);
 	}
 
+    emscripten::val tileDomain() {
+        auto* domain = executor.getDomain();
+        if (!domain || !domain->getDataBroker()->getFFTileManager()) return emscripten::val::null();
+        auto manager = domain->getDataBroker()->getFFTileManager();
+        auto out = emscripten::val::object();
+        out.set("width",domain->getNECorner().getX()-domain->getSWCorner().getX());
+        out.set("height",domain->getNECorner().getY()-domain->getSWCorner().getY());
+        out.set("x0",domain->getSWCorner().getX());out.set("y0",domain->getSWCorner().getY());
+        out.set("longitude",manager->coordinates.longitude);out.set("latitude",manager->coordinates.latitude);
+        out.set("originX",manager->coordinates.x);out.set("originY",manager->coordinates.y);
+        out.set("cachedTiles",manager->cachedTiles());
+        return out;
+    }
+
+    double sampleAt(const std::string& name, double x, double y) {
+        auto* domain = executor.getDomain();
+        if (!domain || !domain->getDataBroker()->hasLayer(name))
+            throw std::runtime_error("sampleAt: domain or layer is missing");
+        return domain->getDataLayer(name)->getValueAt(FFPoint(x,y,0),domain->getSimulationTime());
+    }
+
+    // A bounded preview of a domain, without materializing a whole tile or
+    // a potentially 200 km fuel matrix. Rows are south-first, like .fftile.
+    emscripten::val sampleLayer(const std::string& name, int nx, int ny) {
+        auto* domain = executor.getDomain();
+        if (!domain || nx < 1 || ny < 1 || nx > 1024 || ny > 1024)
+            throw std::runtime_error("sampleLayer: expected a domain and dimensions in 1..1024");
+        double x0=domain->getSWCorner().getX(),y0=domain->getSWCorner().getY();
+        return sampleWindow(name,x0,y0,domain->getNECorner().getX()-x0,
+                            domain->getNECorner().getY()-y0,nx,ny);
+    }
+
+    emscripten::val sampleWindow(const std::string& name, double x0, double y0,
+                                 double width, double height, int nx, int ny) {
+        auto* domain=executor.getDomain();
+        if (!domain || nx<1 || ny<1 || nx>1024 || ny>1024 ||
+            !std::isfinite(x0) || !std::isfinite(y0) || !std::isfinite(width) ||
+            !std::isfinite(height) || width<=0 || height<=0 ||
+            x0<domain->getSWCorner().getX() || y0<domain->getSWCorner().getY() ||
+            x0+width>domain->getNECorner().getX()+1e-6 ||
+            y0+height>domain->getNECorner().getY()+1e-6)
+            throw std::runtime_error("sampleWindow: invalid preview bounds or dimensions");
+        std::vector<double> pixels(size_t(nx)*ny);
+        for (int y=0;y<ny;++y) for(int x=0;x<nx;++x)
+            pixels[size_t(y)*nx+x]=sampleAt(name,x0+(x+.5)*width/nx,y0+(y+.5)*height/ny);
+        auto out=emscripten::val::object();out.set("width",nx);out.set("height",ny);
+        out.set("data",emscripten::val(emscripten::typed_memory_view(pixels.size(),pixels.data())).call<emscripten::val>("slice"));
+        return out;
+    }
+
 	/*! \brief Read a layer back as {shape:[nt,nz,ny,nx], data:Float64Array}. */
 	emscripten::val getDoubleArray(const std::string &name) {
 		FireDomain *domain = executor.getDomain();
@@ -222,5 +275,9 @@ EMSCRIPTEN_BINDINGS(forefire) {
 		.function("addLayer", &ForeFireWasm::addLayer)
 		.function("addScalarLayer", &ForeFireWasm::addScalarLayer)
 		.function("addIndexLayer", &ForeFireWasm::addIndexLayer)
-		.function("getDoubleArray", &ForeFireWasm::getDoubleArray);
+		.function("getDoubleArray", &ForeFireWasm::getDoubleArray)
+        .function("tileDomain", &ForeFireWasm::tileDomain)
+        .function("sampleAt", &ForeFireWasm::sampleAt)
+        .function("sampleLayer", &ForeFireWasm::sampleLayer)
+        .function("sampleWindow", &ForeFireWasm::sampleWindow);
 }

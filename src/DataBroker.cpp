@@ -9,6 +9,8 @@
 #include "DataBroker.h"
 #include "MultiplicativeLayer.h"
 #include "FireDomain.h"
+#include "FFTileDataLayer.h"
+#include <cstdlib>
 
 namespace libforefire
 {
@@ -356,6 +358,8 @@ namespace libforefire
 			//	{
 			// cout << "Redefining layer for variable " << name << " !" << endl;
 			DataLayer<double> *oldlayer = ilayer->second;
+            if (oldlayer == PwindULayer) PwindULayer = nullptr;
+            if (oldlayer == PwindVLayer) PwindVLayer = nullptr;
 			layersMap.erase(name);
 			layers.remove(oldlayer);
 			if (oldlayer != domain->getPropagativeLayer())
@@ -384,6 +388,7 @@ namespace libforefire
 
 			registerLayer("arrival_time_gradient", forcedArrivalTimeLayer);
 		}
+		if (name == "slope") slopeLayer = layer;
 		if (name.find("moisture") != string::npos)
 		{
 			moistureLayer = layer;
@@ -1150,6 +1155,34 @@ namespace libforefire
 			std::cout << "addConstantLayer: Unknown layer type " << layertype << std::endl;
 		}
 	}
+
+void DataBroker::loadFFTiles(const std::string& directory) {
+        std::string global = directory;
+        if (global.empty() && params->isValued("LAYERS_PATH")) global = params->getParameter("LAYERS_PATH");
+        if (global.empty()) { const char* path = std::getenv("LAYERS_PATH"); if (path) global = path; }
+        std::shared_ptr<FFTileProvider> provider;
+        if (fftileIsHTTP(global)) {
+            auto cache = params->GetPath(params->isValued("fftileCacheDirectory") ? params->getParameter("fftileCacheDirectory") : "tiles-cache");
+            provider = std::make_shared<FFTileHTTPProvider>(global,params->GetPath("tiles"),cache);
+        } else provider = std::make_shared<FFTileFileProvider>(params->GetPath("tiles"),global);
+        size_t capacity = params->isValued("fftileCacheSize") ?
+            size_t(std::max(1,params->getInt("fftileCacheSize"))) : 8;
+        tileManager = std::make_shared<FFTileManager>(provider,capacity);
+        auto sw = domain->getSWCorner(), extent = domain->getNECorner()-sw;
+        tileManager->coordinates = {domain->getRefLatitude(),domain->getRefLongitude(),sw.getX(),sw.getY()};
+        if (params->isValued("fftileCenter")) {
+            auto center = params->getDoubleArray("fftileCenter");
+            if (center.size() != 2) throw std::runtime_error("fftile: fftileCenter must be longitude,latitude");
+            tileManager->coordinates = {center[1],center[0],sw.getX()+extent.getX()/2,sw.getY()+extent.getY()/2};
+        }
+        tileManager->windU = params->isValued("windU") ? params->getDouble("windU") : 0.;
+        tileManager->windV = params->isValued("windV") ? params->getDouble("windV") : 0.;
+        for (const auto& name : {"fuel","altitude","slope","windU","windV"}) {
+            // Coupled atmospheric winds are already resolved by the host model.
+            if (domain->atmosphericCoupling && (std::string(name) == "windU" || std::string(name) == "windV")) continue;
+            registerLayer(name,new FFTileDataLayer(name,tileManager,sw,extent));
+        }
+    }
 
 #ifdef FF_NO_NETCDF
 

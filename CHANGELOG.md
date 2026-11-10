@@ -14,6 +14,23 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- The WASM tile demo supports zoom/pan with detailed terrain sampling, multiple
+  ignitions, live wind changes, simulation pacing, pause/resume and the public
+  Corsican tile service (through a local CORS forwarding endpoint).
+- A local WASM tile demo serves `.fftile` landscapes over HTTP and runs
+  Rothermel in a browser worker, with terrain previews, wind controls and
+  timeline playback. The browser adapter stages compressed tiles for the
+  existing C++ reader.
+
+- `loadData[provider=...;center=(longitude,latitude)]` creates a fixed tile
+  domain, prefetches available HTTP tiles to disk, and retains decoded tiles
+  only as needed.
+  Native HTTP support uses optional libcurl; 404/410 coverage is nonburnable.
+- `.fftile` landscapes work in builds with NetCDF disabled. Tiles page in
+  through a replaceable provider, with case-local fuel overrides and zero
+  spread on missing coverage. The Python writer checks reconstruction error
+  and uses 16-bit PNG altitude when 8-bit JPEG loses too much precision.
+
 - The browser demo can draw the DFCI grid, water points and DFCI tracks from
   the IGN Géoplateforme, in France. These layers are display only: they never
   reach the simulation.

@@ -351,9 +351,11 @@ public:
     // Getter for the longitude conversion factor.
     double getMetersPerDegreesLon() ;
 
-	double getXFromLon(double) ;
+	double getXFromLon(double);
+	double getXFromLon(double, double y) ;
 	double getYFromLat(double) ;
-	double getLonFromX(double) ;
+	double getLonFromX(double);
+	double getLonFromX(double, double y) ;
 	double getLatFromY(double) ;
 	vector<double> getActiveBBoxLBRT();
 
