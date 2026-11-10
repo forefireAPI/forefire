@@ -184,7 +184,17 @@ namespace libforefire
 		// 2) Read actual values from valueOf
 		//-----------------------------------------------------------------------------
 		double windspd = adjustementWind * valueOf[idx_wind]; // wind along the normal, m/s
-		double slope = valueOf[idx_slope]; // tangent of the slope along the normal
+		double slope = valueOf[idx_slope];
+		// Except with splines, the normal carries the slope in z, so ForeFire
+		// hands over sin(slope) and the wind times cos(slope). FARSITE wants the
+		// tangent and the horizontal wind.
+		if (FireNode::nmlScheme != FireNode::spline)
+		{
+			double s = std::max(-0.99, std::min(0.99, slope));
+			double c = std::sqrt(1.0 - s * s);
+			slope = s / c;
+			windspd /= c;
+		}
 		// moinstures variables
 		double m_ones = valueOf[idx_m_ones];  
 		double m_liveh = valueOf[idx_m_liveh]; 

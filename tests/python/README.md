@@ -61,9 +61,10 @@ Compares the `Farsite` model with FARSITE's own code for the 13 standard fuel
 models, four midflame winds, three slopes and three moisture sets. The
 reference is `farsite_reference.cpp`, FARSITE's spread rate and ellipse copied
 from mbedward/farsite and compiled by the test with the system C++ compiler.
-Fails when the head rate of spread differs from the reference; flank, back and
-the gap on a slope are printed, not asserted (`--strict` asserts the slope
-too). Needs a C++ compiler besides `pyforefire`. Manually:
+Fails when the head rate of spread differs from the reference; flank and back
+are printed, not asserted. `--scheme splines` runs it with that normal scheme,
+where the head still differs (the spline normals do not point at the head).
+Needs a C++ compiler besides `pyforefire`. Manually:
 
 ```bash
 python tests/python/test_farsite_reference.py        # -v for every case
