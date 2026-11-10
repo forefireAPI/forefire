@@ -156,7 +156,7 @@ void ForeFire::FFShell(ifstream* inputStream) {
         cout << endl;
         cout << "  " << bold << "ForeFire" << reset << " - Wildfire Propagation Simulator  "
              << fg(208) << ff_version << reset << endl;
-        cout << dim << "  Copyright (C) 2026 CNRS/Univ.Corsica - see LICENSE (ABSOLUTELY NO WARRANTY)" << reset << endl;
+        cout << dim << "  © 2026 CNRS/Univ. Corsica · GPL-3.0 · no warranty, see LICENSE" << reset << endl;
         cout << endl;
         cout << "  " << fg(208) << "Tab" << reset << "         list all commands, or complete the one you're typing" << endl;
         cout << "  " << fg(208) << "Tab Tab" << reset << "     detailed help for a command" << endl;
