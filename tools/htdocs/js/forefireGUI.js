@@ -56,6 +56,7 @@ const commands = {
   
   let mapLayer = null;
   let imageOverlay = null; // For image overlays
+  let hasFittedFront = false; // Fit to the first front drawn
   let velocityLayer = null; // For wind velocity layer
   let activeLayer = null; // Track the last clicked layer
   let lastPlotCommand = null;
@@ -497,9 +498,11 @@ const commands = {
       }
     }).addTo(map);
 
-    // Fit map to the bounds of the new GeoJSON layer if refit is true
-    if (refit && mapLayer.getBounds && mapLayer.getBounds().isValid()) {
+    // Fit map to the front when asked, and once on the first front drawn,
+    // so the view lands on the fire without fighting the user's zoom later.
+    if ((refit || !hasFittedFront) && mapLayer.getBounds && mapLayer.getBounds().isValid()) {
       map.fitBounds(mapLayer.getBounds());
+      hasFittedFront = true;
     }
   }
 
