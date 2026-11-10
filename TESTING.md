@@ -214,6 +214,15 @@ absent. `run.bash` runs it after the examples.
 python3 tests/python/test_validate.py
 ```
 
+`tests/python/test_farsite_reference.py` compares the Farsite model with the
+FARSITE reference code (`mbedward/farsite`) over the 13 fuel models. It needs
+a C++ compiler and is not run by CI. Gaps on slope and at flank/back are
+reported; `--strict` makes the slope gap fail.
+
+```bash
+./.venv/bin/python tests/python/test_farsite_reference.py
+```
+
 `tests/python/` also holds `idealizedwind.py`, `farsite_flat.py` and
 `percolation.py`. They are examples rather than tests — they produce plots and
 assert nothing — and are not run anywhere. They are the closest thing to

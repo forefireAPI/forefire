@@ -55,6 +55,20 @@ python tests/python/test_moisture_invariants.py        # -v for every probe
 
 `--model NAME` and `--test NAME`, both repeatable, narrow it down.
 
+### `test_farsite_reference.py`
+
+Compares the `Farsite` model with FARSITE's own code for the 13 standard fuel
+models, four midflame winds, three slopes and three moisture sets. The
+reference is `farsite_reference.cpp`, FARSITE's spread rate and ellipse copied
+from mbedward/farsite and compiled by the test with the system C++ compiler.
+Fails when the head rate of spread differs from the reference; flank, back and
+the gap on a slope are printed, not asserted (`--strict` asserts the slope
+too). Needs a C++ compiler besides `pyforefire`. Manually:
+
+```bash
+python tests/python/test_farsite_reference.py        # -v for every case
+```
+
 ### `test_runner.py`
 
 Checks `pyforefire.ForeFireRunner`: eight simulations, each in its own worker
