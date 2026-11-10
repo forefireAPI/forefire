@@ -4,14 +4,14 @@ ForeFire is a wildfire spread simulator. The C++ core is in `src/` (fronts,
 domain, data layers, `propagation/` and `flux/` models), the interactive shell
 in `app/forefire`, the Python bindings in `bindings/python`, the Emscripten
 build in `bindings/wasm` and the browser GUI served by `listenHTTP[]` in
-`tools/htdocs`. Do not commit, push, open a pull request or merge until a
-maintainer asks for it.
+`tools/htdocs`. Do not commit, push or open a pull request until asked. Never
+merge.
 
 Read README.md, CONTRIBUTING.md and TESTING.md, check `git status` and keep
-the author's edits. Take behaviour from the current source (shell commands are
-in `src/Command.cpp`), not from old scripts in `tools/` or values quoted in
-issues. Long simulations, large
-downloads and Meso-NH runs are not part of routine development.
+uncommitted edits you did not make. Take behaviour from the current source
+(shell commands are in `src/Command.cpp`), not from old scripts in `tools/` or
+values quoted in issues. Long simulations, large downloads and Meso-NH runs are
+not part of routine development.
 
 - Native build: CMake 3.15+, C++17. NetCDF, MPI, CLI, Python, WASM and tests
   are `FOREFIRE_*` options in CMakeLists.txt. The version lives only in
