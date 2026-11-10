@@ -39,9 +39,6 @@ history, so they summarise each release rather than list every change. The
 
 ### Fixed
 
-- `Farsite.adjustementWind` now scales the wind of the Farsite model, as
-  `BalbiNov2011.adjustementWind` does for Balbi. It was read and ignored.
-  The default, 1, leaves results unchanged. ([#265])
 - Commands that need a domain print an error when there is none, instead of
   segfaulting: `FireNode`, `FireFront`, `startFire`, `goTo`, `save[]`,
   `trigger[fuel]`, `trigger[fuelIndice]`, any command scheduled with `@t` or
@@ -340,4 +337,3 @@ repository stays easy to return to.
 [#171]: https://github.com/forefireAPI/forefire/issues/171
 [#172]: https://github.com/forefireAPI/forefire/issues/172
 [#242]: https://github.com/forefireAPI/forefire/pull/242
-[#265]: https://github.com/forefireAPI/forefire/issues/265
