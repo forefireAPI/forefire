@@ -53,6 +53,7 @@ namespace libforefire
 		size_t idx_heatl;
 
 		/*! local variables */
+		double adjustementWind;
 		std::ofstream csvfile;
 		/*! result of the model */
 		double getSpeed(double *);
@@ -115,7 +116,7 @@ namespace libforefire
 
 		/* registering the model in the data broker */
 		dataBroker->registerPropagationModel(this);
-		double adjustementWind = 1.0;
+		adjustementWind = 1.0;
 		if (params->isValued("Farsite.adjustementWind"))
 			adjustementWind = params->getDouble("Farsite.adjustementWind");
 
@@ -182,7 +183,7 @@ namespace libforefire
 		//-----------------------------------------------------------------------------
 		// 2) Read actual values from valueOf
 		//-----------------------------------------------------------------------------
-		double windspd = valueOf[idx_wind]; // wind along the normal, m/s
+		double windspd = adjustementWind * valueOf[idx_wind]; // wind along the normal, m/s
 		double slope = valueOf[idx_slope]; // tangent of the slope along the normal
 		// moinstures variables
 		double m_ones = valueOf[idx_m_ones];  
