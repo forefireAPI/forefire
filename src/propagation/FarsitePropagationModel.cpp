@@ -183,12 +183,14 @@ namespace libforefire
 		//-----------------------------------------------------------------------------
 		// 2) Read actual values from valueOf
 		//-----------------------------------------------------------------------------
-		double windspd = adjustementWind * valueOf[idx_wind]; // wind along the normal, m/s
+		double windspd = adjustementWind * valueOf[idx_wind]; // wind times cos(slope) here, m/s
 		double slope = valueOf[idx_slope];
-		// Except with splines, the normal carries the slope in z, so ForeFire
-		// hands over sin(slope) and the wind times cos(slope). FARSITE wants the
-		// tangent and the horizontal wind.
-		if (FireNode::nmlScheme != FireNode::spline)
+		// Except with splines, ForeFire puts the slope in the normal's z, so
+		// models get sin(slope) and the wind times cos(slope). FARSITE wants the
+		// tangent and the horizontal wind. If the core stops doing that, remove
+		// this conversion. computeSpeed[] calls getSpeed directly, so its inputs
+		// go through it too.
+		if (FireNode::nmlScheme != FireNode::spline && !std::isnan(slope))
 		{
 			double s = std::max(-0.99, std::min(0.99, slope));
 			double c = std::sqrt(1.0 - s * s);

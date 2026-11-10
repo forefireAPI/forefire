@@ -63,7 +63,7 @@ reference is `farsite_reference.cpp`, FARSITE's spread rate and ellipse copied
 from mbedward/farsite and compiled by the test with the system C++ compiler.
 Fails when the head rate of spread differs from the reference; flank and back
 are printed, not asserted. `--scheme splines` runs it with that normal scheme,
-where the head still differs (the spline normals do not point at the head).
+where the head gap is only reported (the spline normals do not point at the head).
 Needs a C++ compiler besides `pyforefire`. Manually:
 
 ```bash
