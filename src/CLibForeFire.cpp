@@ -496,7 +496,6 @@ void FFGetDoubleArray(const char* mname, double t
 					}
 					if (tmpname == "injectedAtGround"){
 						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
-						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
 						double sumInjected = SimulationParameters::GetInstance()->getDouble("sumInjected");
 
 						
@@ -507,7 +506,6 @@ void FFGetDoubleArray(const char* mname, double t
 
 					if (tmpname == "spotAtGround"){
 						double atmosphericTimeStep = SimulationParameters::GetInstance()->getDouble("atmosphericTimeStep");
-						double atmoSurf = SimulationParameters::GetInstance()->getDouble("atmosphericCellLength") * SimulationParameters::GetInstance()->getDouble("atmosphericCellWidth");
 				
 						double sumSedimented = SimulationParameters::GetInstance()->getDouble("sumSedimented");
 						sumSedimented = sumSedimented + ((fullMatrix->sum()) * atmosphericTimeStep );;
