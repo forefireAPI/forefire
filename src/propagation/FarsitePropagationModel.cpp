@@ -187,7 +187,7 @@ namespace libforefire
 		//-----------------------------------------------------------------------------
 		// 2) Read actual values from valueOf
 		//-----------------------------------------------------------------------------
-		double windspd = adjustementWind * valueOf[idx_wind]; // wind times cos(slope) here, m/s
+		double windspd = adjustementWind * valueOf[idx_wind]; // along the normal, times cos(slope), m/s
 		double slope = valueOf[idx_slope];
 		// Except with splines, ForeFire puts the slope in the normal's z, so
 		// models get sin(slope) and the wind times cos(slope). FARSITE wants the
@@ -203,7 +203,9 @@ namespace libforefire
 		}
 		// FARSITE spreads each point as an ellipse along the wind, so the rate
 		// is computed with the whole wind and then taken at the angle between
-		// the node's normal and the wind.
+		// the node's normal and the wind. On a slope this is an approximation:
+		// the node only sees the slope along its normal, so the ellipse follows
+		// the wind alone.
 		double windU = valueOf[idx_windU];
 		double windV = valueOf[idx_windV];
 		double windNorm = adjustementWind * std::hypot(windU, windV);
