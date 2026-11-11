@@ -89,6 +89,10 @@ history, so they summarise each release rather than list every change. The
 - `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid: one row per y,
   north first, at full precision. It used to write one row per x and round
   values to six significant digits.
+- Documentation: removed `defaultFuelType`, which nothing reads, and the
+  `Kcurv`/`beta` columns from the WindDriven examples, which only use
+  `vv_coeff`. `minSpeed`, `relax` and `smoothing` now describe what the code
+  does, and Windows pip users are pointed to WSL.
 
 ## [v2.6.0] — 2026-10-26
 

@@ -102,7 +102,8 @@ are demonstrations of the API rather than tests of the physics.
 compares ForeFire against a FARSITE case, and needs `flatland.lcp`, which is
 not in the repository — `python/README.md` has the download URL.
 
-Three test scripts sit here too, and `run.bash` runs none of them:
+Eight `test_*.py` scripts sit here too, and `run.bash` runs only
+`test_validate.py`. `python/README.md` covers them all; the main ones:
 
 | File | What it checks | Where it runs |
 | --- | --- | --- |
