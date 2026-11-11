@@ -8,8 +8,11 @@ import * as hdf5 from 'jsfive';
 
 const params = new URLSearchParams(location.search);
 const DATA_URL = params.get('data') || 'ForeFire/data.nc';
-const POLL_MS = 2000;
-const FIELDS_EVERY = 4;        // plume and wind every N polls (plot[] is heavier)
+// HTTP commands run on the server thread, concurrently with the time step, so
+// poll gently: front every 5 s, plume and wind every 30 s.
+const POLL_MS = 5000;
+const FIELDS_EVERY = 6;
+const MAX_ISO = 200;           // past fronts kept on screen
 const ISO_STEP = 60;           // seconds of simulation between kept past fronts
 const S = 0.001;               // metres -> scene units (km)
 
@@ -32,7 +35,8 @@ function setStatus(text, kind = '') {
 let queue = Promise.resolve();
 function ff(cmd) {
   const run = () => fetch('/', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: 'ff:' + cmd })
-    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); });
+    .catch(() => { throw Object.assign(new Error('no server'), { offline: true }); })
+    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status} on ${cmd}`); return r.text(); });
   const p = queue.then(run, run);
   queue = p.catch(() => {});
   return p;
@@ -57,12 +61,16 @@ function parseDump(txt) {
   return { sw, ne, t: Number(m[3]), fronts: [...fronts.values()].filter((f) => f.length > 2) };
 }
 
+// ESRI ASCII grid: six header lines, then rows from north to south.
 function parseAsc(txt) {
-  const tok = txt.trim().split(/\s+/);
+  const lines = txt.split('\n');
   const h = {};
-  let k = 0;
-  while (k < tok.length && /^[a-zA-Z_]/.test(tok[k])) { h[tok[k].toLowerCase()] = Number(tok[k + 1]); k += 2; }
-  const v = Float32Array.from(tok.slice(k), Number);
+  for (const line of lines.slice(0, 6)) {
+    const [key, val] = line.trim().split(/\s+/);
+    h[key.toLowerCase()] = Number(val);
+  }
+  const v = Float32Array.from(lines.slice(6).join(' ').trim().split(/\s+/), Number);
+  if (v.length !== h.ncols * h.nrows) throw new Error('truncated plume grid');
   return { nc: h.ncols, nr: h.nrows, xll: h.xllcorner, yll: h.yllcorner, cs: h.cellsize, v };
 }
 
@@ -156,6 +164,7 @@ async function loadTerrain() {
   } catch (e) { console.warn('terrain', e); }
   buildTerrain();
   focusFire();
+  if (lastPlume) info.plume = drawPlume(lastPlume); // first plume was drawn on flat ground
   if (!f) return;
   await sleep(50);
   try {
@@ -274,10 +283,11 @@ function drawPlume(g) {
   const n = g.nc * g.nr;
   const pos = new Float32Array(n * 3), col = new Float32Array(n * 4);
   let maxAgl = 0;
+  const csY = D.ly / g.nr; // the asc header only carries the x cell size
   for (let r = 0; r < g.nr; r++) {
     for (let c = 0; c < g.nc; c++) {
       const k = r * g.nc + c;
-      const X = g.xll + (c + 0.5) * g.cs, Y = g.yll + (g.nr - 1 - r + 0.5) * g.cs; // rows run north to south
+      const X = g.xll + (c + 0.5) * g.cs, Y = g.yll + (g.nr - 1 - r + 0.5) * csY; // rows run north to south
       const ground = altitudeAt(X, Y), v = g.v[k];
       const has = v > ground;
       const agl = has ? v - ground : 0;
@@ -316,10 +326,13 @@ windGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NP *
 windGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(NP * 6), 3));
 windGroup.add(new THREE.LineSegments(windGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 })));
 
-function setWind(json, bounds) {
+// The json header carries the bounds, so nothing is read from the command's stdout.
+function setWind(json) {
   const [u, v] = json;
   const h = u.header;
-  wind = { nx: h.nx, ny: h.ny, lo1: h.lo1, la1: h.la1, dx: h.dx, dy: h.dy, u: u.data, v: v.data, b: bounds };
+  const b = { SWlon: h.lo1, NElon: h.lo2, SWlat: h.la2, NElat: h.la1 };
+  wind = { nx: h.nx, ny: h.ny, lo1: h.lo1, la1: h.la1, dx: h.dx, dy: h.dy, u: u.data, v: v.data, b };
+  return u.data.reduce((m, x, k) => Math.max(m, Math.hypot(x, v.data[k])), 0);
 }
 
 function windAt(X, Y) {
@@ -394,13 +407,15 @@ function focusDomain() {
 
 // ---------- polling ----------
 
-let t0 = null, lastIsoT = -Infinity, firstFocus = true;
+let t0 = null, lastT = -Infinity, lastIsoT = -Infinity, firstFocus = true, lastPlume = null;
 const info = { nodes: 0, fronts: 0, plume: 0, windMax: 0 };
 
 async function pollFront() {
   await ff('setParameter[dumpMode=ff]');
   const dump = parseDump(await ff('print[]'));
-  if (!dump) throw new Error('no FireDomain in print[]');
+  if (!dump) throw new Error('no FireDomain in print[] (another tab may have set dumpMode)');
+  if (dump.t < lastT) { location.reload(); return; } // a new run started on the same port
+  lastT = dump.t;
   if (!D) {
     const [x0, y0] = dump.sw, [x1, y1] = dump.ne;
     D = { x0, y0, lx: x1 - x0, ly: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 };
@@ -412,6 +427,10 @@ async function pollFront() {
   if (dump.t - lastIsoT >= ISO_STEP && dump.fronts.length) {
     lastIsoT = dump.t;
     for (const f of dump.fronts) isoGroup.add(frontLine(f, 0xa3341c));
+    while (isoGroup.children.length > MAX_ISO) {
+      const old = isoGroup.children[0];
+      isoGroup.remove(old); old.geometry.dispose(); old.material.dispose();
+    }
   }
   if (firstFocus && dump.fronts.length) { firstFocus = false; focusFire(); }
   info.fronts = dump.fronts.length;
@@ -422,11 +441,12 @@ async function pollFront() {
 }
 
 async function pollFields() {
-  await ff('plot[parameter=plumeTopHeight;filename=mnh3d_plumeTop.asc;size=128,128]');
-  info.plume = drawPlume(parseAsc(await getText('mnh3d_plumeTop.asc')));
-  const bounds = JSON.parse(await ff('plot[parameter=wind;filename=mnh3d_wind.json;size=48,48;projectionOut=json]'));
-  setWind(JSON.parse(await getText('mnh3d_wind.json')), bounds);
-  info.windMax = bounds.maxVal;
+  const ny = Math.max(2, Math.round(128 * D.ly / D.lx));
+  await ff(`plot[parameter=plumeTopHeight;filename=mnh3d_plumeTop.asc;size=128,${ny}]`);
+  lastPlume = parseAsc(await getText('mnh3d_plumeTop.asc'));
+  info.plume = drawPlume(lastPlume);
+  await ff('plot[parameter=wind;filename=mnh3d_wind.json;size=48,48]');
+  info.windMax = setWind(JSON.parse(await getText('mnh3d_wind.json')));
 }
 
 async function loop() {
@@ -436,7 +456,7 @@ async function loop() {
       if (i % FIELDS_EVERY === 0) await pollFields();
       setStatus('live', 'ok');
     } catch (e) {
-      setStatus(`no server (run ended or not started): ${e.message}`, 'err');
+      setStatus(e.offline ? 'no server (run ended or not started)' : `error: ${e.message}`, 'err');
     }
     $('stats').textContent = `fronts ${info.fronts}   nodes ${info.nodes}\n`
       + `plume max ${info.plume.toFixed(0)} m above ground\nwind max ${info.windMax.toFixed(1)} m/s`;
