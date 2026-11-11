@@ -19,7 +19,7 @@ Unlike Eulerian grid solvers that advance every cell of a domain at a fixed glob
   ForeFire maintains a priority queue (``TimeTable``) of future events ordered chronologically. When a ``FireNode`` is processed at time :math:`t_i`:
 
   1. It moves to its previously scheduled position by a fixed spatial step ``spatialIncrement`` (:math:`\Delta x`).
-  2. ``FireDomain`` enforces topological consistency: if adjacent nodes separate beyond ``perimeterResolution``, intermediate nodes are inserted; if two front segments collide, they merge.
+  2. ``FireDomain`` enforces topological consistency: if adjacent nodes separate beyond twice ``perimeterResolution``, an intermediate node is inserted, and nodes closer than ``perimeterResolution`` are merged; if two front segments collide, they merge.
   3. The node computes its local normal :math:`\vec{n}_i` (using ``normalScheme``: ``medians``, ``weightedMedians``, or ``splines``) and curvature :math:`\kappa_i` (using ``curvatureScheme``: ``circumradius`` or ``angle``).
   4. It queries the active ``PropagationModel`` for its rate of spread :math:`R_i` along :math:`\vec{n}_i`, computes its next update time :math:`t_i + \Delta x / R_i`, and schedules itself back into the ``TimeTable``.
 
@@ -99,7 +99,7 @@ In its constructor, a model declares which environmental or fuel properties it n
      - Wind projected onto the outward normal vector :math:`\vec{u} \cdot \vec{n}` (m/s, propagation models).
    * - ``frontDepth``
      - Local depth of the burning front normal to the perimeter (m, requires ``frontDepthComputation=1``).
-   * - ``curvature``
+   * - ``frontCurvature``
      - Local front curvature :math:`\kappa` (requires ``curvatureComputation=1``).
 
 Minimal Propagation Model Pattern

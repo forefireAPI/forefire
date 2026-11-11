@@ -14,7 +14,7 @@ How Fuel Tables Are Loaded
 You can supply a fuel table in two ways:
 
 1. **External CSV file** (``fuelsTableFile``):
-   Set ``setParameter[fuelsTableFile=fuels.csv]`` (default ``fuels.ff``, resolved relative to ``caseDirectory``).
+   Set ``setParameter[fuelsTableFile=fuels.csv]`` (default ``fuels.ff``, resolved relative to ``caseDirectory/ForeFireDataDirectory``; set ``ForeFireDataDirectory=.`` when the file sits directly in ``caseDirectory``).
 2. **Inline string parameter** (``fuelsTable``):
    Pass the CSV content directly into the ``fuelsTable`` parameter (for example from Python via ``ff["fuelsTable"] = ...``, or using one of the built-in standard tables such as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``).
 
