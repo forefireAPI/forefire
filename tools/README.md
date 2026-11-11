@@ -1,16 +1,14 @@
-
-
-
-These scripts create the files necessary to run a coupled simulation with MesoNH [http://mesonh.aero.obs-mip.fr/mesonh56]
-
-to couple the simulation with MesoNH you should also edit the &NAM_FOREFIRE namelist in the EXSEG file [http://mesonh.aero.obs-mip.fr/mesonh56/BooksAndGuides?action=AttachFile&do=get&target=forefire.pdf] 
+These scripts create the files needed to run a simulation coupled with Meso-NH.
+To couple, also edit the `&NAM_FOREFIRE` namelist in the EXSEG file. The
+Meso-NH guide (`docs/source/user_guide/mesonh.rst`) walks through a full
+coupled run.
 
 #  Preprocessing Scripts
 
 List of preprocessing scripts:
 - ***clickImageToLocation.py*** sets the coordinates for the Init.ff file 
 - ***genForeFireCase.py*** writes the **NetCDFfile** landscape (fuel, elevation, wind, flux models) from numpy arrays
-- ***genPrepIdeal.py*** creates the  .nam for mesonh ideal case ???
+- ***genPrepIdeal.py*** fills `PRE_IDEA1.pattern` into the `PRE_IDEA1.nam` namelist of a Meso-NH ideal case
 - ***kmlDomain.py*** extracts kml files from a netcdf file
 - ***PGD2Init.py*** creates the **InitFile**=Init.ff in the **ForeFireDataDirectory** directory
 - ***prealCF2Case.py*** creates the **NetCDFfile**=data.nc file in the **ForeFireDataDirectory** directory
@@ -40,7 +38,7 @@ short simulation; it doubles as a worked example.
 
 ### PGD2Init
 
-reates the **InitFile**=Init.ff in the **ForeFireDataDirectory** directory.
+Creates the **InitFile**=Init.ff in the **ForeFireDataDirectory** directory.
 The **InitFile** file contains the location of the fire front at initialization (non-parallel init).
 **Usage:** PGD2Init.py inMNH_PGD_File.nc lat lon startTimeInseconds > pathtoForeFireDataDirectory/Init.ff
 - INPUT:
@@ -77,11 +75,11 @@ variables:
 		fuel:type = "fuel" ;
 	int heatFlux(DIMT, DIMZ, DIMY, DIMX) ;
 		heatFlux:type = "flux" ;
-		heatFlux:model0name = "IndFlux" ;
+		heatFlux:model0name = "heatFluxBasic" ;
 		heatFlux:indices = 0 ;
 	int vaporFlux(DIMT, DIMZ, DIMY, DIMX) ;
 		vaporFlux:type = "flux" ;
-		vaporFlux:model1name = "IndVap" ;
+		vaporFlux:model1name = "vaporFluxBasic" ;
 		vaporFlux:indices = 1 ;
 	char domain ;
 		domain:type = "domain" ;
@@ -114,7 +112,7 @@ creates the kml file showing the geographical domain extensions starting from a 
 
 **Usage:** 
 ```
-python3.9 kmlDomain.py PGDFile >  kmlfile
+python3 kmlDomain.py PGDFile >  kmlfile
 ```
 - INPUT: the netCDF containing the informations of the modelled domain (ex: *KTEST_2D/001_pgd/PGD_D160mA.nc*)
 - OUTPUT:the desired kml file (ex: *KTEST_2D/001_pgd/kmlD160.kml*)
@@ -129,8 +127,9 @@ List of postprocessing scripts:
 #  Postprocessing Scripts
 
 List of postprocessing scripts:
-- ***ffToGeoJson.py*** 
 - ***pMNHFF2VTK.py***
+
+`ffToGeoJson.py` (GeoJSON and KML export) lives in `preprocessing/`.
 
 ## pMNHFF2VTK
 
@@ -143,13 +142,13 @@ python PathtoScript pathtoForefireOutput pathForefireOutputGeom pathtodirOutput
     - computes all steps:
     
 ```
-   python3.9 ~/soft/firefront/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/*
+   python3 $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/*
 ```
    
     - computes step number n=4
     
 ```
-   python3.9 ~/soft/firefront/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps 4 5
+   python3 $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps 4 5
 ```
    
 - on multiple nodes (SLURM):  
@@ -165,7 +164,7 @@ echo "ID $SLURM_ARRAY_TASK_ID computing $startSTEP to $endSTEP"
 
 for i in `seq ${startSTEP} ${seqSTEP} ${endSTEP}`; 
 do
-srun -n1 --exclusive python3.9 ~/soft/firefront/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps $i $(($i + $seqSTEP)) & 
+srun -n1 --exclusive python3 $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps $i $(($i + $seqSTEP)) & 
 done
 wait
 ```
@@ -177,12 +176,12 @@ run with `sbatch --array=0-2 script_vtk_array 2 10` :  will launch 3 tasks SLURM
  
 When all steps are computed, run another time:
 ```
- python3.9 ~/soft/firefront/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/
+ python3 $FOREFIREHOME/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/
 ```
 
-with that all time steps will be sincg=hronized with MesoNH time 
+with that all time steps will be synchronized with Meso-NH time.
 
-#  BUGFIX
+#  Troubleshooting coupled runs
 
 ## When launching a simulation do always the following steps
  
