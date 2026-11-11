@@ -144,10 +144,19 @@ The CMake build is option-driven. The defaults below are what a plain
 Wheel builds (anything driven by `pip`) flip seven of these to the portable defaults:
 no MPI, no `-march=native`, static core, Python module on, no tools, no LFS check, no tests.
 
-Coupled fire-atmosphere runs with [Meso-NH](https://mesonh.cnrs.fr/) need the
-MPI build; [`docs/mnh/coupledMNHInstall.md`](docs/mnh/coupledMNHInstall.md)
-walks through the coupled setup. [TESTING.md](TESTING.md) covers the test
-suites and the sanitizer build.
+[TESTING.md](TESTING.md) covers the test suites and the sanitizer build.
+
+### Coupled with Meso-NH
+
+One script takes a bare Linux machine to a running fire-atmosphere case with
+[Meso-NH](https://mesonh.cnrs.fr/) (Pedrógão Grande, 4 MPI processes, about 7 min):
+
+```bash
+tests/mnh_coupled.bash
+```
+
+Options, the live 3D view and the manual setup are in the
+[Meso-NH guide](https://forefire.readthedocs.io/en/latest/user_guide/mesonh.html).
 
 ## What's in the box
 

@@ -82,9 +82,8 @@ Balbi2020
     It registers ``slope``, ``normalWind``, ``moisture``, ``temperature`` and
     the standard 20 ``fuel.*`` columns in
     :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`
-    (from ``fuel.Rhod`` to ``fuel.Blai``). Optional parameters:
-    ``Balbi2020.cooling`` (default ``0``) and ``Balbi2020.Cpa`` (default
-    ``1150``).
+    (from ``fuel.Rhod`` to ``fuel.Blai``). Optional parameter:
+    ``Balbi2020.Cpa``, the air heat capacity (default ``1150`` J/kg/K).
 
 BalbiNov2011, BalbiNov2011Curv and BalbiNov2011TMdMl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -119,8 +118,7 @@ BalbiNov2011, BalbiNov2011Curv and BalbiNov2011TMdMl
     :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`:
 
     *   ``BalbiNov2011`` takes ``Md``, ``Ml`` and ``Ta`` directly from the
-        fuel table. Optional parameters: ``BalbiNov2011.cooling`` (default
-        ``0``), ``BalbiNov2011.Cpa`` (default ``1004``),
+        fuel table. Optional parameters: ``BalbiNov2011.Cpa`` (default ``1004``),
         ``BalbiNov2011.adjustementSlope`` (default ``1``) and
         ``BalbiNov2011.adjustementWind`` (default ``1``).
     *   ``BalbiNov2011Curv`` additionally registers ``frontCurvature`` and
@@ -131,8 +129,7 @@ BalbiNov2011, BalbiNov2011Curv and BalbiNov2011TMdMl
         ``temperature`` and ``moisture``, using ``temperature`` for ambient
         air temperature :math:`T_a` and ``moisture`` for live fuel moisture
         :math:`M_l` (while dead fuel moisture :math:`M_d` is read from
-        ``fuel.Md``). Optional parameters: ``BalbiNov2011TMdMl.cooling``
-        (default ``0``), ``BalbiNov2011TMdMl.Cpa`` (default ``1004``),
+        ``fuel.Md``). Optional parameters: ``BalbiNov2011TMdMl.Cpa`` (default ``1004``),
         ``BalbiNov2011TMdMl.adjustementSlope`` (default ``1``) and
         ``BalbiNov2011TMdMl.adjustementWind`` (default ``1``).
 
@@ -156,10 +153,8 @@ Balbi2015 and BalbiUnsteady
     ``normalWind`` and the 20 standard Balbi ``fuel.*`` columns:
 
     *   ``Balbi2015`` also registers ``moisture`` and ``temperature``, and
-        accepts ``Balbi2015.cooling`` (default ``0``) and ``Balbi2015.Cpa``
-        (default ``1004``).
-    *   ``BalbiUnsteady`` accepts ``BalbiUnsteady.cooling`` (default ``0``)
-        and ``BalbiUnsteady.Cpa`` (default ``1004``). In the current source
+        accepts ``Balbi2015.Cpa`` (default ``1004``).
+    *   ``BalbiUnsteady`` accepts ``BalbiUnsteady.Cpa`` (default ``1004``). In the current source
         code, when the flame tilt angle :math:`\gamma > 0`, ``BalbiUnsteady``
         returns early with the fourth power of the curvature correction factor
         divided by 10 (``curvCor / 10``) before evaluating the full radiative
@@ -209,10 +204,10 @@ ANNPropagationModel
 *   **What it is:** a propagation model that evaluates a pre-trained
     feed-forward artificial neural network (ANN) to predict the rate of spread
     (clamped to :math:`[0, 2]\;\text{m/s}`).
-*   **Reference:** Filippi, J.-B., Bosseur, F., Truchot, B., Baggio, R.
-    (2025). *ForeFire: A modular, scriptable C++ engine and Python interface
-    for wildland fire spread and coupled fire–atmosphere simulations*. Journal
-    of Open Source Software 10(116), 8680.
+*   **Reference:** Filippi, J.-B., Baggio, R., Paugam, R., Bosseur, F.,
+    Leblanc, A., Alonso-Pinar, A. (2025). *A Modular, Scriptable C++
+    Simulation Engine and Library for Wildland-Fire Spread*. Journal of Open
+    Source Software 10(116), 8680.
     https://doi.org/10.21105/joss.08680
 *   **How to select it:**
 
@@ -268,7 +263,7 @@ spread laws, idealized test cases, or training data loggers:
      - ``fuel.vv_coeff``; parameter ``speed_module``.
    * - ``WindDriven``
      - Wind-driven rate of spread :math:`R = \text{vv\_coeff} \times u_n`.
-     - ``normalWind``, ``fuel.vv_coeff``; parameter ``windReductionFactor``.
+     - ``normalWind``, ``fuel.vv_coeff``.
    * - ``CurvatureDriven``
      - Curvature-dependent rate of spread :math:`R = \max\!\left(0,\; \text{speed\_module} \cdot \text{vv\_coeff} \cdot \left(1 - K_{\text{curv}} \kappa / \sqrt{1 + \beta \kappa^2}\right)\right)`.
      - ``frontCurvature``, ``fuel.vv_coeff``, ``fuel.Kcurv``, ``fuel.beta``; parameter ``speed_module``.

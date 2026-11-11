@@ -30,7 +30,7 @@ Creates the simulation domain. Fronts, nodes, and data layers live inside this `
 * ``ne=(x,y,z)``: Northeast corner coordinates in Cartesian meters.
 * ``t=seconds``: Initial simulation time in seconds (``FireDomain`` does not accept ``date=``).
 
-**Georeferencing:** To place a standalone ``FireDomain`` on the globe without ``loadData``, set the ``BBoxWSEN`` parameter (``westLon,southLat,eastLon,northLat`` in WGS84, without parentheses) **before** calling ``FireDomain``. Otherwise the domain defaults to ``DefaultSWLngLat`` (in Corsica).
+**Georeferencing:** To place a standalone ``FireDomain`` on the globe without ``loadData``, set the ``BBoxWSEN`` parameter (``westLon,southLat,eastLon,northLat`` in WGS84, without parentheses) **before** calling ``FireDomain``. ``SWLngLat``, if set, takes precedence; with neither, the domain defaults to ``DefaultSWLngLat`` (in Corsica).
 
 **Example:**
 
@@ -47,15 +47,13 @@ FireFront (Indented)
 
 .. code-block:: none
 
-       FireFront[t=<seconds>;opt:id=<front_id>;opt:domain=<domain_id>]
+       FireFront[t=<seconds>]
 
 Creates a ``FireFront`` contour inside the active ``FireDomain`` (1 indent level: 4 spaces or 1 tab) or an inner island front nested inside an enclosing ``FireFront`` (2 indent levels: 8 spaces or 2 tabs).
 
 **Arguments:**
 
 * ``t=<seconds>``: Simulation time in seconds.
-* ``opt:id=<front_id>``: Optional integer identifier.
-* ``opt:domain=<domain_id>``: Optional domain ID (defaults to ``0``).
 
 **Example:**
 
@@ -87,7 +85,7 @@ Appends a Lagrangian marker node to the current ``FireFront`` (indented one leve
 * ``opt:id=<node_id>``: Node identifier (default ``0``).
 * ``opt:fdepth=<meters>``: Initial front depth in meters (defaults to ``initialFrontDepth``).
 * ``opt:kappa=<factor>``: Initial local curvature (default ``0.``).
-* ``opt:state=<state_name>``: Node state (``init``, ``moving``, ``link``, ``final``; defaults to ``init``).
+* ``opt:state=<state_name>``: Node state (``init``, ``link``, ``final``; defaults to ``init``; ``moving`` is accepted and treated as ``init``).
 
 **Example:**
 
@@ -398,7 +396,7 @@ Exports or renders a 2D matrix of ``parameter`` over the domain.
 
 **Arguments:**
 
-* ``parameter=<param_name>``: Layer or property name (e.g., ``speed``, ``arrival_time``, ``fuel``, ``altitude``, ``slope``, ``windU``, ``windV``, or a model name such as ``Rothermel``).
+* ``parameter=<param_name>``: Layer or property name (e.g., ``speed``, ``arrival_time``, ``fuel``, ``altitude``, ``slope``, ``windU``, ``windV``).
 * ``filename=<fname>``: Output file path; the extension selects the format (``.png``, ``.jpg``, ``.nc``, or ``.asc``).
 * ``opt:range=(min,max)``: Value range for colormapping.
 * ``opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)`` / ``opt:BBoxLBRT=(leftX,bottomY,rightX,topY)`` / ``opt:BBoxLBRT=active``: Sub-region to export (defaults to the full domain).
@@ -423,15 +421,19 @@ computeSpeed
 
    computeSpeed[val1;val2;...;valN]
 
-Evaluates ``getSpeed(values)`` directly on the active propagation model (selected by the ``propagationModel`` parameter) using the semicolon-separated numerical property values ``val1;val2;...`` supplied in the exact order registered by that model, and prints the resulting spread rate (in m/s). Calling ``computeSpeed[]`` with no arguments returns an error.
+Evaluates ``getSpeed(values)`` directly on the active propagation model (selected by the ``propagationModel`` parameter) using the semicolon-separated numerical property values ``val1;val2;...`` supplied in the exact order registered by that model, and prints the resulting spread rate (in m/s). The model must already exist: it is created on the first ``step``/``goTo`` or by ``loadData``, otherwise the command prints ``Propagation model ... not found``. Calling ``computeSpeed[]`` with no arguments returns an error.
 
 **Example:**
 
 .. code-block:: none
 
-   # For WindDriven (registers normalWind, curvature, fuel.vv_coeff, fuel.Kcurv, fuel.beta):
+   # The model is created on the first step (or by loadData), so run one first.
    setParameter[propagationModel=WindDriven]
-   computeSpeed[5.0;0.0;0.1;1.0;1.0]
+   FireDomain[sw=(0.,0.,0.);ne=(1000.,1000.,0.);t=0.]
+   startFire[loc=(500.,500.,0.);t=0.]
+   step[dt=1]
+   # WindDriven registers normalWind, fuel.vv_coeff: prints 0.5
+   computeSpeed[5.0;0.1]
 
 
 .. _cmd-include:

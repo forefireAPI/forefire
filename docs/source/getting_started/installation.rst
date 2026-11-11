@@ -152,7 +152,7 @@ Pass ``-DFOREFIRE_<OPTION>=...`` at configure time (for example, ``cmake -S . -B
     - Enable MPI coupling (for Meso-NH) when MPI is found on the system.
   * - ``FOREFIRE_ENABLE_NETCDF``
     - ``ON``
-    - Build NetCDF-backed I/O paths. When ``OFF``, ForeFire compiles without NetCDF headers or libraries; array layers and in-memory runs work normally, while ``loadData`` (with a date), ``save``, and ``FireDomain`` with ``pgdNcFile`` report ``no NetCDF support``.
+    - Build NetCDF-backed I/O paths. When ``OFF``, ForeFire compiles without NetCDF headers or libraries; array layers and in-memory runs work normally, while ``loadData`` (with a date) and ``save`` report ``no NetCDF support`` and ``FireDomain`` does not accept ``pgdNcFile``.
   * - ``FOREFIRE_BUILD_CLI``
     - ``ON``
     - Build the interactive ``forefire`` command-line interpreter.
