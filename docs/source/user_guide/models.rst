@@ -82,8 +82,9 @@ Balbi2020
     It registers ``slope``, ``normalWind``, ``moisture``, ``temperature`` and
     the standard 20 ``fuel.*`` columns in
     :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`
-    (from ``fuel.Rhod`` to ``fuel.Blai``). The air heat capacity is fixed at
-    ``1150`` J/kg/K in the spread computation.
+    (from ``fuel.Rhod`` to ``fuel.Blai``). Optional parameters:
+    ``Balbi2020.cooling`` (default ``0``) and ``Balbi2020.Cpa`` (default
+    ``1150``).
 
 BalbiNov2011, BalbiNov2011Curv and BalbiNov2011TMdMl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
