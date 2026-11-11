@@ -23,9 +23,12 @@ simulator build.
 
 ```bash
 cd tools/wildfire_ROS_models
-pip install -r requirements.txt
+pip install -r requirements.txt tensorflow
 pip install --editable .
 ```
+
+Importing the package loads `tf_ros_model.py`, so it needs TensorFlow even if
+you only run the models; `requirements.txt` does not list it.
 
 ## Example
 
