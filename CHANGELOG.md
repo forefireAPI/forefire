@@ -52,12 +52,14 @@ history, so they summarise each release rather than list every change. The
 ### Fixed
 
 - `setParameter[key="""..."""]` stores the value without the triple quotes, so
-  an inline multiline `fuelsTable` in a `.ff` script is read correctly.
+  an inline multiline `fuelsTable` in a `.ff` script is read correctly. The
+  value may also contain `=`.
 - `Balbi2020.Cpa` now sets the air heat capacity; the model used a fixed
   1150 J/kg/K whatever the parameter said. The default is now 1150, so results
   do not change.
 - `FDCellsOutputs`, the documented name, turns on the atmospheric cell debug
-  output; the code read `FDCellOutputs`.
+  output when `watchedProc` selects the process, like the other `*Outputs`
+  flags; the code read `FDCellOutputs`.
 - The Farsite model now matches the FARSITE reference (mbedward/farsite) at
   the flanks and back of the fire, not only at the head. On slopes it is an
   approximation. This changes Farsite results. ([#270])
