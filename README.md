@@ -44,8 +44,7 @@ import pyforefire as forefire
 from pyforefire.helpers import printToPathe
 
 ff = forefire.ForeFire()
-ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0"
-ff["defaultFuelType"] = 1
+ff["fuelsTable"] = "Index;vv_coeff\n1;1.0"
 ff["propagationModel"] = "WindDriven"
 ff.execute("FireDomain[sw=(0,0,0);ne=(4000,4000,0);t=0]")
 

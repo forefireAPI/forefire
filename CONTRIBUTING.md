@@ -70,7 +70,10 @@ We welcome code contributions, from bug fixes to new features.
     cmake -S . -B build && cmake --build build -j
     ctest --test-dir build --output-on-failure
 
-    # The script-driven suites (runff, runANN)
+    # Regression check: compares a real case against the .ref files
+    cd tests/runff && bash ff-run.bash
+
+    # Every script-driven suite your environment allows
     cd tests && bash run.bash
     ```
 7.  **Record the Change:**

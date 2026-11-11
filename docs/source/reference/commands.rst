@@ -123,14 +123,16 @@ startFire
 .. code-block:: none
 
    startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
+   startFire[geojson=<file or inline GeoJSON>]
 
-Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at the given location and time.
+Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at the given location and time, or a front along a GeoJSON polygon.
 
 **Arguments:**
 
 * ``loc=(x,y,z)``: Ignition point in Cartesian domain coordinates (meters).
 * ``lonlat=(lon,lat,z)``: Ignition point in WGS84 coordinates (longitude, latitude, elevation). All three components are required (``lonlat=(lon,lat)`` is ignored).
 * ``t=seconds`` or ``date=YYYY-MM-DDTHH:MM:SSZ``: Ignition time in seconds or ISO 8601 UTC format.
+* ``geojson=``: Path to a GeoJSON file, or the GeoJSON text inline between triple quotes. The ``Polygon`` or ``MultiPolygon`` coordinates are ``[lon, lat, z]``. A top-level ``"valid_at"`` date, if present, sets the ignition time. See ``tests/runff/rungeojson.ff``.
 
 **Example:**
 
@@ -138,6 +140,7 @@ Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at th
 
    startFire[loc=(5000,5000,0);t=0]
    startFire[lonlat=(9.0,42.0,0);date=2024-07-15T10:00:00Z]
+   startFire[geojson=ignition.geojson]
 
 
 .. _cmd-step:

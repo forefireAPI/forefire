@@ -80,6 +80,7 @@ While it runs, open ``http://localhost:8080/mnh3d.html``. The page displays
 the terrain, fuel, fire perimeter, plume top and surface wind. The browser
 needs internet access to load its JavaScript dependencies.
 
-This is a live view of the calculation: it does not provide a replay or
-fast-forward control. Use one viewer tab at a time. For comparisons of
+The page follows the run live. Once it has steps to show, a Timeline slider
+lets you scrub or play them back, and opening the page after the run replays
+the steps saved in ``ForeFire/Outputs`` and ``MODEL2``. Use one viewer tab at a time. For comparisons of
 simulation outputs, leave the viewer closed, as explained in the guide.

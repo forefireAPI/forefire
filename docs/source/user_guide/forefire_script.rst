@@ -31,9 +31,9 @@ Grammar & Syntax Rules
 
    .. code-block:: none
 
-      setParameter[fuelsTable="""Index;vv_coeff;Kcurv;beta
-      1;1.0;1.0;1.0
-      2;0.3;1.0;1.0"""]
+      setParameter[fuelsTable="""Index;vv_coeff
+      1;1.0
+      2;0.3"""]
 
 5. **Parameter Substitution** (``*param*``) **and Protected Values** (``!``):
 
