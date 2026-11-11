@@ -12,13 +12,10 @@ developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-co
 
 ## Try it now, no install
 
-**[Open the in-browser demo](https://forefireapi.github.io/forefire/)**: the
-engine compiled to WebAssembly, running in your tab on terrain and fuel built
-from map tiles.
-Click the map to light a fire, set the wind, and watch it spread.
+**[In-browser demo](https://forefireapi.github.io/forefire/)** · **[Live demo](https://forefire.univ-corse.fr/sim)**
 
-There is also a [server-side demo](https://forefire.univ-corse.fr/sim) run by the
-Université de Corse.
+The in-browser demo is the engine compiled to WebAssembly, running in your tab
+on terrain and fuel built from map tiles. Click the map to light a fire, set the wind, and watch it spread.
 
 <p align="center">
   <a href="https://forefireapi.github.io/forefire/">
