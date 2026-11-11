@@ -106,7 +106,8 @@ forefire> listenHTTP[0.0.0.0:8000]
 
 Open <http://localhost:8000/>, click **`include`** (or type
 `include[real_case.ff]`) and **Send**, then **Refresh Map**. Running the
-command again continues the simulation. The `systemExec is not available over
+`include` again restarts the case; send `step[dt=600]` to continue it. The
+`systemExec is not available over
 HTTP` line it prints is expected: the script's data check only runs from the
 console.
 
