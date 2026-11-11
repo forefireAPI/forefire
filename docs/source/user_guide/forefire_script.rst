@@ -87,8 +87,8 @@ Typical Script Workflow
 
 .. code-block:: none
 
-   # 1. Configure model and solver parameters
-   setParameters[propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
+   # 1. Configure model and solver parameters (ForeFireDataDirectory=. looks in caseDirectory)
+   setParameters[ForeFireDataDirectory=.;propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
 
    # 2. Load the NetCDF landscape (creates the FireDomain from the 'domain' variable)
    loadData[data.nc;2024-07-15T12:00:00Z]

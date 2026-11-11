@@ -128,8 +128,11 @@ The CMake build is option-driven. The defaults below are what a plain
 | Option | Default | Purpose |
 | --- | --- | --- |
 | `FOREFIRE_ENABLE_MPI` | `ON` | Enable MPI coupling when MPI is available. |
+| `FOREFIRE_ENABLE_NETCDF` | `ON` | Build with NetCDF support (`OFF` compiles in-memory and WASM builds without `libnetcdf`). |
 | `FOREFIRE_NATIVE_ARCH` | `ON` | Compile with `-march=native`. Turn off for binaries that must run on other machines. |
+| `FOREFIRE_BUILD_CLI` | `ON` | Build the `forefire` command-line executable. |
 | `FOREFIRE_BUILD_PYTHON` | `OFF` | Build the `pyforefire` extension module. |
+| `FOREFIRE_BUILD_WASM` | `OFF` | Build the Emscripten WebAssembly module (`forefire.mjs` + `forefire.wasm`). |
 | `FOREFIRE_STATIC_CORE` | `OFF` | Build the core as a static library instead of `libforefireL`. |
 | `FOREFIRE_BUILD_TOOLS` | `ON` | Build the `ANN_test` helper executable. |
 | `FOREFIRE_CHECK_LFS` | `ON` | Run the Git LFS integrity check while configuring. |
@@ -138,8 +141,8 @@ The CMake build is option-driven. The defaults below are what a plain
 | `FOREFIRE_WARNINGS_AS_ERRORS` | `OFF` | Fail the build on any compiler warning. Not yet usable repository-wide. |
 | `FOREFIRE_SANITIZE` | `""` | Sanitizers to build with, passed to `-fsanitize=` (e.g. `address`). |
 
-Wheel builds (anything driven by `pip`) flip these to the portable defaults:
-no MPI, no `-march=native`, static core, Python module on, no tools, no tests.
+Wheel builds (anything driven by `pip`) flip seven of these to the portable defaults:
+no MPI, no `-march=native`, static core, Python module on, no tools, no LFS check, no tests.
 
 Coupled fire-atmosphere runs with [Meso-NH](https://mesonh.cnrs.fr/) need the
 MPI build; [`docs/mnh/coupledMNHInstall.md`](docs/mnh/coupledMNHInstall.md)

@@ -97,13 +97,14 @@ It checks that:
 
 1. A fuel variable exists and **every unique fuel index in the raster is defined in the fuel table**.
 2. An elevation variable is present and reports any shape mismatch.
-3. Wind layers are present (or warns you to supply wind via ``trigger[wind;...]``).
+3. Wind layers are present (note: ``forefire-validate`` checks for 2D wind variables and prints a warning on files that store a combined 4D ``wind(t,z,y,x)`` variable such as ``tests/runff/data.nc``; also make sure the variable names in the file match the exact C++ names ``fuel``, ``altitude``, and ``wind``).
 
 Loading the File in a Script
 ----------------------------
 
-Use :ref:`loadData <cmd-loadData>` with the path to the ``.nc`` file and an optional ISO 8601 UTC start date:
+Use :ref:`loadData <cmd-loadData>` with the path to the ``.nc`` file (resolved relative to ``caseDirectory/ForeFireDataDirectory``; set ``ForeFireDataDirectory=.`` when the file is in the current directory) and an optional ISO 8601 UTC start date:
 
 .. code-block:: none
 
+   setParameter[ForeFireDataDirectory=.]
    loadData[data.nc;2023-08-10T14:00:00Z]
