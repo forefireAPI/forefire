@@ -14,6 +14,7 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- A User Guide page introduces Meso-NH coupling, the supplied cases and the live 3D viewer.
 - A User Guide page lists the propagation and flux models that have a
   published reference, with a link to it and how to select each model.
 - `tools/htdocs/mnh3d.html` shows a run coupled to Meso-NH live in 3D:

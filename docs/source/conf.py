@@ -10,7 +10,7 @@ import pathlib
 import re
 
 project = 'ForeFire'
-copyright = '2014 - 2025, J-B Filippi'
+copyright = '2014 - 2026, J-B Filippi'
 author = 'Filippi, Jean Baptiste'
 
 # Single source of truth for the version, the same file CMake and

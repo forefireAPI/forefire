@@ -1,35 +1,35 @@
 ForeFire Documentation
 ======================
 
-Welcome to the official documentation for ForeFire — the open-source wildfire simulation platform. This documentation provides guidance on installation, usage, and technical details to help both users and developers get started.
+**ForeFire** is a modular, scriptable, discrete-event-driven C++ simulation engine and Python library for wildland fire spread, developed by CNRS at the `Université de Corse Pascal Paoli <https://www.univ-corse.fr/>`_.
 
 **Key Links:**
 
+- `In-Browser WebAssembly Demo <https://forefireapi.github.io/forefire/>`_ · `Server-Side Demo <https://forefire.univ-corse.fr/sim>`_
 - `GitHub Repository <https://github.com/forefireAPI/forefire>`_
 - `ForeFire on PyPI <https://pypi.org/project/forefire/>`_ — ``pip install forefire``
-- `Online Demo Simulator <http://forefire.univ-corse.fr/sim>`_
+- `JOSS Paper (Filippi et al., 2025) <https://doi.org/10.21105/joss.08680>`_
 
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
 
    getting_started/introduction
-   getting_started/quickstart
    getting_started/installation
-   getting_started/execution_modes
+   getting_started/quickstart
 
 .. toctree::
    :maxdepth: 1
    :caption: User Guide
 
-   user_guide/basic_configuration
-   user_guide/fuels_and_models
+   user_guide/core_concepts
    user_guide/models
+   user_guide/fuels_and_models
    user_guide/landscape_file
+   user_guide/forefire_script
    user_guide/python_arrays
    user_guide/ensembles
-   user_guide/forefire_script
-   user_guide/core_concepts
+   user_guide/mesonh
 
 .. toctree::
    :maxdepth: 1
@@ -43,12 +43,6 @@ Welcome to the official documentation for ForeFire — the open-source wildfire 
    :maxdepth: 1
    :caption: About
 
-   about/license
-   about/citation
    about/statement_of_need
-
-
-.. Indices and tables (Keep these standard Sphinx features)
-.. ==================
-.. * :ref:`genindex`
-.. * :ref:`search`
+   about/citation
+   about/license

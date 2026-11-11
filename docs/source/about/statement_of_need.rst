@@ -3,27 +3,29 @@
 Statement of Need
 =================
 
-**The Problem:** 
+Wildfire modeling tools have historically been split between **complex combustion research models** and **streamlined operational tools**, each with distinct limitations:
 
-Wildfires pose significant environmental, economic, and societal risks globally. Understanding and predicting their behavior requires sophisticated simulation tools capable of handling complex interactions between fire, fuel, weather, and terrain. While various wildfire models exist, challenges remain in areas such as computational performance for large domains, accurate representation of specific physical processes (like fire-atmosphere coupling), and providing flexible platforms for research and operational use.
+- **Computational Fluid Dynamics (CFD) and combustion codes** (such as FIRETEC or WFDS) resolve detailed flame physics in 3D, but are too computationally expensive to provide landscape-scale wildfire forecasts faster than real time.
+- **Atmosphere-coupled codes** (such as WRF-SFire) must run inside a full mesoscale atmospheric model, requiring substantial computing resources and meteorological preprocessing even when uncoupled surface runs would suffice.
+- **Operational wildfire simulators** (such as FARSITE / FlamMap or Prometheus) simulate fire fronts spanning tens of kilometers in seconds, but bake in fixed modeling assumptions and are primarily distributed as compiled desktop applications with limited scriptability. Other open-source spread libraries (such as ELMFIRE or Cell2Fire) are tied to a single rate-of-spread formulation and lack a domain-specific scripting language.
 
-**ForeFire's Contribution:**
+ForeFire's Contribution
+-----------------------
 
-ForeFire was developed by CNRS at the Université de Corse Pascal Paoli to address these needs. It is an open-source (GPLv3) wildfire simulation engine designed for both research and operational applications.
+Developed by CNRS at the Université de Corse Pascal Paoli (`Filippi et al., 2025 <https://doi.org/10.21105/joss.08680>`_), **ForeFire** bridges the gap between customizable research codes and fast operational solvers by providing a **unified, modular, scriptable wildfire simulation engine**:
 
-Key motivations and contributions include:
+1. **Discrete-Event Lagrangian Front Tracking:**
+   By representing the fire perimeter as a dynamic contour of Lagrangian markers updated through a discrete-event ``TimeTable``, ForeFire concentrates computation at meter-scale resolution strictly along the active fire front, achieving simulation speeds above 100 ha/s on a single CPU.
 
-*   **High-Performance Core:** Implemented in C++ with MPI support for efficient parallel execution, enabling large-scale simulations and faster-than-real-time forecasting capabilities essential for operational scenarios.
-*   **Physics-Based Modeling:** Incorporates established Rate of Spread (ROS) models (e.g., Rothermel, Balbi) and provides a framework for researchers to implement and test new or custom models.
-*   **Fire-Atmosphere Coupling:** Explicitly designed with interfaces (via the core C++ library) to enable two-way coupling with atmospheric models like MesoNH. This allows for capturing critical feedback mechanisms where the fire influences local weather (wind, turbulence) which, in turn, affects fire spread.
-*   **Geospatial Data Handling:** Natively utilizes NetCDF for complex landscape and weather inputs, aligning with common scientific data formats.
-*   **Flexible Interfaces:** Offers multiple ways to interact with the engine: a command-line interpreter for scripting (`.ff` files) and interactive use, direct C++ library linking for integration into other systems, and Python bindings for scripting and analysis convenience.
-*   **Open Source Platform:** Provides a transparent, extensible, and community-driven platform for advancing wildfire science and simulation technology.
+2. **Rapid Prototyping of Spread and Flux Models:**
+   Propagation and flux models plug into the engine through a clean C++ Strategy interface (`registerProperty` + `getSpeed` / `getValue`). Researchers can compare Rothermel, Balbi, FARSITE, or neural-network formulations—or add a new physical model in a single ``.cpp`` file—without touching the front-tracking solver or I/O layers.
 
-**Target Audience:**
+3. **Scriptable Across Python, CLI, WebAssembly, and HPC:**
+   The same ``.ff`` command language drives batch experiments, interactive debugging, HTTP web visualization, Python/NumPy workflows (`pyforefire`), browser-based WebAssembly simulations, and two-way MPI coupling with the `Meso-NH <https://mesonh.cnrs.fr/>`_ atmospheric model.
 
-ForeFire is intended for:
+Target Audience
+---------------
 
-*   **Wildfire Researchers:** Investigating fire behavior, model development, sensitivity analyses, fire-atmosphere interactions.
-*   **Operational Agencies:** Use in forecasting systems (potentially via ensemble simulations), risk assessment, and post-fire analysis.
-*   **Students and Educators:** A tool for learning about wildfire dynamics and simulation techniques.
+- **Wildfire & Atmospheric Researchers:** developing and benchmarking rate-of-spread formulations, heat/chemical flux parameterizations, surrogate ML models, and coupled fire–atmosphere simulations.
+- **Operational Forecasting & Decision Support Teams:** running fast deterministic or ensemble burn-probability forecasts (used in platforms such as OPEN DFCI, FireCaster, AriaFire, umgrauemeio Pantera, and OroraTech FireSpread).
+- **Educators & Students:** exploring wildland fire dynamics interactively in Python or directly in a browser tab.

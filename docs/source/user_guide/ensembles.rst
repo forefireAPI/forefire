@@ -90,7 +90,7 @@ ensemble:
    pyforefire.brier_score(p, observed)         # error of the probability map, 0 is perfect
    frequency, count = pyforefire.reliability(p, observed)
 
-* ``dice`` is 2|A ∩ B| / (|A| + |B|), one value per member.
+* ``dice`` is :math:`2|A \cap B| / (|A| + |B|)`, one value per member.
 * ``brier_score`` is the mean of ``(p - observed)²``. Applied to
   ``arrivals <= t`` it scores each member alone, so the ensemble can be
   compared with its members.

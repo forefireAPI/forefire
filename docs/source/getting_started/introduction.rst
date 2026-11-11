@@ -3,65 +3,44 @@
 Introduction
 ============
 
-Welcome to the official documentation for ForeFire.
+**ForeFire** is an open-source, discrete-event-driven simulation engine for wildland fire spread written in C++ and developed at CNRS / Université de Corse Pascal Paoli (`Filippi et al., 2009 <https://doi.org/10.3894/JAMES.2009.1.11>`_; `Filippi et al., 2025 <https://doi.org/10.21105/joss.08680>`_).
 
-What is ForeFire?
------------------
+Instead of advancing a fixed spatial grid over global time steps, ForeFire tracks the fire perimeter as a dynamic Lagrangian mesh of markers (``FireNode`` objects grouped into ``FireFront`` contours) and schedules updates in an event queue (``TimeTable``). Computational effort is concentrated exclusively on the active fire line, enabling meter-scale resolution over large landscapes at speeds exceeding 100 ha/s on a single CPU core.
 
-ForeFire is a powerful, open-source **wildfire simulation engine** written in C++. Its core purpose is to simulate the spread of wildfires over complex terrain using various physical models and geospatial data inputs.
+Architecture
+------------
 
-Architecturally, it consists of two primary components:
+ForeFire is built around a core C++ library with multiple entry points:
 
-1.  **Simulation Engine (Library):**
-  
-  The core C++ logic containing the physics, data structures, and simulation algorithms. This is compiled into a **reusable shared library** (``libforefireL.so``/``.dylib``) which can be directly linked by other programs (e.g., for atmospheric coupling).
+1. **Simulation Engine (``libforefireL``):**
+   The C++17 core implementing Lagrangian front tracking, discrete-event scheduling, the ``DataBroker`` layer system, and pluggable Rate of Spread (ROS) and flux models. It can be compiled with or without NetCDF (``-DFOREFIRE_ENABLE_NETCDF=OFF``) and linked into atmospheric models via MPI and ISO C/Fortran bindings.
 
-2.  **Interpreter (Executable):**
-  
-  The ``forefire`` program acts as the primary user interface. It's a **command-line interpreter** that reads instructions and directs the underlying Simulation Engine. Users interact with the interpreter via:
+2. **Python Package (``pyforefire`` via ``pip install forefire``):**
+   Self-contained Python bindings that expose the simulation engine, direct NumPy array ingestion (``addIndexLayer``, ``addScalarLayer``), isolated multi-process execution (``ForeFireRunner``), ensemble forecasting (``run_ensemble``, ``burn_probability``), and input validation (``forefire-validate``).
 
-  - Script files (``.ff``)
-  - Interactive console commands
-  - A web UI (powered by the ``listenHTTP[]`` command)
+3. **Command-Line Interpreter & HTTP Server (``forefire``):**
+   Executes ``.ff`` simulation scripts, provides an interactive shell with tab completion, and serves a browser-based graphical interface via ``listenHTTP[]``.
 
-This separation allows ForeFire to function both as a standalone simulation tool and as an embeddable computational engine for larger systems.
+4. **WebAssembly Module (``forefire.wasm`` / ``forefire.mjs``):**
+   An Emscripten build (compiled with ``FOREFIRE_ENABLE_NETCDF=OFF``) that runs the complete solver and all propagation models directly inside a browser Web Worker or Node.js. Try it live in the `in-browser demo <https://forefireapi.github.io/forefire/>`_.
 
 Key Capabilities
 ----------------
 
-- **Physics-Based Simulation:** Implements established Rate of Spread (ROS) models (e.g., based on Rothermel equations) and provides a framework for adding custom models.
-- **Geospatial Data Handling:** Natively uses NetCDF files for input data layers such as elevation, fuel type, and weather variables.
-- **Fire-Atmosphere Coupling:** Explicitly designed for two-way coupling with atmospheric models (e.g., MesoNH) to capture crucial wind-fire interactions.
-- **High-Performance Computing:** The C++ core is optimized for performance, and MPI support enables efficient parallel execution on multi-core systems and clusters, allowing for large-scale and faster-than-real-time simulations.
-- **Multiple Interaction Modes:** Accessible via command-line scripts, an interactive console, a web-based visualization interface, direct C++ library linking, and potentially Python bindings.
-- **Extensibility:** Users can implement and integrate their own C++ modules for specific fire behavior (ROS) or flux calculations.
-- **Open Source:** Developed under the GPLv3 license, fostering transparency and community contributions.
-
-Intended Use Cases
-------------------
-
-ForeFire is suitable for a range of applications, including:
-
-- Wildfire behavior research
-- Detailed reanalysis of past fire events
-- Operational or near-real-time fire spread forecasting (standalone or ensemble)
-- Investigating fire-atmosphere interactions through coupled simulations
-- Testing and comparing different fire spread models
+- **Pluggable Physics (Strategy Pattern):** Includes standard surface spread models (:doc:`/user_guide/models` — ``Rothermel``, ``RothermelAndrews2018``, ``Balbi2020``, ``BalbiNov2011``, ``Farsite``), heat and chemical flux models (``BurnUpHeatFlux``, ``ForeFireV1HeatFlux``), and a neural-network emulator (``ANNPropagationModel``). Adding a new model requires a single ``.cpp`` file.
+- **Flexible Data Ingestion:** Feed environmental layers (elevation, fuel index maps, wind fields) from **NumPy arrays** in memory, **NetCDF** landscape files, or **web map tiles** (in the WebAssembly build). Export perimeters and rasters to GeoJSON, KML, NetCDF, PNG, JPG, or ASCII grids.
+- **Two-Way Fire–Atmosphere Coupling:** Couple directly with the open-source `Meso-NH <https://mesonh.cnrs.fr/>`_ atmospheric model over MPI so surface winds drive fire spread while fire heat and vapor fluxes force atmospheric convection (see :doc:`/user_guide/mesonh`).
+- **Ensembles & Burn Probability:** Fork a spun-up simulation across worker processes to evaluate wind or parameter uncertainty and score probabilistic forecasts against observed perimeters (see :doc:`/user_guide/ensembles`).
 
 Supported Platforms
 -------------------
 
-ForeFire is primarily developed and tested on **Unix-like systems (Linux and macOS)**. It can run on Windows via **WSL** (Windows Subsystem for Linux) or **Docker**.
+- **Linux (`x86_64`, `aarch64`) and macOS (Apple Silicon):** pre-built wheels via ``pip install forefire``, or native CMake builds.
+- **Windows:** run via **WSL** (Linux ``pip`` wheel or source build), **Docker** (``ghcr.io/forefireapi/forefire:latest``), or the **in-browser WebAssembly demo**.
 
-About This Documentation
-------------------------
+Where to Go Next
+----------------
 
-This documentation aims to provide comprehensive guidance for users and developers. It is organized into the following main sections:
-
-- **Getting Started:** Installation, quick start guides, and running basic examples.
-- **User Guide:** Explanations of core concepts, configuration files, and common workflows.
-- **Reference:** Detailed reference material for commands, parameters, and file formats.
-- **API Reference:** Documentation for the C++ library classes and functions (generated from source code).
-- **About:** License, citation information, and acknowledgements.
-
-We recommend starting with the :doc:`quickstart` or :doc:`installation` guides.
+- :doc:`installation` — install with ``pip``, Docker, or CMake from source.
+- :doc:`quickstart` — run your first simulation in the browser, Python, the CLI, or Docker.
+- :doc:`/user_guide/core_concepts` — understand Lagrangian markers, the ``DataBroker``, arrival-time maps (``BMap``), and how to write a new C++ model.

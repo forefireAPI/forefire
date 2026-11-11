@@ -1,25 +1,35 @@
-Quick Start
-===========
+.. _quickstart:
+.. _execution_modes:
 
-Your first simulation, two ways: from a pip install in about a minute, or in
-Docker with the interactive web console.
+Quick Start & Execution Modes
+=============================
+
+ForeFire can be run in four ways: directly in your browser (via WebAssembly), from Python, from the command-line interpreter, or inside Docker with the interactive web console.
+
+1. Try it in the browser (no install)
+-------------------------------------
+
+The `in-browser WebAssembly demo <https://forefireapi.github.io/forefire/>`_ runs the C++ engine directly in your browser tab over elevation and fuel layers decoded from map tiles:
+
+- **Explore mode:** click anywhere on the map to ignite a fire, adjust wind speed and direction on the dial, and scrub the timeline in 2D or 3D terrain view.
+- **Research mode:** switch propagation models (``Rothermel``, ``BalbiNov2011Curv``, ``BalbiUnsteady``, ``TroisPourcent``, ``Iso``), tune fuel moistures (``Md``, ``Ml``), bed depth (``e``), ``windReductionFactor``, ``perimeterResolution``, and ``spatialIncrement``, and inspect arrival-time isochrones or front spread speeds.
 
 .. _quickstart-pip:
 
-The one-minute version, with pip
---------------------------------
+2. Run from Python (1 minute)
+-----------------------------
 
-On Linux or macOS on Apple Silicon, nothing needs to be compiled and no
-dependencies need to be installed on your system:
+On Linux or macOS (Apple Silicon), install the pre-built wheel:
 
 .. code-block:: bash
 
   pip install forefire
 
-Then run a simulation from Python:
+Run an idealized simulation in memory and plot the expanding perimeters:
 
 .. code-block:: python
 
+  import numpy as np
   import pyforefire as forefire
 
   ff = forefire.ForeFire()
@@ -29,118 +39,115 @@ Then run a simulation from Python:
   ff.execute("step[dt=1000]")
   print(ff.execute("print[]"))
 
-``print[]`` returns the state of the simulation as text — one ``FireNode``
-entry per node of the front, each with its location, velocity and time. The
-same commands work in the interactive interpreter, which the same install
-provides:
+``print[]`` returns the fire front hierarchy as text — one ``FireNode`` entry per marker along the perimeter, with its coordinates, velocity vector, and timestamp. To feed custom fuel maps and wind fields from NumPy arrays, continue to :doc:`/user_guide/python_arrays`.
+
+3. Command-line interpreter (Batch, Interactive & Local Web UI)
+---------------------------------------------------------------
+
+Whether installed via ``pip`` or built from source, the ``forefire`` executable runs ``.ff`` scripts in three modes. The repository includes a reference case in Corsica under ``tests/runff/`` (note: pull Git LFS objects first if working from a git clone):
+
+- ``real_case.ff`` — main simulation script
+- ``params.ff`` — solver and model parameters included by ``real_case.ff``
+- ``data.nc`` — NetCDF landscape file (elevation and fuel indices)
+- ``fuels.csv`` — fuel property table
+
+Mode A: Batch execution (``-i``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Feed a script file non-interactively from the directory containing its data:
 
 .. code-block:: bash
 
-  forefire
+  cd tests/runff
+  forefire -i real_case.ff
 
-See :doc:`installation` for which platforms have wheels, and
-:doc:`/user_guide/forefire_script` for what these commands mean.
+This runs the script from start to finish and writes ``to_reload.ff`` (front state) and ``ForeFire.0.nc`` (arrival-time matrix).
+
+Mode B: Interactive shell
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Start the interpreter with no arguments to get an interactive ``forefire>`` prompt with command history and tab completion:
+
+.. code-block:: text
+
+  $ cd tests/runff
+  $ forefire
+  forefire> include[real_case.ff]
+  forefire> getParameter[propagationModel]
+  forefire> step[dt=600]
+  forefire> quit[]
+
+Mode C: Local Web UI (``listenHTTP[]`` or ``-l``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The interpreter embeds a local HTTP command and visualization server.
+
+.. note::
+   Outside Docker, ``FOREFIREHOME`` **must** point to a ForeFire source checkout so the HTTP server can serve ``$FOREFIREHOME/tools/htdocs``. Without ``FOREFIREHOME``, ``http://localhost:8000/`` returns ``404``.
+
+.. code-block:: bash
+
+  export FOREFIREHOME=/path/to/forefire
+  cd "$FOREFIREHOME/tests/runff"
+  forefire -l
+
+Or from inside an interactive session:
+
+.. code-block:: text
+
+  forefire> listenHTTP[]
+  ForeFire HTTP command server listening at http://localhost:8000
+
+Open ``http://localhost:8000/`` in your browser.
 
 .. _quickstart-docker:
 
-The full example, with Docker
------------------------------
+4. Full Web UI walkthrough with Docker
+--------------------------------------
 
-This runs the standard **ForeFire example simulation** in its interactive web
-console. It bundles all dependencies, so nothing is installed on your host
-system, and it is the only way to run ForeFire on Windows.
+The official container image ``ghcr.io/forefireapi/forefire:latest`` bundles the compiled engine, ``FOREFIREHOME``, the web interface, and the ``tests/runff`` dataset. It works on Linux, macOS, and Windows without cloning the repository or installing Git LFS.
 
-Prerequisites
-~~~~~~~~~~~~~
-- Docker installed and running on your system.
-- Git installed (for cloning the repository).
+1. **Start the container:**
 
-Steps
-~~~~~
+   .. code-block:: bash
 
-1.  **Clone the ForeFire repository:** Open your terminal and run:
+     docker run -it --rm -p 127.0.0.1:8000:8000 ghcr.io/forefireapi/forefire:latest
 
-  .. code-block:: bash
+   Binding ``127.0.0.1:8000:8000`` restricts port ``8000`` to your local machine. You land in a shell as user ``forefire`` inside ``/forefire``.
 
-    git clone https://github.com/forefireAPI/forefire.git
+2. **Start ForeFire in the test directory and bind the HTTP server:**
 
-2.  **Build the Docker image:**
+   .. code-block:: bash
 
-  Navigate into the cloned repository directory. The `Dockerfile` defines the environment. Build the image with:
-  
-  .. code-block:: bash
+     cd tests/runff
+     forefire
 
-    cd forefire
-    docker build . -t forefire:latest
+   At the prompt, bind to ``0.0.0.0:8000`` so the container port forwarding can reach the server (``listenHTTP[]`` with no argument binds only to the container's internal ``localhost``):
 
-  This might take a few minutes the first time as it downloads base images and installs dependencies inside the Docker build environment.
+   .. code-block:: text
 
-3.  **Run the container interactively:**
+     forefire> listenHTTP[0.0.0.0:8000]
 
-  This command starts the container, maps port 8000 for the web interface, and gives you a bash shell inside the container:
-  
-  .. code-block:: bash
+3. **Run the simulation from your browser:**
 
-    docker run -it --rm -p 127.0.0.1:8000:8000 --name ff_interactive forefire
+   Open ``http://localhost:8000/`` on your host machine:
 
-  ``127.0.0.1:`` publishes the port on this machine only. A bare ``-p 8000:8000`` publishes it on every interface of the host, so anyone on the network could send commands to the server.
+   - Type ``include[real_case.ff]`` in the command box (or click the **`include`** button) and click **`Send`**.
+   - Click **`Refresh Map`** to display the simulated fire perimeters in the Aullène region of Corsica.
 
-4.  **Inside the container, navigate to the test directory:**
+   .. note::
+      When running ``include[real_case.ff]`` through the Web UI, the console prints ``systemExec is not available over HTTP``. This is expected: for security, shell commands (the ``systemExec[bash check_data_nc.bash]`` check on line 1 of ``real_case.ff``) are refused over HTTP, while the rest of the simulation runs normally.
 
-  Your terminal prompt should now show you are inside the container (e.g., `root@<container_id>:/app#`). Navigate to the test directory:
+   .. image:: /_static/images/gui_real_case_ff.jpg
+     :alt: ForeFire Web UI showing the Aullène simulation in Corsica
+     :align: center
+     :width: 90%
 
-  .. code-block:: bash
+4. **Exit:** type ``quit[]`` at the ``forefire>`` prompt, then ``exit`` in the container shell.
 
-    cd tests/runff
+Where to Go Next
+----------------
 
-5.  **Start the ForeFire interpreter:**
-
-  .. code-block:: bash
-
-    forefire
-
-6.  **Launch the HTTP server from the ForeFire console:**
-
-  Type the following command at the `forefire>` prompt:
-
-  .. code-block:: none
-
-    forefire> listenHTTP[0.0.0.0:8000]
-
-  You should see the output : `>> ForeFire HTTP command server listening at http://0.0.0.0:8000`, followed by a warning that the server is reachable from the network.
-  Inside a container this is needed: ``listenHTTP[]`` alone only listens on the container's own localhost, which the published port cannot reach. The warning is about the container's network; with the port published on ``127.0.0.1`` as in step 3, only your machine can reach the server.
-
-7.  **Access the Web Console:**
-
-  Open your local web browser (on your host machine, not inside the container) and navigate to `http://localhost:8000/`.
-
-8.  **Run a Simulation:**
-
-  In ForeFire, running a simulation and viewing the result are separate commands. The UI guides you through this.
-
-    * **Step 1: Run the simulation script.** In the command input box, type `include[real_case.ff]` and click the **`Send`** button. The simulation will run on the server.
-    * **Step 2: View the result.** After the command finishes, click the **`Refresh Map`** button to load the simulation results onto the map.
-  
-  You should see a simulation running in the Aullène region of Corsica.
-  
-  .. image:: /_static/images/gui_real_case_ff.jpg
-    :alt: Screenshot of the ForeFire Web UI showing the Aullène example simulation
-    :align: center
-    :width: 90%
-  
-  **This confirms your Docker setup is working!**
-
-9.  **Stop the Container:**
-
-  When finished exploring:
-
-  - In the ForeFire console (either web or terminal inside the container), type `quit`.
-  - In the container's bash shell (terminal), type `exit`.
-  - The `docker run` command used `--rm`, so the container will be automatically removed upon exit.
-
-.. rubric:: Next Steps
-
-Congratulations! You've successfully run your first ForeFire simulation and have a working environment. Here are some recommended next steps to deepen your understanding:
-
-- **Explore Execution Modes:** Learn about the command-line (batch) and interactive console alternatives to the Web UI by reading the :doc:`execution_modes` guide.
-- **Understand the Script:** To see what was inside the ``real_case.ff`` script you just ran, dive into the :doc:`/user_guide/forefire_script` guide.
+- :doc:`/user_guide/forefire_script` — syntax and structure of ``.ff`` scripts.
+- :doc:`/user_guide/models` & :doc:`/user_guide/fuels_and_models` — choosing a propagation model and preparing ``fuels.csv``.
+- :doc:`/user_guide/python_arrays` & :doc:`/user_guide/ensembles` — driving ForeFire and ensembles from Python.

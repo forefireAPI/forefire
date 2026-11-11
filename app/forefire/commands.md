@@ -26,7 +26,7 @@ std::string commandHelp = R"(
     FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds]
     Creates a FireNode within a FireFront. The prefixed spacing defines the hierarchical level of the element.
     A FireNode inside a FireFront is defined with 4 additional spaces relative to its parent.
-    Example: FireNode[domain=0;id=1;fdepth=2;kappa=0.1;loc=(3.5,2.6,1.1);vel=(-0.1,-0.03,0.01);t=2.1;state=moving;frontId=2]
+    Example: FireNode[domain=0;id=1;fdepth=2;kappa=0.1;loc=(3.5,2.6,1.1);vel=(-0.1,-0.03,0.01);t=2.1;state=moving]
     Arguments:
      - 'loc': Spatial coordinates (x,y,z) where the node is created
      - 'vel': Initial velocity (x,y,z) of the node
@@ -35,7 +35,7 @@ std::string commandHelp = R"(
      - 'opt:id': Identifier for the fire node
      - 'opt:fdepth': Initial fire depth in meters
      - 'opt:kappa': Initial curvature factor (tan value)
-     - 'opt:state': State of the node (init, moving, splitting, merging, final);
+     - 'opt:state': State of the node (init, moving, link, final);
 
 ## @
     @t=seconds
@@ -106,12 +106,14 @@ std::string commandHelp = R"(
      - opt: the filename for output;
 
 ## save
-    save[opt:filename=landscape_file.nc;opt:fields=(altitude,wind,fuel)]]
-    without argument saves the current simulation arrival time state in netcdf format with default name ForeFire.'domainID'.nc
+    save[opt:filename=landscape_file.nc;opt:fields=altitude,fuel,wind;opt:compression=0]
+    without argument saves the current simulation arrival time state in netcdf format with default name <experiment>.<domainID>.nc
     Example: save[]
+    Example: save[filename=landscape.nc;fields=altitude,fuel,wind]
     Arguments:
      - opt:filename if given, landscape file is saved instead
-     - opt:fields fields to save in landscape file in (altitude,wind,fuel);
+     - opt:fields comma-separated fields to save in landscape file: altitude,fuel,wind (default altitude,fuel; no parentheses)
+     - opt:compression NetCDF-4 deflate level 0-10 (default 0);
 
 ## loadData
     loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
@@ -156,11 +158,11 @@ std::string commandHelp = R"(
                             to generate a KML file with a GroundOverlay referencing the output image.;
 
 ## computeSpeed
-    computeSpeed
-    Computes and returns an array of speed values using the first registered propagation model
-    Example: computeSpeed
+    computeSpeed[v1;v2;...]
+    Evaluates the active propagationModel on the semicolon-separated property values (in the order registered by the model) and prints the speed
+    Example: computeSpeed[5.0;0.0;0.1;1.0;1.0]
     Arguments:
-     - Uses the active propagation model to calculate simulation speeds;
+     - semicolon-separated numeric values for each property registered by the current propagationModel;
 
 ## setParameter
     setParameter[param=value]
@@ -197,11 +199,11 @@ std::string commandHelp = R"(
     Example: clear[]
 
 ## systemExec
-    systemExec[command=<system_command>]
-    Executes a system command
-    Example: systemExec[command=ls -la]
+    systemExec[<system_command>]
+    Executes a system shell command (refused over HTTP; *param* tokens are expanded and ':' is replaced with '-')
+    Example: systemExec[ls -la]
     Arguments:
-     - 'command': The system command to execute
+     - raw shell command string to execute (do not prefix with 'command=')
 
 ## listenHTTP
     listenHTTP[host:port]

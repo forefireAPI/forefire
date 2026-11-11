@@ -1,8 +1,7 @@
 Installation
 ============
 
-There are three ways to install ForeFire. Which one you want depends on what
-you intend to do with it:
+There are three ways to install ForeFire, depending on how you intend to use it:
 
 .. list-table::
   :header-rows: 1
@@ -12,14 +11,13 @@ you intend to do with it:
     - Use it when
     - Section
   * - **pip**
-    - You want to run simulations or drive ForeFire from Python.
+    - You want to run simulations from Python or the command line on Linux or macOS.
     - :ref:`install-pip`
   * - **Docker**
-    - You are on Windows, or you want the web console with no setup.
-    - :doc:`quickstart`
+    - You want the interactive web console and sample datasets ready to run on any OS (including Windows).
+    - :ref:`quickstart-docker`
   * - **From source**
-    - You need MPI coupling with Meso-NH, a CPU-tuned build, or you are
-      working on ForeFire itself.
+    - You need MPI coupling with Meso-NH, a CPU-tuned build, WebAssembly, or you are modifying ForeFire's C++ code.
     - :ref:`install-source`
 
 .. _install-pip:
@@ -27,8 +25,7 @@ you intend to do with it:
 Install with pip
 ----------------
 
-This is the fastest route, and it needs no compiler, no CMake and no NetCDF
-installation of your own — NetCDF is bundled inside the wheel.
+This is the fastest route. It requires no compiler, no CMake, and no system NetCDF installation — NetCDF is bundled inside the wheel.
 
 .. code-block:: bash
 
@@ -37,26 +34,20 @@ installation of your own — NetCDF is bundled inside the wheel.
 Requirements
 ~~~~~~~~~~~~
 
-- **CPython 3.9 to 3.14.** The free-threaded builds (``cp314t``) are
-  deliberately not published: the C++ core still keeps mutable global state, so
-  a wheel advertising free-threading would silently re-enable the GIL on
-  import.
-- **Linux** on ``x86_64`` or ``aarch64`` (``manylinux_2_28`` or newer), or
-  **macOS 14+ on Apple Silicon**.
+- **CPython 3.9 to 3.14.** Free-threaded builds (``cp314t``) are intentionally not published because the C++ engine keeps process-wide state; use :class:`pyforefire.ForeFireRunner` for parallel runs (see :doc:`/user_guide/ensembles`).
+- **Linux** on ``x86_64`` or ``aarch64`` (``manylinux_2_28`` or newer), or **macOS 14+ on Apple Silicon**.
 
-There is no wheel for Intel macOS, musl-based Linux (Alpine), 32-bit targets,
-Windows or PyPy. On those platforms pip falls back to the source distribution,
-which needs the build prerequisites in :ref:`install-source`. Windows users are
-better served by Docker — see :doc:`quickstart`.
+There is no wheel for Intel macOS, musl-based Linux (Alpine), 32-bit targets, native Windows, or PyPy. On Windows, run ``pip install forefire`` inside **WSL**, use **Docker** (:ref:`quickstart-docker`), or use the `in-browser WebAssembly demo <https://forefireapi.github.io/forefire/>`_.
 
 What you get
 ~~~~~~~~~~~~
 
-Both interfaces, from the one package:
+One package installs the ``forefire`` CLI, the ``forefire-validate`` checker, and the ``pyforefire`` Python module:
 
 .. code-block:: bash
 
   forefire -v
+  forefire-validate --help
 
 .. code-block:: python
 
@@ -71,40 +62,29 @@ Both interfaces, from the one package:
 
 .. note::
 
-  The distribution on PyPI is called ``forefire``; the importable module keeps
-  its historical name, ``pyforefire``.
+  The PyPI distribution is named ``forefire``; the Python module keeps its historical import name, ``pyforefire``.
 
-What you do not get
-~~~~~~~~~~~~~~~~~~~
+What you do not get in the wheel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Published wheels are built with three options turned off, so a few things are
-only available in a source build:
+Published wheels are built for portability across machines, so four things require a source checkout or source build:
 
-- **MPI coupling.** Fire-atmosphere runs with Meso-NH need
-  ``FOREFIRE_ENABLE_MPI``, so they need a source build.
-- **CPU tuning.** Wheels are built without ``-march=native``, so that they run
-  on any machine of the right architecture. A source build with
-  ``FOREFIRE_NATIVE_ARCH=ON`` will be faster on the machine that built it.
-- **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS``.
+- **MPI coupling:** coupled fire–atmosphere runs with Meso-NH require ``FOREFIRE_ENABLE_MPI=ON`` in a source build.
+- **Host CPU tuning:** wheels omit ``-march=native`` so they run on any CPU of the target architecture. Build from source with ``FOREFIRE_NATIVE_ARCH=ON`` for maximum local speed.
+- **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS=ON``.
+- **Web UI static assets (`tools/htdocs`):** ``listenHTTP[]`` serves the browser UI from ``$FOREFIREHOME/tools/htdocs``. A ``pip``-only install does not ship ``tools/htdocs``; either point ``FOREFIREHOME`` at a git checkout of the repository or use the Docker image.
 
 .. _install-source:
 
 Build from source
 -----------------
 
-A native build, in exchange for managing the dependencies yourself. Two routes:
-the install script (Debian/Ubuntu only), or manual steps (any Unix-like
-system).
-
 Prerequisites
 ~~~~~~~~~~~~~
 
-- **A C++ compiler**, such as ``g++``. On Debian/Ubuntu this comes with
-  ``build-essential``.
+- **A C++17 compiler** (``g++`` or ``clang++``).
 - **CMake** 3.15 or newer, and **Make**.
-- **NetCDF — both the C library and the legacy C++4 API.** The C++4 API is a
-  separate package from the C library on every distribution, and it is the one
-  people usually miss.
+- **NetCDF — both the C library and the C++4 API** (unless building with ``-DFOREFIRE_ENABLE_NETCDF=OFF``):
 
   .. list-table::
     :header-rows: 1
@@ -119,164 +99,106 @@ Prerequisites
     * - macOS (Homebrew)
       - ``brew install netcdf netcdf-cxx``
 
-  The library is named ``netcdf_c++4`` everywhere except Homebrew, which calls
-  it ``netcdf-cxx4`` (``netcdf-cxx`` in older bottles); CMake looks for all
-  three. The older ``libnetcdf-cxx-legacy-dev`` package is a *different*,
-  pre-C++4 API and will not work.
+  The C++4 library is named ``netcdf_c++4`` on Linux and ``netcdf-cxx4`` (or ``netcdf-cxx``) on Homebrew; CMake checks all three. The older ``libnetcdf-cxx-legacy-dev`` package is a pre-C++4 API and will not work.
 
-  If NetCDF is installed somewhere CMake does not search, point at it with
-  ``-DNETCDF_HOME=/path/to/netcdf`` (and ``-DNETCDF_CXX_HOME=...`` if the C++
-  API lives elsewhere).
+  If NetCDF lives in a custom prefix, pass ``-DNETCDF_HOME=/path/to/netcdf`` (and ``-DNETCDF_CXX_HOME=...`` if separate).
 
-Option 1: the install script (Debian/Ubuntu)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``install-forefire.sh`` automates the process on Debian-based systems.
-
-1.  **Clone the repository:**
-
-  .. code-block:: bash
-
-    git clone https://github.com/forefireAPI/forefire.git
-    cd forefire
-
-2.  **Run the install script:**
-
-  .. warning::
-
-    This script requires ``sudo`` privileges to install system packages using
-    ``apt``. Review the script if you have concerns.
-
-  .. code-block:: bash
-
-    sudo bash install-forefire.sh
-
-**What the install script does:**
-
-- **Installs dependencies:** runs ``apt-get update`` and installs the
-  prerequisites listed above.
-- **Builds ForeFire** using CMake and Make.
-- **Reports the install location:** usually ``$PROJECT_ROOT/bin``.
-- **(Optional) updates PATH:**
-
-  - Prompts you before doing anything, and only if you agree appends
-    ``export PATH=`` and ``export FOREFIREHOME=`` lines to ``~/.bashrc``.
-  - It detects the invoking user's home directory even under ``sudo``, via
-    ``$SUDO_USER``.
-  - **Note:** this only modifies ``.bashrc``. For ``zsh`` or ``fish``,
-    configure the PATH manually (see below).
-
-Option 2: manual build (any Linux/Unix-like system)
+Option 1: install scripts (Debian/Ubuntu and macOS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use this if you are not on Debian/Ubuntu, prefer manual control, or do not
-want to run the install script.
+The repository includes helper scripts that install dependencies via ``apt`` or Homebrew and run the CMake build:
 
-1.  **Clone the repository:**
+.. code-block:: bash
 
-  .. code-block:: bash
+  git clone https://github.com/forefireAPI/forefire.git
+  cd forefire
 
-    git clone https://github.com/forefireAPI/forefire.git
-    cd forefire
+  # On Debian/Ubuntu:
+  sudo bash install-forefire.sh
 
-2.  **Install the prerequisites** for your system, from the table above.
+  # On macOS (with Homebrew):
+  bash install-forefire-osx.sh
 
-3.  **Configure and build:**
+Option 2: manual CMake build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: bash
+.. code-block:: bash
 
-    cmake -S . -B build
-    cmake --build build -j
+  git clone https://github.com/forefireAPI/forefire.git
+  cd forefire
+  cmake -S . -B build
+  cmake --build build -j
 
-  The executable lands in ``bin/forefire``. Check it with:
+The executable lands in ``bin/forefire`` and the shared library in ``lib/libforefireL.so`` (or ``.dylib``):
 
-  .. code-block:: bash
+.. code-block:: bash
 
-    ./bin/forefire -v
+  ./bin/forefire -v
 
-Build options
-~~~~~~~~~~~~~
+CMake build options
+~~~~~~~~~~~~~~~~~~~
 
-The build is driven by ``FOREFIRE_*`` CMake options; pass them at configure
-time, for example ``cmake -S . -B build -DFOREFIRE_ENABLE_MPI=OFF``.
+Pass ``-DFOREFIRE_<OPTION>=...`` at configure time (for example, ``cmake -S . -B build -DFOREFIRE_ENABLE_MPI=OFF``). Below are the defaults for a standard native build:
 
 .. list-table::
   :header-rows: 1
-  :widths: 30 15 55
+  :widths: 32 13 55
 
   * - Option
     - Default
     - Effect
   * - ``FOREFIRE_ENABLE_MPI``
-    - ON
-    - Fire-atmosphere coupling with Meso-NH, when MPI is found. Replaces the
-      compiler with the MPI wrapper.
+    - ``ON``
+    - Enable MPI coupling (for Meso-NH) when MPI is found on the system.
+  * - ``FOREFIRE_ENABLE_NETCDF``
+    - ``ON``
+    - Build NetCDF-backed I/O paths. When ``OFF``, ForeFire compiles without NetCDF headers or libraries; array layers and in-memory runs work normally, while ``loadData`` (with a date), ``save``, and ``FireDomain`` with ``pgdNcFile`` report ``no NetCDF support``.
+  * - ``FOREFIRE_BUILD_CLI``
+    - ``ON``
+    - Build the interactive ``forefire`` command-line interpreter.
+  * - ``FOREFIRE_BUILD_WASM``
+    - ``OFF``
+    - Build the Emscripten/embind module (``forefire.wasm`` + ``forefire.mjs``). Automatically enabled under ``emcmake``.
   * - ``FOREFIRE_NATIVE_ARCH``
-    - ON
-    - ``-march=native``. Turn it off for a binary you intend to move to
-      another machine.
+    - ``ON``
+    - Compile with ``-march=native``. Turn ``OFF`` for portable binaries.
   * - ``FOREFIRE_BUILD_PYTHON``
-    - OFF
-    - Build the ``pyforefire`` extension module.
+    - ``OFF``
+    - Build the ``pyforefire`` Python extension module.
   * - ``FOREFIRE_STATIC_CORE``
-    - OFF
-    - Link the core statically.
+    - ``OFF``
+    - Build the ForeFire core as a static library instead of ``libforefireL``.
   * - ``FOREFIRE_BUILD_TOOLS``
-    - ON
-    - Build the ``ANN_test`` helper, needed by ``tests/runANN``.
+    - ``ON``
+    - Build the ``ANN_test`` helper executable (used by ``tests/runANN``).
   * - ``FOREFIRE_CHECK_LFS``
-    - ON
-    - Fail early if the Git LFS test fixtures were not pulled.
+    - ``ON``
+    - Verify Git LFS test data integrity at configure time.
   * - ``FOREFIRE_BUILD_TESTS``
-    - ON
-    - Build the C++ unit tests and register them with CTest.
+    - ``ON``
+    - Build C++ unit tests and register them with CTest.
   * - ``FOREFIRE_ENABLE_WARNINGS``
-    - ON
-    - Compile ForeFire's own sources with ``-Wall -Wextra``.
+    - ``ON``
+    - Compile ForeFire sources with ``-Wall -Wextra``.
   * - ``FOREFIRE_WARNINGS_AS_ERRORS``
-    - OFF
-    - Fail the build on a compiler warning.
+    - ``OFF``
+    - Treat compiler warnings as errors.
   * - ``FOREFIRE_SANITIZE``
     - *(empty)*
-    - Sanitizers to build with, passed to ``-fsanitize=``, for example
-      ``address,undefined``.
+    - Sanitizers passed to ``-fsanitize=`` (e.g. ``address,undefined``).
 
-Wheel builds flip six of these: MPI, native-arch, tools, tests and the LFS
-check off, Python and the static core on. That is what makes a wheel run on a
-machine other than the one that built it.
+When driven by ``pip`` / ``scikit-build-core``, seven options flip automatically for portability: ``MPI=OFF``, ``NATIVE_ARCH=OFF``, ``TOOLS=OFF``, ``CHECK_LFS=OFF``, ``TESTS=OFF``, ``PYTHON=ON``, and ``STATIC_CORE=ON``.
 
-``TESTING.md`` at the repository root covers the test suites and the sanitizer
-build in detail.
+When driven by ``emcmake`` (Emscripten), CMake automatically sets ``NETCDF=OFF``, ``MPI=OFF``, ``CLI=OFF``, ``WASM=ON``, and ``STATIC_CORE=ON`` to produce ``bin/forefire.wasm`` and ``bin/forefire.mjs``. See ``bindings/wasm/README.md`` in the repository for details on building and serving the WebAssembly target.
 
-Making ForeFire available system-wide
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Environment variables (``PATH`` and ``FOREFIREHOME``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After a source build, ``forefire`` lives in the repository's ``bin``
-directory. To run it from anywhere, add that directory to your PATH.
-
-**For the current terminal session:**
-
-.. code-block:: bash
-
-  # Execute this from the root of the forefire repository
-  export PATH=$PATH:`pwd`/bin
-
-**Permanently:**
-
-Add the following to your shell's configuration file (``~/.bashrc``,
-``~/.zshrc``, ``~/.profile``, or ``~/.config/fish/config.fish``), replacing
-``/path/to/forefire`` with the absolute path to the cloned repository.
-
-.. code-block:: bash
-
-  export PATH="/path/to/forefire/bin:$PATH"
-
-*Optional:* the install script also sets ``FOREFIREHOME``, which some scripts
-and components use to locate the repository.
+After a source build, add ``bin/`` to ``PATH`` and set ``FOREFIREHOME`` to the repository root:
 
 .. code-block:: bash
 
   export FOREFIREHOME="/path/to/forefire"
+  export PATH="$FOREFIREHOME/bin:$PATH"
 
-Then restart your terminal or reload the configuration, for example with
-``source ~/.bashrc``.
+``FOREFIREHOME`` is required when using the built-in web interface (``listenHTTP[]``) so the HTTP server can find the static UI files under ``$FOREFIREHOME/tools/htdocs`` (including the 2D console and the 3D Meso-NH viewer ``mnh3d.html``).

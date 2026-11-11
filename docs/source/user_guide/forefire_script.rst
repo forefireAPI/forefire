@@ -1,154 +1,110 @@
 .. _userguide-forefire-script:
 
-ForeFire Script File (.ff)
-==========================
+ForeFire Script File (``.ff``)
+==============================
 
-The ForeFire Script File, conventionally given a ``.ff`` extension, is a plain text file that contains a sequence of commands to control and execute a ForeFire simulation. It acts as the primary way to define a simulation scenario for non-interactive runs.
+A ForeFire script (conventionally ``.ff``) is a plain-text sequence of interpreter commands that configures parameters, loads data, initializes fire fronts, schedules events, and exports results. Every command available in a ``.ff`` file can also be executed interactively at the ``forefire>`` prompt, sent over HTTP, or passed to ``ff.execute("...")`` in Python.
 
-Purpose
--------
+Grammar & Syntax Rules
+----------------------
 
-The script file allows you to automate the entire simulation process, including:
+1. **Command Format:**
+   Each command takes the form ``CommandName[arg1=val1;arg2=val2]`` (or positional arguments such as ``loadData[data.nc;2024-01-01T12:00:00Z]`` and ``include[params.ff]``). Command and parameter names are **case-sensitive**.
 
-- Setting simulation parameters.
-- Loading necessary input data (landscape, fuels).
-- Defining the initial state of the fire (ignition points or lines).
-- Specifying dynamic conditions (like changing winds).
-- Controlling the simulation's time progression.
-- Generating output files at desired intervals or at the end.
+2. **Comments (Whole Line Only):**
+   Lines starting with ``#`` or ``*`` (outside multiline blocks) are ignored as comments.
 
-Basic Syntax
-------------
+   .. warning::
+      **Never place a comment or trailing spaces after the closing bracket** ``]`` **on the same line.** Everything after ``]`` is parsed as a schedule post-operator (:ref:`@t=... <cmd-@>`). A trailing ``# comment`` or two or more trailing spaces after ``]`` triggers ``unknown post operator`` and **prevents the command from running**.
 
-- **One Command Per Line:** Each line in the script file generally represents a single ForeFire command.
-- **Command Structure:** Commands follow the format ``CommandName[argument1=value1;argument2=value2;...]``.
-  
-  - The command name is case-sensitive (e.g., ``setParameter`` is different from ``setparameter``).
-  - Arguments are enclosed in square brackets ``[...]``.
-  - Arguments are typically key-value pairs separated by an equals sign ``=``.
-  - Multiple arguments within the brackets are separated by semicolons ``;``.
-  - Some commands might take positional arguments (like :ref:`loadData <cmd-loadData>`) or have optional arguments (prefixed with `opt:` in the :doc:`Command Reference </reference/commands>`).
-- **Comments:** Lines beginning with a hash symbol ``#`` are treated as comments and are ignored by the interpreter. A ``#`` after a command on the same line is not a comment: ForeFire prints ``unknown post operator`` and does not run the command. Put comments on their own line.
-- **Whitespace:** Leading and trailing whitespace on a line is generally ignored, except for indentation (see below).
+3. **Schedule Operator (`@t=` and `@nowplus=`):**
+   Append ``@t=<seconds>`` (absolute simulation time) or ``@nowplus=<seconds>`` (relative to current domain time) immediately after ``]`` to queue a command in the event ``TimeTable`` instead of executing it immediately:
 
-Indentation for Hierarchy (FireFront / FireNode)
-------------------------------------------------
+   .. code-block:: none
 
-Certain commands, specifically :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, use **leading spaces (indentation)** to define their relationship within the simulation structure when creating custom initial fire perimeters:
+      trigger[wind;vel=(6.0,2.0,0.0)]@t=1800
+      print[front_t1800.geojson]@t=1800
+      save[]@nowplus=600
 
-- A ``FireFront`` defined within a :ref:`FireDomain <cmd-FireDomain>` is typically indented (e.g., 4 spaces).
-- A ``FireNode`` belonging to that ``FireFront`` is indented further relative to the `FireFront` (e.g., another 4 spaces, totaling 8).
-- An inner ``FireFront`` (representing an unburned island within another `FireFront`) would be indented relative to its parent `FireFront`.
+4. **Multiline Arguments (`"""..."""`):**
+   Wrap an argument value in triple quotes ``"""`` to span multiple lines—for example, to embed an inline fuel table inside a script:
+
+   .. code-block:: none
+
+      setParameter[fuelsTable="""Index;vv_coeff;Kcurv;beta
+      1;1.0;1.0;1.0
+      2;0.3;1.0;1.0"""]
+
+5. **Parameter Substitution (`*param*`) and Protected Values (`!`):**
+
+   * In ``print[...]`` and ``systemExec[...]``, any ``*paramName*`` token in the argument string is replaced with the current value of ``paramName`` (and any ``:`` in the resulting string is replaced with ``-`` so ISO timestamps are safe in filenames):
+
+     .. code-block:: none
+
+        print[front_*ISOdate*_step_*count*.geojson]
+
+   * Prefixing a value with ``!`` in ``setParameter[key=!value]`` marks ``key`` as **protected**: subsequent ``setParameter`` calls for that key are ignored for the rest of the session.
+
+Hierarchy & Front Orientation (``FireFront`` / ``FireNode``)
+------------------------------------------------------------
+
+When constructing custom fire perimeters with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, ForeFire uses **indentation** and **node ordering (winding)**:
+
+* **Indentation rule:** Each hierarchy level is indented by **one tab (``\t``) or four spaces (``    ``)** relative to the first command in the script:
+
+  * Level 0 (no indent): ``FireDomain[...]`` and top-level commands.
+  * Level 1 (4 spaces or 1 tab): outer ``FireFront[...]`` inside the ``FireDomain``.
+  * Level 2 (8 spaces or 2 tabs): ``FireNode[...]`` belonging to the outer ``FireFront``, **or** an inner ``FireFront[...]`` (unburned island) nested inside the outer front.
+  * Level 3 (12 spaces or 3 tabs): ``FireNode[...]`` belonging to the inner ``FireFront``.
+
+* **Required `FireNode` arguments:** Every ``FireNode`` requires at least three arguments: ``loc=(x,y,z)``, ``vel=(vx,vy,vz)``, and ``t=<seconds>`` (fewer than 3 arguments raises ``MissingOption``).
+
+* **Winding direction (Expanding vs. Contracting fronts):**
+  The normal vector direction is determined by the winding order of the ``FireNode`` markers:
+
+  * **Clockwise order** :math:`\rightarrow` outward normal (**expanding** fire perimeter).
+  * **Counter-clockwise order** :math:`\rightarrow` inward normal (**contracting** perimeter, used for unburned islands inside an outer front).
 
 .. code-block:: none
-  :caption: Example Indentation for Custom Front
+   :caption: Expanding outer perimeter with a contracting inner island
 
-  # FireDomain defined earlier or implicitly...
+   FireDomain[sw=(-1000,-1000,0);ne=(1000,1000,0);t=0]
+       FireFront[t=0]
+           FireNode[loc=(0,100,0);vel=(0,0,0);t=0]
+           FireNode[loc=(100,0,0);vel=(0,0,0);t=0]
+           FireNode[loc=(0,-100,0);vel=(0,0,0);t=0]
+           FireNode[loc=(-100,0,0);vel=(0,0,0);t=0]
+           FireFront[t=0]
+               FireNode[loc=(0,20,0);vel=(0,0,0);t=0]
+               FireNode[loc=(-20,0,0);vel=(0,0,0);t=0]
+               FireNode[loc=(0,-20,0);vel=(0,0,0);t=0]
+               FireNode[loc=(20,0,0);vel=(0,0,0);t=0]
 
-      # Indented FireFront (e.g., 4 spaces)
-      FireFront[t=0]
-          # Further indented FireNode (e.g., 8 spaces total)
-          FireNode[loc=(100,100,0);t=0]
-          FireNode[loc=(200,100,0);t=0]
-          FireNode[loc=(150,150,0);t=0]
-          # ... potentially more nodes defining the outer perimeter
-
-
-.. important::
-   Consistent use of spaces (not tabs) is recommended for indentation. The exact number of spaces required might need experimentation or checking examples, but the relative indentation defines the hierarchy. Using :ref:`startFire <cmd-startFire>` is often simpler for basic point ignitions.
+For simple point ignitions, :ref:`startFire <cmd-startFire>` automatically creates a small clockwise triangular front of 3 nodes.
 
 Typical Script Workflow
 -----------------------
 
-While the exact commands depend on the simulation, a common workflow within a ``.ff`` script looks like this:
+.. code-block:: none
 
-1.  **Setup Parameters:** Define simulation controls, model choices, resolution, etc.
+   # 1. Configure model and solver parameters
+   setParameters[propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
 
-  .. code-block:: none
+   # 2. Load the NetCDF landscape (creates the FireDomain from the 'domain' variable)
+   loadData[data.nc;2024-07-15T12:00:00Z]
 
-    # Include parameters from a separate file (optional)
-    # include[params.ff]
+   # 3. Ignite the fire (in WGS84 lon,lat,z or Cartesian loc=(x,y,z))
+   startFire[lonlat=(8.85,41.78,0);t=0]
 
-    # Set specific parameters directly
-    setParameters[propagationModel=Rothermel;perimeterResolution=30;dumpMode=geojson]
+   # 4. Set initial wind and schedule a wind shift at t = 1 hour
+   trigger[wind;vel=(5.0,2.0,0.0)]
+   trigger[wind;vel=(2.0,6.0,0.0)]@t=3600
 
-2.  **Load Input Data:** Load the geospatial context.
+   # 5. Advance simulation clock by 2 hours
+   goTo[t=7200]
 
-  .. code-block:: none
+   # 6. Export final front perimeter and arrival-time matrix
+   print[final_front.geojson]
+   save[]
 
-    # Load landscape and associate with a time
-    loadData[my_landscape.nc;2024-01-01T12:00:00Z]
-    # Note: The fuels file (e.g., fuels.csv) is usually implicitly loaded
-    # based on the 'fuelsTableFile' parameter or defaults,
-    # but its path might need to be relative to 'caseDirectory'.
-
-3.  **Define Simulation Domain (if needed):** While ``loadData`` can implicitly define the domain extent based on the NetCDF file, you can also explicitly define it using ``FireDomain``.
-
-  .. code-block:: none
-
-    # Optional explicit domain definition (using projected coords)
-    # FireDomain[sw=(0,0,0);ne=(50000,50000,0);t=0]
-
-4.  **Define Initial Fire State:** Specify where and when the fire starts.
-
-  .. code-block:: none
-
-    # Simple point ignition, using geographic coordinates
-    startFire[lonlat=(9.1,42.2,0);t=0]
-
-    # --- OR ---
-
-    # Custom initial front (using projected coords and indentation)
-    # Ensure FireDomain covers these coordinates
-    #    FireFront[t=0]
-    #        FireNode[loc=(2500,3000,150);t=0]
-    #        FireNode[loc=(2600,3000,150);t=0]
-    #        FireNode[loc=(2550,3100,150);t=0]
-
-
-5.  **Set Dynamic Conditions (Optional):** Introduce time-varying inputs, like wind changes.
-
-  .. code-block:: none
-
-    # Set initial wind (applied from t=0 if not in landscape file)
-    trigger[wind;vel=(3.0,-1.0,0.0)]
-
-    # Change wind later in the simulation: new wind at 1 hour
-    trigger[wind;vel=(0.0,5.0,0.0)]@t=3600
-
-6.  **Advance Simulation Time:** Run the simulation forward.
-
-  .. code-block:: none
-
-    # Run until a specific absolute simulation time (t = 2 hours)
-    goTo[t=7200]
-
-    # --- OR ---
-
-    # Run in discrete steps (useful for periodic output),
-    # with outputs scheduled at t=600 and t=1200
-    # print[front_t600.geojson]@t=600
-    # print[front_t1200.geojson]@t=1200
-    # step[dt=600]
-    # step[dt=600]
-    # ...
-
-7.  **Generate Outputs:** Save the simulation results.
-
-  .. code-block:: none
-
-    # Save final front geometry (format set by dumpMode parameter)
-    print[final_front.geojson]
-
-    # Save final arrival time map to NetCDF
-    # (uses default filename pattern ForeFire.<domainID>.nc)
-    save[]
-
-    # Plot a specific variable to an image
-    # plot[parameter=arrival_time;filename=arrival_map.png]
-
-
-Complete Example (`real_case.ff`)
----------------------------------
-
-The file ``tests/runff/real_case.ff`` serves as a complete, working example demonstrating many of these concepts in practice. After understanding the basics outlined here and consulting the :doc:`Command </reference/commands>` and :doc:`Parameter </reference/parameters>` references, studying ``real_case.ff`` is highly recommended.
+See ``tests/runff/real_case.ff`` and ``tests/runff/params.ff`` in the repository for a complete real-world setup.

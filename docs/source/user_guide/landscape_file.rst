@@ -1,127 +1,109 @@
 .. _userguide-landscape-file:
 
-Landscape File (landscape.nc)
-=============================
+Landscape File (``landscape.nc``)
+=================================
 
-.. warning::
+The NetCDF landscape file (``.nc``) packages the domain geometry and spatial data layers (fuel index map, elevation, and optional wind fields) for geospatial simulations.
 
-    This documentation is still based on forefire v1.0. The landscape file format and requirements may change in future versions (e.g., v2). Always refer to the latest documentation or release notes for updates.
+.. tip::
+   If you are working in Python with idealized grids or custom rasters in memory, you do not need to create a NetCDF file—pass NumPy arrays directly with ``addIndexLayer`` and ``addScalarLayer`` (see :doc:`python_arrays`).
 
-The Landscape File, typically ending with the ``.nc`` extension, is the primary geospatial input file for ForeFire. It provides the environmental context over which the fire simulation will run.
+How ForeFire Reads a Landscape File
+-----------------------------------
 
-File Format
------------
+When :ref:`loadData <cmd-loadData>` opens a NetCDF file, it inspects the ``domain`` variable first and then iterates over all remaining variables in the file, dispatching each one according to its ``type`` attribute. Any variable without a ``type`` attribute is skipped with a console message.
 
-The Landscape File **must** be in the **NetCDF (Network Common Data Form)** format (`.nc`). This is a standard format for storing array-oriented scientific data. ForeFire uses libraries to read the necessary variables directly from this file.
+1. The ``domain`` Variable (Required)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Required Data Variables
------------------------
+The file **must** contain a variable named ``domain`` with ``domain:type = "domain"``. Without it, loading aborts with ``Error: Domain variable not found``.
 
-At a minimum, a functional ForeFire simulation generally requires the following variables to be present within the NetCDF landscape file.
+Its attributes define the Cartesian simulation box (in meters and seconds) and optional WGS84 georeferencing:
 
-ForeFire reads every variable in the file and dispatches on its ``type`` attribute. A variable without one is skipped, with a message on the console, so a misspelled name is not an error: the layer is simply absent from the simulation.
+* **Cartesian extent:** ``SWx``, ``SWy``, ``SWz`` (southwest corner in meters), ``Lx``, ``Ly``, ``Lz`` (domain lengths in meters), ``t0`` and ``Lt`` (initial time and duration in seconds). ``loadData`` constructs the :ref:`FireDomain <cmd-FireDomain>` directly from these attributes, so no separate ``FireDomain[...]`` command is needed.
+* **Geographic alignment (``BBoxWSEN``):** an optional string attribute ``"lonWest,latSouth,lonEast,latNorth"`` in WGS84 degrees. ForeFire uses ``BBoxWSEN`` (or ``WSENLBRT``, which appends vertical and Cartesian bounds) to project ``lonlat=(lon,lat,z)`` ignitions and to export georeferenced GeoJSON and KML perimeters. ForeFire does not read EPSG codes or WKT projection strings from NetCDF attributes.
 
-*   **Fuel Index Map**
+2. Required Data Layers
+~~~~~~~~~~~~~~~~~~~~~~~
 
-    *   **Variable name:** ``fuel``, matched **exactly**. ``fuel_index`` and ``land_cover`` are not recognised.
-    *   **Attribute:** ``type = "fuel"``.
-    *   **Description:** A 2D array (grid) containing **integer values** representing the fuel type at each location in the simulation domain.
-    *   **Crucial Link:** Each unique integer value in this array **must** correspond directly to an ``Index`` value present in the model parameter file (see :doc:`/user_guide/fuels_and_models`) used for the simulation. ForeFire uses this to look up the fuel properties needed for the fire spread calculations. Index `0` is often used for non-burnable areas.
-    *   **Dimensions:** read from the variable itself; the axes are ordered outermost first.
+* **Fuel Index Map (``fuel``)**
 
-*   **Elevation (Digital Elevation Model - DEM)**
+  * **Variable name:** ``fuel`` (matched **exactly**; ``fuel_index`` and ``land_cover`` are not recognized by the C++ loader).
+  * **Attribute:** ``fuel:type = "fuel"``.
+  * **Values:** integer indices corresponding to the ``Index`` column of your fuel table (:doc:`fuels_and_models`). Index ``0`` typically denotes non-burnable cells.
+  * **Dimensions:** read from the variable itself, ordered outermost axis first: ``(NY, NX)`` or ``(NT, NZ, NY, NX)``.
 
-    *   **Variable name:** ``altitude``, matched **exactly**. ``elevation``, ``dem`` and ``hgt`` are not recognised, and the simulation then runs without slope.
-    *   **Attribute:** ``type = "data"``.
-    *   **Description:** A 2D array containing the elevation (height above sea level) for each grid cell in the domain. This is essential for calculating slope, which significantly impacts fire spread.
-    *   **Units:** Meters (m).
-    *   **Dimensions:** read from the variable itself. It does **not** have to match the fuel grid: the shipped test case has fuel at 10 m and elevation at 100 m.
+* **Elevation (``altitude``)**
 
-Optional Data Variables
------------------------
+  * **Variable name:** ``altitude`` (matched **exactly**; if named ``elevation``, ``dem``, or ``hgt``, it is ignored and the simulation runs on flat ground).
+  * **Attribute:** ``altitude:type = "data"``.
+  * **Values:** height above sea level in meters (`m`). ForeFire automatically derives the ``slope`` layer from ``altitude``.
+  * **Resolution:** each layer uses its own grid dimensions, so ``altitude`` does not need to share the resolution of ``fuel`` (for example, ``tests/runff/data.nc`` pairs a 10 m fuel raster with a 100 m DEM).
 
-While fuel and elevation are fundamental, Landscape files often contain additional variables to support more complex simulations or specific model requirements:
+3. Optional Wind Layers
+~~~~~~~~~~~~~~~~~~~~~~~
 
-*   **Wind**
+Wind fields in meters per second (`m/s`) can be stored in either of two forms:
 
-    Two forms are read, both in metres per second (m/s):
+* **Combined ``wind`` variable** with ``wind:type = "wind"`` and four dimensions ``(2, wind_directions, wind_rows, wind_columns)``, where the leading axis selects the zonal (`U`) and meridional (`V`) response fields (as in ``tests/runff/data.nc``).
+* **Separate ``windU`` (West–East) and ``windV`` (South–North) variables** (matched **exactly**).
 
-    *   a single ``wind`` variable holding both components, with the two leading axes selecting component and level, as in the shipped test case;
-    *   or separate ``windU`` (West-East) and ``windV`` (South-North) variables, matched **exactly**. ``wind_u`` and ``U`` are not recognised.
+If no wind variable is present in the NetCDF file, supply wind via ``addScalarLayer`` or the :ref:`trigger <cmd-trigger>` command.
 
-    Time may be one of the variable's axes, allowing for dynamic wind conditions.
-
-    **Note:** If wind data is not provided in the landscape file, wind conditions must be specified via other means, such as constant values set via :ref:`parameters <reference-parameters>` or dynamic conditions applied using the :ref:`trigger <cmd-trigger>` command.
-
-*   **Other Potential Variables:** Depending on the specific propagation models or simulation setup, other variables might be included or derived:
-    *   ``slope``: slope steepness, derived internally from ``altitude``. There is no ``aspect`` layer.
-    *   Canopy characteristics (if using specific canopy models).
-
-Coordinate System & Domain Definition
+Creating a Landscape File from Python
 -------------------------------------
 
-*   **Projection:** While ForeFire's internal simulation often works with Cartesian coordinates (meters relative to an origin), the input NetCDF file should ideally contain **projected geospatial data**. Common choices include UTM (Universal Transverse Mercator) zones appropriate for the region of interest. The projection information (e.g., projection string, EPSG code) should ideally be included as global attributes or variable attributes within the NetCDF file if possible, although ForeFire might rely on user-defined domain bounds.
-*   **Grid:** Each layer is built from the dimensions of its own variable, so the file does not have to share a single grid: the shipped test case has fuel at 10 m and elevation at 100 m.
-*   **Domain:** The file **must** contain a ``domain`` variable. Without it the load aborts with ``Error: Domain variable not found``. Its attributes carry the extent, ``SWx``, ``SWy``, ``SWz``, ``Lx``, ``Ly``, ``Lz``, ``t0`` and ``Lt``, and :ref:`loadData <cmd-loadData>` builds the :ref:`FireDomain <cmd-FireDomain>` from them, so a landscape file needs no explicit ``FireDomain`` command.
-*   **Geographic alignment:** an optional ``BBoxWSEN`` attribute on the ``domain`` variable gives the WGS84 bounding box of the grid as ``lonWest,latSouth,lonEast,latNorth``. ForeFire reads it to place ``lonlat`` ignitions and to write geo-referenced output. ``WSENLBRT`` carries the same box followed by the vertical extent and the domain size.
+The helper ``tools/preprocessing/genForeFireCase.py`` builds a compliant NetCDF file directly from NumPy arrays:
 
-Relationship to the Fuels & Models File
----------------------------------------
+.. code-block:: python
 
-As mentioned under Required Variables, the link between the integer values in the ``fuel`` layer of the NetCDF file and the ``Index`` column in the model parameter file (see :doc:`/user_guide/fuels_and_models`) is **absolutely critical**. If the landscape file contains a fuel index (e.g., `5`) that is not defined in the ``fuels.csv``, the simulation will likely fail or produce incorrect results.
+   import numpy as np
+   from genForeFireCase import FiretoNC
 
-Creating Landscape Files
-------------------------
+   FiretoNC(
+       "landscape.nc",
+       domainProperties={
+           "SWx": 0.0, "SWy": 0.0, "SWz": 0.0,
+           "Lx": 1000.0, "Ly": 1000.0, "Lz": 0.0,
+           "t0": 0.0, "Lt": np.inf,
+       },
+       parametersProperties={
+           "date": "2026-08-12T12:00:00Z",
+           "duration": 3600,
+           "refYear": 2026, "refDay": 224,
+           "year": 2026, "month": 8, "day": 12,
+       },
+       fuelModelMap=fuel,          # (NY, NX) integer fuel indices
+       elevation=elevation,        # (NY, NX) meters
+       wind={"zonal": windU, "meridian": windV},
+   )
 
-Generating a suitable ``landscape.nc`` file typically involves standard Geographic Information System (GIS) workflows:
-
-1.  **Obtain Source Data:**
-
-    *   **DEM:** Download elevation data for your region (e.g., from SRTM, ASTER GDEM, national datasets, LiDAR).
-    *   **Fuel Map:** Obtain a land cover or fuel type raster map (e.g., CORINE, LANDFIRE, national datasets, or custom classifications). Remember this might need reclassification to match the indices in your ``fuels.csv``.
-    *   **Wind Data:** Obtain wind fields from meteorological models (e.g., WRF, GFS, ECMWF) or reanalysis datasets if dynamic wind is needed.
-
-2.  **GIS Processing:** Use GIS software (like QGIS, ArcGIS, GRASS GIS) or geospatial libraries (like GDAL, Rasterio in Python):
-
-    *   Ensure all layers are **reprojected** to the *same* target projected coordinate system (e.g., UTM).
-    *   Ensure all layers are **resampled** or **aligned** to the *same* grid resolution and spatial extent.
-    *   **Clip** the layers to your desired simulation domain boundaries.
-    *   **Convert** the final processed layers into a single NetCDF file with appropriate variable names.
-
-3.  **ForeFire Helpers:** ``tools/preprocessing/genForeFireCase.py`` writes the file for you from numpy arrays, which is usually easier than assembling the NetCDF by hand:
-
-    .. code-block:: python
-
-       import numpy as np
-       from genForeFireCase import FiretoNC
-
-       FiretoNC("landscape.nc",
-                domainProperties={'SWx': 0., 'SWy': 0., 'SWz': 0.,
-                                  'Lx': 1000., 'Ly': 1000., 'Lz': 0.,
-                                  't0': 0., 'Lt': np.inf},
-                parametersProperties={'date': "2026-08-12T12:00:00Z",
-                                      'duration': 3600,
-                                      'refYear': 2026, 'refDay': 224,
-                                      'year': 2026, 'month': 8, 'day': 12},
-                fuelModelMap=fuel,        # (NY, NX) integer fuel indices
-                elevation=elevation,      # (NY, NX) metres
-                wind={"zonal": windU, "meridian": windV})
-
-    Field arrays are indexed outermost axis first: ``(NY, NX)``, or ``(NZ, NY, NX)`` and ``(NT, NZ, NY, NX)`` when they vary with height or time. Every key shown under ``parametersProperties`` is required.
-
-Loading in ForeFire
--------------------
-
-The Landscape File is loaded into the simulation using the :ref:`loadData <cmd-loadData>` command, specifying the path to the ``.nc`` file and the corresponding UTC timestamp for the data:
+You can also export the active ``altitude``, ``fuel``, and ``wind`` layers of a running simulation to a NetCDF landscape file with :ref:`save <cmd-save>`:
 
 .. code-block:: none
 
-   loadData[path/to/your_landscape.nc;YYYY-MM-DDTHH:MM:SSZ]
+   save[filename=landscape_snapshot.nc;fields=altitude,fuel,wind;compression=6]
 
-Example:
+Validating a Landscape File (``forefire-validate``)
+---------------------------------------------------
+
+If a cell in the ``fuel`` raster contains an integer index that is missing from ``fuels.csv``, the simulation can fail or produce invalid spread rates without an obvious error message. Run ``forefire-validate`` (included with ``pip install forefire``; requires ``pip install netCDF4``) to check both files before starting a run:
+
+.. code-block:: bash
+
+   forefire-validate landscape.nc fuels.csv
+
+It checks that:
+
+1. A fuel variable exists and **every unique fuel index in the raster is defined in the fuel table**.
+2. An elevation variable is present and reports any shape mismatch.
+3. Wind layers are present (or warns you to supply wind via ``trigger[wind;...]``).
+
+Loading the File in a Script
+----------------------------
+
+Use :ref:`loadData <cmd-loadData>` with the path to the ``.nc`` file and an optional ISO 8601 UTC start date:
 
 .. code-block:: none
 
-   loadData[aullene_data.nc;2023-08-10T14:00:00Z]
-
-This command populates ForeFire's internal ``DataBroker`` with the necessary data layers for the simulation.
+   loadData[data.nc;2023-08-10T14:00:00Z]

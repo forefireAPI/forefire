@@ -1,106 +1,182 @@
 .. _userguide-fuels-and-models:
 
-Fuel & Model Parameterization
-=============================
+Fuel Tables & Model Parameterization
+====================================
 
-A core feature of ForeFire is its flexibility as a **general Rate of Spread (ROS) model solver**. Rather than being tied to a single fire spread equation, it can use different physical or empirical models depending on the user's needs. This is controlled via the :ref:`propagationModel <param-propagationModel>` parameter.
-
-.. note::
-   **For New Users:** The most common use case for ForeFire is simulating surface wildfires using the standard **Rothermel** model. This model **requires a ``fuels.csv`` file**. If this is your goal, you can skip directly to the section :ref:`The Rothermel / Balbi Fuel File <rothermel-fuel-file>` to learn how to prepare this critical input.
-
-The choice of propagation model is critical because it dictates what physical parameters the simulation requires. This guide explains the available models and how to provide the necessary parameterization for each.
-
-Available Propagation Models
-----------------------------
-
-ForeFire includes several built-in propagation models. Below are the primary models intended for general use. For a complete list of all implemented models, including experimental ones, users can refer to the C++ source code.
+ForeFire is a general Rate of Spread (ROS) and flux solver. When a model is instantiated, it informs the ``DataBroker`` which fuel properties it needs via ``registerProperty("fuel.<column>")`` (see :doc:`core_concepts`). Consequently, **the required columns in your fuel table depend on the model you select**.
 
 .. seealso::
-   :doc:`models` lists the propagation and flux models that have a published reference, with that reference and how to select each one.
+   For the list of propagation and flux models with published scientific references and how to select each one, see :doc:`models`.
 
-**Iso**
-^^^^^^^
-*   **Description:** A simple isotropic model where the fire spreads at a constant rate in all directions. It ignores all environmental factors except for blocking terrain.
-*   **Use Case:** Ideal for simple tests, debugging setups, or scenarios where a constant spread rate is desired.
-*   **Parameterization:** This model **does not** use an external fuels file. The spread speed is set directly in the simulation script via a model-specific parameter.
-*   **Example:**
+How Fuel Tables Are Loaded
+--------------------------
 
-  .. code-block:: bash
+You can supply a fuel table in two ways:
 
-    setParameter[propagationModel=Iso]
-    # Sets spread to 0.5 meters/second
-    setParameter[Iso.speed=0.5]
+1. **External CSV file (`fuelsTableFile`):**
+   Set ``setParameter[fuelsTableFile=fuels.csv]`` (default ``fuels.ff``, resolved relative to ``caseDirectory``).
+2. **Inline string parameter (`fuelsTable`):**
+   Pass the CSV content directly into the ``fuelsTable`` parameter (for example from Python via ``ff["fuelsTable"] = ...``, or using one of the built-in standard tables such as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``).
 
-**Rothermel**
-^^^^^^^^^^^^^
-*   **Description:** Implements the Rothermel (1972) surface fire spread model, a widely used semi-empirical model in wildfire simulation.
-*   **Use Case:** The standard choice for simulating surface fire spread in various fuel types (grass, shrub, timber litter).
-*   **Parameterization:** This model requires a detailed set of fuel bed parameters. These are provided via a **CSV file**, the format of which is detailed in the section below.
+In both cases:
 
-**Balbi** variants (e.g., `BalbiNov2011`, `Balbi2015`)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-*   **Description:** Implements physical models based on the work of Balbi et al. These models take a different approach from Rothermel, often considering factors like flame geometry and radiative heat transfer more explicitly.
-*   **Use Case:** Primarily for research applications, model comparison studies, or scenarios where a more physics-based approach is preferred.
-*   **Parameterization:** These models also source their parameters from the same CSV fuel file format used by Rothermel, though they may use a different subset of the columns for their calculations.
+* The delimiter is a **semicolon (``;``)**.
+* The first line must be a header row starting with ``Index``.
+* Each integer value in the landscape's ``fuel`` index layer is looked up against the ``Index`` column. Index ``0`` is conventionally reserved for non-burnable ground (water, bare rock, roads, or buildings, with bed depth ``e = 0``).
+* Only the ``fuel.*`` columns registered by the active propagation and flux models are read from the table.
 
-.. note::
-  The relationship between a model and its parameters is key: when a model like `Rothermel` is selected, it informs the simulation engine which properties it needs (e.g., `slope`, `normalWind`, `fuel.Rhod`, etc.). The engine then provides these values, retrieving the `fuel.*` properties from the loaded CSV table.
+Model Families and Their Fuel Columns
+-------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 72
+
+   * - Model(s)
+     - Required Fuel Columns
+   * - ``Iso``
+     - **None.** Spreads at the constant speed given by ``setParameter[Iso.speed=0.5]`` (m/s) in all directions.
+   * - ``WindDriven``
+     - ``Index;vv_coeff;Kcurv;beta`` (idealized wind-driven model used in :doc:`python_arrays` and :doc:`ensembles`).
+   * - ``Rothermel``, ``BalbiNov2011``, ``Balbi2020``, ``Balbi2015``
+     - The standard 23-column Rothermel/Balbi fuel table detailed in :ref:`rothermel-fuel-file` below.
+   * - ``RothermelAndrews2018``
+     - Imperial Rothermel columns from Andrews (2018): ``Index;fl1h_tac;fd_ft;SAVcar_ftinv;mdOnDry1h_r;fuelDens_lbft3;H_BTUlb;Dme_pc;totMineral_r;effectMineral_r``.
+   * - ``Farsite``
+     - Multi-class Scott & Burgan (2005) columns (built into ForeFire via ``setParameter[fuelsTable=STDfarsiteFuelsTable]``): ``Index;code;Number;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl``.
 
 ----
 
 .. _rothermel-fuel-file:
 
-The Rothermel / Balbi Fuel File (`fuels.csv`)
------------------------------------------------
+The Standard Rothermel / Balbi Fuel Table (``fuels.csv``)
+---------------------------------------------------------
 
-When a `propagationModel` like `Rothermel` or a `Balbi` variant is selected, ForeFire needs a file that defines the physical characteristics of the fuel types present in the landscape.
+The standard ``fuels.csv`` format (used in ``tests/runff/fuels.csv`` and ``STDlandIndexedFuelsTable``) provides 23 semicolon-separated columns covering both Rothermel (1972) and the Balbi physical propagation and flux models:
 
-**File Format**
+.. code-block:: text
 
-*   **Format:** Comma Separated Value (CSV).
-*   **Delimiter:** The parser expects a **semicolon (`;`)** as the delimiter.
-*   **Header:** The first line *must* be a header row containing the exact column names specified below. The file parser requires all columns to be present, even if a specific model does not use all of them.
+   Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal;stoch;RhoA;Ta;Tau0;Deltah;DeltaH;Cp;Cpa;Ti;X0;r00;Blai;me
+   1;500.0;500.0;0.1;0.7;5000.0;5000.0;0.5;0.8;0.2;8.3;1.0;300.0;70000.0;2300000.0;1.8e7;1800.0;1000.0;600.0;0.3;2.5e-5;3.0;0.3
 
-**Required Columns**
+Column Reference
+~~~~~~~~~~~~~~~~
 
-The ``Index`` column links these properties to the integer values in the landscape file's fuel layer.
+.. list-table::
+   :header-rows: 1
+   :widths: 12 18 48 22
 
-*   ``Index``: **Critical.** Unique non-negative integer for the fuel type (e.g., `0` for non-burnable).
-*   ``Rhod``: Oven-dry particle density (kg/m³).
-*   ``Rhol``: (Model Specific)
-*   ``Md``: Oven-dry fuel moisture content (dimensionless ratio, e.g., 0.1 for 10%).
-*   ``Ml``: (Model Specific)
-*   ``sd``: Surface-area-to-volume ratio of dry fuel (m²/m³).
-*   ``sl``: (Model Specific)
-*   ``e``: Fuel bed depth (meters).
-*   ``Sigmad``: Oven-dry fuel load (kg/m²).
-*   ``Sigmal``: (Model Specific)
-*   ``stoch``: (Model Specific)
-*   ``RhoA``: (Model Specific)
-*   ``Ta``: (Model Specific)
-*   ``Tau0``: (Model Specific)
-*   ``Deltah``: (Model Specific)
-*   ``DeltaH``: Fuel particle heat content (J/kg).
-*   ``Cp``: (Model Specific)
-*   ``Cpa``: (Model Specific)
-*   ``Ti``: (Model Specific)
-*   ``X0``: (Model Specific)
-*   ``r00``: (Model Specific)
-*   ``Blai``: (Model Specific)
-*   ``me``: Moisture content of extinction (dimensionless ratio).
+   * - Column
+     - Units
+     - Physical Meaning
+     - Primary Models
+   * - ``Index``
+     - integer
+     - Unique non-negative fuel type identifier matching the ``fuel`` index raster (``0`` = non-burnable).
+     - All
+   * - ``Rhod``
+     - :math:`\text{kg/m}^3`
+     - Oven-dry dead fuel particle density (typically ``400–720``).
+     - ``Rothermel``, ``Balbi*``
+   * - ``Rhol``
+     - :math:`\text{kg/m}^3`
+     - Live fuel particle density (typically ``500–720``).
+     - ``BalbiNov2011``
+   * - ``Md``
+     - ratio (0–1)
+     - Dead fuel moisture content on a dry-mass basis (e.g., ``0.10`` for 10%).
+     - ``Rothermel``, ``Balbi*``, ``ForeFireV1*``
+   * - ``Ml``
+     - ratio
+     - Live fuel moisture content on a dry-mass basis (e.g., ``0.5–2.0``).
+     - ``BalbiNov2011``, ``ForeFireV1*``
+   * - ``sd``
+     - :math:`\text{m}^{-1}`
+     - Surface-area-to-volume ratio of dead fuel particles (e.g., ``2000–6000``).
+     - ``Rothermel``, ``Balbi*``, ``ForeFireV1*``
+   * - ``sl``
+     - :math:`\text{m}^{-1}`
+     - Surface-area-to-volume ratio of live fuel particles.
+     - ``BalbiNov2011``
+   * - ``e``
+     - :math:`\text{m}`
+     - Fuel bed depth (height of the surface fuel layer; ``0`` stops propagation).
+     - ``Rothermel``, ``Balbi*``
+   * - ``Sigmad``
+     - :math:`\text{kg/m}^2`
+     - Oven-dry dead fuel load per unit ground area.
+     - ``Rothermel``, ``Balbi*``, ``BurnUpHeatFlux``, ``ForeFireV1*``
+   * - ``Sigmal``
+     - :math:`\text{kg/m}^2`
+     - Live fuel load per unit ground area.
+     - ``BalbiNov2011``, ``ForeFireV1*``
+   * - ``stoch``
+     - ratio
+     - Stoichiometric air-to-fuel mass ratio :math:`s_t` (typically ``8.3–17``).
+     - ``BalbiNov2011``
+   * - ``RhoA``
+     - :math:`\text{kg/m}^3`
+     - Ambient air density :math:`\rho_a` (typically ``1.0–1.225``).
+     - ``Balbi*``
+   * - ``Ta``
+     - :math:`\text{K}`
+     - Ambient air temperature :math:`T_a` (typically ``300``).
+     - ``Balbi*``
+   * - ``Tau0``
+     - :math:`\text{s/m}`
+     - Anderson flame residence-time constant :math:`\tau_0` (residence time :math:`\tau = \tau_0 / s_d`, typically ``70000–75590``).
+     - ``Balbi*``, ``heatFluxNominal``
+   * - ``Deltah``
+     - :math:`\text{J/kg}`
+     - Latent heat of water vaporization / fuel drying :math:`\Delta h` (typically ``2.3e6``).
+     - ``Balbi*``
+   * - ``DeltaH``
+     - :math:`\text{J/kg}`
+     - Low heat of combustion of dry fuel :math:`\Delta H` (typically ``1.5e7–1.86e7``).
+     - ``Rothermel``, ``Balbi*``, ``BurnUpHeatFlux``, ``ForeFireV1*``
+   * - ``Cp``
+     - :math:`\text{J/(kg}\cdot\text{K)}`
+     - Specific heat capacity of fuel particles (typically ``1800–2030``).
+     - ``Balbi*``
+   * - ``Cpa``
+     - :math:`\text{J/(kg}\cdot\text{K)}`
+     - Specific heat capacity of air (typically ``1000–1150``).
+     - ``Rothermel`` (registered)
+   * - ``Ti``
+     - :math:`\text{K}`
+     - Fuel ignition temperature :math:`T_i` (typically ``600``).
+     - ``Balbi*``
+   * - ``X0``
+     - ratio (0–1)
+     - Radiant heat fraction factor :math:`\chi_0` (typically ``0.3``).
+     - ``Balbi*``
+   * - ``r00``
+     - :math:`\text{m}`
+     - Balbi radiative length-scale parameter :math:`r_{00}` (typically ``2.5e-5``).
+     - ``Balbi*``
+   * - ``Blai``
+     - ratio
+     - Leaf Area Index (LAI, typically ``2.0–4.0``).
+     - ``BalbiNov2011``, ``ForeFireV1*``
+   * - ``me``
+     - ratio (0–1)
+     - Dead fuel moisture content of extinction (typically ``0.25–0.30``).
+     - ``Rothermel``, ``ForeFireV1*``
 
-.. important::
-   While all columns are required by the file parser, the parameters most fundamentally driving the *Rothermel* calculation are typically: ``Index``, ``Rhod``, ``Md``, ``sd``, ``e``, ``Sigmad``, ``DeltaH``, and ``me``. Different models may utilize different columns.
+.. note::
+   ``BurnUpHeatFlux`` additionally registers ``fuel.w`` (characteristic burn time in seconds), ``fuel.Sigmad``, and ``fuel.DeltaH`` (see :doc:`models`).
 
-----
+Validating Your Fuel Table Against a Landscape
+----------------------------------------------
 
-Finding and Creating Fuel Parameter Sets
-----------------------------------------
+Before running a simulation with a NetCDF landscape file, run ``forefire-validate`` (installed with ``pip install forefire``) to verify that every integer fuel index present in the raster is defined in your CSV table:
 
-Finding appropriate fuel parameter values is a scientific task in itself. Users have two primary resources:
+.. code-block:: bash
 
-1.  **Reference Examples:** The test cases within the ForeFire repository (e.g., `tests/runff/fuels.csv`) provide the best and intended reference for a correctly formatted file.
-2.  **External Parameter Libraries:** For users looking for standard or pre-published fuel parameter sets, the following external repository, maintained by the ForeFire team, is the recommended resource:
+   forefire-validate data.nc fuels.csv
 
-    *   **wildfire_ROS_models:** `https://github.com/forefireAPI/wildfire_ROS_models`
-    *   This repository contains parameterizations for various fuel models and is a valuable companion to ForeFire for preparing simulation inputs.
+Reference Fuel Libraries
+------------------------
+
+- **In-tree test cases:** ``tests/runff/fuels.csv`` and the built-in ``STDlandIndexedFuelsTable`` / ``STDfarsiteFuelsTable`` tables in ``src/SimulationParameters.cpp``.
+- **Companion ROS toolbox:** ``tools/wildfire_ROS_models/`` in the repository includes Python implementations, polar plots, and Sobol sensitivity analyses for ``Rothermel1972``, ``RothermelAndrews2018``, ``Balbi2020``, and ``Cruz`` crown fire models, along with standard fuel databases in ``fuels_database.py``.

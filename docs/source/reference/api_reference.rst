@@ -1,12 +1,80 @@
-C++ API Reference
-=================
+API Reference (Python & C++)
+============================
 
-This section provides a high-level overview of the most fundamental C++ classes and interfaces that constitute the ForeFire simulation engine. For a comprehensive, detailed API reference for all classes and functions, please consult the full Doxygen-generated documentation.
+This page covers the Python bindings (``pyforefire``, installed via ``pip install forefire``) and the primary C++ classes in ``libforefire``.
+
+Python API (``pyforefire``)
+---------------------------
+
+In-Process Engine (`ForeFire`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: pyforefire.ForeFire()
+
+   In-process wrapper around the C++ ``PLibForeFire`` engine. Because the C++ core holds process-wide state, use :class:`ForeFireRunner` below when running multiple independent simulations in parallel.
+
+   .. py:method:: execute(command: str) -> str
+
+      Executes a ForeFire ``.ff`` command string (e.g., ``"step[dt=60]"``, ``"print[]"``) and returns the command's output as a string.
+
+   .. py:method:: __getitem__(key: str) -> str
+   .. py:method:: __setitem__(key: str, value: Union[str, int, float])
+
+      Gets or sets a simulation parameter in ``SimulationParameters`` (e.g., ``ff["propagationModel"] = "Rothermel"``). Also accessible via ``getString(key)``, ``setString(key, val)``, ``getDouble(key)``, ``setDouble(key, val)``, ``getInt(key)``, and ``setInt(key, val)``.
+
+   .. py:method:: addLayer(type: str, model_name: str, layer_name: str)
+
+      Registers a propagation or flux layer across the domain (for example, ``ff.addLayer("propagation", "Rothermel", "propagationModel")``).
+
+   .. py:method:: addIndexLayer(type: str, name: str, x0: float, y0: float, t0: float, width: float, height: float, timespan: float, values: numpy.ndarray)
+
+      Adds a 4D integer NumPy array shaped ``(nt, nz, ny, nx)`` as an index layer (e.g., ``type="table"``, ``name="fuel"``). See :doc:`/user_guide/python_arrays`.
+
+   .. py:method:: addScalarLayer(type: str, name: str, x0: float, y0: float, t0: float, width: float, height: float, timespan: float, values: numpy.ndarray)
+
+      Adds a 4D ``float64`` NumPy array shaped ``(nt, nz, ny, nx)`` as a continuous scalar layer (e.g., ``altitude``, ``windU``, ``windV``).
+
+Isolated Worker Process (`ForeFireRunner`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:class:: pyforefire.ForeFireRunner(*, stdout=DEVNULL)
+
+   Runs a ``ForeFire`` instance inside a dedicated child process so multiple simulations can run concurrently without sharing global C++ state. Supports the ``with`` context-manager protocol and provides the same methods as :class:`ForeFire` (``execute``, ``ff[key] = val``, ``addLayer``, ``addIndexLayer``, ``addScalarLayer``), plus:
+
+   .. py:method:: fork(*, stdout=...) -> ForeFireRunner
+
+      Forks the worker process (using OS ``fork`` where available), returning a new :class:`ForeFireRunner` that shares the exact spun-up state of the parent simulation at minimal cost.
+
+   .. py:method:: close()
+
+      Terminates the worker process.
+
+.. py:exception:: pyforefire.WorkerDied
+
+   Raised when a :class:`ForeFireRunner` child process exits unexpectedly (e.g., due to a fatal signal in the C++ kernel).
+
+Ensembles, Burn Probability & Verification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See :doc:`/user_guide/ensembles` for worked examples of these functions:
+
+* ``pyforefire.run_ensemble(setup, members, *, until, perturb=None, bbox=None, fork=True, max_workers=None, stdout=DEVNULL)`` — runs an ensemble of ``members`` up to simulation time ``until`` and returns a ``(n_members, ny, nx)`` array of fire arrival times (``inf`` where unburned).
+* ``pyforefire.burn_probability(arrivals, t=None)`` — computes the fraction of ensemble members that burned each cell (by time ``t``, or by the end of the run if ``t is None``).
+* ``pyforefire.arrival_time(ff, bbox=None)`` — extracts the 2D arrival-time matrix (``BMap``) from an active simulation (requires ``ff["bmapLayer"] = 1``).
+* ``pyforefire.dice(predicted, observed)`` — Sørensen–Dice similarity coefficient :math:`2|A \cap B| / (|A| + |B|)`.
+* ``pyforefire.brier_score(probability, observed)`` — mean squared error of a burn-probability map against a boolean observed burn scar.
+* ``pyforefire.reliability(probability, observed, bins=10)`` — calibration curve ``(observed_frequency, cell_count)`` per probability bin.
+* ``pyforefire.helpers.printToPathe(print_output)`` — parses ``ff.execute("print[]")`` output into a list of Matplotlib ``Path`` objects whose ``.vertices`` are ``(N, 2)`` NumPy arrays.
+
+----
+
+C++ API Reference
+-----------------
+
+This section provides an overview of the primary C++ classes in ``libforefire``.
 
 Core Simulation Objects
------------------------
-
-These classes represent the primary entities in a wildfire simulation.
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::FireDomain
    :project: ForeFire
@@ -21,9 +89,7 @@ These classes represent the primary entities in a wildfire simulation.
    :members:
 
 Data Management
----------------
-
-These classes are central to how ForeFire handles environmental and simulation data.
+~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::DataBroker
    :project: ForeFire
@@ -33,13 +99,11 @@ These classes are central to how ForeFire handles environmental and simulation d
    :project: ForeFire
    :members:
 
-.. rubric:: Note
-   ForeFire provides various specializations of ``DataLayer`` (e.g., for 2D/3D arrays, NetCDF files, fuel properties, atmospheric data) to handle different data sources and types. Refer to the full Doxygen documentation for details on specific implementations like ``Array2DdataLayer``, ``NCXYZTDataLayer``, ``FuelDataLayer``, etc.
+.. note::
+   ForeFire provides specializations of ``DataLayer`` for in-memory arrays, NetCDF variables, fuel tables, and atmospheric fields, including ``ArrayDataLayer``, ``NCXYZTDataLayer``, ``FuelDataLayer``, and ``FluxLayer``.
 
 Scientific Model Interfaces
----------------------------
-
-These abstract base classes define how new scientific models for fire spread and flux calculations can be integrated.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::PropagationModel
    :project: ForeFire
@@ -50,9 +114,7 @@ These abstract base classes define how new scientific models for fire spread and
    :members:
 
 User Interaction & Configuration
---------------------------------
-
-These components manage user commands and simulation parameters.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::Command
    :project: ForeFire
@@ -63,9 +125,7 @@ These components manage user commands and simulation parameters.
    :members:
 
 Fundamental Utilities
----------------------
-
-Basic geometric data types used throughout the simulation.
+~~~~~~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::FFPoint
    :project: ForeFire

@@ -19,14 +19,13 @@ The two array layers
 
 Two binding methods take NumPy arrays directly:
 
-* ``addIndexLayer(name, "fuel", SWx, SWy, SWz, Lx, Ly, Lz, array)`` — the
-  **fuel index map**. Each cell holds an integer index into the fuel table.
-* ``addScalarLayer(name, variable, SWx, SWy, SWz, Lx, Ly, Lz, array)`` — a
-  continuous field such as a **wind component**.
+* ``addIndexLayer(type, name, x0, y0, t0, width, height, timespan, array)`` — an
+  integer index layer such as the **fuel index map** (e.g. ``type="table"``, ``name="fuel"``).
+* ``addScalarLayer(type, name, x0, y0, t0, width, height, timespan, array)`` — a
+  continuous ``float64`` field such as elevation (``type="data"``, ``name="altitude"``)
+  or a projected wind component (``type="windScalDir"``, ``name="windU"`` / ``"windV"``).
 
-The ``SW*`` / ``L*`` arguments give the south-west corner and the extent of the
-layer in the simulation's Cartesian metres, so the array is stretched to cover
-the domain regardless of its pixel resolution.
+The ``x0, y0, t0`` and ``width, height, timespan`` arguments give the south-west corner, initial time, spatial extent (in Cartesian metres), and duration of the layer, so the array is stretched to cover the domain regardless of its pixel resolution.
 
 A complete example
 ------------------
@@ -138,7 +137,7 @@ the map with a slower fuel:
    fuel_map[0, 0, :, H // 2:] = 2.0   # index 2 = slower fuel
 
 Where to go next
----------------
+----------------
 
 * ``tests/python/idealizedwind.py`` in the repository is a fuller worked
   version of this example: it drives the same array-based setup with a *turning*

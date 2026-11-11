@@ -1,116 +1,159 @@
 .. _userguide-core-concepts:
 
-Core Concepts
-=============
+Core Concepts & Architecture
+============================
 
-Understanding the fundamental concepts behind ForeFire can help you use the simulator more effectively and interpret its behavior and outputs. This page provides a high-level overview of the key components and the simulation process.
+ForeFire is designed to propagate a reactive interface (a fire front) over a 2D surface while computing the physical and chemical fluxes released into the atmosphere behind the front. Understanding its four core abstractions—**Lagrangian Discrete-Event Front Tracking**, **Data Layers & Maps of Models**, **Arrival-Time Flux Integration**, and **Pluggable C++ Models**—makes it straightforward to configure simulations and extend the solver.
 
-Simulation Engine & Interpreter
--------------------------------
+1. Discrete-Event Lagrangian Front Tracking
+-------------------------------------------
 
-As discussed in the :doc:`/getting_started/introduction`, ForeFire consists of:
+Unlike Eulerian grid solvers that advance every cell of a domain at a fixed global time step :math:`\Delta t`, ForeFire tracks the fire edge using **Lagrangian markers** driven by a **Discrete-Event Simulation (DEVS)** scheduler:
 
-1.  **Simulation Engine** (Library ``libforefireL``): The core C++ code containing the physics, data structures, and algorithms for simulating fire spread.
-2.  **Interpreter** (Executable ``forefire``): The program you typically interact with. It reads commands (from scripts, console, or web UI) and instructs the engine library what to do.
+* **FireFront & FireNode:**
+  A ``FireFront`` is a closed contour represented as a doubly linked list of ``FireNode`` markers. Each ``FireNode`` stores its position :math:`\vec{x}_i = (x, y, z)`, velocity vector :math:`\vec{v}_i`, outward unit normal :math:`\vec{n}_i`, local curvature :math:`\kappa_i`, front depth, and timestamp :math:`t_i`.
 
-This separation allows ForeFire to be used both as a standalone tool (via the interpreter) and as a component linked into other software (like atmospheric models).
+  * **Front orientation (winding):** The order of nodes along a ``FireFront`` defines whether it expands or shrinks. Nodes ordered **clockwise** produce an outward normal and an **expanding** fire perimeter; nodes ordered **counter-clockwise** produce an inward normal and a **contracting** front (used for unburned islands nested inside an outer ``FireFront``).
 
-Key Simulation Components
--------------------------
+* **Event-Driven TimeTable (`Simulator` & `TimeTable`):**
+  ForeFire maintains a priority queue (``TimeTable``) of future events ordered chronologically. When a ``FireNode`` is processed at time :math:`t_i`:
 
-The simulation engine relies on several key C++ components (classes) to manage the fire spread process:
+  1. It moves to its previously scheduled position by a fixed spatial step ``spatialIncrement`` (:math:`\Delta x`).
+  2. ``FireDomain`` enforces topological consistency: if adjacent nodes separate beyond ``perimeterResolution``, intermediate nodes are inserted; if two front segments collide, they merge.
+  3. The node computes its local normal :math:`\vec{n}_i` (using ``normalScheme``: ``medians``, ``weightedMedians``, or ``splines``) and curvature :math:`\kappa_i` (using ``curvatureScheme``: ``circumradius`` or ``angle``).
+  4. It queries the active ``PropagationModel`` for its rate of spread :math:`R_i` along :math:`\vec{n}_i`, computes its next update time :math:`t_i + \Delta x / R_i`, and schedules itself back into the ``TimeTable``.
 
-*   **Simulator & TimeTable (Event-Driven Core)**
+  Because each marker advances at its own pace :math:`\Delta t_i = \Delta x / R_i`, fast-moving head fire nodes update frequently while slow flank or backing nodes update rarely.
 
-    *   ForeFire uses an **event-driven** approach. Instead of fixed time steps for the entire simulation, it maintains a `TimeTable` (a prioritized queue) of future events.
-    *   Each event typically corresponds to a `FireNode` needing an update at a specific future time.
-    *   The `Simulator` processes events from the `TimeTable` in chronological order. It retrieves the next event, tells the associated object (like a `FireNode`) to update its state and calculate its next move, and then the object schedules its *next* update event back into the `TimeTable`.
-    *   **This event-driven approach means the simulation doesn't use fixed global time steps; different parts of the front can advance according to their own calculated timings.**
+2. DataBroker, DataLayers, and the Map of Models
+------------------------------------------------
 
-*   **FireDomain (The Simulation World)**
+All environmental and model data inside a ``FireDomain`` are managed by the ``DataBroker`` as named ``DataLayer`` objects:
 
-    *   Represents the overall simulation area and context.
-    *   Manages the simulation's current time.
-    *   Defines the spatial boundaries (often derived from the :doc:`/user_guide/landscape_file`).
-    *   Contains the `DataBroker` to access environmental data.
-    *   Owns the main `FireFront` (s).
-    *   Manages the `TimeTable` of simulation events.
-    *   May handle discretization of the domain into cells (e.g., for flux calculations or burning map outputs).
+* **Environmental DataLayers:** provide elevation (``altitude``), derived terrain slope along the front normal (``slope``), fuel type indices (``fuel``), wind components (``windU``, ``windV``, and projected ``normalWind``), or dynamic fields from NumPy arrays, NetCDF files, or a coupled atmospheric model.
+* **Propagative and Flux Layers (Map of Models):**
+  Every computed property—propagation velocity or a surface flux such as ``heatFlux`` or ``vaporFlux``—is backed by a dedicated layer. When a single model applies across the entire domain, setting ``propagationModel`` (or calling ``addLayer``) creates a uniform model layer automatically.
 
-*   **FireFront & FireNode (Representing the Fire)**
+  For heterogeneous domains (for example, wildland vegetation adjacent to an industrial zone, or a volcano with distinct crater and lava emission models), a layer can store a spatial **map of model indices**, routing each location to a different model implementation:
 
-    *   ForeFire uses a **Lagrangian** approach to track the fire's edge.
-    *   A `FireFront` represents a continuous segment of the fire perimeter. It is essentially a linked list of `FireNode` objects.
-    *   A `FireNode` is a point (marker) on the fire front. It has properties like:
+.. figure:: /_static/images/mapOfModels.svg
+   :alt: Different models applied in different regions of the domain
+   :align: center
+   :width: 65%
 
-        *   Location (x, y, z coordinates)
-        *   Velocity (calculated based on local conditions)
-        *   Normal vector (direction perpendicular to the front)
-        *   Curvature and potentially front depth
-    *   When a `FireNode`'s event occurs, it calculates its propagation speed based on local environmental data and the chosen :ref:`propagation model <param-propagationmodel>`, determines its next location, and schedules its next update.
-    *   The `FireDomain` monitors the `FireNode` s to handle topological changes:
+   Different models (A, B, C) can be assigned to distinct areas of the simulation domain.
 
-        *   **Adding nodes:** When nodes spread too far apart (controlled by :ref:`perimeterResolution <param-perimeterresolution>`), new nodes are inserted.
-        *   **Merging:** When different parts of a `FireFront` touch, they merge.
-        *   **Splitting:** Not explicitly mentioned in summary, but might occur if front self-intersects or hits complex boundaries.
-        *   **Inner Fronts:** `FireFront` s can be nested to represent unburned islands within the main fire perimeter.
+.. figure:: /_static/images/mapOfModelsMap.svg
+   :alt: Discretized index map selecting which model applies in each cell
+   :align: center
+   :width: 65%
 
-*   **DataBroker & DataLayer (Accessing Environmental Data)**
+   Each model is registered with an integer index, and the layer stores the spatial grid of model indices.
 
-    *   The `DataBroker` is the central hub for all environmental data needed by the simulation (terrain, fuel, weather).
-    *   It manages a collection of `DataLayer` objects. Each `DataLayer` provides access to a specific type of data (e.g., elevation, fuel index, wind speed).
-    *   **Data layers can also manage which specific physical model (e.g., which heat flux calculation) applies at different locations, often based on index maps read from the input files.**
-    *   Different `DataLayer` subclasses handle various data sources and formats:
+3. Arrival-Time Map (``BMap``) and Flux Computation
+---------------------------------------------------
 
-        *   Loading grids from the NetCDF :doc:`/user_guide/landscape_file`.
-        *   Handling constant values across the domain (e.g., constant wind).
-        *   Calculating gradients (like slope/aspect from elevation).
-        *   Accessing the computed arrival time map (Burning Map).
-        *   Interpolating data in space and potentially time (e.g., for time-varying wind fields).
-    *   When a `FireNode` needs environmental data to calculate its speed, it asks the `DataBroker`, which efficiently retrieves the necessary values from the relevant `DataLayer` (s) at the node's location.
+While propagation models act on 1D Lagrangian markers along the fire edge, atmospheric coupling and emission inventories require 2D surface fluxes (such as heat in :math:`\text{W/m}^2` or chemical species in :math:`\text{kg/m}^2\text{/s}`) integrated over atmospheric grid cells.
 
-*   **PropagationModel & FluxModel (The Physics)**
+ForeFire bridges these scales through the **Burning Map (``BMap``)**:
 
-    *   ForeFire uses a **Strategy pattern** for physical calculations, allowing different models to be plugged in.
-    *   `PropagationModel` subclasses (e.g., `Rothermel`, `Balbi`, `Iso`) implement specific algorithms to calculate the Rate of Spread (ROS) based on properties fetched via the `DataBroker`. The active model is chosen using the :ref:`propagationModel <param-propagationmodel>` parameter.
-    *   `FluxModel` subclasses (e.g., `HeatFluxBasicModel`) calculate fluxes (like heat, water vapor) from the burning area, often needed for coupled simulations or specific research outputs.
+1. As ``FireNode`` markers sweep across the landscape, ``FireDomain`` records the fire arrival time :math:`t^i(x, y)` on a high-resolution 2D matrix (typically at least 10 times finer than the atmospheric grid resolution).
+2. Each ``FluxLayer`` maps the coarse atmospheric cells onto the underlying ``BMap`` sub-cells:
 
-*   **SimulationParameters (Configuration)**
+.. figure:: /_static/images/fluxComputation.svg
+   :alt: Coarse atmospheric cells overlaying the fine arrival-time burning map
+   :align: center
+   :width: 65%
 
-    *   A central place (likely a Singleton class internally) holding the global configuration values set by the user via :ref:`setParameter <cmd-setparameter>` or :ref:`setParameters <cmd-setparameters>` commands. This includes things like model choices, resolution parameters, output settings, etc.
+   Four coarse atmospheric cells (thick lines) over the fire front contour (dark grey) and the finely resolved arrival-time matrix ``BMap`` (thin lines).
 
-Simulation Workflow Summary
----------------------------
+3. To compute the total flux for an atmospheric cell at time :math:`t`, ForeFire sums the contributions of all ``BMap`` sub-cells inside it. For each sub-cell where the fire has arrived (:math:`t \ge t^i`), the active ``FluxModel`` evaluates the flux as a function of the elapsed time since ignition :math:`t - t^i` (for example, constant release over the flame residence time :math:`\tau = \tau_0 / s_d` in ``heatFluxNominal``, or exponential fuel mass decay in ``BurnUpHeatFlux``).
 
-1.  **Initialization:**
+.. _custom-cpp-models:
 
-    *   The `forefire` interpreter starts.
-    *   Commands from a script file (or interactive input) are processed.
-    *   :doc:`Parameters </reference/parameters>` are set.
-    *   The :ref:`FireDomain <cmd-firedomain>` is created.
-    *   :ref:`loadData <cmd-loaddata>` populates the `DataBroker` with `DataLayer` from the :doc:`/user_guide/landscape_file`. The :doc:`/user_guide/fuels_and_models` information is associated.
-    *   The initial fire state is defined using :ref:`startFire <cmd-startfire>` or custom `FireFront`/`FireNode` commands, scheduling the first update events for the initial nodes into the `TimeTable`.
+4. Implementing a New Model in C++
+----------------------------------
 
-2.  **Simulation Loop (driven by step or goTo):**
+Propagation models (in ``src/propagation/``) and flux models (in ``src/flux/``) inherit from ``ForeFireModel`` via ``PropagationModel`` or ``FluxModel``. Adding a new model requires only a single ``.cpp`` file.
 
-    *   The `Simulator` gets the chronologically next event (usually a `FireNode` update) from the `TimeTable`.
-    *   The `Simulator` advances the global simulation time to the event time.
-    *   The `Simulator` calls the update method on the `FireNode`.
-    *   The `FireNode` calculates its new position based on its previously calculated velocity.
-    *   The `FireDomain` checks for topological changes (node spacing, potential merges).
-    *   The `Simulator` calls the time-advance method on the `FireNode`.
-    *   The `FireNode`:
+How Property Registration Works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        *   Determines its local normal vector and curvature.
-        *   Requests necessary environmental properties (fuel type, slope, wind, etc.) from the `DataBroker` for its current location.
-        *   Calls the active `PropagationModel`'s `getSpeed()` method with these properties.
-        *   Calculates its new velocity and intended next location.
-        *   Determines its next update time based on speed and resolution parameters.
-        *   Schedules its next update event back into the `TimeTable`.
-    *   This loop continues until the target time specified by :ref:`goTo <cmd-goto>` is reached, the duration specified by :ref:`step <cmd-step>` elapses, or the `TimeTable` becomes empty.
+In its constructor, a model declares which environmental or fuel properties it needs by calling ``registerProperty("<name>")``. This returns an integer index into the ``double* valueOf`` array that the ``DataBroker`` populates before calling ``getSpeed(valueOf)`` or ``getValue(valueOf, bt, et, at)``:
 
-3.  **Output:**
+.. list-table:: Built-in properties available to ``registerProperty``
+   :header-rows: 1
+   :widths: 28 72
 
-    *   Commands like :ref:`print <cmd-print>`, :ref:`save <cmd-save>`, or :ref:`plot <cmd-plot>` are executed (either when encountered in the script or scheduled via :ref:`@t=... <cmd-@>`) to query the state of the `FireFront` (s) or `DataLayer` (s) (like the burning map) and write them to files.
+   * - Property Name
+     - Description
+   * - ``fuel.<Column>``
+     - Any column from the fuel table (e.g., ``fuel.Rhod``, ``fuel.sd``, ``fuel.Md``, ``fuel.DeltaH``).
+   * - ``altitude``
+     - Terrain elevation in meters (`m`).
+   * - ``slope``
+     - Terrain slope :math:`\tan\alpha` in the outward normal direction of the ``FireNode`` (propagation models).
+   * - ``windU``, ``windV``
+     - Zonal (West–East) and meridional (South–North) wind components (`m/s`).
+   * - ``normalWind``
+     - Wind projected onto the outward normal vector :math:`\vec{u} \cdot \vec{n}` (`m/s`, propagation models).
+   * - ``frontDepth``
+     - Local depth of the burning front normal to the perimeter (`m`, requires ``frontDepthComputation=1``).
+   * - ``curvature``
+     - Local front curvature :math:`\kappa` (requires ``curvatureComputation=1``).
 
-Understanding these core concepts provides context for the various commands, parameters, and input files required to run a ForeFire simulation.
+Minimal Propagation Model Pattern
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For example, to implement a propagation model :math:`R = A \frac{\max(0, \vec{u}\cdot\vec{n})}{1 + M_d}`, copy ``src/propagation/SamplePropagationModel.cpp``:
+
+.. code-block:: cpp
+
+   #include "../PropagationModel.h"
+   #include "../FireDomain.h"
+
+   namespace libforefire {
+
+   class MyWindMoistureModel : public PropagationModel {
+       static const std::string name;
+       static int isInitialized;
+
+       size_t normalWind;
+       size_t Md;
+       double coeffA;
+
+   public:
+       MyWindMoistureModel(const int& mindex = 0, DataBroker* db = 0)
+           : PropagationModel(mindex, db) {
+           // 1. Register environmental and fuel properties
+           normalWind = registerProperty("normalWind");
+           Md = registerProperty("fuel.Md");
+
+           if (numProperties > 0) properties = new double[numProperties];
+           dataBroker->registerPropagationModel(this);
+
+           // 2. Read optional parameter from SimulationParameters
+           coeffA = 0.1;
+           if (params->isValued("MyWindMoisture.A"))
+               coeffA = params->getDouble("MyWindMoisture.A");
+       }
+
+       std::string getName() { return name; }
+
+       // 3. Compute Rate of Spread (m/s) from the populated valueOf array
+       double getSpeed(double* valueOf) {
+           double u = valueOf[normalWind] > 0. ? valueOf[normalWind] : 0.;
+           return coeffA * u / (1. + valueOf[Md]);
+       }
+   };
+
+   const std::string MyWindMoistureModel::name = "MyWindMoisture";
+   PropagationModel* getMyWindMoistureModel(const int& idx, DataBroker* db) {
+       return new MyWindMoistureModel(idx, db);
+   }
+   int MyWindMoistureModel::isInitialized =
+       FireDomain::registerPropagationModelInstantiator(name, getMyWindMoistureModel);
+
+   } // namespace libforefire
+
+Once placed in ``src/propagation/`` and recompiled with CMake, the model is immediately selectable via ``setParameter[propagationModel=MyWindMoisture]``. Flux models follow the exact same pattern in ``src/flux/``, inheriting from ``FluxModel`` and implementing ``getValue(double* valueOf, const double& bt, const double& et, const double& at)``.
