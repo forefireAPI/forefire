@@ -3,11 +3,11 @@ API Reference (Python & C++)
 
 This page covers the Python bindings (``pyforefire``, installed via ``pip install forefire``) and the primary C++ classes in ``libforefire``.
 
-Python API (``pyforefire``)
----------------------------
+Python API (pyforefire)
+-----------------------
 
-In-Process Engine (`ForeFire`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In-Process Engine (ForeFire)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: pyforefire.ForeFire()
 
@@ -34,8 +34,8 @@ In-Process Engine (`ForeFire`)
 
       Adds a 4D ``float64`` NumPy array shaped ``(nt, nz, ny, nx)`` as a continuous scalar layer (e.g., ``altitude``, ``windU``, ``windV``).
 
-Isolated Worker Process (`ForeFireRunner`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Isolated Worker Process (ForeFireRunner)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:class:: pyforefire.ForeFireRunner(*, stdout=DEVNULL)
 

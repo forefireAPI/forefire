@@ -12,16 +12,16 @@ Architecture
 
 ForeFire is built around a core C++ library with multiple entry points:
 
-1. **Simulation Engine (``libforefireL``):**
+1. **Simulation Engine** (``libforefireL``):
    The C++17 core implementing Lagrangian front tracking, discrete-event scheduling, the ``DataBroker`` layer system, and pluggable Rate of Spread (ROS) and flux models. It can be compiled with or without NetCDF (``-DFOREFIRE_ENABLE_NETCDF=OFF``) and linked into atmospheric models via MPI and ISO C/Fortran bindings.
 
-2. **Python Package (``pyforefire`` via ``pip install forefire``):**
+2. **Python Package** (``pyforefire`` via ``pip install forefire``):
    Self-contained Python bindings that expose the simulation engine, direct NumPy array ingestion (``addIndexLayer``, ``addScalarLayer``), isolated multi-process execution (``ForeFireRunner``), ensemble forecasting (``run_ensemble``, ``burn_probability``), and input validation (``forefire-validate``).
 
-3. **Command-Line Interpreter & HTTP Server (``forefire``):**
+3. **Command-Line Interpreter & HTTP Server** (``forefire``):
    Executes ``.ff`` simulation scripts, provides an interactive shell with tab completion, and serves a browser-based graphical interface via ``listenHTTP[]``.
 
-4. **WebAssembly Module (``forefire.wasm`` / ``forefire.mjs``):**
+4. **WebAssembly Module** (``forefire.wasm`` / ``forefire.mjs``):
    An Emscripten build (compiled with ``FOREFIRE_ENABLE_NETCDF=OFF``) that runs the complete solver and all propagation models directly inside a browser Web Worker or Node.js. Try it live in the `in-browser demo <https://forefireapi.github.io/forefire/>`_.
 
 Key Capabilities
@@ -35,7 +35,7 @@ Key Capabilities
 Supported Platforms
 -------------------
 
-- **Linux (`x86_64`, `aarch64`) and macOS (Apple Silicon):** pre-built wheels via ``pip install forefire``, or native CMake builds.
+- **Linux** (``x86_64``, ``aarch64``) **and macOS** (Apple Silicon): pre-built wheels via ``pip install forefire``, or native CMake builds.
 - **Windows:** run via **WSL** (Linux ``pip`` wheel or source build), **Docker** (``ghcr.io/forefireapi/forefire:latest``), or the **in-browser WebAssembly demo**.
 
 Where to Go Next

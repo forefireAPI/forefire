@@ -15,8 +15,8 @@ List of Commands
 
 .. _cmd-FireDomain:
 
-``FireDomain``
-~~~~~~~~~~~~~~
+FireDomain
+~~~~~~~~~~
 
 .. code-block:: none
 
@@ -42,8 +42,8 @@ Creates the simulation domain. Fronts, nodes, and data layers live inside this `
 
 .. _cmd-FireFront:
 
-``FireFront`` (Indented)
-~~~~~~~~~~~~~~~~~~~~~~~~
+FireFront (Indented)
+~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -66,8 +66,8 @@ Creates a ``FireFront`` contour inside the active ``FireDomain`` (1 indent level
 
 .. _cmd-FireNode:
 
-``FireNode`` (Indented)
-~~~~~~~~~~~~~~~~~~~~~~~
+FireNode (Indented)
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -99,8 +99,8 @@ Appends a Lagrangian marker node to the current ``FireFront`` (indented one leve
 
 .. _cmd-@:
 
-``@`` (Schedule Operator)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+@ (Schedule Operator)
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -119,8 +119,8 @@ Queues the preceding command in the event ``TimeTable`` to execute when simulati
 
 .. _cmd-startFire:
 
-``startFire``
-~~~~~~~~~~~~~
+startFire
+~~~~~~~~~
 
 .. code-block:: none
 
@@ -144,8 +144,8 @@ Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at th
 
 .. _cmd-step:
 
-``step``
-~~~~~~~~
+step
+~~~~
 
 .. code-block:: none
 
@@ -162,8 +162,8 @@ Advances the simulation clock by the relative duration ``dt`` (in seconds).
 
 .. _cmd-goTo:
 
-``goTo``
-~~~~~~~~
+goTo
+~~~~
 
 .. code-block:: none
 
@@ -180,8 +180,8 @@ Advances the simulation clock until absolute simulation time ``t`` (in seconds).
 
 .. _cmd-setParameter:
 
-``setParameter``
-~~~~~~~~~~~~~~~~
+setParameter
+~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -200,8 +200,8 @@ Sets a single simulation parameter. Prefixing the value with ``!`` protects the 
 
 .. _cmd-setParameters:
 
-``setParameters``
-~~~~~~~~~~~~~~~~~
+setParameters
+~~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -218,8 +218,8 @@ Sets multiple semicolon-separated simulation parameters in one call.
 
 .. _cmd-getParameter:
 
-``getParameter``
-~~~~~~~~~~~~~~~~
+getParameter
+~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -236,8 +236,8 @@ Returns (and prints) the current string value of parameter ``key``.
 
 .. _cmd-loadData:
 
-``loadData``
-~~~~~~~~~~~~
+loadData
+~~~~~~~~
 
 .. code-block:: none
 
@@ -246,8 +246,8 @@ Returns (and prints) the current string value of parameter ``key``.
 
 Loads environmental data or a domain file. Arguments are positional and separated by ``;``:
 
-* **Two arguments (`loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]`):** Reads a NetCDF landscape file (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``), sets the ``NetCDFfile`` parameter to the given path, builds the ``FireDomain`` from the ``domain`` variable attributes, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
-* **One argument (`loadData[file.ff]`):** Reads a saved domain state file without NetCDF.
+* **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Reads a NetCDF landscape file (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``), sets the ``NetCDFfile`` parameter to the given path, builds the ``FireDomain`` from the ``domain`` variable attributes, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
+* **One argument** (``loadData[file.ff]``): Reads a saved domain state file without NetCDF.
 
 **Example:**
 
@@ -258,8 +258,8 @@ Loads environmental data or a domain file. Arguments are positional and separate
 
 .. _cmd-addLayer:
 
-``addLayer``
-~~~~~~~~~~~~
+addLayer
+~~~~~~~~
 
 .. code-block:: none
 
@@ -284,8 +284,8 @@ Adds a uniform ``DataLayer`` (or model layer) spanning the active ``FireDomain``
 
 .. _cmd-trigger:
 
-``trigger``
-~~~~~~~~~~~
+trigger
+~~~~~~~
 
 .. code-block:: none
 
@@ -304,8 +304,8 @@ Updates dynamic environmental conditions at the moment the command executes. The
 
 .. _cmd-emit:
 
-``emit``
-~~~~~~~~
+emit
+~~~~
 
 .. code-block:: none
 
@@ -331,8 +331,8 @@ Injects an external emission source into an existing flux layer (created beforeh
 
 .. _cmd-print:
 
-``print``
-~~~~~~~~~
+print
+~~~~~
 
 .. code-block:: none
 
@@ -354,8 +354,8 @@ Formats the current fire front state according to ``dumpMode`` (``ff``, ``json``
 
 .. _cmd-save:
 
-``save``
-~~~~~~~~
+save
+~~~~
 
 .. code-block:: none
 
@@ -364,9 +364,9 @@ Formats the current fire front state according to ``dumpMode`` (``ff``, ``json``
 
 Saves simulation outputs to NetCDF (requires ``FOREFIRE_ENABLE_NETCDF=ON``). ``save`` has two modes:
 
-1. **Arrival-time Burning Map (`save[]` with no arguments):**
+1. **Arrival-time Burning Map** (``save[]`` with no arguments):
    Writes the 2D ``arrival_time_of_front`` matrix (with ``-9999`` for unburned cells, deflate level 6) to ``<fireOutputDirectory>/<experiment>.<domainID>.nc`` (by default ``./ForeFire.0.nc``).
-2. **Landscape Snapshot (`save[filename=...]`):**
+2. **Landscape Snapshot** (``save[filename=...]``):
    Writes the ``domain`` variable and selected environmental layers from the ``DataBroker`` to ``filename``.
 
    * ``filename=<fname.nc>``: Output NetCDF path. **Required** for landscape mode.
@@ -385,8 +385,8 @@ Saves simulation outputs to NetCDF (requires ``FOREFIRE_ENABLE_NETCDF=ON``). ``s
 
 .. _cmd-plot:
 
-``plot``
-~~~~~~~~
+plot
+~~~~
 
 .. code-block:: none
 
@@ -414,8 +414,8 @@ Exports or renders a 2D matrix of ``parameter`` over the domain.
 
 .. _cmd-computeSpeed:
 
-``computeSpeed``
-~~~~~~~~~~~~~~~~
+computeSpeed
+~~~~~~~~~~~~
 
 .. code-block:: none
 
@@ -434,8 +434,8 @@ Evaluates ``getSpeed(values)`` directly on the active propagation model (selecte
 
 .. _cmd-include:
 
-``include``
-~~~~~~~~~~~
+include
+~~~~~~~
 
 .. code-block:: none
 
@@ -452,8 +452,8 @@ Reads and executes commands sequentially from ``filename.ff`` (resolved relative
 
 .. _cmd-clear:
 
-``clear``
-~~~~~~~~~
+clear
+~~~~~
 
 .. code-block:: none
 
@@ -464,8 +464,8 @@ Frees the active ``FireDomain`` (including all fronts, nodes, and data layers) a
 
 .. _cmd-systemExec:
 
-``systemExec``
-~~~~~~~~~~~~~~
+systemExec
+~~~~~~~~~~
 
 .. code-block:: none
 
@@ -488,8 +488,8 @@ Executes a shell command via ``popen`` and prints its output.
 
 .. _cmd-listenHTTP:
 
-``listenHTTP``
-~~~~~~~~~~~~~~
+listenHTTP
+~~~~~~~~~~
 
 .. code-block:: none
 
@@ -511,8 +511,8 @@ Starts the embedded HTTP command and visualization server (intended for trusted 
 
 .. _cmd-quit:
 
-``quit``
-~~~~~~~~
+quit
+~~~~
 
 .. code-block:: none
 

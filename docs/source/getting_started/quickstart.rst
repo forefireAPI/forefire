@@ -51,8 +51,8 @@ Whether installed via ``pip`` or built from source, the ``forefire`` executable 
 - ``data.nc`` — NetCDF landscape file (elevation and fuel indices)
 - ``fuels.csv`` — fuel property table
 
-Mode A: Batch execution (``-i``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mode A: Batch execution (-i)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Feed a script file non-interactively from the directory containing its data:
 
@@ -77,8 +77,8 @@ Start the interpreter with no arguments to get an interactive ``forefire>`` prom
   forefire> step[dt=600]
   forefire> quit[]
 
-Mode C: Local Web UI (``listenHTTP[]`` or ``-l``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mode C: Local Web UI (listenHTTP or -l)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The interpreter embeds a local HTTP command and visualization server.
 
@@ -132,8 +132,8 @@ The official container image ``ghcr.io/forefireapi/forefire:latest`` bundles the
 
    Open ``http://localhost:8000/`` on your host machine:
 
-   - Type ``include[real_case.ff]`` in the command box (or click the **`include`** button) and click **`Send`**.
-   - Click **`Refresh Map`** to display the simulated fire perimeters in the Aullène region of Corsica.
+   - Type ``include[real_case.ff]`` in the command box (or click the **include** button) and click **Send**.
+   - Click **Refresh Map** to display the simulated fire perimeters in the Aullène region of Corsica.
 
    .. note::
       When running ``include[real_case.ff]`` through the Web UI, the console prints ``systemExec is not available over HTTP``. This is expected: for security, shell commands (the ``systemExec[bash check_data_nc.bash]`` check on line 1 of ``real_case.ff``) are refused over HTTP, while the rest of the simulation runs normally.

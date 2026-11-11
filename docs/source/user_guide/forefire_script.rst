@@ -1,7 +1,7 @@
 .. _userguide-forefire-script:
 
-ForeFire Script File (``.ff``)
-==============================
+ForeFire Script File (.ff)
+==========================
 
 A ForeFire script (conventionally ``.ff``) is a plain-text sequence of interpreter commands that configures parameters, loads data, initializes fire fronts, schedules events, and exports results. Every command available in a ``.ff`` file can also be executed interactively at the ``forefire>`` prompt, sent over HTTP, or passed to ``ff.execute("...")`` in Python.
 
@@ -17,7 +17,7 @@ Grammar & Syntax Rules
    .. warning::
       **Never place a comment or trailing spaces after the closing bracket** ``]`` **on the same line.** Everything after ``]`` is parsed as a schedule post-operator (:ref:`@t=... <cmd-@>`). A trailing ``# comment`` or two or more trailing spaces after ``]`` triggers ``unknown post operator`` and **prevents the command from running**.
 
-3. **Schedule Operator (`@t=` and `@nowplus=`):**
+3. **Schedule Operator** (``@t=`` and ``@nowplus=``):
    Append ``@t=<seconds>`` (absolute simulation time) or ``@nowplus=<seconds>`` (relative to current domain time) immediately after ``]`` to queue a command in the event ``TimeTable`` instead of executing it immediately:
 
    .. code-block:: none
@@ -26,7 +26,7 @@ Grammar & Syntax Rules
       print[front_t1800.geojson]@t=1800
       save[]@nowplus=600
 
-4. **Multiline Arguments (`"""..."""`):**
+4. **Multiline Arguments** (``"""..."""``):
    Wrap an argument value in triple quotes ``"""`` to span multiple lines—for example, to embed an inline fuel table inside a script:
 
    .. code-block:: none
@@ -35,7 +35,7 @@ Grammar & Syntax Rules
       1;1.0;1.0;1.0
       2;0.3;1.0;1.0"""]
 
-5. **Parameter Substitution (`*param*`) and Protected Values (`!`):**
+5. **Parameter Substitution** (``*param*``) **and Protected Values** (``!``):
 
    * In ``print[...]`` and ``systemExec[...]``, any ``*paramName*`` token in the argument string is replaced with the current value of ``paramName`` (and any ``:`` in the resulting string is replaced with ``-`` so ISO timestamps are safe in filenames):
 
@@ -45,19 +45,19 @@ Grammar & Syntax Rules
 
    * Prefixing a value with ``!`` in ``setParameter[key=!value]`` marks ``key`` as **protected**: subsequent ``setParameter`` calls for that key are ignored for the rest of the session.
 
-Hierarchy & Front Orientation (``FireFront`` / ``FireNode``)
-------------------------------------------------------------
+Hierarchy & Front Orientation (FireFront / FireNode)
+----------------------------------------------------
 
 When constructing custom fire perimeters with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, ForeFire uses **indentation** and **node ordering (winding)**:
 
-* **Indentation rule:** Each hierarchy level is indented by **one tab (``\t``) or four spaces (``    ``)** relative to the first command in the script:
+* **Indentation rule:** Each hierarchy level is indented by **one tab** (``\t``) **or four spaces** (``    ``) relative to the first command in the script:
 
   * Level 0 (no indent): ``FireDomain[...]`` and top-level commands.
   * Level 1 (4 spaces or 1 tab): outer ``FireFront[...]`` inside the ``FireDomain``.
   * Level 2 (8 spaces or 2 tabs): ``FireNode[...]`` belonging to the outer ``FireFront``, **or** an inner ``FireFront[...]`` (unburned island) nested inside the outer front.
   * Level 3 (12 spaces or 3 tabs): ``FireNode[...]`` belonging to the inner ``FireFront``.
 
-* **Required `FireNode` arguments:** Every ``FireNode`` requires at least three arguments: ``loc=(x,y,z)``, ``vel=(vx,vy,vz)``, and ``t=<seconds>`` (fewer than 3 arguments raises ``MissingOption``).
+* **Required** ``FireNode`` **arguments:** Every ``FireNode`` requires at least three arguments: ``loc=(x,y,z)``, ``vel=(vx,vy,vz)``, and ``t=<seconds>`` (fewer than 3 arguments raises ``MissingOption``).
 
 * **Winding direction (Expanding vs. Contracting fronts):**
   The normal vector direction is determined by the winding order of the ``FireNode`` markers:

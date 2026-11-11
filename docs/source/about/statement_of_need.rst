@@ -18,10 +18,10 @@ Developed by CNRS at the Université de Corse Pascal Paoli (`Filippi et al., 202
    By representing the fire perimeter as a dynamic contour of Lagrangian markers updated through a discrete-event ``TimeTable``, ForeFire concentrates computation at meter-scale resolution strictly along the active fire front, achieving simulation speeds above 100 ha/s on a single CPU.
 
 2. **Rapid Prototyping of Spread and Flux Models:**
-   Propagation and flux models plug into the engine through a clean C++ Strategy interface (`registerProperty` + `getSpeed` / `getValue`). Researchers can compare Rothermel, Balbi, FARSITE, or neural-network formulations—or add a new physical model in a single ``.cpp`` file—without touching the front-tracking solver or I/O layers.
+   Propagation and flux models plug into the engine through a clean C++ Strategy interface (``registerProperty`` + ``getSpeed`` / ``getValue``). Researchers can compare Rothermel, Balbi, FARSITE, or neural-network formulations—or add a new physical model in a single ``.cpp`` file—without touching the front-tracking solver or I/O layers.
 
 3. **Scriptable Across Python, CLI, WebAssembly, and HPC:**
-   The same ``.ff`` command language drives batch experiments, interactive debugging, HTTP web visualization, Python/NumPy workflows (`pyforefire`), browser-based WebAssembly simulations, and two-way MPI coupling with the `Meso-NH <https://mesonh.cnrs.fr/>`_ atmospheric model.
+   The same ``.ff`` command language drives batch experiments, interactive debugging, HTTP web visualization, Python/NumPy workflows (``pyforefire``), browser-based WebAssembly simulations, and two-way MPI coupling with the `Meso-NH <https://mesonh.cnrs.fr/>`_ atmospheric model.
 
 Target Audience
 ---------------

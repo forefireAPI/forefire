@@ -13,14 +13,14 @@ How Fuel Tables Are Loaded
 
 You can supply a fuel table in two ways:
 
-1. **External CSV file (`fuelsTableFile`):**
+1. **External CSV file** (``fuelsTableFile``):
    Set ``setParameter[fuelsTableFile=fuels.csv]`` (default ``fuels.ff``, resolved relative to ``caseDirectory``).
-2. **Inline string parameter (`fuelsTable`):**
+2. **Inline string parameter** (``fuelsTable``):
    Pass the CSV content directly into the ``fuelsTable`` parameter (for example from Python via ``ff["fuelsTable"] = ...``, or using one of the built-in standard tables such as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``).
 
 In both cases:
 
-* The delimiter is a **semicolon (``;``)**.
+* The delimiter is a **semicolon** (``;``).
 * The first line must be a header row starting with ``Index``.
 * Each integer value in the landscape's ``fuel`` index layer is looked up against the ``Index`` column. Index ``0`` is conventionally reserved for non-burnable ground (water, bare rock, roads, or buildings, with bed depth ``e = 0``).
 * Only the ``fuel.*`` columns registered by the active propagation and flux models are read from the table.
@@ -49,8 +49,8 @@ Model Families and Their Fuel Columns
 
 .. _rothermel-fuel-file:
 
-The Standard Rothermel / Balbi Fuel Table (``fuels.csv``)
----------------------------------------------------------
+The Standard Rothermel / Balbi Fuel Table (fuels.csv)
+-----------------------------------------------------
 
 The standard ``fuels.csv`` format (used in ``tests/runff/fuels.csv`` and ``STDlandIndexedFuelsTable``) provides 23 semicolon-separated columns covering both Rothermel (1972) and the Balbi physical propagation and flux models:
 

@@ -15,7 +15,7 @@ Unlike Eulerian grid solvers that advance every cell of a domain at a fixed glob
 
   * **Front orientation (winding):** The order of nodes along a ``FireFront`` defines whether it expands or shrinks. Nodes ordered **clockwise** produce an outward normal and an **expanding** fire perimeter; nodes ordered **counter-clockwise** produce an inward normal and a **contracting** front (used for unburned islands nested inside an outer ``FireFront``).
 
-* **Event-Driven TimeTable (`Simulator` & `TimeTable`):**
+* **Event-Driven TimeTable** (``Simulator`` & ``TimeTable``):
   ForeFire maintains a priority queue (``TimeTable``) of future events ordered chronologically. When a ``FireNode`` is processed at time :math:`t_i`:
 
   1. It moves to its previously scheduled position by a fixed spatial step ``spatialIncrement`` (:math:`\Delta x`).
@@ -31,7 +31,7 @@ Unlike Eulerian grid solvers that advance every cell of a domain at a fixed glob
 All environmental and model data inside a ``FireDomain`` are managed by the ``DataBroker`` as named ``DataLayer`` objects:
 
 * **Environmental DataLayers:** provide elevation (``altitude``), derived terrain slope along the front normal (``slope``), fuel type indices (``fuel``), wind components (``windU``, ``windV``, and projected ``normalWind``), or dynamic fields from NumPy arrays, NetCDF files, or a coupled atmospheric model.
-* **Propagative and Flux Layers (Map of Models):**
+* **Propagative and Flux Layers** (Map of Models):
   Every computed property—propagation velocity or a surface flux such as ``heatFlux`` or ``vaporFlux``—is backed by a dedicated layer. When a single model applies across the entire domain, setting ``propagationModel`` (or calling ``addLayer``) creates a uniform model layer automatically.
 
   For heterogeneous domains (for example, wildland vegetation adjacent to an industrial zone, or a volcano with distinct crater and lava emission models), a layer can store a spatial **map of model indices**, routing each location to a different model implementation:
@@ -50,12 +50,12 @@ All environmental and model data inside a ``FireDomain`` are managed by the ``Da
 
    Each model is registered with an integer index, and the layer stores the spatial grid of model indices.
 
-3. Arrival-Time Map (``BMap``) and Flux Computation
----------------------------------------------------
+3. Arrival-Time Map (BMap) and Flux Computation
+-----------------------------------------------
 
 While propagation models act on 1D Lagrangian markers along the fire edge, atmospheric coupling and emission inventories require 2D surface fluxes (such as heat in :math:`\text{W/m}^2` or chemical species in :math:`\text{kg/m}^2\text{/s}`) integrated over atmospheric grid cells.
 
-ForeFire bridges these scales through the **Burning Map (``BMap``)**:
+ForeFire bridges these scales through the **Burning Map** (``BMap``):
 
 1. As ``FireNode`` markers sweep across the landscape, ``FireDomain`` records the fire arrival time :math:`t^i(x, y)` on a high-resolution 2D matrix (typically at least 10 times finer than the atmospheric grid resolution).
 2. Each ``FluxLayer`` maps the coarse atmospheric cells onto the underlying ``BMap`` sub-cells:
@@ -90,15 +90,15 @@ In its constructor, a model declares which environmental or fuel properties it n
    * - ``fuel.<Column>``
      - Any column from the fuel table (e.g., ``fuel.Rhod``, ``fuel.sd``, ``fuel.Md``, ``fuel.DeltaH``).
    * - ``altitude``
-     - Terrain elevation in meters (`m`).
+     - Terrain elevation in meters (m).
    * - ``slope``
      - Terrain slope :math:`\tan\alpha` in the outward normal direction of the ``FireNode`` (propagation models).
    * - ``windU``, ``windV``
-     - Zonal (West–East) and meridional (South–North) wind components (`m/s`).
+     - Zonal (West–East) and meridional (South–North) wind components (m/s).
    * - ``normalWind``
-     - Wind projected onto the outward normal vector :math:`\vec{u} \cdot \vec{n}` (`m/s`, propagation models).
+     - Wind projected onto the outward normal vector :math:`\vec{u} \cdot \vec{n}` (m/s, propagation models).
    * - ``frontDepth``
-     - Local depth of the burning front normal to the perimeter (`m`, requires ``frontDepthComputation=1``).
+     - Local depth of the burning front normal to the perimeter (m, requires ``frontDepthComputation=1``).
    * - ``curvature``
      - Local front curvature :math:`\kappa` (requires ``curvatureComputation=1``).
 

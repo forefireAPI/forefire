@@ -72,7 +72,7 @@ Published wheels are built for portability across machines, so four things requi
 - **MPI coupling:** coupled fire–atmosphere runs with Meso-NH require ``FOREFIRE_ENABLE_MPI=ON`` in a source build.
 - **Host CPU tuning:** wheels omit ``-march=native`` so they run on any CPU of the target architecture. Build from source with ``FOREFIRE_NATIVE_ARCH=ON`` for maximum local speed.
 - **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS=ON``.
-- **Web UI static assets (`tools/htdocs`):** ``listenHTTP[]`` serves the browser UI from ``$FOREFIREHOME/tools/htdocs``. A ``pip``-only install does not ship ``tools/htdocs``; either point ``FOREFIREHOME`` at a git checkout of the repository or use the Docker image.
+- **Web UI static assets** (``tools/htdocs``): ``listenHTTP[]`` serves the browser UI from ``$FOREFIREHOME/tools/htdocs``. A ``pip``-only install does not ship ``tools/htdocs``; either point ``FOREFIREHOME`` at a git checkout of the repository or use the Docker image.
 
 .. _install-source:
 
@@ -191,8 +191,8 @@ When driven by ``pip`` / ``scikit-build-core``, seven options flip automatically
 
 When driven by ``emcmake`` (Emscripten), CMake automatically sets ``NETCDF=OFF``, ``MPI=OFF``, ``CLI=OFF``, ``WASM=ON``, and ``STATIC_CORE=ON`` to produce ``bin/forefire.wasm`` and ``bin/forefire.mjs``. See ``bindings/wasm/README.md`` in the repository for details on building and serving the WebAssembly target.
 
-Environment variables (``PATH`` and ``FOREFIREHOME``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Environment variables (PATH and FOREFIREHOME)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After a source build, add ``bin/`` to ``PATH`` and set ``FOREFIREHOME`` to the repository root:
 
