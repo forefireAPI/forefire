@@ -50,7 +50,7 @@ Hierarchy & Front Orientation (FireFront / FireNode)
 
 When constructing custom fire perimeters with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, ForeFire uses **indentation** and **node ordering (winding)**:
 
-* **Indentation rule:** Each hierarchy level is indented by **one tab** (``\t``) **or four spaces** (``    ``) relative to the first command in the script:
+* **Indentation rule:** Each hierarchy level is indented by **one tab** (``\t``) **or four spaces** relative to the first command in the script:
 
   * Level 0 (no indent): ``FireDomain[...]`` and top-level commands.
   * Level 1 (4 spaces or 1 tab): outer ``FireFront[...]`` inside the ``FireDomain``.
