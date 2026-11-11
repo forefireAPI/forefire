@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ForeFire × Meso-NH 3D</title>
+<link rel="icon" href="img/ff_logo.png">
 <style>
   :root {
     --bg: #0b0e14; --panel: rgba(16, 20, 28, 0.88); --line: #263040;
@@ -15,8 +16,10 @@
   #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   #panel { position: fixed; top: 12px; left: 12px; width: 270px; max-height: calc(100% - 24px); overflow: auto;
     background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .hdr img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
   h1 { font-size: 14px; margin: 0 0 2px; font-weight: 600; }
-  .sub { color: var(--muted); margin-bottom: 10px; }
+  .sub { color: var(--muted); }
   #status { font-size: 12px; margin-bottom: 10px; color: var(--muted); }
   #status[data-kind="ok"]::before { content: "● "; color: var(--ok); }
   #status[data-kind="err"]::before { content: "● "; color: var(--err); }
@@ -47,17 +50,31 @@
 <body>
 <canvas id="view"></canvas>
 <div id="panel">
-  <h1>ForeFire × Meso-NH</h1>
-  <div class="sub">Live view of a coupled run</div>
+  <div class="hdr">
+    <img src="img/ff_logo.png" alt="ForeFire">
+    <div>
+      <h1>ForeFire × Meso-NH</h1>
+      <div class="sub">Live view of a coupled run</div>
+    </div>
+  </div>
   <div id="status">connecting…</div>
   <div id="clock">--</div>
   <div id="elapsed">&nbsp;</div>
+
+  <fieldset id="replayBox" hidden>
+    <legend>Timeline <span id="replayStep"></span></legend>
+    <input type="range" id="timeSlider" min="0" max="0" step="1" value="0">
+    <div class="row">
+      <button id="playBtn">▶ Play</button>
+      <button id="liveBtn" hidden>● Live</button>
+    </div>
+  </fieldset>
 
   <fieldset>
     <legend>Layers</legend>
     <label><input type="checkbox" id="lyrFront" checked><span class="sw" style="background:#ffb340"></span>Fire front</label>
     <label><input type="checkbox" id="lyrIso" checked><span class="sw" style="background:#a3341c"></span>Past fronts (every 60 s)</label>
-    <label><input type="checkbox" id="lyrPlume" checked>Plume top height</label>
+    <label><input type="checkbox" id="lyrPlume" checked>Smoke plume (3D)</label>
     <label><input type="checkbox" id="lyrWind" checked>Surface wind</label>
     <label><input type="checkbox" id="lyrFuel" checked>Fuel map on terrain</label>
   </fieldset>
