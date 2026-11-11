@@ -14,6 +14,8 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- `tools/htdocs/mnh3d.html` shows a run coupled to Meso-NH live in 3D:
+  terrain, fuel, fire front, plume top and surface wind.
 - The browser demo can draw the DFCI grid, water points and DFCI tracks from
   the IGN Géoplateforme, in France. These layers are display only: they never
   reach the simulation.

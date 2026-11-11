@@ -87,6 +87,11 @@ on 6.1). A meaningful check is the comparison in section 5.
 `mnh_real_nested/ForeFire/Init.ff` starts
 `listenHTTP[host=127.0.0.1:8080]`, so port 8080 must be free.
 
+To watch the run in 3D (terrain, fire front, plume, wind), export
+`FOREFIREHOME=/path/to/forefire` before `run.bash` and open
+<http://localhost:8080/mnh3d.html> while it runs. The page sends commands
+during the run, so leave it closed for the comparison in section 5.
+
 ## 5. Check that a change does not alter coupled results
 
 Run the same case with ForeFire built from `dev` and from the branch under
