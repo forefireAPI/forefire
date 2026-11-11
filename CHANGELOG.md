@@ -14,6 +14,8 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- A User Guide page lists the propagation and flux models that have a
+  published reference, with a link to it and how to select each model.
 - The browser demo can draw the DFCI grid, water points and DFCI tracks from
   the IGN Géoplateforme, in France. These layers are display only: they never
   reach the simulation.

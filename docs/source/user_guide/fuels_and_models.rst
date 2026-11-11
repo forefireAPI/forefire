@@ -15,6 +15,9 @@ Available Propagation Models
 
 ForeFire includes several built-in propagation models. Below are the primary models intended for general use. For a complete list of all implemented models, including experimental ones, users can refer to the C++ source code.
 
+.. seealso::
+   :doc:`models` lists the propagation and flux models that have a published reference, with that reference and how to select each one.
+
 **Iso**
 ^^^^^^^
 *   **Description:** A simple isotropic model where the fire spreads at a constant rate in all directions. It ignores all environmental factors except for blocking terrain.
