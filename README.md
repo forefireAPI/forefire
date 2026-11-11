@@ -2,165 +2,126 @@
   <img src="./docs/source/_static/forefire.svg" alt="ForeFire Logo" width="400">
 </p>
 
-
----
-<!-- Identity & Citation -->
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
- [![DOI](https://camo.githubusercontent.com/76a5b3086405ed966d1386695b4f78097f5aaf7d234ebb692f95dfd6d173d615/68747470733a2f2f6a6f73732e7468656f6a2e6f72672f7061706572732f31302e32313130352f6a6f73732e30383638302f7374617475732e737667)](https://doi.org/10.21105/joss.08680)
-<!-- Project Health & Status -->
-[![linuxCI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
-[![macOSCI](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/macos.yml)
-[![Model Invariants](https://github.com/forefireAPI/forefire/actions/workflows/invariants.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/invariants.yml)
-[![Docker CI/CD](https://github.com/forefireAPI/forefire/actions/workflows/docker.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/docker.yml)
+[![Linux CI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
 [![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest)
-<!-- Distribution and Technical Stack -->
-[![Docker Package](https://img.shields.io/badge/Docker-Package-blue?logo=docker&logoColor=white)](https://github.com/forefireAPI/forefire/pkgs/container/forefire)
-![Language](https://img.shields.io/badge/C++-00599C?logo=c%2B%2B&logoColor=white)
-![Language](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+[![PyPI](https://img.shields.io/pypi/v/forefire)](https://pypi.org/project/forefire/)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08680/status.svg)](https://doi.org/10.21105/joss.08680)
 
+**ForeFire** is an open-source wildfire spread simulator written in C++,
+developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/).
 
-**ForeFire** is an open-source **wildfire simulation engine** written in C++. Developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/), it is used for research and operational forecasting. The engine implements various fire behavior models and enables high-fidelity coupled fire-atmosphere simulations, aiming to improve wildfire prediction and understanding for complex environments.
+## Try it now, no install
 
+**[Open the in-browser demo](https://forefireapi.github.io/forefire/)**: the
+engine compiled to WebAssembly, running in your tab on terrain and fuel built
+from map tiles.
+Click the map to light a fire, set the wind, and watch it spread.
 
-**Key Links:**
-- 📚 **Full Documentation:** [forefire.readthedocs.io](https://forefire.readthedocs.io/en/latest/)
-- 🚀 **Live Demo:** [forefire.univ-corse.fr/sim](http://forefire.univ-corse.fr/sim)
-- 💻 **In-browser Demo (WebAssembly):** [forefireapi.github.io/forefire](https://forefireapi.github.io/forefire/)
-- 🌍 **Website:** [forefire.univ-corse.fr](https://forefire.univ-corse.fr/)
-- 📝 **Changelog:** [CHANGELOG.md](CHANGELOG.md)
-- 🧪 **Testing:** [TESTING.md](TESTING.md)
+<p align="center">
+  <a href="https://forefireapi.github.io/forefire/">
+    <img src="./docs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire browser demo" width="800">
+  </a>
+</p>
 
-## Features
+## Run it from Python
 
-*   **Advanced Simulation Engine:** Core C++ logic for fire propagation using various Rate of Spread (ROS) models and handling complex geospatial data (NetCDF).
-*   **Fire-Atmosphere Coupling:** Designed for two-way coupling by linking the core library with atmospheric models like [MesoNH](https://mesonh.aero.obs-mip.fr/mesonh/) (developed by CNRS & Météo-France).
-*   **High Performance:** Optimized C++ core with MPI support for parallel computing.
-*   **Flexible Interfaces:** Built upon a core **C++ Simulation Engine (Library)**:
-    *   **`forefire` Interpreter:** The primary way to run simulations using script files (`.ff`), interactive console commands, or the web interface (via `listenHTTP[]`).
-    *   **C++ Library (`libforefireL`):** Allows direct integration into other software.
-    *   **Python Bindings:** Enable scripting and control from Python (see [./bindings/python/README.md](./bindings/python/README.md)).
-*   **Flexible Output:** Can generate outputs in various formats, including KML for visualization in Google Earth, Geojson, NetCDF, and custom binary/text formats.
-*   **Extensible:** Add custom ROS models in C++; customize web interfaces.
-*   **Applications:** Research, case reanalysis, ensemble forecasting.
-
-
-## Quick Start with pip
-
-On Linux and macOS, ForeFire ships as a self-contained wheel. Nothing else to
-install &mdash; NetCDF is bundled inside the package:
+On Linux and macOS, `pip install forefire` gives you a self-contained wheel
+(NetCDF is bundled) with the `pyforefire` module and the `forefire`
+command-line interpreter. NumPy and Matplotlib come with it.
 
 ```bash
 pip install forefire
 ```
 
-This gives you both the `forefire` command-line interpreter and the
-`pyforefire` Python module:
-
-```bash
-forefire -v
-```
+Save this as `spread.py` and run `python spread.py`. It lights a fire on a
+4 km square of uniform fuel with an 8 m/s wind and draws the front every
+30 seconds into `fronts.png`:
 
 ```python
+import numpy as np
+import matplotlib.pyplot as plt
 import pyforefire as forefire
+from pyforefire.helpers import printToPathe
 
 ff = forefire.ForeFire()
-ff.execute("FireDomain[sw=(0,0,0);ne=(10000,10000,0);t=0]")
-ff.addLayer("propagation", "Iso", "propagationModel")
-ff.execute("startFire[loc=(5000,5000,0.0)]")
-ff.execute("step[dt=1000]")
-print(ff.execute("print[]"))
+ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0"
+ff["defaultFuelType"] = 1
+ff["propagationModel"] = "WindDriven"
+ff.execute("FireDomain[sw=(0,0,0);ne=(4000,4000,0);t=0]")
+
+# Uniform fuel and a wind field, as NumPy arrays over the 4 km domain
+fuel = np.ones((1, 1, 200, 200))
+wind = np.zeros((2, 2, 200, 200))
+wind[0, 0] = 1.0  # windU, unit vector in x
+wind[1, 1] = 1.0  # windV, unit vector in y
+ff.addLayer("propagation", "WindDriven", "propagationModel")
+ff.addIndexLayer("table", "fuel", 0, 0, 0, 4000, 4000, 0, fuel)
+ff.addScalarLayer("windScalDir", "windU", 0, 0, 0, 4000, 4000, 0, wind[0:1])
+ff.addScalarLayer("windScalDir", "windV", 0, 0, 0, 4000, 4000, 0, wind[1:2])
+
+ff.execute("startFire[loc=(1000,2000,0);t=0]")
+ff.execute("trigger[wind;loc=(0,0,0);vel=(8,3,0)]")
+for _ in range(8):
+    ff.execute("step[dt=30]")
+    for path in printToPathe(ff.execute("print[]")):
+        plt.plot(*path.vertices.T, color="tab:red")
+
+plt.gca().set_aspect("equal")
+plt.savefig("fronts.png")
+print("wrote fronts.png")
 ```
 
-You can drive a whole simulation from NumPy arrays — a fuel map and a wind
-field, no NetCDF and no GIS — using `addIndexLayer` and `addScalarLayer`. See
-[Running from NumPy arrays](https://forefire.readthedocs.io/en/latest/user_guide/python_arrays.html)
-for a complete example.
+Open `fronts.png`: eight nested perimeters, stretched downwind. To paint your
+own fuel map, wind field or terrain, see
+[Running from NumPy arrays](https://forefire.readthedocs.io/en/latest/user_guide/python_arrays.html).
 
-Published wheels are built without MPI support. For fire-atmosphere coupling
-with MesoNH, or to tune the build for your CPU, build from source instead
-(see [Build from source](#build-from-source), and
-[`docs/mnh/coupledMNHInstall.md`](docs/mnh/coupledMNHInstall.md) for the
-coupled setup).
+Published wheels are built without MPI. For fire-atmosphere coupling with
+Meso-NH, or to tune the build for your CPU, [build from source](#build-from-source).
 
-## Quick Start with Docker
+## Run the web GUI with Docker
 
+The published image includes the interpreter, the web GUI and a real case in
+Corsica (`tests/runff`):
 
+```bash
+docker run -it --rm -p 127.0.0.1:8000:8000 ghcr.io/forefireapi/forefire:latest
+```
 
+`127.0.0.1:` keeps the port on this machine. A bare `-p 8000:8000` publishes
+it on every interface, so anyone on the network could send commands to the
+server. To build the image yourself instead, run `docker build -t forefire .`
+in a clone and use `forefire` as the image name.
 
+Inside the container, start the interpreter next to the sample data and open
+the HTTP server. Bind it to `0.0.0.0` so the published port reaches it
+(`listenHTTP[]` alone listens only on the container's own localhost):
 
-The easiest way to get started is often using Docker and the interactive console with instruction noted below via the **`forefire` command-line interpreter** see in video :
+```bash
+cd tests/runff
+forefire
+```
 
-<video src="https://github.com/user-attachments/assets/e257fa8c-5880-4b96-a671-5e3af576be48" width="600" autoplay loop muted playsinline></video>
+```text
+forefire> listenHTTP[0.0.0.0:8000]
+```
 
+Open <http://localhost:8000/>, click **`include`** (or type
+`include[real_case.ff]`) and **Send**, then **Refresh Map**. Running the
+command again continues the simulation. The `systemExec is not available over
+HTTP` line it prints is expected: the script's data check only runs from the
+console.
 
-1. Clone the repository
-    
-    ``` bash
-    # Clone the repository
-    git clone https://github.com/forefireAPI/forefire.git
-    cd forefire
+![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
 
-    ```
-
-2. Build the Docker image 
-
-    ```bash
-    docker build . -t forefire:latest
-    ```
-
-3. Run the container interactively
-
-    ```bash
-    docker run -it --rm -p 127.0.0.1:8000:8000 --name ff_interactive forefire
-    ```
-    `127.0.0.1:` publishes the port on this machine only. A bare `-p 8000:8000`
-    publishes it on every interface of the host, so anyone on the network could
-    send commands to the server.
-4. Inside the container navigate to test directory and launch the forefire console:
-    ```bash
-    cd tests/runff
-
-    # start the forefire console with the command
-    forefire
-
-    ```
-
-5. Launch the HTTP server from the console. Inside the container, bind to all
-   interfaces so the published port reaches it (`listenHTTP[]` alone only
-   listens on the container's own localhost):
-    ```bash
-    listenHTTP[0.0.0.0:8000]
-    ```
-    the output should be :
-
-    ```bash
-    >> ForeFire HTTP command server listening at http://0.0.0.0:8000
-    ```
-
-    This server provides a graphical user interface that you can access on your browser at http://localhost:8000/
-
-6. Run your first simulation
-    
-    In ForeFire (web or on console are equivalent), running a simulation and viewing the result are separate commands. The UI guides you through this process.
-    - **Step 1: Run the simulation script.** In HTTP Interface click the **`include`** button or type `include[real_case.ff]` in command input box, and click the **`Send`** button. 
-    You can also run the same command directly in the interactive console if you prefer, by typing `include[real_case.ff]` and pressing enter.
-    The script executes a simulation by loading data, starting fires, applying wind triggers, and running the simulation for a specified duration.
-
-    - **Step 2: View the result.** After the command finishes, click the **`Refresh Map`** button to display the simulation results onto the web map.
-    - **Step 3 (optional): iterate more.** You can continue the simulation by running the `include[real_case.ff]` command again and clicking the **`Refresh Map`** button to display the updated simulation results onto the web map.
-    
-    ![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
-    
-    You should see a simulation running in the Aullène region of Corsica. **This confirms your Docker setup is working!** Check the full documentation for more details on this example
-
-### Sample data and Git LFS
-
-The demo datasets bundled under `tests/runff/` are stored with Git LFS because they include several megabytes of raster data that we only use in the quick-start examples and regression tests. Make sure Git LFS is installed before cloning; otherwise Git will pull pointer files only. If that happens, download the dataset directly from the GitHub web interface and drop it back into the expected folder before running the examples. This data is only provided for the bundled test scenarios.
+The sample data under `tests/` is stored in Git LFS. If you work from a clone
+rather than the published image, install Git LFS before cloning, or `data.nc`
+will be a small pointer file instead of the dataset.
 
 ## Build from source
 
-See the Full Documentation for more details on building from source with the `install-forefire.sh` file
-
+`install-forefire.sh` (Linux) and `install-forefire-osx.sh` (macOS) install the
+dependencies and build; the
+[documentation](https://forefire.readthedocs.io/en/latest/) covers the details.
 The CMake build is option-driven. The defaults below are what a plain
 `cmake -S . -B build` gives you:
 
@@ -180,30 +141,48 @@ The CMake build is option-driven. The defaults below are what a plain
 Wheel builds (anything driven by `pip`) flip these to the portable defaults:
 no MPI, no `-march=native`, static core, Python module on, no tools, no tests.
 
-`TESTING.md` covers the test suites and the sanitizer build in detail.
+Coupled fire-atmosphere runs with [Meso-NH](https://mesonh.cnrs.fr/) need the
+MPI build; [`docs/mnh/coupledMNHInstall.md`](docs/mnh/coupledMNHInstall.md)
+walks through the coupled setup. [TESTING.md](TESTING.md) covers the test
+suites and the sanitizer build.
 
-## Python Bindings
-ForeFire provides Python bindings for easier scripting and integration:
-`pip install forefire`, then `import pyforefire`. See the Python Bindings
-[./bindings/python/README.md](./bindings/python/README.md) for details.
+## What's in the box
+
+- A C++ engine that tracks the fire front as a set of moving nodes, with
+  pluggable rate-of-spread models (Rothermel, several Balbi variants, Farsite,
+  and simple wind-driven or isotropic ones for teaching).
+- The `forefire` interpreter: `.ff` scripts, an interactive console, and a web
+  GUI served by `listenHTTP[]`.
+- `libforefireL` for embedding, and Python bindings that take NumPy arrays.
+- Landscape input from NetCDF or from arrays; output to KML, GeoJSON, NetCDF
+  and text.
+- Two-way coupling with the Meso-NH atmospheric model through MPI.
+
+More: [documentation](https://forefire.readthedocs.io/en/latest/) ·
+[website](https://forefire.univ-corse.fr/) · [changelog](CHANGELOG.md)
+
+## Python bindings
+
+The `pyforefire` module drives the same engine as the interpreter: run `.ff`
+commands, pass layers as NumPy arrays, and run simulations side by side in
+worker processes with `ForeFireRunner`. See
+[bindings/python/README.md](bindings/python/README.md).
 
 ## Contributing
 
-We welcome contributions to ForeFire! We especially appreciate help with:
-
-- Improving documentation and tutorials.
-- Python bindings
-- Enhancing packaging (Docker, Pip, etc.) and cross-platform compatibility.
-
- Please read our **[Contributing Guidelines](CONTRIBUTING.md)** to learn how you can help, including how to report bugs, suggest features, and submit code changes.
-
-All contributors are expected to adhere to our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
-
+Contributions are welcome, especially to the documentation and tutorials, the
+Python bindings, and packaging (Docker, pip) across platforms. Read the
+[contributing guidelines](CONTRIBUTING.md) for how to report bugs, suggest
+features and submit changes. All contributors are expected to follow the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
-ForeFire is licensed under the GNU General Public License v3.0. See [LICENSE](./LICENSE) for full details.
+
+ForeFire is licensed under the GNU General Public License v3.0. See
+[LICENSE](LICENSE).
 
 ## Citation
+
 If you use ForeFire in your work, please cite:
 
 **BibTex**
