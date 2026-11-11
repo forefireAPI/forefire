@@ -43,7 +43,7 @@ Model Families and Their Fuel Columns
    * - ``RothermelAndrews2018``
      - Imperial Rothermel columns from Andrews (2018): ``Index;fl1h_tac;fd_ft;SAVcar_ftinv;mdOnDry1h_r;fuelDens_lbft3;H_BTUlb;Dme_pc;totMineral_r;effectMineral_r``.
    * - ``Farsite``
-     - Multi-class Scott & Burgan (2005) columns (built into ForeFire via ``setParameter[fuelsTable=STDfarsiteFuelsTable]``): ``Index;code;Number;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl``.
+     - Multi-class Scott & Burgan (2005) columns (built into ForeFire via ``setParameter[fuelsTable=STDfarsiteFuelsTable]``): ``Index;code;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl;desc``.
 
 ----
 

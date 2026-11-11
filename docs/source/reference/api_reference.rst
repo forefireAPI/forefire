@@ -17,14 +17,14 @@ In-Process Engine (ForeFire)
 
       Executes a ForeFire ``.ff`` command string (e.g., ``"step[dt=60]"``, ``"print[]"``) and returns the command's output as a string.
 
-   .. py:method:: __getitem__(key: str) -> str
+   .. py:method:: __getitem__(key: str) -> Union[float, str, numpy.ndarray]
    .. py:method:: __setitem__(key: str, value: Union[str, int, float])
 
-      Gets or sets a simulation parameter in ``SimulationParameters`` (e.g., ``ff["propagationModel"] = "Rothermel"``). Also accessible via ``getString(key)``, ``setString(key, val)``, ``getDouble(key)``, ``setDouble(key, val)``, ``getInt(key)``, and ``setInt(key, val)``.
+      Gets or sets a simulation parameter in ``SimulationParameters`` (e.g., ``ff["propagationModel"] = "Rothermel"``; numeric parameters return a ``float``). If ``key`` is not a parameter, ``ff[key]`` queries ``FireDomain::getDataMatrix(key)`` and returns a 2D ``float64`` NumPy array (e.g., ``ff["arrival_time"]``, ``ff["BMap"]``). Also accessible via ``getString(key)``, ``setString(key, val)``, ``getDouble(key)``, ``setDouble(key, val)``, ``getInt(key)``, and ``setInt(key, val)``.
 
-   .. py:method:: addLayer(type: str, model_name: str, layer_name: str)
+   .. py:method:: addLayer(type: str, layer_name: str, key_name: str)
 
-      Registers a propagation or flux layer across the domain (for example, ``ff.addLayer("propagation", "Rothermel", "propagationModel")``).
+      Registers a propagation, flux, or data layer across the domain (for example, ``ff.addLayer("propagation", "Rothermel", "propagationModel")``, where ``key_name`` must already be set in ``SimulationParameters``).
 
    .. py:method:: addIndexLayer(type: str, name: str, x0: float, y0: float, t0: float, width: float, height: float, timespan: float, values: numpy.ndarray)
 
@@ -37,13 +37,13 @@ In-Process Engine (ForeFire)
 Isolated Worker Process (ForeFireRunner)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:class:: pyforefire.ForeFireRunner(*, stdout=DEVNULL)
+.. py:class:: pyforefire.ForeFireRunner(stdout=None, stderr=None)
 
    Runs a ``ForeFire`` instance inside a dedicated child process so multiple simulations can run concurrently without sharing global C++ state. Supports the ``with`` context-manager protocol and provides the same methods as :class:`ForeFire` (``execute``, ``ff[key] = val``, ``addLayer``, ``addIndexLayer``, ``addScalarLayer``), plus:
 
-   .. py:method:: fork(*, stdout=...) -> ForeFireRunner
+   .. py:method:: fork() -> ForeFireRunner
 
-      Forks the worker process (using OS ``fork`` where available), returning a new :class:`ForeFireRunner` that shares the exact spun-up state of the parent simulation at minimal cost.
+      Forks the worker process (using OS ``fork`` where available), returning a new :class:`ForeFireRunner` that shares the exact spun-up state and streams of the parent simulation at minimal cost.
 
    .. py:method:: close()
 
@@ -58,12 +58,12 @@ Ensembles, Burn Probability & Verification
 
 See :doc:`/user_guide/ensembles` for worked examples of these functions:
 
-* ``pyforefire.run_ensemble(setup, members, *, until, perturb=None, bbox=None, fork=True, max_workers=None, stdout=DEVNULL)`` — runs an ensemble of ``members`` up to simulation time ``until`` and returns a ``(n_members, ny, nx)`` array of fire arrival times (``inf`` where unburned).
+* ``pyforefire.run_ensemble(setup, members, until, perturb=..., fork=True, bbox=None, max_workers=None, stdout=subprocess.DEVNULL, stderr=None)`` — runs an ensemble of ``members`` up to simulation time ``until`` (by default ``perturb`` applies each ``member`` dict via ``ff[k] = v``) and returns a ``(n_members, ny, nx)`` array of fire arrival times (``inf`` where unburned).
 * ``pyforefire.burn_probability(arrivals, t=None)`` — computes the fraction of ensemble members that burned each cell (by time ``t``, or by the end of the run if ``t is None``).
-* ``pyforefire.arrival_time(ff, bbox=None)`` — extracts the 2D arrival-time matrix (``BMap``) from an active simulation (requires ``ff["bmapLayer"] = 1``).
-* ``pyforefire.dice(predicted, observed)`` — Sørensen–Dice similarity coefficient :math:`2|A \cap B| / (|A| + |B|)`.
+* ``pyforefire.arrival_time(ff, path, bbox=None)`` — extracts the 2D arrival-time matrix from an active simulation via ``plot[parameter=arrival_time;filename=<path>]``.
+* ``pyforefire.dice(burnt, observed)`` — Sørensen–Dice similarity coefficient :math:`2|A \cap B| / (|A| + |B|)`.
 * ``pyforefire.brier_score(probability, observed)`` — mean squared error of a burn-probability map against a boolean observed burn scar.
-* ``pyforefire.reliability(probability, observed, bins=10)`` — calibration curve ``(observed_frequency, cell_count)`` per probability bin.
+* ``pyforefire.reliability(probability, observed, bins=(0, 0.1, 0.3, 0.5, 0.7, 0.9, 1))`` — calibration curve ``(observed_frequency, cell_count)`` per probability bin edge interval.
 * ``pyforefire.helpers.printToPathe(print_output)`` — parses ``ff.execute("print[]")`` output into a list of Matplotlib ``Path`` objects whose ``.vertices`` are ``(N, 2)`` NumPy arrays.
 
 ----

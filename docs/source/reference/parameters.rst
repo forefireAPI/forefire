@@ -22,7 +22,7 @@ Iso.speed
 
 windReductionFactor
 ~~~~~~~~~~~~~~~~~~~
-* **Description:** Multiplier scaling ambient/surface wind speed to mid-flame height (used by ``Rothermel`` and ``RothermelAndrews2018``).
+* **Description:** Multiplier scaling ambient/surface wind speed to mid-flame height (used by ``Rothermel``).
 * **Default:** ``0.4``
 
 propagationSpeedAdjustmentFactor
@@ -42,7 +42,7 @@ maxSpeed
 
 fuelsTableFile
 ~~~~~~~~~~~~~~
-* **Description:** Path to the semicolon-delimited fuel table file (e.g., ``fuels.csv``), resolved relative to ``caseDirectory``. Ignored if ``fuelsTable`` is set inline.
+* **Description:** Path to the semicolon-delimited fuel table file (e.g., ``fuels.csv``), resolved relative to ``caseDirectory/ForeFireDataDirectory`` (set ``ForeFireDataDirectory=.`` when files sit directly in ``caseDirectory``). Ignored if ``fuelsTable`` is set inline.
 * **Default:** ``fuels.ff``
 
 fuelsTable
@@ -50,10 +50,10 @@ fuelsTable
 * **Description:** Inline semicolon-delimited fuel table string (or a built-in table name such as ``STDfarsiteFuelsTable`` or ``STDlandIndexedFuelsTable``). When set, ForeFire parses this string directly instead of opening ``fuelsTableFile``.
 * **Default:** *(unset)*
 
-defaultFuelType
-~~~~~~~~~~~~~~~
-* **Description:** Fallback integer fuel index used when no ``fuel`` layer is registered.
-* **Default:** ``1`` (when read)
+fuel
+~~~~
+* **Description:** Fallback integer fuel index used when no spatial ``fuel`` layer is registered in the ``DataBroker``.
+* **Default:** ``0`` (when unset)
 
 heatFluxDefaultModel / vaporFluxDefaultModel / SPOTF1DefaultModel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

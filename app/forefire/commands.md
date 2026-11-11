@@ -70,14 +70,18 @@ std::string commandHelp = R"(
 
 ## trigger
     trigger[wind;vel=(vx,vy,vz)]
+    trigger[fuel;<column>=<value>]
     trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
-    Triggers a change in simulation data, such as fuel or dynamic wind conditions
+    trigger[resolution;perimeterResolution=<val>;spatialIncrement=<val>]
+    Triggers a change in simulation data, such as fuel, wind, or domain resolution
     The first argument, alone without '=', selects the change. Schedule it with @t=, a 't=' inside the brackets is not read
     Example: trigger[wind;vel=(5.0,2.0,0.0)]@t=1800
     Example: trigger[fuelIndice;loc=(10,20,0);fuelType=1]
     Arguments:
      - 'wind': Sets the wind to 'vel', the vector (vx,vy,vz) in m/s
-     - 'fuelIndice': Sets the fuel index at 'loc' (x,y,z) to the integer 'fuelType';
+     - 'fuel': Updates a fuel column across all entries in the active fuel table
+     - 'fuelIndice': Sets the fuel index at 'loc' (x,y,z) to the integer 'fuelType'
+     - 'resolution': Updates 'perimeterResolution' and 'spatialIncrement';
 
 ## emit
     emit[layer=<flux_layer>;loc=(x,y,z);radius=<m>;duration=<seconds>;flux=<per_m2>]

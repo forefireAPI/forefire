@@ -269,9 +269,9 @@ Adds a uniform ``DataLayer`` (or model layer) spanning the active ``FireDomain``
 
 **Arguments:**
 
-* ``name=<layerName>``: Layer name (e.g., ``propagation``, ``heatFlux``, ``windU``).
-* ``opt:type=<layerType>``: Layer category (``data`` by default, ``propagation``, ``flux``).
-* ``opt:modelName=<model>``: Registered C++ model name when ``type`` is ``propagation`` or ``flux`` (e.g., ``Rothermel``, ``BurnUpHeatFlux``).
+* ``name=<layerName>``: Layer name (e.g., ``heatFlux``, ``windU``).
+* ``opt:type=<layerType>``: Layer category (``data`` by default, ``flux``, or ``BRatio``; to register a ``propagation`` layer from Python, use ``ff.addLayer("propagation", ...)``).
+* ``opt:modelName=<model>``: Registered C++ flux model name when ``type=flux`` (e.g., ``BurnUpHeatFlux``).
 * ``opt:value=<V>``: Constant numerical value for ``data`` layers (defaults to the parameter of the same name if set, else ``0``).
 
 **Example:**
@@ -290,7 +290,9 @@ trigger
 .. code-block:: none
 
    trigger[wind;vel=(vx,vy,vz)]
+   trigger[fuel;<column>=<value>]
    trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
+   trigger[resolution;perimeterResolution=<val>;spatialIncrement=<val>]
 
 Updates dynamic environmental conditions at the moment the command executes. The first token (without ``=``) selects the target layer. To apply the change at a future time, schedule the command with :ref:`@t=... <cmd-@>` (a ``t=`` inside the brackets is ignored by ``wind`` and ``fuelIndice``).
 
