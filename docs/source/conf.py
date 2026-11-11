@@ -47,12 +47,24 @@ exclude_patterns = []
 
 html_theme = 'furo'
 html_static_path = ['_static']
-html_logo = "_static/forefire.svg"
 html_favicon = "_static/favicon.ico"
 
 html_title = "ForeFire"
 
 html_theme_options = {
+	'sidebar_hide_name': True,
+	'light_logo': 'forefire.svg',
+	'dark_logo': 'forefire-dark.svg',
+	'light_css_variables': {
+		'color-brand-primary': '#c2410c',
+		'color-brand-content': '#c2410c',
+		'color-brand-visited': '#9a3412',
+	},
+	'dark_css_variables': {
+		'color-brand-primary': '#ff8a4c',
+		'color-brand-content': '#ff8a4c',
+		'color-brand-visited': '#f0a070',
+	},
 	'source_repository': 'https://github.com/forefireAPI/forefire/',
 	'source_branch': 'dev',
 	'source_directory': 'docs/source/',
