@@ -123,7 +123,7 @@ Balbi2020::Balbi2020(const int & mindex, DataBroker* db)
 	cooling = 0.;
 	if ( params->isValued("Balbi2020.cooling") )
 		cooling = params->getDouble("Balbi2020.cooling");
-	Cpa = 1004.;
+	Cpa = 1150.;
 	if ( params->isValued("Balbi2020.Cpa") )
 		Cpa = params->getDouble("Balbi2020.Cpa");
 }
@@ -176,7 +176,6 @@ double Balbi2020::getSpeed(double* valueOf){
 	double lg = 9.81;
 	double B = 5.6e-8; // nomenclature
 
-	double Cpa = 1150 ;// nomenclature
 	double Tvap = 373; // nomenclature
 	double K1 = 130 ;// nomenclature new parameter
 	double st = 17 ;// nomenclature new parameter

@@ -2045,6 +2045,12 @@ namespace libforefire
             return error;
         }
 
+        // A value wrapped in triple quotes (a multiline literal) is stored without them.
+        string &value = tmpArgs[1];
+        if (value.size() >= 6 && value.compare(0, 3, "\"\"\"") == 0
+            && value.compare(value.size() - 3, 3, "\"\"\"") == 0)
+            value = value.substr(3, value.size() - 6);
+
         // Check if the parameter value begins with '!'
         if (!tmpArgs[1].empty() && tmpArgs[1][0] == '!')
         {
