@@ -62,6 +62,10 @@ We welcome code contributions, from bug fixes to new features.
 5.  **Make Changes:**
 
     Implement your code changes, following existing coding style and conventions where possible.
+    *   Changes to propagation or flux models and their physics start as an issue: the maintainers decide those.
+    *   A change that moves simulation results goes in its own PR, and at the top of its CHANGELOG entry.
+    *   Never regenerate a `.ref` file to make a test pass.
+    *   Report security problems through [private vulnerability reporting](https://github.com/forefireAPI/forefire/security/advisories/new), never in a public issue.
 6.  **Add Tests (if applicable):**
 
     For new features or significant bug fixes, please add corresponding tests or update existing ones. See [TESTING.md](TESTING.md) for what each suite covers, how to run it, and which ones CI validates. Ensure all tests pass locally.
@@ -94,7 +98,7 @@ We welcome code contributions, from bug fixes to new features.
     ```
 10. **Open a Pull Request (PR):**
 
-    Go to the `forefireAPI/forefire` repository on GitHub and open a Pull Request from your branch to the `dev` branch (or `master` if that's the target).
+    Go to the `forefireAPI/forefire` repository on GitHub and open a Pull Request from your branch to the `dev` branch.
     *   Provide a clear description of the changes in the PR.
     *   Link any relevant issues (e.g., "Fixes #123").
     *   Ensure the CI checks pass on your PR. The maintainers will review your code, provide feedback, and merge it once approved.
