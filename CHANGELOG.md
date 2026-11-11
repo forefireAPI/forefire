@@ -16,6 +16,8 @@ history, so they summarise each release rather than list every change. The
 
 - A User Guide page lists the propagation and flux models that have a
   published reference, with a link to it and how to select each model.
+- `tools/htdocs/mnh3d.html` shows a run coupled to Meso-NH live in 3D:
+  terrain, fuel, fire front, plume top and surface wind.
 - The browser demo can draw the DFCI grid, water points and DFCI tracks from
   the IGN Géoplateforme, in France. These layers are display only: they never
   reach the simulation.
