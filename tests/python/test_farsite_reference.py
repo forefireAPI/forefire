@@ -23,8 +23,9 @@ pipeline  The reference is fed the case as FARSITE sees it: the midflame wind
           is in how ForeFire derives the normal wind and slope it hands over.
 
 The test fails when the head rate of spread differs beyond REL_TOL in either
-comparison. Flank, back and length-to-breadth are only reported: ForeFire has
-no ellipse, so a node not facing the wind spreads at the no-wind rate.
+comparison, or the flank or back one does on flat ground. On a slope they are
+only reported: the model sees the slope along each node's normal, not the
+whole slope vector FARSITE turns its ellipse with.
 
 Every case runs in its own interpreter, because a second ``ForeFire()`` in a
 process inherits the first one's parameters (see test_moisture_invariants.py).
@@ -267,9 +268,13 @@ def main(argv=None):
             "head(model)": rel(h["ROS"], mo["head"]),
             "head(pipeline)": rel(h["ROS"], pi["head"]),
         }
+        if c["slope"] == 0:
+            errs["flank"] = rel(flank["ROS"], pi["flank"])
+            errs["back"] = rel(back["ROS"], pi["back"])
         # The spline normals do not point at the head: report that gap only.
         checked = [k for k in errs
-                   if not (k == "head(pipeline)" and args.scheme == "splines")]
+                   if not (k in ("head(pipeline)", "flank", "back")
+                           and args.scheme == "splines")]
         bad = [k for k in checked if errs[k] > REL_TOL]
         if bad:
             failures.append((c, bad))
