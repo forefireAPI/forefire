@@ -4,7 +4,7 @@
 
 [![Linux CI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
 [![Documentation Status](https://readthedocs.org/projects/forefire/badge/?version=latest)](https://forefire.readthedocs.io/en/latest/?badge=latest)
-[![PyPI](https://img.shields.io/pypi/v/forefire)](https://pypi.org/project/forefire/)
+[![PyPI](https://img.shields.io/pypi/v/forefire?logo=python&logoColor=white)](https://pypi.org/project/forefire/)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.08680/status.svg)](https://doi.org/10.21105/joss.08680)
 
 **ForeFire** is an open-source wildfire spread simulator written in C++,
@@ -16,6 +16,9 @@ developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-co
 engine compiled to WebAssembly, running in your tab on terrain and fuel built
 from map tiles.
 Click the map to light a fire, set the wind, and watch it spread.
+
+There is also a [server-side demo](https://forefire.univ-corse.fr/sim) run by the
+Université de Corse.
 
 <p align="center">
   <a href="https://forefireapi.github.io/forefire/">
