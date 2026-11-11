@@ -39,6 +39,9 @@ history, so they summarise each release rather than list every change. The
 
 ### Fixed
 
+- The Farsite model now matches the FARSITE reference (mbedward/farsite) at
+  the flanks and back of the fire, not only at the head. This changes Farsite
+  results. ([#NNN])
 - The Farsite model reads the wind in m/s and the slope as a tangent, like the
   other Rothermel models, and slope only speeds up spread uphill. It used to
   read the wind as if it were in mph and double the slope, so downhill spread

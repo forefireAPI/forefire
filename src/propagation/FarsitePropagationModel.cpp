@@ -29,6 +29,8 @@ namespace libforefire
 
 		size_t idx_slope;
 		size_t idx_wind;
+		size_t idx_windU;
+		size_t idx_windV;
 
 		size_t idx_m_ones;
 		size_t idx_m_liveh;
@@ -88,6 +90,8 @@ namespace libforefire
 		/* defining the properties needed for the model */
 		idx_slope = registerProperty("slope");
 		idx_wind = registerProperty("normalWind");
+		idx_windU = registerProperty("windU");
+		idx_windV = registerProperty("windV");
 
 		idx_m_ones = registerProperty("moist.ones");
 		idx_m_liveh = registerProperty("moist.liveh");
@@ -197,6 +201,18 @@ namespace libforefire
 			slope = s / c;
 			windspd /= c;
 		}
+		// FARSITE spreads each point as an ellipse along the wind, so the rate
+		// is computed with the whole wind and then taken at the angle between
+		// the node's normal and the wind.
+		double windU = valueOf[idx_windU];
+		double windV = valueOf[idx_windV];
+		double windNorm = adjustementWind * std::hypot(windU, windV);
+		double cosWind = 1.0;
+		if (windNorm > 1e-9)
+			cosWind = std::max(-1.0, std::min(1.0, windspd / windNorm));
+		else
+			windNorm = windspd;
+		windspd = windNorm;
 		// moinstures variables
 		double m_ones = valueOf[idx_m_ones];  
 		double m_liveh = valueOf[idx_m_liveh]; 
@@ -491,6 +507,24 @@ namespace libforefire
 		}else{
 			rate_of_spread = rateo * (1 + phiew);
 		}
+
+		// Ellipse: FARSITE's Mechanix::ellipse (Anderson 1983 length-to-breadth,
+		// Alexander 1985 head-to-back), wind in mph. The rate normal to the
+		// front at angle theta from the wind is Richards (1990):
+		// c cos(theta) + sqrt(a^2 cos^2(theta) + b^2 sin^2(theta)).
+		double windMph = std::max(windspd, 0.0) / 0.44704;
+		double lb = 0.936 * std::exp(0.1147 * windMph)
+				  + 0.461 * std::exp(-0.0692 * windMph) - 0.397;
+		lb = std::max(1.0, std::min(8.0, lb));
+		double part = std::sqrt(lb * lb - 1.0);
+		double head = rate_of_spread;
+		double back = head * (lb - part) / (lb + part);
+		double ea = (head + back) / 2.0;
+		double ec = (head - back) / 2.0;
+		double eb = ea / lb;
+		double sin2 = 1.0 - cosWind * cosWind;
+		rate_of_spread = ec * cosWind
+					   + std::sqrt(ea * ea * cosWind * cosWind + eb * eb * sin2);
 
 
 		rate_of_spread = rate_of_spread/60.0;
