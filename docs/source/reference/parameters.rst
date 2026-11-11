@@ -32,7 +32,7 @@ propagationSpeedAdjustmentFactor
 
 minSpeed
 ~~~~~~~~
-* **Description:** Minimum propagation speed floor (in m/s) enforced when advancing a ``FireNode``.
+* **Description:** A ``FireNode`` whose speed (in m/s) is at or below this value stops advancing. It is a stopping threshold, not a floor on the speed.
 * **Default:** ``0.005``
 
 maxSpeed
@@ -111,12 +111,12 @@ curvatureScheme
 
 smoothing
 ~~~~~~~~~
-* **Description:** Smoothing weight applied during normal vector computation.
+* **Description:** Read but not used by the current node update.
 * **Default:** ``1``
 
 relax
 ~~~~~
-* **Description:** Relaxation factor (:math:`0\text{–}1`) used when updating node normal vectors and front depth.
+* **Description:** Relaxation factor (:math:`0\text{–}1`) that blends a node's previous speed and front depth with the newly computed ones.
 * **Default:** ``0.5``
 
 frontDepthComputation

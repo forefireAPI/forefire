@@ -30,8 +30,7 @@ against a ``pip``-installed ForeFire.
    L = 4000.0
 
    def setup(ff):
-       ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0"
-       ff["defaultFuelType"] = 1.
+       ff["fuelsTable"] = "Index;vv_coeff\n1;1.0"
        ff["windReductionFactor"] = 1.0
        ff["propagationModel"] = "WindDriven"
        ff.execute(f"FireDomain[sw=(0,0,0);ne=({L},{L},0);t=0]")

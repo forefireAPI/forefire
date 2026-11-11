@@ -37,7 +37,7 @@ Model Families and Their Fuel Columns
    * - ``Iso``
      - **None.** Spreads at the constant speed given by ``setParameter[Iso.speed=0.5]`` (m/s) in all directions.
    * - ``WindDriven``
-     - ``Index;vv_coeff;Kcurv;beta`` (idealized wind-driven model used in :doc:`python_arrays` and :doc:`ensembles`).
+     - ``Index;vv_coeff``: the rate of spread is ``vv_coeff × normal wind`` (idealized wind-driven model used in :doc:`python_arrays` and :doc:`ensembles`).
    * - ``Rothermel``, ``BalbiNov2011``, ``Balbi2020``, ``Balbi2015``
      - The standard 23-column Rothermel/Balbi fuel table detailed in :ref:`rothermel-fuel-file` below.
    * - ``RothermelAndrews2018``

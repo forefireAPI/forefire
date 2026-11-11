@@ -3,7 +3,8 @@
 Everything here needs the `pyforefire` module: either a build configured with
 `-DFOREFIRE_BUILD_PYTHON=ON`, or `pip install forefire`.
 
-`../run.bash` runs only the first two, through `$PYTHONEXE`.
+`../run.bash` runs only the first two examples and `test_validate.py`, through
+`$PYTHONEXE`.
 
 ## `percolation.py`
 
@@ -35,8 +36,8 @@ The weather it uses, `flatland_3mph0deg7hr.raws`, *is* in this directory.
 
 ## The test scripts
 
-These four are tests rather than examples, and `../run.bash` runs none of
-them. They are plain scripts, not pytest modules. `TESTING.md` covers each in
+The `test_*.py` scripts are tests rather than examples, and `../run.bash`
+runs only `test_validate.py`. They are plain scripts, not pytest modules. `TESTING.md` covers each in
 detail, including how to build the module they import.
 
 ### `test_moisture_invariants.py`

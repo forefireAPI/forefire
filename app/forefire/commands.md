@@ -48,12 +48,15 @@ std::string commandHelp = R"(
 
 ## startFire
     startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
-    Creates the smallest possible triangular fire front at the specified location and time
+    startFire[geojson=<file or inline GeoJSON>]
+    Creates the smallest possible triangular fire front at the specified location and time, or a front along a GeoJSON polygon
     Example: startFire[loc=(0.0,0.0,0.0);t=0.]
+    Example: startFire[geojson=ignition.geojson]
     Arguments:
      - 'loc': Starting location of the fire (coordinates x,y,z)
      - 'lonlat': WGS coordinates of the ignition point (lon,lat,z); all three values are required
-     - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date);
+     - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date)
+     - 'geojson': GeoJSON file or inline text (Polygon/MultiPolygon in lon,lat,z); a top-level "valid_at" date sets the time;
 
 ## step
     step[dt=seconds]

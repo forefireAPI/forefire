@@ -45,8 +45,7 @@ against a ``pip``-installed ForeFire.
    # Fuel table, inline — no CSV file needed. The columns depend on the
    # propagation model: the WindDriven model used here only needs vv_coeff
    # (see "Choosing a fuel table" below).
-   ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0\n2;0.3;1.0;1.0"
-   ff["defaultFuelType"] = 1.
+   ff["fuelsTable"] = "Index;vv_coeff\n1;1.0\n2;0.3"
 
    # Solver parameters.
    for key, value in {
@@ -122,7 +121,7 @@ The columns of ``fuelsTable`` are read by the propagation model, so they change
 with the model you select:
 
 * ``WindDriven`` — a minimal table with ``vv_coeff`` (the rate of spread is
-  ``vv_coeff × normal wind``), plus ``Kcurv`` and ``beta``. Convenient for
+  ``vv_coeff × normal wind``). Convenient for
   idealized and teaching cases.
 * ``Rothermel``, ``BalbiNov2011``, ``Balbi2015`` and the other physical models
   — the full fuel description in ``fuels.csv``. See

@@ -40,6 +40,10 @@ The primary physics regression test, validated in CI by `main.yml` and `macos.ym
 2.  Navigate to the test directory: `cd tests/runff`
 3.  Execute the test script: `bash ff-run.bash`
 
+The test data and `.ref` files are stored in Git LFS. Fetch them first with
+`git lfs pull --include tests/runff` (or `git lfs pull` for every case).
+Configure checks the LFS files; `-DFOREFIRE_CHECK_LFS=OFF` skips that check.
+
 **Test Logic:**
 
 The `ff-run.bash` script:
