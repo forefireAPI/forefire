@@ -242,12 +242,12 @@ loadData
 .. code-block:: none
 
    loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
-   loadData[domain_file.ff]
+   loadData[landscape_file.nc]
 
-Loads environmental data or a domain file. Arguments are positional and separated by ``;``:
+Loads NetCDF environmental data into the simulation (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``). Arguments are positional and separated by ``;``:
 
-* **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Reads a NetCDF landscape file (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``), sets the ``NetCDFfile`` parameter to the given path, builds the ``FireDomain`` from the ``domain`` variable attributes, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
-* **One argument** (``loadData[file.ff]``): Reads a saved domain state file without NetCDF.
+* **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Sets the ``NetCDFfile`` parameter to the given path, builds a new ``FireDomain`` from the ``domain`` variable attributes, loads the NetCDF layers, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
+* **One argument** (``loadData[landscape.nc]``): Loads NetCDF layers from the given file into the ``DataBroker`` of an already created ``FireDomain``.
 
 **Example:**
 

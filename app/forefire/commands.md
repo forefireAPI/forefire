@@ -116,12 +116,12 @@ std::string commandHelp = R"(
      - opt:compression NetCDF-4 deflate level 0-10 (default 0);
 
 ## loadData
-    loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
-    Loads a NetCDF data file into the simulation at a certain UTC date
+    loadData[landscape_file.nc;opt:YYYY-MM-DDTHH:MM:SSZ]
+    Loads a NetCDF landscape file (creates the FireDomain and sets the reference UTC date when the date is given; loads into the existing FireDomain otherwise)
     Example: loadData[data.nc;2020-02-10T17:35:54Z]
     Arguments:
-     - a netcdf landscape file
-     - the UTC date;
+     - a NetCDF landscape file
+     - opt: the reference UTC date (ISO 8601);
 
 ## plot
     plot[parameter=(speed|arrival_time|fuel|altitude|slope|windU|windV|Rothermel);
@@ -206,12 +206,11 @@ std::string commandHelp = R"(
      - raw shell command string to execute (do not prefix with 'command=')
 
 ## listenHTTP
-    listenHTTP[host:port]
-    Launches an HTTP server to listen for simulation commands
+    listenHTTP[opt:host:port]
+    Launches an HTTP server for local simulation control and static files from the run directory and FOREFIREHOME/tools/htdocs (defaults to localhost:8000; systemExec is refused over HTTP)
     Example: listenHTTP[localhost:8080]
     Arguments:
-     - 'host': Hostname or IP address for the server
-     - 'port': Port number on which the server will listen;
+     - opt: 'host:port' or 'host=host:port' (default localhost:8000);
 
 ## quit
     quit[]
