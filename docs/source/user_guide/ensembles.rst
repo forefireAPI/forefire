@@ -18,7 +18,7 @@ A complete example
 
 The script below ignites a fire in a 4 km square domain, runs a two-minute
 spin-up once, then forks 32 members that each continue under a different
-easterly wind. It uses the minimal ``WindDriven`` model of
+eastward wind. It uses the minimal ``WindDriven`` model of
 :ref:`Running from NumPy arrays <userguide-python-arrays>` and runs as-is
 against a ``pip``-installed ForeFire.
 
@@ -51,7 +51,7 @@ against a ``pip``-installed ForeFire.
        ff.execute(f"trigger[wind;loc=(0,0,0);vel=({u},{v},0)]")
 
    rng = np.random.default_rng(1)
-   angle = rng.normal(0, np.radians(20), 32)  # easterly, give or take 20 degrees
+   angle = rng.normal(0, np.radians(20), 32)  # blowing east, give or take 20 degrees
    speed = rng.uniform(2, 4, 32)
    winds = list(zip(speed * np.cos(angle), speed * np.sin(angle)))
 

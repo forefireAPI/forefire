@@ -37,7 +37,7 @@ minSpeed
 
 maxSpeed
 ~~~~~~~~
-* **Description:** Maximum propagation speed cap (in m/s).
+* **Description:** Speed cap (in m/s) used only by the ``BMapLoggerForANNTraining`` model. Other models are not capped.
 * **Default:** ``10``
 
 fuelsTableFile
@@ -73,7 +73,7 @@ Domain, Georeferencing & Front Discretization
 
 perimeterResolution
 ~~~~~~~~~~~~~~~~~~~
-* **Description:** Target maximum spacing (in meters) between adjacent ``FireNode`` markers along a ``FireFront``. When two neighbors separate beyond this distance, new markers are inserted.
+* **Description:** Target maximum spacing (in meters) between adjacent ``FireNode`` markers along a ``FireFront``. A new marker is inserted when two neighbors are more than twice this distance apart, and neighbors closer than this distance are merged.
 * **Default:** ``40``
 
 spatialIncrement
@@ -91,7 +91,7 @@ BBoxWSEN
 
 SWLngLat / DefaultSWLngLat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-* **Description:** Fallback WGS84 southwest corner ``lon,lat`` used when ``BBoxWSEN`` is not set.
+* **Description:** WGS84 southwest corner ``lon,lat``. With ``runmode=standalone``, ``SWLngLat`` takes precedence over ``BBoxWSEN`` when both are set; ``DefaultSWLngLat`` is the fallback when neither is.
 * **Default:** ``DefaultSWLngLat = 8.6192,41.765`` (Corsica)
 
 normalScheme
@@ -161,7 +161,7 @@ noInitialScan
 
 bmapLayer
 ~~~~~~~~~
-* **Description:** Boolean (``0`` or ``1``). Set to ``1`` to register the arrival-time burning map (``BMap``) as a queryable ``DataLayer`` (required by :func:`pyforefire.run_ensemble`).
+* **Description:** Boolean (``0`` or ``1``). Set to ``1`` to register the arrival-time burning map (``BMap``) as a queryable ``DataLayer``, read from Python with ``ff["BMap"]``. Not needed for ``plot[parameter=arrival_time]`` or :func:`pyforefire.run_ensemble`.
 * **Default:** ``0``
 
 max_inner_front_nodes_filter
