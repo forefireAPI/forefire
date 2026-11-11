@@ -94,10 +94,10 @@ map ForeFire writes natively, rebuilt from the perimeter of every frame.
 nodes on a tight curve do not wash it out.
 
 The models on offer are the ones that run on this fuel table with only slope
-and wind: Rothermel, BalbiNov2011Curv, BalbiUnsteady, TroisPourcent and Iso.
-Balbi2015, Balbi2020 and BalbiNov2011TMdMl also need moisture and temperature
-layers and abort without them; BalbiNov2011 places the front far from the
-ignition.
+and wind: Rothermel, Farsite, BalbiNov2011Curv, BalbiUnsteady, TroisPourcent
+and Iso. Balbi2015, Balbi2020 and BalbiNov2011TMdMl also need moisture and
+temperature layers and abort without them; BalbiNov2011 places the front far
+from the ignition.
 
 ### The landscape comes from map tiles
 
