@@ -14,6 +14,8 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- The browser demo includes the `Farsite` propagation model in its model
+  selector.
 - `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled
   ForeFire + Meso-NH run: it downloads and builds Meso-NH 6.0.1, builds
   ForeFire with MPI, links them and runs `tests/mnh_real_nested`. With

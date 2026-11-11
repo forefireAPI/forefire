@@ -462,6 +462,7 @@
       // temperature layers abort here, and BalbiNov2011 misplaces the front.
       const MODELS = [
         ["Rothermel", "Rothermel (1972)"],
+        ["Farsite", "FARSITE (Finney 1998)"],
         ["BalbiNov2011Curv", "Balbi 2011, curvature"],
         ["BalbiUnsteady", "Balbi, unsteady"],
         ["TroisPourcent", "3% rule"],
@@ -765,6 +766,8 @@
               liveMoisture: value.liveMoisture,
               depth: { 5: value.depth5, 4: value.depth4 },
             }),
+            deadMoisture: value.deadMoisture,
+            liveMoisture: value.liveMoisture,
             defaultFuel: FUELS[0].index,
           },
           model: $("model").value,
