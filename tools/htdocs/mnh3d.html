@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForeFire × Meso-NH 3D</title>
+<style>
+  :root {
+    --bg: #0b0e14; --panel: rgba(16, 20, 28, 0.88); --line: #263040;
+    --text: #d8dee9; --muted: #8a94a6; --ok: #7fd49b; --err: #ff7a6b; --fire: #ff8a3d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #panel { position: fixed; top: 12px; left: 12px; width: 270px; max-height: calc(100% - 24px); overflow: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  h1 { font-size: 14px; margin: 0 0 2px; font-weight: 600; }
+  .sub { color: var(--muted); margin-bottom: 10px; }
+  #status { font-size: 12px; margin-bottom: 10px; color: var(--muted); }
+  #status[data-kind="ok"]::before { content: "● "; color: var(--ok); }
+  #status[data-kind="err"]::before { content: "● "; color: var(--err); }
+  #clock { font: 600 18px/1.2 ui-monospace, "Cascadia Mono", monospace; }
+  #elapsed { color: var(--muted); font-family: ui-monospace, monospace; margin-bottom: 10px; }
+  fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 8px 0 4px; }
+  legend { color: var(--muted); padding: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  label { display: flex; align-items: center; gap: 8px; padding: 2px 0; cursor: pointer; }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 6px; margin: 6px 0; }
+  button { flex: 1; background: #1b2230; color: var(--text); border: 1px solid var(--line);
+    border-radius: 5px; padding: 5px 8px; cursor: pointer; font: inherit; }
+  button:hover { border-color: #3a4a60; }
+  .ramp { height: 8px; border-radius: 2px; margin: 4px 0 1px; }
+  .ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+  #stats { color: var(--muted); font-family: ui-monospace, monospace; font-size: 11px; white-space: pre; margin-top: 6px; }
+  .sw { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; }
+  @media (max-width: 600px) { #panel { width: calc(100% - 24px); max-height: 45%; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+  "jsfive": "https://cdn.jsdelivr.net/npm/jsfive@0.4.0/dist/esm/index.mjs"
+} }
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="panel">
+  <h1>ForeFire × Meso-NH</h1>
+  <div class="sub">Live view of a coupled run</div>
+  <div id="status">connecting…</div>
+  <div id="clock">--</div>
+  <div id="elapsed">&nbsp;</div>
+
+  <fieldset>
+    <legend>Layers</legend>
+    <label><input type="checkbox" id="lyrFront" checked><span class="sw" style="background:#ffb340"></span>Fire front</label>
+    <label><input type="checkbox" id="lyrIso" checked><span class="sw" style="background:#a3341c"></span>Past fronts (every 60 s)</label>
+    <label><input type="checkbox" id="lyrPlume" checked>Plume top height</label>
+    <label><input type="checkbox" id="lyrWind" checked>Surface wind</label>
+    <label><input type="checkbox" id="lyrFuel" checked>Fuel map on terrain</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Vertical exaggeration <span id="exagVal">2×</span></legend>
+    <input type="range" id="exag" min="1" max="5" step="0.5" value="2">
+    <div class="row"><button id="focusFire">Focus fire</button><button id="focusDomain">Whole domain</button></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Plume top, above ground</legend>
+    <div class="ramp" id="rampPlume"></div>
+    <div class="ticks"><span>0</span><span>1 km</span><span>2.5 km+</span></div>
+    <legend style="margin-top:8px">Wind speed</legend>
+    <div class="ramp" id="rampWind"></div>
+    <div class="ticks"><span>0</span><span>6</span><span>12+ m/s</span></div>
+  </fieldset>
+
+  <div id="stats"></div>
+</div>
+<script type="module" src="js/mnh3d.js"></script>
+</body>
+</html>
