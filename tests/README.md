@@ -30,8 +30,10 @@ ctest --test-dir build --output-on-failure
 * The test fixtures are stored in **Git LFS**. `git lfs pull` if the `.nc`
   files look like short text stubs.
 
-* *(optional)* **Meso-NH**, for the `mnh_*` tests only. Setup and the `dev` × PR
-  check: [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
+* *(optional)* **Meso-NH**, for the `mnh_*` tests only. `mnh_coupled.bash`
+  builds it, links ForeFire and runs `mnh_real_nested`; with `--compare` it
+  runs the `dev` × PR check. See
+  [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
 
   ```bash
   # sets SRC_MESONH and XYZ, which the mnh_* scripts use

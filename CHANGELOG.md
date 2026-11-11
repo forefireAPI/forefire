@@ -14,6 +14,11 @@ history, so they summarise each release rather than list every change. The
 
 ### Added
 
+- `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled
+  ForeFire + Meso-NH run: it downloads and builds Meso-NH 6.0.1, builds
+  ForeFire with MPI, links them and runs `tests/mnh_real_nested`. With
+  `--compare <branch>` it runs the case on both builds and reports the output
+  files that differ beyond run-to-run noise. ([#266])
 - A User Guide page introduces Meso-NH coupling, the supplied cases and the live 3D viewer.
 - A User Guide page lists the propagation and flux models that have a
   published reference, with a link to it and how to select each model.
@@ -352,3 +357,4 @@ repository stays easy to return to.
 [#265]: https://github.com/forefireAPI/forefire/issues/265
 [#242]: https://github.com/forefireAPI/forefire/pull/242
 [#270]: https://github.com/forefireAPI/forefire/pull/270
+[#266]: https://github.com/forefireAPI/forefire/issues/266
