@@ -1,5 +1,5 @@
 // Live 3D view of a ForeFire run coupled to Meso-NH, served by listenHTTP[]
-// (tools/htdocs/mnh3d.html, see docs/mnh/coupledMNHInstall.md).
+// (tools/htdocs/mnh3d.html, see tests/mnh/README.md).
 // Reads the fire front with print[], plume and wind with plot[], terrain and
 // fuel from the case's data.nc. Everything is placed in ForeFire metres.
 import * as THREE from 'three';
