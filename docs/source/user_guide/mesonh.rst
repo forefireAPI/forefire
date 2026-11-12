@@ -58,7 +58,7 @@ The repository includes two examples:
        It runs 20 minutes of simulated time using four MPI processes.
 
 Follow the `coupled installation and execution guide
-<https://github.com/forefireAPI/forefire/blob/dev/docs/mnh/coupledMNHInstall.md>`_
+<https://github.com/forefireAPI/forefire/blob/dev/tests/mnh/README.md>`_
 for prerequisites, compilation, linking the library and running either
 case. The guide was tested with Meso-NH 6.0.1 on Ubuntu 24.04 and also
 explains how to compare coupled results between ForeFire versions.
