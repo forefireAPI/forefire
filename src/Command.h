@@ -170,6 +170,7 @@ class Command {
 
 	/*! \brief command to load a NC data file */
 	static int loadData(const string&, size_t&);
+    static int loadTileService(const string&, size_t&);
 	/*! \brief command to save a NC landscape data file */
 	static int saveData(const string&, size_t&);
 

@@ -7,6 +7,7 @@
  */
 
  #include "FireDomain.h"
+#include "fftile.h"
  #include "BurningMapLayer.h"
  
  #include <sys/stat.h>
@@ -74,8 +75,8 @@
 	 }	
  
 	 FireDomain::FireDomain(const double& t
-							, FFPoint& swc, FFPoint& nec)
-	 : ForeFireAtom(t), SWCorner(swc), NECorner(nec) {
+							, FFPoint& swc, FFPoint& nec, std::shared_ptr<const FFTileGeographicGrid> geography)
+	 : ForeFireAtom(t), tileGeography_(std::move(geography)), SWCorner(swc), NECorner(nec) {
 		 isFireActive = false;
 		 refLatitude = 0.;
 		 refLongitude = 0.;
@@ -200,8 +201,8 @@
 							, const double& lat, const double& lon
 							, const int& mdimx, const double* meshx
 							, const int& mdimy, const double* meshy
-							, const int& mdimz, const double& dt)
-	 : ForeFireAtom(t), refLatitude(lat), refLongitude(lon) {
+							, const int& mdimz, const double& dt, std::shared_ptr<const FFTileGeographicGrid> geography)
+	 : ForeFireAtom(t), tileGeography_(std::move(geography)), refLatitude(lat), refLongitude(lon) {
  
 		 getNewID(mpirank);
 		 isFireActive = false;
@@ -894,18 +895,21 @@
  
 	 double FireDomain::getArrivalTime(FFPoint& loc){
 		 if ( !striclyWithinDomain(loc) ) return numeric_limits<double>::infinity();
+		 if (geographicArrival_) {size_t i,j;return geographicArrival_->index(loc,i,j)?geographicArrival_->get(i,j):numeric_limits<double>::infinity();}
 		 size_t ii = (size_t) ((loc.getX()-SWCornerX())/burningMatrixResX);
 		 size_t jj = (size_t) ((loc.getY()-SWCornerY())/burningMatrixResY);
 		 return getArrivalTime(ii, jj);
 	 }
 	 double FireDomain::getMaxSpeed(FFPoint& loc){
 		 if ( !striclyWithinDomain(loc) ) return numeric_limits<double>::infinity();
+		 if (geographicArrival_) {size_t i,j;return geographicArrival_->index(loc,i,j)?geographicArrival_->speed(i,j):numeric_limits<double>::infinity();}
 		 size_t ii = (size_t) ((loc.getX()-SWCornerX())/burningMatrixResX);
 		 size_t jj = (size_t) ((loc.getY()-SWCornerY())/burningMatrixResY);
 		 return getMaxSpeed(ii, jj);
 	 }
  
 	 double FireDomain::getArrivalTime(const size_t& ii, const size_t& jj){
+		 if (geographicArrival_) return geographicArrival_->get(ii,jj);
 		 if ( ii > globalBMapSizeX-1 ) return numeric_limits<double>::infinity();
 		 if ( jj > globalBMapSizeY-1 ) return numeric_limits<double>::infinity();
 		 size_t i = ii/localBMapSizeX;
@@ -914,6 +918,7 @@
 	 }
  
 	 double FireDomain::getMaxSpeed(const size_t& ii, const size_t& jj) {
+			 if (geographicArrival_) return geographicArrival_->speed(ii,jj);
 			 if (ii >= globalBMapSizeX || jj >= globalBMapSizeY) return std::numeric_limits<double>::infinity();
 			 double current_time = getArrivalTime(ii, jj);
 			 if (current_time == std::numeric_limits<double>::infinity()) return std::numeric_limits<double>::infinity();
@@ -944,6 +949,7 @@
 		 }
  
 	 void FireDomain::setArrivalTime(const size_t& ii, const size_t& jj, const double& t){
+		 if (geographicArrival_) {geographicArrival_->set(ii,jj,t);return;}
 		 // getting the cell where to pixel to set to burning lies
  
 		 if ( ii > globalBMapSizeX-1 ) return ;
@@ -1114,6 +1120,9 @@
  
 	 void FireDomain::singlePolygonAreaBurningScan(FFPoint& swc, FFPoint& nec, double t
 												   , bool expanding, size_t& nvert, double* vertx, double* verty){
+		 if (geographicArrival_) {
+             geographicArrival_->scan(swc,nec,[&](FFPoint& p){return p.pointInPolygon(nvert,vertx,verty)==expanding;},[&](FFPoint&){return t;});return;
+         }
 		 /* Scanning a domain with a given front */
 		 /* looking at the vertices of the matrix of arrival times.
 		  * If this vertice is inside the firefront, setting the
@@ -1149,6 +1158,11 @@
 	 }
  
 	 void FireDomain::areaBurningScan(FFPoint& swc, FFPoint& nec, double t){
+		 if (geographicArrival_) {
+             domainFront->constructVerticesVectors();
+             geographicArrival_->scan(swc,nec,[&](FFPoint& p){return checkForBurningStatus(p);},[&](FFPoint&){return t;});
+             domainFront->deleteVerticesVectors();return;
+         }
 		 /* Global scan of a bounding box for the update of the burning matrix. */
  
 		 // I/ Defining the region to be scanned in terms of burning matrix
@@ -1209,6 +1223,10 @@
 		 // II/ Compute the region to be scanned
 		 FFPoint swc, nec;
 		 ff->computeBoundingBox(swc, nec);
+		 if (geographicArrival_) {
+             geographicArrival_->scan(swc,nec,[&](FFPoint& p){return checkForBurningStatus(p);},[&](FFPoint& p){return constantTimeInit?t:t-p.signedDistanceToPolygon(nvert,vertx,verty,ff->isExpanding())*dt/dmax;});
+             domainFront->deleteVerticesVectors();delete [] vertx;delete [] verty;return;
+         }
 		 size_t minI = 1;
 		 if ( swc.getX() > SWCornerX()+2.*burningMatrixResX )
 			 minI = (size_t) ((swc.getX() - SWCornerX())/burningMatrixResX);
@@ -1259,6 +1277,11 @@
 		 // I/ Compute the region to be scanned
 		 FFPoint swc, nec;
 		 ff->computeBoundingBox(swc, nec);
+		 if (geographicArrival_) {
+             domainFront->constructVerticesVectors();
+             geographicArrival_->scan(swc,nec,[&](FFPoint& p){return checkForBurningStatus(p);},[&](FFPoint&){return t;});
+             domainFront->deleteVerticesVectors();return;
+         }
  
 		 // II/ Defining the region to be scanned in terms of burning matrix
 		 size_t minI = 1;
@@ -1364,6 +1387,9 @@
  
 	 // Computing the propagation speed of a given firenode
 	 double FireDomain::getPropagationSpeed(FireNode* fn) {
+         if (auto tiles = dataBroker->getFFTileManager()) {
+             if (tiles->sample(FFTileField::Fuel,fn->getX(),fn->getY()) == 0) return 0.;
+         }
 		 if ( propagativeLayer == nullptr ){
 			 // A domain built without loadData: pick the model as loadData does
 			 string propagationModel = params->getParameter("propagationModel");
@@ -2828,7 +2854,24 @@
 
 		 }
 
-		 dataBroker->loadFromNCFile(infile.str());
+		 if (params->isValued("fftilesPath")) {
+             auto source = params->getParameter("fftilesPath");
+             dataBroker->loadFFTiles(fftileIsHTTP(source) ? source : params->GetPath(source));
+         }
+         else
+             dataBroker->loadFromNCFile(infile.str());
+
+         if (params->isValued("arrivalMapSubdivisions") && params->getDouble("arrivalMapSubdivisions")!=0) {
+             auto manager=dataBroker->getFFTileManager();
+             if(atmosphericCoupling||parallel||!manager||manager->coordinates.grid)
+                 throw std::runtime_error("Geographic arrival maps require standalone FFTiles; coupled flux mapping is not enabled");
+             double requested=params->getDouble("arrivalMapSubdivisions");
+             if(requested!=64&&requested!=128&&requested!=256&&requested!=512)throw std::runtime_error("arrivalMapSubdivisions must be 64,128,256 or 512");
+             geographicArrival_=std::make_unique<GeographicArrivalMap>(manager->coordinates,SWCorner,NECorner,unsigned(requested));
+             globalBMapSizeX=geographicArrival_->width();globalBMapSizeY=geographicArrival_->height();
+             burningMatrixResX=geographicArrival_->spacingX();burningMatrixResY=geographicArrival_->spacingY();burningMatrixRes=std::max(burningMatrixResX,burningMatrixResY);
+             params->setDouble("bmapResolution",burningMatrixRes);
+         }
 
 		 if ( params->isValued("metersPerDegreeLat") ){
 			 metersPerDegreeLat = params->getDouble("metersPerDegreeLat");
@@ -2918,19 +2961,44 @@
 	 }
 
 
+    FFPoint FireDomain::getPointFromLonLat(double lon, double lat, double altitude) {
+        if(auto tiles=dataBroker->getFFTileManager()) {
+            auto xy=tiles->coordinates.cartesian(lat,lon);return FFPoint(xy[0],xy[1],altitude);
+        }
+        return FFPoint(getXFromLon(lon),getYFromLat(lat),altitude);
+    }
+    std::array<double,2> FireDomain::getLatLonFromPoint(double x, double y) {
+        if(auto tiles=dataBroker->getFFTileManager())return tiles->coordinates.geographic(x,y);
+        return {getLatFromY(y),getLonFromX(x)};
+    }
 	double FireDomain::getXFromLon(double lon) {
+        return getXFromLon(lon,SWCorner.getY());
+    }
+
+    double FireDomain::getXFromLon(double lon, double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) {
+            auto lat = tiles->coordinates.geographic(tiles->coordinates.x,y)[0];
+            return tiles->coordinates.cartesian(lat,lon)[0];
+        }
 		return (lon - getRefLongitude()) * getMetersPerDegreesLon();
 	}
 	
 	double FireDomain::getYFromLat(double lat) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.cartesian(lat,tiles->coordinates.longitude)[1];
 		return (lat - getRefLatitude()) * getMetersPerDegreeLat();
 	}
 	
 	double FireDomain::getLonFromX(double x) {
+        return getLonFromX(x,SWCorner.getY());
+    }
+
+    double FireDomain::getLonFromX(double x, double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.geographic(x,y)[1];
 		return x / getMetersPerDegreesLon() + getRefLongitude();
 	}
 	
 	double FireDomain::getLatFromY(double y) {
+        if (auto tiles = dataBroker->getFFTileManager()) return tiles->coordinates.geographic(tiles->coordinates.x,y)[0];
 		return y / getMetersPerDegreeLat() + getRefLatitude();
 	}
 

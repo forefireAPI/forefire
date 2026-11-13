@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ForeFire · Tile field lab</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><a class="brand" href="/" aria-label="ForeFire home"><span class="spark">◈</span> FORE<span>FIRE</span></a><span class="header-note">TILE FIELD LAB</span><span class="local"><i></i> LOCAL · WEBASSEMBLY</span></header>
+<main>
+<section class="workspace" aria-label="Landscape and fire simulation">
+  <div class="map-heading"><div><p class="eyebrow">CORSICA / LIVE LANDSCAPE</p><h1>A landscape, tile by tile.</h1><p id="subtitle">Real terrain. A fire running in your browser.</p></div><span class="north">N<br>↑</span></div>
+  <div class="map-frame" id="map-frame">
+    <canvas id="map" aria-label="Terrain map. Scroll or pinch to zoom, drag to pan, click to choose an ignition point."></canvas>
+    <div id="busy" class="busy"><span class="spinner"></span><b id="busy-label">Starting the tile service…</b></div>
+    <div class="map-tools"><button id="fuel-view" class="active" aria-pressed="true">Fuel + terrain</button><button id="height-view" aria-pressed="false">Elevation</button></div>
+    <div class="zoom-tools"><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit">Fit domain</button></div>
+    <div class="map-location" id="location">42.0100° N &nbsp; 8.9000° E</div>
+    <div class="scale"><span id="scale-label">1 km</span><i></i></div>
+    <div class="legend"><i class="vegetation"></i> Burnable cover <i class="bare"></i> Bare / water <i class="front"></i> Fire front</div>
+  </div>
+  <div class="playback"><button id="play" disabled aria-label="Play fire timeline">▶</button><span id="time">00:00</span><input type="range" id="timeline" min="0" max="0" value="0" aria-label="Simulation timeline" disabled><span id="duration-label">30 min</span></div>
+  <div class="metrics"><div><span>BURNT AREA</span><strong id="area">—<small> ha</small></strong></div><div><span>FRONT NODES</span><strong id="nodes">—</strong></div><div><span>TILES READY</span><strong id="tile-count">—</strong></div><div><span>FETCHED</span><strong id="bytes">—<small> MB</small></strong></div></div>
+</section>
+<aside>
+  <div class="panel-title"><span class="eyebrow">01 / LANDSCAPE</span><span class="pill" id="engine">WASM</span></div>
+  <h2>Your tile service.</h2><p class="muted">Choose a center. Available tiles are fetched before the run.</p>
+  <form id="load-form">
+    <label for="provider">Service address</label><input id="provider" type="url" required spellcheck="false" aria-label="Tile service address">
+    <div class="two"><div><label for="longitude">Longitude</label><input id="longitude" type="number" step="0.0001" value="8.9" min="-180" max="179.9999" required></div><div><label for="latitude">Latitude</label><input id="latitude" type="number" step="0.0001" value="42.01" min="-89" max="89" required></div></div>
+    <label for="size">Domain width × height</label><select id="size"><option value="0.04,0.03">0.04° × 0.03° · nearby</option><option value="0.08,0.04" selected>0.08° × 0.04° · landscape</option><option value="0.12,0.08">0.12° × 0.08° · wider view</option><option value="0.5,0.35">0.5° × 0.35° · regional</option><option value="2,2">2° × 2° · full domain</option></select>
+    <button class="secondary full" id="load" type="submit">Load landscape <span>↗</span></button>
+  </form>
+  <div class="divider"></div><p class="eyebrow">02 / IGNITION & WIND</p><h2>Let it spread.</h2><p class="muted">Scroll or pinch to zoom; drag to pan. Click to select a location, then add a fire. Wind changes apply during the simulation. The arrow shows where it blows.</p>
+  <div class="wind-row"><div class="wind-compass"><span>N</span><div id="wind-arrow">↑</div></div><div class="wind-input"><label for="wind-speed">Wind speed <output id="wind-speed-value">8 m/s</output></label><input id="wind-speed" type="range" min="0" max="20" step="1" value="8"><label for="wind-direction">Blowing toward <output id="wind-direction-value">NE · 45°</output></label><input id="wind-direction" type="range" min="0" max="355" step="5" value="45"></div></div>
+  <label for="duration">Run for another</label><select id="duration"><option value="600">10 minutes</option><option value="1800" selected>30 minutes</option><option value="3600">1 hour</option></select>
+  <label for="pace">Simulation speed</label><select id="pace"><option value="1000">30× · more time to interact</option><option value="500" selected>60× · interactive</option><option value="250">120×</option><option value="0">As fast as possible</option></select>
+  <button class="primary full" id="run" disabled>Ignite & run <span>→</span></button><button class="secondary full hidden" id="stop">Pause simulation</button>
+  <button class="secondary full" id="add-fire" disabled>Add fire at selected point +</button><button class="secondary full" id="reset" disabled>Reset simulation</button>
+  <p class="status" id="status" role="status" aria-live="polite">Preparing the WebAssembly engine.</p>
+  <details><summary>Tile activity <span id="activity-count">0</span></summary><ul id="activity"></ul></details>
+  <footer><b>Rothermel</b> · static terrain and fuel IDs<br>HTTP fetch → compressed tile cache → WASM solver</footer>
+</aside>
+</main><script type="module" src="/demo.mjs"></script>
+</body></html>

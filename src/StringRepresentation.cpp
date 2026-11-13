@@ -216,8 +216,8 @@ void StringRepresentation::visit(FireNode* fn) {
           //  std::cout<<domain->getRefLongitude()<<"   "<< domain->getMetersPerDegreesLon()<<std::endl;
             coord << "[" 
                   << fixed << setprecision(5)
-                  << fn->getLoc().projectLon(domain->getRefLongitude(), domain->getMetersPerDegreesLon()) << ", "
-                  << fn->getLoc().projectLat(domain->getRefLatitude(), domain->getMetersPerDegreeLat())
+                  << domain->getLatLonFromPoint(fn->getX(),fn->getY())[1] << ", "
+                  << domain->getLatLonFromPoint(fn->getX(),fn->getY())[0]
                   << ", 0]";
             if (!geojson_current_feature.empty()) {
                 // Append coordinate to the current (last) ring.
@@ -231,8 +231,8 @@ void StringRepresentation::visit(FireNode* fn) {
         if (fn->getFront()->getDomain()->getSimulationTime() >= fn->getFront()->getTime()) {
             outputstr.precision(5);
             outputstr << fixed 
-                      << fn->getLoc().projectLon(domain->getRefLongitude(), domain->getMetersPerDegreesLon()) << ","
-                      << fn->getLoc().projectLat(domain->getRefLatitude(), domain->getMetersPerDegreeLat())
+                      << domain->getLatLonFromPoint(fn->getX(),fn->getY())[1] << ","
+                      << domain->getLatLonFromPoint(fn->getX(),fn->getY())[0]
                       << ",0 ";
         }
         return;

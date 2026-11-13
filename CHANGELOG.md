@@ -12,7 +12,49 @@ history, so they summarise each release rather than list every change. The
 
 ## [Unreleased]
 
+### Changed
+
+- Coupled FFTile cases use Meso-NH's registered mass-point geography in the
+  parent Cartesian frame, including nested offsets and grid rotation. Fire
+  terrain remains tile-backed; Meso-NH altitude updates use a separate writable
+  atmospheric layer. Tile slope components are transformed to the grid frame.
+  This changes results for newly enabled tile coupling; the legacy NetCDF
+  coupling path is retained. A matching Meso-NH interface patch is provided.
+
 ### Added
+
+- Standalone FFTile domains optionally store arrival times in sparse globally
+  aligned 0.1-degree blocks (`arrivalMapSubdivisions=64/128/256/512`). The web
+  default uses 256; its opt-in Super fast preview uses 128 m / 32 m front
+  numerics, 128 subdivisions and adaptive protection for small ignitions.
+  ROS and wind adjustment are unchanged. Geographic blocks are not yet enabled
+  for coupled or parallel runs.
+
+- WebAssembly tile domains accept rolling coarse east/north wind fields, with
+  bilinear spatial and linear temporal interpolation, tile response matrices,
+  and a local coordinate Jacobian. Missing forcing coverage raises an error.
+  A dedicated perimeter importer preserves disconnected polygons and holes.
+
+- A tile-backed launcher for the real nested Meso-NH case creates an isolated
+  run, validates four-rank coupling and geographic placement, and optionally
+  records summaries of wind and heat/vapour arrays at the C/Fortran boundary.
+
+- The WASM tile demo supports zoom/pan with detailed terrain sampling, multiple
+  ignitions, live wind changes, simulation pacing, pause/resume and the public
+  Corsican tile service (through a local CORS forwarding endpoint).
+- A local WASM tile demo serves `.fftile` landscapes over HTTP and runs
+  Rothermel in a browser worker, with terrain previews, wind controls and
+  timeline playback. The browser adapter stages compressed tiles for the
+  existing C++ reader.
+
+- `loadData[provider=...;center=(longitude,latitude)]` creates a fixed tile
+  domain, prefetches available HTTP tiles to disk, and retains decoded tiles
+  only as needed.
+  Native HTTP support uses optional libcurl; 404/410 coverage is nonburnable.
+- `.fftile` landscapes work in builds with NetCDF disabled. Tiles page in
+  through a replaceable provider, with case-local fuel overrides and zero
+  spread on missing coverage. The Python writer checks reconstruction error
+  and uses 16-bit PNG altitude when 8-bit JPEG loses too much precision.
 
 - The browser demo includes the `Farsite` propagation model in its model
   selector.

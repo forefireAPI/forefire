@@ -209,6 +209,13 @@ version of `multiply` indexed its matrices row-major while `perspective`,
 matrix, and the mesh still drew; it just drew as streaks radiating from a
 vanishing point.
 
+## Local `.fftile` service demo
+
+The [tile field lab](tiles-demo/README.md) serves a local tile directory and
+runs the simulator in a browser worker. It uses the same C++ `.fftile` reader
+as the native build, including 16-bit PNG altitude, with asynchronous HTTP
+prefetch into MEMFS rather than separate JS terrain arrays.
+
 ## The API
 
 `forefire.mjs` is an ES module exporting a `createForeFire()` factory. It
@@ -262,6 +269,7 @@ index with, the same shuffle `_pyforefire.cpp` performs.
 - **C++17 throughout.** embind refuses to compile below C++17, and the whole
   project now targets C++17, so the core and the embind translation unit sit on
   the same standard.
-- **No file I/O worth the name.** `FS` is exported so a caller can stage
-  `fuels.csv` or read back what `print[<file>]` writes, but there is no landscape
-  file support at all — arrays are the only way in.
+- **Virtual file I/O.** `FS` is exported so callers can stage fuel tables and
+  `.fftile` landscapes in MEMFS or read output files. Browser HTTP is handled
+  asynchronously by `tile-service.mjs` before the C++ reader accesses staged
+  tiles; native libcurl transport is not part of the WASM build.

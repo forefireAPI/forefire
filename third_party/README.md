@@ -12,6 +12,7 @@ not maintain.
 | File or directory | Version | License |
 | --- | --- | --- |
 | `doctest/` | 2.5.3 (2026-07-06) | MIT |
+| `stb_image.h` | 2.30 | public domain / MIT |
 | `stb_image_write.h` | 1.16 | public domain / MIT |
 
 ## doctest
@@ -37,3 +38,12 @@ include, which `src/Command.cpp` does and nothing else may.
 
 To update it, replace the file with a newer release and rebuild. ForeFire uses
 `stbi_write_png` only.
+
+## stb_image
+
+Reads PNG and JPEG tile payloads. Taken unmodified from
+<https://github.com/nothings/stb/blob/master/stb_image.h>, v2.30.
+Only `src/fftile.cpp` defines `STB_IMAGE_IMPLEMENTATION`; it enables PNG and
+JPEG only. The 16-bit PNG path preserves altitude precision.
+
+Vendored SHA-256: `594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3`.

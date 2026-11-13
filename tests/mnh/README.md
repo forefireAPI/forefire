@@ -8,6 +8,9 @@ back.
 Tested on Ubuntu 24.04 (WSL) with GCC/gfortran 13.3, OpenMPI 4.1.6 and
 Meso-NH 6.0.1. macOS notes, from an older Meso-NH 5.7 setup, are at the end.
 
+For tile-backed landscapes and nested-grid geography, see the
+[FFTile coupling notes and source patch](fftiles-coupling.md).
+
 ## 1. Run the script
 
 From a ForeFire clone, in Bash:

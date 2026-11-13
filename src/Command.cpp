@@ -7,6 +7,7 @@
  */
 
 #include "Command.h"
+#include "fftile.h"
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
@@ -199,7 +200,7 @@ namespace libforefire
                     
                     currentSession.params->setParameter("runmode", "masterMNH");
 
-                    currentSession.fdp = new FireDomain(t, SW, NE);
+                    currentSession.fdp = new FireDomain(t, SW, NE, currentSession.fd->tileGeography());
                     currentSession.fdp->setTimeTable(currentSession.tt);
                     currentSession.ff = currentSession.fdp->getDomainFront();
 
@@ -391,10 +392,6 @@ namespace libforefire
             std::vector<double>                triple;
             int                                depth = 0;
 
-            double refLon     = getDomain()->getRefLongitude();
-            double refLat     = getDomain()->getRefLatitude();
-            double mPerDegLon = getDomain()->getMetersPerDegreesLon();
-            double mPerDegLat = getDomain()->getMetersPerDegreeLat();
 
             auto flushNumber = [&](void)
             {
@@ -414,11 +411,8 @@ namespace libforefire
                         const double lon = triple[0];
                         const double lat = triple[1];
                         const double alt = triple[2];
-                        const double x   = (lon - refLon) * mPerDegLon;
-                        const double y   = (lat - refLat) * mPerDegLat;
-
-                        /* Add the point to the current ring. */
-                        currentRing.emplace_back(x, y, alt);
+                        /* Preserve the full grid transform, including rotation. */
+                        currentRing.push_back(getDomain()->getPointFromLonLat(lon,lat,alt));
                         triple.clear();
                     }
                 }
@@ -588,10 +582,6 @@ namespace libforefire
             // Example input:
             // "8.810264,41.968841,0.14 8.810117,41.968757,0.03 8.810017,41.968692,0.01"
             std::istringstream iss(arg);
-            double refLon = getDomain()->getRefLongitude();
-            double refLat = getDomain()->getRefLatitude();
-            double mPerDegLon = getDomain()->getMetersPerDegreesLon();
-            double mPerDegLat = getDomain()->getMetersPerDegreeLat();
             std::string token;
             while (iss >> token)
             {
@@ -601,19 +591,13 @@ namespace libforefire
                 double lon, lat, alt;
                 if (!(ptStream >> lon >> lat >> alt))
                     continue;
-                double x = (lon - refLon) * mPerDegLon;
-                double y = (lat - refLat) * mPerDegLat;
-                points.push_back(FFPoint(x, y, alt));
+                points.push_back(getDomain()->getPointFromLonLat(lon,lat,alt));
             }
         }
         else if (opt == "polyencoded")
         {
             // Polyline encoded string. Standard algorithm decodes lat and lon.
             // Altitude is not provided (set to 0).
-            double refLon = getDomain()->getRefLongitude();
-            double refLat = getDomain()->getRefLatitude();
-            double mPerDegLon = getDomain()->getMetersPerDegreesLon();
-            double mPerDegLat = getDomain()->getMetersPerDegreeLat();
 
             int index = 0, len = static_cast<int>(arg.size());
             int lat = 0, lng = 0;
@@ -642,9 +626,7 @@ namespace libforefire
 
                 double latd = lat * 1e-5;
                 double lngd = lng * 1e-5;
-                double x = (lngd - refLon) * mPerDegLon;
-                double y = (latd - refLat) * mPerDegLat;
-                points.push_back(FFPoint(x, y, 0));
+                points.push_back(getDomain()->getPointFromLonLat(lngd,latd));
             }
         }
         else if (opt == "points")
@@ -1404,10 +1386,9 @@ namespace libforefire
                     v[idx++] = std::stod(token);
                 }
                 // Convert geographic -> cartesian
-                SWX = getDomain()->getXFromLon(v[0]); // west
-                SWY = getDomain()->getYFromLat(v[1]); // south
-                NEX = getDomain()->getXFromLon(v[2]); // east
-                NEY = getDomain()->getYFromLat(v[3]); // north
+                auto sw=getDomain()->getPointFromLonLat(v[0],v[1]);
+                auto ne=getDomain()->getPointFromLonLat(v[2],v[3]);
+                SWX=sw.getX();SWY=sw.getY();NEX=ne.getX();NEY=ne.getY();
             }
             else if (argMap.find("BBoxLBRT") != argMap.end())
             {
@@ -1498,10 +1479,10 @@ namespace libforefire
                     else if (lowerFilename.substr(lowerFilename.size() - 5) == ".json")
                     {
                         // Convert bounding box corners back to lat/lon, etc.
-                        double westLon = getDomain()->getLonFromX(SWX);
-                        double eastLon = getDomain()->getLonFromX(NEX);
-                        double southLat = getDomain()->getLatFromY(SWY);
-                        double northLat = getDomain()->getLatFromY(NEY);
+                        double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                        double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                        double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                        double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                         // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
                         size_t ncols = matrixU.size();
@@ -1629,10 +1610,10 @@ namespace libforefire
                     // Still handle optional projectionOut if present
                     if (argMap.find("projectionOut") != argMap.end())
                     {
-                        double westLon = getDomain()->getLonFromX(SWX);
-                        double eastLon = getDomain()->getLonFromX(NEX);
-                        double southLat = getDomain()->getLatFromY(SWY);
-                        double northLat = getDomain()->getLatFromY(NEY);
+                        double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                        double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                        double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                        double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                         std::string projectionFormat = argMap["projectionOut"];
                         if (projectionFormat == "json")
@@ -1722,10 +1703,10 @@ namespace libforefire
                                  lowerFilename.substr(lowerFilename.size() - 3) == ".nc")
                         {
                             std::vector<double> latitudes, longitudes;
-                            double westLon = getDomain()->getLonFromX(SWX);
-                            double eastLon = getDomain()->getLonFromX(NEX);
-                            double southLat = getDomain()->getLatFromY(SWY);
-                            double northLat = getDomain()->getLatFromY(NEY);
+                            double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                            double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                            double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                            double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
                             size_t nlat = (enj > 0) ? enj : 100;
                             size_t nlon = (eni > 0) ? eni : 100;
                             double dLat = (northLat - southLat) / (nlat - 1);
@@ -1752,10 +1733,10 @@ namespace libforefire
                         // Optional projectionOut
                         if (argMap.find("projectionOut") != argMap.end())
                         {
-                            double westLon = getDomain()->getLonFromX(SWX);
-                            double eastLon = getDomain()->getLonFromX(NEX);
-                            double southLat = getDomain()->getLatFromY(SWY);
-                            double northLat = getDomain()->getLatFromY(NEY);
+                            double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                            double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                            double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                            double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                             std::string projectionPath = argMap["projectionOut"];
                             if (projectionPath == "json")
@@ -2156,6 +2137,10 @@ namespace libforefire
             {
                 if (getDomain()->getDataBroker() != 0)
                 {
+                    if (auto tiles = getDomain()->getDataBroker()->getFFTileManager(); tiles && !getDomain()->atmosphericCoupling) {
+                        tiles->windU = a.getVx(); tiles->windV = a.getVy();
+                        return normal;
+                    }
                     if (getDomain()->getDataBroker()->PwindULayer != 0)
                     {
                         getDomain()->getDataBroker()->PwindULayer->setProjectionDirVector(a, b);
@@ -2266,9 +2251,7 @@ namespace libforefire
             }
             if (lonlat)
             {
-                double x = domain->getXFromLon(a);
-                double y = domain->getYFromLat(b);
-                return FFPoint(x, y, c);
+                return domain->getPointFromLonLat(a,b,c);
             }
             return FFPoint(a, b, c);
         };
@@ -2852,8 +2835,69 @@ namespace libforefire
 
 #endif /* FF_NO_NETCDF */
 
-    int Command::loadData(const string &arg, size_t &/*numTabs*/)
+    int Command::loadTileService(const string& arg, size_t& numTabs)
     {
+        if (currentSession.fd != nullptr) {
+            cout << "loadData[tiles]: clear the existing domain before loading a new center" << endl;
+            return error;
+        }
+        auto* p = SimulationParameters::GetInstance();
+        std::map<std::string,std::string> saved;
+        bool created = false;
+        try {
+            auto options = FFTileLoadOptions::parse(arg);
+            // Validate transport configuration before creating a domain.
+            if (fftileIsHTTP(options.provider)) {
+                FFTileHTTPProvider check(options.provider,p->GetPath("tiles"),p->GetPath("tiles-cache"));
+            } else if (options.provider.find("://") != std::string::npos) {
+                throw std::runtime_error("unsupported tile service protocol");
+            }
+            double seconds = 0; int year = 0, day = 0;
+            if (!options.date.empty() && !p->ISODateDecomposition(options.date,seconds,year,day))
+                throw std::runtime_error("invalid date; expected YYYY-MM-DDTHH:MM:SSZ");
+            for (const auto& key : {"fftilesPath","fftileCenter","SWLngLat","runmode","refYear","refDay","refTime","ISOdate"})
+                saved[key] = p->getParameter(key);
+            p->setParameter("runmode","standalone");
+            p->setParameter("fftilesPath",options.provider);
+            std::ostringstream center; center.precision(17);
+            center << options.longitude << ',' << options.latitude;
+            p->setParameter("fftileCenter",center.str());
+            constexpr double meters = 111195., radians = 0.017453292519943295;
+            // Inscribe the Cartesian rectangle within the requested geographic
+            // envelope; latitude-dependent longitude scale is smallest poleward.
+            double scale = std::min(std::cos((options.latitude-options.height/2)*radians),
+                                    std::cos((options.latitude+options.height/2)*radians));
+            double width = options.width*meters*scale, height = options.height*meters;
+            FFTileCoordinates frame{options.latitude,options.longitude,width/2,height/2};
+            auto sw = frame.geographic(0,0);
+            std::ostringstream origin; origin.precision(17); origin << sw[1] << ',' << sw[0];
+            p->setParameter("SWLngLat",origin.str());
+            if (!options.date.empty()) {
+                p->setInt("refYear",year); p->setInt("refDay",day); p->setDouble("refTime",seconds);
+                p->setParameter("ISOdate",options.date);
+            }
+            std::ostringstream domain; domain.precision(17);
+            domain << "sw=(0,0,0);ne=(" << width << ',' << height << ",0);t=0";
+            createDomain(domain.str(),numTabs);
+            created = currentSession.fd != nullptr;
+            if (!created) throw std::runtime_error("could not create tile domain");
+            if (options.prefetch) {
+                auto stats = currentSession.fd->getDataBroker()->getFFTileManager()->prefetch(0,0,width,height);
+                cout << "Tiles prefetched: " << stats.available << " available, " << stats.missing << " missing" << endl;
+            }
+            return normal;
+        } catch (const std::exception& e) {
+            if (created) clear("",numTabs);
+            for (const auto& value : saved) p->setParameter(value.first,value.second);
+            cout << "loadData[tiles]: " << e.what() << endl;
+            return error;
+        }
+    }
+
+    int Command::loadData(const string &arg, size_t &numTabs)
+    {
+        if (arg.rfind("provider=",0) == 0 || fftileIsHTTP(arg))
+            return loadTileService(arg,numTabs);
 
         if (arg.size() == 0)
         {
@@ -3183,10 +3227,7 @@ namespace libforefire
         if (opt == "lonlat")
         {
             // Convert spherical (lon, lat) to Cartesian coordinates (x, y).
-            double x = getDomain()->getXFromLon(v1);
-            double y = getDomain()->getYFromLat(v2);
-
-            return FFPoint(x, y, v3);
+            return getDomain()->getPointFromLonLat(v1,v2,v3);
         }
         else
         {

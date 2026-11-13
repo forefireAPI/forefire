@@ -8,8 +8,11 @@
 
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
+#include "fftile.h"
 #include <cmath>
 #include <random>
+#include <iomanip>
+#include <limits>
 
 #ifdef MPI_COUPLING
 #include <mpi.h>
@@ -45,7 +48,46 @@ Command* getLauncher(){
 	return &executor;
 }
 
+// Optional summaries of the arrays crossing the actual C/Fortran boundary.
+// Disabled by default; diagnostics do not alter the exchanged values.
+static std::map<std::string,double> couplingDiagnosticBuckets;
+static void recordCouplingArray(const std::string& name, const char* direction,
+                                double time, const double* data, size_t count) {
+    auto* params=SimulationParameters::GetInstance();
+    if (!params->isValued("couplingDiagnosticInterval")) return;
+    double interval=params->getDouble("couplingDiagnosticInterval");
+    if (!(interval>0) || !session->fd || !count ||
+        (name!="windU" && name!="windV" && name!="heatFlux" && name!="vaporFlux")) return;
+    int domain=session->fd->getDomainID();
+    std::string key=std::to_string(domain)+direction+name;
+    double bucket=std::floor(time/interval);
+    auto previous=couplingDiagnosticBuckets.find(key);
+    if(previous!=couplingDiagnosticBuckets.end() && previous->second==bucket)return;
+    couplingDiagnosticBuckets[key]=bucket;
+    double low=std::numeric_limits<double>::infinity(),high=-low,total=0;
+    size_t nonfinite=0;
+    for(size_t i=0;i<count;++i) {
+        if(!std::isfinite(data[i])) {++nonfinite;continue;}
+        low=std::min(low,data[i]);high=std::max(high,data[i]);total+=data[i];
+    }
+    std::string path=params->getParameter("caseDirectory")+'/'+params->getParameter("fireOutputDirectory")+
+                     "/coupling."+std::to_string(domain)+".csv";
+    std::ofstream out(path,std::ios::app);
+    if(!out)throw std::runtime_error("cannot write coupling diagnostics: "+path);
+    if(out.tellp()==0)out<<"time,domain,field,direction,count,min,max,sum,nonfinite\n";
+    out<<std::setprecision(17)<<time<<','<<domain<<','<<name<<','<<direction<<','<<count<<','
+       <<low<<','<<high<<','<<total<<','<<nonfinite<<'\n';
+}
+
+static std::shared_ptr<const FFTileGeographicGrid> pendingGeography;
+void MNHSetGeographicGrid(int nx, const double* x, int ny, const double* y,
+                          const double* lat, const double* lon) {
+    pendingGeography=std::make_shared<FFTileGeographicGrid>(nx,x,ny,y,lat,lon);
+}
+
 void MNHInit(const double t){
+    pendingGeography.reset();
+    couplingDiagnosticBuckets.clear();
 	executor.setReferenceTime(t);
 
 
@@ -96,7 +138,7 @@ void MNHCreateDomain(const int id
 	SimulationParameters::GetInstance()->setDouble("sumSedimented", 0.0);
 
 	session->fd = new FireDomain(id, year, month, day, t, lat, lon
-			, mdimx, meshx, mdimy, meshy, mdimz, dt);
+			, mdimx, meshx, mdimy, meshy, mdimz, dt, std::move(pendingGeography));
 
     #ifdef MPI_COUPLING
 
@@ -466,10 +508,13 @@ void FFGetDoubleArray(const char* mname, double t
 	string tmpname(mname);
 	double ct = executor.refTime + t;
 	// searching for the layer to put data 
-	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname); 
+	DataLayer<double>* myLayer = session->fd->getDataLayer(tmpname);
+    if (tmpname=="altitude" && session->fd->getDataBroker()->getFFTileManager())
+        myLayer=session->fd->getDataLayer("atmosphericAltitude");
 
 	if ( myLayer ){
 			myLayer->setMatrix(tmpname, x, sizein, sizeout, ct);
+            recordCouplingArray(tmpname,"MNH_to_FF",ct,x,sizein);
 		
 	
 			#ifdef MPI_COUPLING
@@ -662,7 +707,7 @@ void FFGetDouble(const char* mname, double* x){
 }
 
 void FFPutDoubleArray(const char* mname, double* x,
-		size_t /*sizein*/, size_t /*sizeout*/){
+		size_t sizein, size_t /*sizeout*/){
 	string tmpname(mname);
 	// searching for concerned layer
 			
@@ -689,6 +734,7 @@ void FFPutDoubleArray(const char* mname, double* x,
 		#endif
 
 		myMatrix->copyDataToFortran(x);
+        recordCouplingArray(tmpname,"FF_to_MNH",executor.getTime(),x,std::min(sizein,myMatrix->getSize()));
 	} else {
 		cout<<"Error trying to put data from unknown layer "<<tmpname<<endl;
 	}

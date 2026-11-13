@@ -119,6 +119,7 @@ size_t BurningMapLayer<T>::getValuesAt(FFPoint /*loc*/, const double& /*t*/
 
 template<typename T>
 T BurningMapLayer<T>::getNearestData(FFPoint loc){
+    if(domain->geographicArrivalMap())return domain->getArrivalTime(loc);
 
 	/* getting the floor value */
 	size_t i = (size_t) (loc.getX()-getOriginX())/getDx();
