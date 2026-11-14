@@ -20,6 +20,25 @@
 
 using namespace std;
 
+namespace
+{
+    // If `in`, once trimmed of surrounding whitespace, is wrapped in triple
+    // quotes, puts the text between them in `out` and returns true.
+    bool stripTripleQuotes(const std::string &in, std::string &out)
+    {
+        const std::string ws = " \t\r\n";
+        const std::size_t first = in.find_first_not_of(ws);
+        if (first == std::string::npos)
+            return false;
+        const std::string trimmed = in.substr(first, in.find_last_not_of(ws) - first + 1);
+        if (trimmed.size() < 6 || trimmed.compare(0, 3, "\"\"\"") != 0
+            || trimmed.compare(trimmed.size() - 3, 3, "\"\"\"") != 0)
+            return false;
+        out = trimmed.substr(3, trimmed.size() - 6);
+        return true;
+    }
+}
+
 namespace libforefire
 {
 
@@ -310,16 +329,7 @@ namespace libforefire
                 trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
                 trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
 
-                /* Triple‑quoted inline string?  e.g.  \"\"\"{ ... }\"\"\"   */
-                bool tripleQuoted = trimmed.size() >= 6 &&
-                                    trimmed.substr(0, 3) == "\"\"\"" &&
-                                    trimmed.substr(trimmed.size() - 3) == "\"\"\"";
-
-                if (tripleQuoted)
-                {
-                    geojsonText = trimmed.substr(3, trimmed.size() - 6); // strip outer quotes
-                }
-                else
+                if (!stripTripleQuotes(trimmed, geojsonText))
                 {
                     /* Try to open it as a file path. */
                     std::ifstream jf(trimmed.c_str());
@@ -2046,34 +2056,25 @@ namespace libforefire
     }
     int Command::setParameter(const string &arg, size_t &/*numTabs*/)
     {
-        // Getting all the arguments, using the 'tokenize' function
-        // Returns strings of the form 'arg=...'
-        vector<string> tmpArgs;
-        string delimiter = "=";
-        tokenize(arg, tmpArgs, delimiter);
-        if (tmpArgs.size() > 2)
+        // key=value, split on the first '=' so the value may contain '='.
+        // A leading '!' protects the key; a value wrapped in triple quotes
+        // (a multiline literal) is stored without them.
+        const size_t eq = arg.find('=');
+        if (eq == string::npos || eq == 0)
         {
             cout << "problem in the number of arguments when setting " << arg << endl;
             return error;
         }
+        const string key = arg.substr(0, eq);
+        string value = arg.substr(eq + 1);
+        const bool protect = !value.empty() && value[0] == '!';
+        if (protect)
+            value = value.substr(1);
+        stripTripleQuotes(value, value);
 
-        // Check if the parameter value begins with '!'
-        if (!tmpArgs[1].empty() && tmpArgs[1][0] == '!')
-        {
-            // Remove the leading '!' to get the actual value.
-            std::string value = tmpArgs[1].substr(1);
-            // Set the parameter with a protection flag (true).
-            currentSession.params->setParameter(tmpArgs[0], value, true);
-            std::cout << "Parameter " << tmpArgs[0]
-                      << " set to fixed protected value " << value << std::endl;
-        }
-        else
-        {
-            // Set the parameter normally (without protection).
-            currentSession.params->setParameter(tmpArgs[0], tmpArgs[1], false);
-        }
-
-        currentSession.params->setParameter(tmpArgs[0], tmpArgs[1]);
+        currentSession.params->setParameter(key, value, protect);
+        if (protect)
+            cout << "Parameter " << key << " set to fixed protected value " << value << endl;
         return normal;
     }
 
@@ -2457,6 +2458,10 @@ namespace libforefire
 
         while (std::getline(*inputStream, line))
         {
+            // Scripts saved with CRLF line endings.
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+
             // A `quit[]` earlier in the script stops the file here rather than
             // ending the process, so the caller still gets to return normally.
             if (quitAsked)

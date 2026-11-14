@@ -2552,7 +2552,7 @@
 			 if ( params->getInt("FireDomainOutputs") != 0 ) outputs = true;
 			 if ( params->getInt("FireFrontOutputs") != 0 ) FireFront::outputs = true;
 			 if ( params->getInt("FireNodeOutputs") != 0 ) FireNode::outputs = true;
-			 if ( params->getInt("FDCellOutputs") != 0 ) FDCell::outputs = true;
+			 if ( params->getInt("FDCellsOutputs") != 0 ) FDCell::outputs = true;
 		 }
 		// std::cout<<"ID"<<getID()<< " la:"<< refLatitude<<" lo:"<<refLongitude<<" SOUTH:"<<params->getParameter("SOUTH")<<" WEST:"<<params->getParameter("WEST")<<" NORTH:"<<params->getParameter("NORTH")<<" EAST:"<<params->getParameter("EAST")<<endl;
  
