@@ -12,6 +12,7 @@
 namespace libforefire {
 // A fixed global lattice; allocation is lazy in 0.1-degree blocks.
 class GeographicArrivalMap {
+    friend class FFState;
     FFTileCoordinates frame_;
     int64_t x0_,y0_,blockX_,blockY_;
     size_t nx_,ny_,blocksX_,blocksY_,allocated_=0;

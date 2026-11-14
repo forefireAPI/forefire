@@ -9,6 +9,7 @@
 #include "CLibForeFire.h"
 #include "SimulationParameters.h"
 #include "fftile.h"
+#include "ffstate.h"
 #include <cmath>
 #include <random>
 #include <iomanip>
@@ -88,6 +89,8 @@ void MNHSetGeographicGrid(int nx, const double* x, int ny, const double* y,
 void MNHInit(const double t){
     pendingGeography.reset();
     couplingDiagnosticBuckets.clear();
+    for(auto key:{"ffstateAttachedTime","ffstateAttachedFile","ffstateAttachRequested"})
+        session->params->setParameter(key,"1234567890");
 	executor.setReferenceTime(t);
 
 
@@ -113,6 +116,8 @@ void MNHInit(const double t){
 		cout<<'\t'<<"looked in "<<paramsfile.str()<<endl;
 	}
 
+    if(session->params->isValued("ffstateFile"))
+        FFState::prepareCoupling(SimulationParameters::GetPath(session->params->getParameter("ffstateFile")));
 	executor.outputDirs = SimulationParameters::GetInstance()->getParameterArray("atmoOutputDirectories");
 
 }
@@ -246,6 +251,7 @@ void MNHCreateDomain(const int id
 
 
 	ifstream inputInit(initfile.str().c_str());
+    executor.setStartTime(session->fd->getSecondsFromReferenceTime(year,month,day,t));
 	#ifdef MPI_COUPLING
 	if (world_rank == 0) {
 	#else
@@ -264,6 +270,7 @@ void MNHCreateDomain(const int id
 					continue;
 				// treating the command of the current line
 				executor.ExecuteCommand(line);
+                if(session->params->isValued("ffstateAttachRequested")&&!session->params->isValued("ffstateAttachedTime"))break;
 			}
 		} else {
 			cout<<"File for ForeFire initialization "<<initfile.str()
@@ -304,6 +311,32 @@ void MNHCreateDomain(const int id
 	executor.setReferenceTime(deltaT);
 	executor.setStartTime(deltaT);
 
+    // Every atmospheric rank must start flux integration at attachment, not
+    // at the default -1 clock (which would replay pre-attachment burn ages).
+    int stateRequired=session->params->isValued("ffstateFile")||session->params->isValued("ffstateAttachRequested");
+    double attached=SimulationParameters::GetInstance()->isValued("ffstateAttachedTime")
+        ?SimulationParameters::GetInstance()->getDouble("ffstateAttachedTime")
+        :std::numeric_limits<double>::quiet_NaN();
+#ifdef MPI_COUPLING
+    MPI_Bcast(&stateRequired,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&attached,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+#endif
+    if(stateRequired&&!std::isfinite(attached))
+        throw std::runtime_error("FFState attachment failed; refusing to start an empty coupled fire");
+    if(std::isfinite(attached)) {
+        std::string stateFile=session->params->getParameter("ffstateAttachedFile");
+#ifdef MPI_COUPLING
+        int length=world_rank==0?int(stateFile.size()):0;
+        MPI_Bcast(&length,1,MPI_INT,0,MPI_COMM_WORLD);
+        if(length<=0||length>65536)throw std::runtime_error("invalid coupled FFState filename");
+        stateFile.resize(size_t(length));MPI_Bcast(&stateFile[0],length,MPI_CHAR,0,MPI_COMM_WORLD);
+#endif
+        FFState::attachEnvironment(stateFile,*session->fd);
+        SimulationParameters::GetInstance()->setDouble("ffstateAttachedTime",attached);
+        for(auto& name:session->fd->getDataBroker()->getAllLayerNames())
+            if(auto* layer=session->fd->getFluxLayer(name))layer->setFirstCall(attached);
+    }
+
 
 
 }
@@ -321,6 +354,9 @@ void CheckLayer(const char* lname){
 					<<" could not be found within ForeFire framework, "
 					<<"this should cause serious problems when coupling"<<endl;
 		}
+        if(auto* layer=session->fd->getFluxLayer(tmpname))
+            if(SimulationParameters::GetInstance()->isValued("ffstateAttachedTime"))
+                layer->setFirstCall(SimulationParameters::GetInstance()->getDouble("ffstateAttachedTime"));
 	}
 }
 

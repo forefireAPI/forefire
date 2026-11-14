@@ -12,6 +12,7 @@
 #include "include/Futils.h"
 
 #include <atomic>
+#include <cstdint>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ namespace libforefire{
  */
 
 class ForeFireAtom {
+    friend class FFState;
 private:
 
 	/*! \brief Instance count, the source of every atom's id.
@@ -102,10 +104,9 @@ public:
 		return (double)(getShortID()+domainMult()*getDomainID());
 	}
 	long getIDfromLongs(const long& domainID, const long& shortID){
-		long tmpnumID = domainID;
-		tmpnumID <<=getModelMask() ;
-		tmpnumID |= shortID;
-		return tmpnumID;
+        // long is 32 bits in WebAssembly; shifting it by 40 was undefined
+        // and produced zero identities for newly created standalone nodes.
+        return long((uint64_t(domainID)<<getModelMask())|uint64_t(shortID));
 	}
 	long getIDfromDouble(const double& did){
 		return getIDfromLongs((long) did/domainMult(),(long) did%domainMult());

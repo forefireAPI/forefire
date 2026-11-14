@@ -27,6 +27,7 @@ namespace libforefire {
  */
 
 template<typename T> class FluxLayer : public DataLayer<T> {
+    friend class FFState;
 
 	/* Data for fluxes on atmospheric cells */
 	FFPoint SWCorner, NECorner;

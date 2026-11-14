@@ -2692,6 +2692,12 @@
 		 // Burning map resolution
 		 BMapsResolution = getBurningMapResolution(spatialIncrement
 														  , params->getDouble("minimalPropagativeFrontDepth"));
+         if (params->isValued("arrivalMapResolution")) {
+             auto resolution=params->getDouble("arrivalMapResolution");
+             if(!std::isfinite(resolution)||resolution<=0)
+                 throw std::runtime_error("arrivalMapResolution must be finite and positive");
+             BMapsResolution=resolution;
+         }
 		 localBMapSizeX = (size_t) (dx/BMapsResolution );
 		 if ( localBMapSizeX < 1 ){
 			 cout<<"Warning, atmo (fluxes integration) cell has less than 1 BMap point given "

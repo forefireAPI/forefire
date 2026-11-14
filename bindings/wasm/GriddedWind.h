@@ -49,6 +49,7 @@ struct GriddedWind {
     }
 };
 class GriddedTileWindLayer : public FFTileDataLayer {
+    friend class FFState;
     std::shared_ptr<FFTileManager> manager;
     std::shared_ptr<GriddedWind> forcing;
     bool eastComponent;

@@ -55,6 +55,7 @@ template<typename T> class MultiplicativeLayer;
  *  (for parallel simulations).
  */
 class DataBroker {
+    friend class FFState;
 
 	// Information concerning the fire model
 	std::shared_ptr<FFTileManager> tileManager;

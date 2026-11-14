@@ -8,6 +8,7 @@
 
 #include "Command.h"
 #include "fftile.h"
+#include "ffstate.h"
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
@@ -1928,6 +1929,36 @@ namespace libforefire
         return normal;
     }
 
+    int Command::saveState(const string& arg, size_t&) {
+        try {
+            auto file=getString("file",arg); if(file==stringError)file=arg;
+            if(file.empty())throw std::runtime_error("saveState requires file=...");
+            auto scenario=getString("scenario",arg);
+            FFState::save(SimulationParameters::GetPath(file),scenario==stringError?"":scenario);
+            *currentSession.outStream<<"Saved FFState: "<<file<<'\n';return normal;
+        }catch(const std::exception& e){*currentSession.outStream<<e.what()<<'\n';return error;}
+    }
+
+    int Command::loadState(const string& arg, size_t& tabs) {
+        try {
+            auto file=getString("file",arg);
+            if(file==stringError)file=arg.find('=')==std::string::npos?arg:currentSession.params->getParameter("ffstateFile");
+            auto mode=getString("mode",arg);
+            if(mode!=stringError&&mode!="attach")throw std::runtime_error("loadState mode must be attach");
+            if(file.empty())throw std::runtime_error("loadState requires file=...");
+            if(mode=="attach")currentSession.params->setParameter("ffstateAttachRequested","1");
+#ifdef MPI_COUPLING
+            if(mode=="attach"&&currentSession.fd&&!currentSession.fdp&&currentSession.fd->atmosphericCoupling&&currentSession.fd->getDomainID()==1) {
+                std::ostringstream domain;domain<<std::setprecision(17)<<"sw="<<currentSession.fd->getSWCorner().print()<<";ne="<<currentSession.fd->getNECorner().print()<<";t="<<getTime();
+                createDomain(domain.str(),tabs);
+            }
+#endif
+            auto provider=getString("provider",arg);
+            FFState::load(SimulationParameters::GetPath(file),mode=="attach",provider==stringError?"":provider);
+            *currentSession.outStream<<"Loaded FFState: "<<file<<'\n';return normal;
+        }catch(const std::exception& e){*currentSession.outStream<<e.what()<<'\n';return error;}
+    }
+
     int Command::setParameters(const string &arg, size_t &numTabs)
     {
         // Getting all the arguments, using the 'tokenize' function
@@ -2175,6 +2206,14 @@ namespace libforefire
                 }
                 return error;
             }
+        }
+        if (tmpArgs[0] == "tileFuel") {
+            if(!domainExists("trigger[tileFuel]"))return error;
+            auto manager=getDomain()->getDataBroker()->getFFTileManager();
+            if(!manager)throw std::runtime_error("tileFuel requires an FFTile domain");
+            manager->addFuelPolygon(getInt("fuelType",arg),getString("points",arg));
+            currentSession.params->setParameter("fftileFuelPolygons",manager->fuelPolygons());
+            return normal;
         }
         if (tmpArgs[0] == "fuelIndice")
         {
@@ -2896,6 +2935,7 @@ namespace libforefire
 
     int Command::loadData(const string &arg, size_t &numTabs)
     {
+        if(arg.size()>=8&&arg.substr(arg.size()-8)==".ffstate")return loadState(arg,numTabs);
         if (arg.rfind("provider=",0) == 0 || fftileIsHTTP(arg))
             return loadTileService(arg,numTabs);
 

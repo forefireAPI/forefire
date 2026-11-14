@@ -42,6 +42,7 @@ struct FFEventComparator {
  *  is provided to trash events.
  */
 class TimeTable {
+    friend class FFState;
 
     FFEvent* head; /*!< Next event to happen */
     FFEvent* rbin; /*!< Bin for thrashing events */

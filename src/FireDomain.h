@@ -50,6 +50,7 @@ namespace libforefire{
 class FFTileGeographicGrid;
 
 class FireDomain: public ForeFireAtom, Visitable {
+    friend class FFState;
 
 
 	/* Internal variables of the simulation */

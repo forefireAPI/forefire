@@ -157,8 +157,8 @@ public:
 
     void importPerimeters(const emscripten::val& polygons) {
         auto* domain=executor.getDomain();
-        if(!domain || executor.getTime()!=0 || !domain->getMainFronts().empty())
-            throw std::runtime_error("Import perimeters into a fresh tile domain");
+        if(!domain)
+            throw std::runtime_error("Load a tile domain before importing perimeters");
         using Ring=std::vector<std::array<double,2>>;
         std::vector<std::vector<Ring>> components;
         const unsigned count=polygons["length"].as<unsigned>();size_t vertices=0;
@@ -187,10 +187,10 @@ public:
         for(const auto& rings:components) {
             for(size_t j=0;j<rings.size();++j) {
                 const std::string indent(j?2:1,'\t');
-                execute(indent+"FireFront[t=0]");
+                execute(indent+"FireFront[t="+std::to_string(executor.getTime())+"]");
                 for(auto p:rings[j]) {
                     std::ostringstream node;node.precision(17);
-                    node<<indent<<"\tFireNode[loc=("<<p[0]<<","<<p[1]<<",0);vel=(0,0,0);t=0;state=init]";
+                    node<<indent<<"\tFireNode[loc=("<<p[0]<<","<<p[1]<<",0);vel=(0,0,0);t="<<executor.getTime()<<";state=init]";
                     execute(node.str());
                 }
             }

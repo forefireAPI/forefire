@@ -1,5 +1,7 @@
 #include "doctest/doctest.h"
 #include "fftile.h"
+#include "ffstate.h"
+#include "include/SHA256.h"
 #include "FFTileDataLayer.h"
 #include "../../bindings/wasm/GriddedWind.h"
 #include "model_sandbox.h"
@@ -115,6 +117,24 @@ struct Directory {
 };
 }
 TEST_SUITE("fftile") {
+TEST_CASE("geographic fuel modifiers survive paging and round trips without editing base tiles") {
+    auto provider=std::make_shared<Provider>();FFTileManager manager(provider,1);
+    manager.coordinates={42.2,8.2,0,0};
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==1);
+    manager.addFuelPolygon(0,"8.19,42.19|8.21,42.19|8.21,42.21|8.19,42.21");
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==0);
+    CHECK(manager.sample(FFTileField::Altitude,0,0)!=0);
+    manager.addFuelPolygon(82,"8.195,42.195|8.205,42.195|8.205,42.205|8.195,42.205");
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==82);
+    auto saved=manager.fuelPolygons();manager.clearCache();
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==82);
+    FFTileManager second(provider,1);second.coordinates=manager.coordinates;second.restoreFuelPolygons(saved);
+    CHECK(second.sample(FFTileField::Fuel,0,0)==82);
+    CHECK_THROWS(second.restoreFuelPolygons("0 invalid"));
+    CHECK(second.fuelPolygons()==saved);
+    auto outside=second.coordinates.cartesian(42.25,8.25);
+    CHECK(second.sample(FFTileField::Fuel,outside[0],outside[1])==1);
+}
 TEST_CASE("coarse wind forcing interpolates both space and time without extrapolation") {
     GriddedWind f;f.nx=f.ny=2;f.west=8;f.east=9;f.south=42;f.north=43;
     f.times={0,3600};f.u={0,2,4,6,10,12,14,16};f.v={-6,-4,-2,0,4,6,8,10};
@@ -541,3 +561,60 @@ TEST_CASE("HTTP redirects work and disk caches are isolated per service") {
 }
 }
 #endif
+
+
+TEST_SUITE("ffstate") {
+TEST_CASE("tile fingerprints match standard SHA256 vectors including padding boundaries") {
+    auto hex=[](const Bytes& b){auto hash=sha256(b);std::ostringstream out;out<<std::hex<<std::setfill('0');for(auto c:hash)out<<std::setw(2)<<unsigned(c);return out.str();};
+    CHECK(hex({})=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    CHECK(hex(Bytes{'a','b','c'})=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    CHECK(hex(Bytes(1000000,'a'))=="cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+}
+TEST_CASE("checkpoint restores live pending nodes and lossless arrivals without initialization") {
+    Directory data;
+    data.write("42_8.5.fftile",tileBytes(264,377,82));
+    ff_test::ModelSandbox snapshot;
+    auto run=[](std::string command){Command::ExecuteCommand(command);};
+    run("clear[]");
+    struct Cleanup {~Cleanup(){std::string c="clear[]";Command::ExecuteCommand(c);}} cleanup;
+    auto* p=snapshot.parameters();
+    p->setParameter("caseDirectory",data.path.string());p->setParameter("ForeFireDataDirectory","");
+    p->setParameter("propagationModel","Iso");p->setDouble("Iso.speed",1);
+    p->setInt("outputsUpdate",0);p->setDouble("minimalPropagativeFrontDepth",0);
+    p->setDouble("perimeterResolution",12);p->setDouble("spatialIncrement",3);
+    p->setInt("arrivalMapSubdivisions",256);
+    bool geographic=true,stopped=false,override=false,pin=false,live=false,modifiers=false;
+    SUBCASE("geographic"){}
+    SUBCASE("geographic scenario modifiers"){modifiers=true;}
+    SUBCASE("Cartesian"){geographic=false;p->setInt("arrivalMapSubdivisions",0);}
+    SUBCASE("stopped boundary segment"){stopped=true;}
+    SUBCASE("fuel override survives deletion"){override=true;data.write("tiles/42_8.5_fuel.png",image(8,8,Bytes(64,3),true));}
+    SUBCASE("changed external tile is rejected"){pin=true;}
+    SUBCASE("live solver values override stale parameter strings"){live=true;}
+    run("loadData[provider="+data.path.string()+";center=(8.6,42.1);size=(.02,.02);date=2025-08-05T12:00:00Z]");
+    REQUIRE(Command::getDomain()!=nullptr);
+    run("startFire[lonlat=(8.6,42.1,0);t=0]");run("step[dt=30]");
+    auto* d=Command::getDomain();auto* front=d->getMainFronts().front();
+    if(live){d->getMaxTimeStep()=.25;FireNode::setRelax(.3);p->setDouble("relax",.9);p->setDouble("propagationSpeedAdjustmentFactor",7);}
+    auto* node=front->getHead();if(stopped)node->setState(FireNode::final);auto pos=node->getLoc(),next=node->getNextLoc();auto vel=node->getVel();
+    auto time=node->getTime(),update=node->getUpdateTime();auto state=node->getState();auto count=front->getNumFN();auto id=node->getID();
+    if(override){auto m=d->getDataBroker()->getFFTileManager();auto ll=m->coordinates.geographic(pos.getX(),pos.getY());m->tileAt(ll[0],ll[1])->overrideFuel(image(8,8,Bytes(64,4),true));}
+    if(modifiers)run("trigger[tileFuel;fuelType=3;points=8.599,42.099|8.601,42.099|8.601,42.101|8.599,42.101]");
+    auto path=(data.path/"fire.ffstate").string();REQUIRE_NOTHROW(FFState::save(path));
+    CHECK_THROWS(FFState::load(path));CHECK(Command::getDomain()==d);
+    run("clear[]");if(override)std::filesystem::remove(data.path/"tiles/42_8.5_fuel.png");REQUIRE_NOTHROW(FFState::load(path));
+    d=Command::getDomain();front=d->getMainFronts().front();node=front->getHead();
+    if(live){CHECK(d->getMaxTimeStep()==.25);CHECK(p->getDouble("relax")==.3);CHECK(p->getDouble("propagationSpeedAdjustmentFactor")==1);}
+    if(modifiers){auto m=d->getDataBroker()->getFFTileManager();auto q=m->coordinates.cartesian(42.1,8.6);CHECK(m->sample(FFTileField::Fuel,q[0],q[1])==3);}
+    CHECK(Command::getTime()==30);CHECK(front->getNumFN()==count);CHECK(node->getID()==id);
+    CHECK(node->getTime()==time);CHECK(node->getUpdateTime()==update);CHECK(node->getState()==state);
+    if(override){auto loc=node->getLoc();CHECK(d->getDataLayer("fuel")->getValueAt(loc,30)==4);}
+    CHECK(node->getLoc().getX()==pos.getX());CHECK(node->getNextLoc().getY()==next.getY());CHECK(node->getVel().getVx()==vel.getVx());
+    if(geographic)CHECK(d->geographicArrivalMap()->allocatedBlocks()>0);else CHECK(d->geographicArrivalMap()==nullptr);
+    run("step[dt=30]");CHECK(Command::getTime()==60);CHECK(front->getArea()>0);
+    // A checksum failure must leave the current live domain untouched.
+    std::ifstream in(path,std::ios::binary);Bytes file((std::istreambuf_iterator<char>(in)),{});file.back()^=1;
+    data.write("bad.ffstate",file);CHECK_THROWS(FFState::load((data.path/"bad.ffstate").string(),true));CHECK(Command::getDomain()==d);CHECK(Command::getTime()==60);
+    if(pin){run("clear[]");auto changed=tileBytes(264,377,82);changed[255]^=1;data.write("42_8.5.fftile",changed);CHECK_THROWS(FFState::load(path));CHECK(Command::getDomain()==nullptr);data.write("42_8.5.fftile",tileBytes(264,377,82));CHECK_NOTHROW(FFState::load(path));}
+}
+}

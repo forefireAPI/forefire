@@ -1,7 +1,8 @@
 # `.ffstate` implementation plan
 
 Status: proposed design, revised for live-object serialization and standalone-to-
-Meso-NH attachment; no solver implementation in this change.
+Meso-NH attachment. The initial implementation and tested boundaries are now
+documented in [tests/ffstate/README.md](tests/ffstate/README.md).
 
 ## 1. Purpose and command interface
 

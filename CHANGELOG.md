@@ -14,6 +14,13 @@ history, so they summarise each release rather than list every change. The
 
 ### Changed
 
+- FFTile geographic fuel polygons support persistent scenario barriers and fuel
+  replacement; FFState preserves them and ignores confirmed retired-node events.
+- WebAssembly can add perimeter ignitions at the current simulation clock.
+
+- WebAssembly node identities use a defined wide shift, fixing duplicate zero
+  IDs when serializing newly created nodes.
+
 - Coupled FFTile cases use Meso-NH's registered mass-point geography in the
   parent Cartesian frame, including nested offsets and grid rotation. Fire
   terrain remains tile-backed; Meso-NH altitude updates use a separate writable
@@ -22,6 +29,11 @@ history, so they summarise each release rather than list every change. The
   coupling path is retained. A matching Meso-NH interface patch is provided.
 
 ### Added
+
+- `saveState` / `loadState` store live fire objects, sparse arrival history,
+  parameters, forcing and fuel overrides without NetCDF. FFTile-backed states
+  attach to registered Meso-NH domains with UTC/frame transfer and checkpoint
+  flux clocks; base tiles remain external.
 
 - Standalone FFTile domains optionally store arrival times in sparse globally
   aligned 0.1-degree blocks (`arrivalMapSubdivisions=64/128/256/512`). The web

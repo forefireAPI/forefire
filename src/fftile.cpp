@@ -1,4 +1,5 @@
 #include "fftile.h"
+#include "include/SHA256.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #define STBI_ONLY_JPEG
@@ -10,6 +11,7 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <stdexcept>
 #include <limits>
 #include <cerrno>
@@ -136,6 +138,7 @@ FFTile::FFTile(const std::vector<uint8_t>& bytes) : header_(FFTileHeader::parse(
 void FFTile::overrideFuel(const std::vector<uint8_t>& png) {
     require(png.size() >= 8 && png[0] == 137 && png[1] == 80, "fuel override must be grayscale PNG");
     images_[0] = decode(png.data(), png.size(), header_.dimensions[0], header_.dimensions[1]);
+    fuelOverride_=png;
 }
 double FFTile::sample(FFTileField field, double lat, double lon) const {
     const auto& h = header_;
@@ -261,7 +264,9 @@ std::shared_ptr<FFTile> FFTileManager::tileAt(double lat, double lon) {
         require(tile->header().latIndex == li && tile->header().lonIndex == lj, "provider returned wrong tile");
         auto fuel = provider_->fuelOverride(li,lj);
         if (!fuel.empty()) tile->overrideFuel(fuel);
+        if(!fuel.empty())fuelOverrides_[key]=std::move(fuel);else fuelOverrides_.erase(key);
     }
+    sources_[key]=sha256(bytes);
     if (cache_.size() >= capacity_) {
         auto oldest = std::min_element(cache_.begin(),cache_.end(),[](const auto& a,const auto& b){return a.second.touched<b.second.touched;});
         cache_.erase(oldest);
@@ -271,7 +276,34 @@ std::shared_ptr<FFTile> FFTileManager::tileAt(double lat, double lon) {
 }
 double FFTileManager::sample(FFTileField field, double x, double y) {
     auto ll = coordinates.geographic(x,y);
+    if(field==FFTileField::Fuel)for(auto m=modifiers_.rbegin();m!=modifiers_.rend();++m){
+        bool inside=false;const auto& p=m->points;
+        for(size_t i=0,j=p.size()-1;i<p.size();j=i++){
+            double ax=std::remainder(p[i][0]-ll[1],360.),bx=std::remainder(p[j][0]-ll[1],360.);
+            if((p[i][1]>ll[0])!=(p[j][1]>ll[0]) && 0<(bx-ax)*(ll[0]-p[i][1])/(p[j][1]-p[i][1])+ax)inside=!inside;
+        }
+        if(inside)return m->fuel;
+    }
     auto tile = tileAt(ll[0],ll[1]);
     return tile ? tile->sample(field,ll[0],ll[1]) : 0.;
 }
+void FFTileManager::addFuelPolygon(int fuel,const std::string& text) {
+    require(fuel>=0&&fuel<=255,"modifier fuel ID must be 0..255");
+    require(modifiers_.size()<4096,"too many fuel modifiers");
+    std::string clean=text;for(char& c:clean)if(c==','||c==':'||c=='|')c=' ';
+    std::istringstream in(clean);FuelPolygon polygon{fuel,{}};double lon,lat;
+    while(in>>lon){require(bool(in>>lat),"unpaired modifier coordinate");require(std::isfinite(lon)&&std::isfinite(lat)&&lon>=-180&&lon<=180&&std::abs(lat)<89,"invalid modifier coordinate");polygon.points.push_back({lon,lat});require(polygon.points.size()<=10000,"too many modifier vertices");}
+    require(in.eof()&&polygon.points.size()>=3,"modifier needs three geographic vertices");
+    modifiers_.push_back(std::move(polygon));
+}
+std::string FFTileManager::fuelPolygons() const {
+    std::ostringstream out;out<<std::setprecision(17);
+    for(const auto& p:modifiers_){out<<p.fuel;for(auto q:p.points)out<<' '<<q[0]<<' '<<q[1];out<<'\n';}return out.str();
+}
+void FFTileManager::restoreFuelPolygons(const std::string& text) {
+    auto previous=modifiers_;modifiers_.clear();
+    try{std::istringstream input(text);std::string line;while(std::getline(input,line)){if(line.empty())continue;std::istringstream row(line);int fuel;require(bool(row>>fuel),"invalid modifier record");std::string points;std::getline(row,points);addFuelPolygon(fuel,points);}}
+    catch(...){modifiers_=std::move(previous);throw;}
+}
+
 }

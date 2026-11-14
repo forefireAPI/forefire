@@ -39,6 +39,7 @@ class FireNodeData;
  *  class and setVal the new properties of the FireNode.
  */
 class FireNode : public ForeFireAtom, Visitable {
+    friend class FFState;
 
 	static const double Pi;
 	static SimulationParameters* params;
