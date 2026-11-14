@@ -110,3 +110,30 @@ verified clean.
 `-Wall -Wextra` is on and not clean, so warnings do not fail the build.
 `-DFOREFIRE_ENABLE_WARNINGS=OFF` silences them;
 `-DFOREFIRE_WARNINGS_AS_ERRORS=ON` makes them fatal.
+
+
+## FFState and Scenario Studio
+
+FFState object/event/arrival restoration is covered by `unit.ffstate` in CTest.
+Fresh-process checks and the opt-in MPI/Meso-NH driver are documented in
+[tests/ffstate/README.md](tests/ffstate/README.md). Coupled tests are not CI and
+must not be inferred from browser or standalone test results.
+
+After building the WASM module:
+
+```sh
+node bindings/wasm/smoke.mjs bin/forefire.mjs
+python3 bindings/wasm/scenario-studio/prepare.py
+node --test local/scenario-studio/tests/*.test.mjs
+FFTILE_FIXTURES="$PWD/test_output_tiles" node --test local/scenario-studio/tests/*.test.mjs
+```
+
+No tile download is needed for staging or the first Node suite. Real tile tests
+skip without `FFTILE_FIXTURES`; the second invocation enables them. Do not count
+skips as passes. The tests catch false future burn at startup, shared initial
+burn colouring, slower/faster ensemble bias, separate-worker isolation and
+scenario resets, alongside tile and model checks. Browser/Cesium/WebCodecs
+rendering still needs browser QA.
+
+The Pages artifact alone downloads Corsica tiles with `prepare.py --corsica`;
+these tiles, generated binaries and credentials never enter the source commit.

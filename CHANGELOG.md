@@ -14,6 +14,9 @@ history, so they summarise each release rather than list every change. The
 
 ### Changed
 
+- The browser's Ultrafast preset trades road-scale detail for speed; ensemble
+  comparisons default to the same numerics as the reference.
+
 - FFTile geographic fuel polygons support persistent scenario barriers and fuel
   replacement; FFState preserves them and ignores confirmed retired-node events.
 - WebAssembly can add perimeter ignitions at the current simulation clock.
@@ -29,6 +32,9 @@ history, so they summarise each release rather than list every change. The
   coupling path is retained. A matching Meso-NH interface patch is provided.
 
 ### Added
+
+- Scenario Studio supports timeline actions, reset, FFState downloads and
+  paper-based ensemble burn probabilities; Pages stages Corsica tiles outside Git.
 
 - `saveState` / `loadState` store live fire objects, sparse arrival history,
   parameters, forcing and fuel overrides without NetCDF. FFTile-backed states

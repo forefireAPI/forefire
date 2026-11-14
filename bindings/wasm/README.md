@@ -13,6 +13,20 @@ on every push to `dev`. The `.wasm` is built in CI rather
 than committed: it is a megabyte of generated output, and a stale binary
 sitting next to live sources is worse than a two minute build.
 
+## Scenario Studio
+
+The current tile-based application is in
+[scenario-studio/](scenario-studio/README.md). GitHub Pages assembles it from
+source and the current WASM build, with a Corsica tile subset fetched into the
+site artifact. Generated engine assets, tiles and deployment config are ignored.
+The former small demo is retained under `/classic/` in the published artifact.
+Manual wind needs no weather archive; ERA and PHP POST launch are optional
+hosting capabilities. The source includes scenario edits, FFState and browser
+ensembles. See [TESTING.md](../../TESTING.md) for the checks.
+
+The size and timing figures below describe the original small demo build;
+they are not measurements of the current Scenario Studio application.
+
 ## What made it possible
 
 `#include <netcdf>` sat in `src/DataBroker.h`, and the `using namespace netCDF`

@@ -90,6 +90,7 @@ Going further
    user_guide/forefire_script
    user_guide/python_arrays
    user_guide/ensembles
+   user_guide/scenario_studio
    user_guide/mesonh
 
 .. toctree::

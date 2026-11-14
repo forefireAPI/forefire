@@ -12,7 +12,7 @@ developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-co
 
 ## Try it now, no install
 
-**[In-browser demo](https://forefireapi.github.io/forefire/)** · **[Live demo](https://forefire.univ-corse.fr/sim)**
+**[In-browser demo](https://forefireapi.github.io/forefire/)** · **[Live demo](https://forefire.univ-corse.fr/forefire/)**
 
 The in-browser demo is the engine compiled to WebAssembly, running in your tab
 on terrain and fuel built from map tiles. Click the map to light a fire, set the wind, and watch it spread.
@@ -22,6 +22,13 @@ on terrain and fuel built from map tiles. Click the map to light a fire, set the
     <img src="./docs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire browser demo" width="800">
   </a>
 </p>
+
+Scenario Studio adds a scenario timeline, dynamic FFTile loading, FFState
+restart and experimental ensemble probability maps. Its source and static-site
+build instructions are in [bindings/wasm/scenario-studio](bindings/wasm/scenario-studio/README.md).
+The Pages workflow stages a Corsica tile subset; terrain data and generated WASM
+stay outside Git. The previous lightweight demo remains available under `/classic/`
+after the next Pages deployment.
 
 ## Run it from Python
 
