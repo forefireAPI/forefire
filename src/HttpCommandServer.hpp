@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cctype>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <dirent.h>
 
 // POSIX headers for sockets
@@ -151,20 +152,50 @@ namespace http_command {
                     }
                     continue;
                 }
+                // Clients are served one at a time: do not let a stalled one
+                // hold the server.
+                timeval timeout{5, 0};
+                setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
                 handleClient(client_fd);
                 close(client_fd);
             }
         }
 
+        // Read the whole request: headers, then Content-Length bytes of body.
+        // Clients may send them in separate segments, so one read() is not
+        // enough. Empty on a closed connection or an oversized request.
+        static std::string readRequest(int client_fd) {
+            const size_t max_size = 16 << 20;
+            std::string request;
+            char buffer[4096];
+            size_t header_end = std::string::npos, expected = 0;
+            while (true) {
+                if (header_end == std::string::npos) {
+                    header_end = request.find("\r\n\r\n");
+                    if (header_end != std::string::npos) {
+                        std::string length = headerValue(request, "content-length");
+                        size_t body = 0;
+                        try { body = length.empty() ? 0 : std::stoull(length); }
+                        catch (...) { return ""; }
+                        if (body > max_size) return "";
+                        expected = header_end + 4 + body;
+                    }
+                }
+                if (header_end != std::string::npos && request.size() >= expected)
+                    return request;
+                if (request.size() > max_size) return "";
+                ssize_t n = read(client_fd, buffer, sizeof(buffer));
+                if (n <= 0)
+                    return header_end == std::string::npos ? request : "";
+                request.append(buffer, static_cast<size_t>(n));
+            }
+        }
+
         // Handle a client connection by parsing the request.
         void handleClient(int client_fd) {
-            const int buf_size = 4096;
-            char buffer[buf_size];
-            int bytes_read = read(client_fd, buffer, buf_size - 1);
-            if (bytes_read <= 0)
+            std::string request = readRequest(client_fd);
+            if (request.empty())
                 return;
-            buffer[bytes_read] = '\0';
-            std::string request(buffer);
 
             // Parse the request line (e.g., "GET /uri HTTP/1.1" or "POST /uri HTTP/1.1").
             std::istringstream requestStream(request);

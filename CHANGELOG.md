@@ -111,6 +111,9 @@ history, so they summarise each release rather than list every change. The
 
 ### Fixed
 
+- `setParameter[key=]` with an empty value no longer crashes.
+- `listenHTTP` reads a POST body sent after its headers, as Python's `urllib` does.
+- A `listenHTTP` server started from `pyforefire` no longer crashes on its first command.
 - The Farsite model now matches the FARSITE reference (mbedward/farsite) at
   the flanks and back of the fire, not only at the head. On slopes it is an
   approximation. This changes Farsite results. ([#270])

@@ -135,7 +135,12 @@ py::object PLibForeFire::getDataMatrixPy(char *name) {
 string PLibForeFire::execute(char *command)
 {
 	ostringstream stringOut;
-	pyxecutor->setOstringstream(&stringOut);
+	// Back to cout on return, even on a throw: output written after this
+	// call (e.g. by a listenHTTP thread) must not reach a dead stream.
+	struct Capture {
+		explicit Capture(ostringstream *out) { Command::setOstringstream(out); }
+		~Capture() { Command::setOstringstream(nullptr); }
+	} capture(&stringOut);
 	string smsg(command);
 	pyxecutor->ExecuteCommand(smsg);
 	return stringOut.str();
