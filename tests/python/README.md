@@ -94,6 +94,28 @@ decrease with time. Run in CI by `invariants.yml`. Manually:
 python tests/python/test_ensemble.py
 ```
 
+### `test_fftile_ffstate.py`
+
+Writes one small synthetic `.fftile` with `tools/tiles/fftile.py`, loads it
+from Python and checks the fuel and altitude layers. A checkpoint saved in one
+worker and restored in a fresh one must then continue exactly like the
+original, for both arrival-map layouts. A corrupt checkpoint must be refused.
+Run in CI by `invariants.yml`. Manually:
+
+```bash
+python tests/python/test_fftile_ffstate.py
+```
+
+### `test_listen.py`
+
+Starts `listenHTTP` in a worker and drives a tile case over HTTP, by GET and
+POST, including the commands the web page sends. The checkpoint it saves must
+restore in a fresh worker. Run in CI by `invariants.yml`. Manually:
+
+```bash
+python tests/python/test_listen.py
+```
+
 ### `test_threading.py`
 
 Runs eight simulations in threads and requires each to reproduce the node
