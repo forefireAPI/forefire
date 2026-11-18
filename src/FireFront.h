@@ -34,6 +34,7 @@ class FireDomain;
  *  FireFront.
  */
 class FireFront: public ForeFireAtom, Visitable {
+    friend class FFState;
 
 	size_t numFirenodes; /*!< number of firenodes in the front */
 	FireNode* headNode; /*!< 'FireNode' of entry for the 'FireFront' */

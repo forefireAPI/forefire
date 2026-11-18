@@ -1,0 +1,561 @@
+{
+  "experimental": true,
+  "source": "Scott & Burgan 2005, local fuels_database.py CB2005_t7_csv",
+  "mapping": [
+    {
+      "tileFuel": 0,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 1,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 2,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 3,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 4,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 5,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 6,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 7,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 8,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 9,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 10,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 11,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 12,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 13,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 14,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 15,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 16,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 17,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 18,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 19,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 20,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 21,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 22,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 23,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 24,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 25,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 26,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 27,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 28,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 29,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 30,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 31,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 32,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 33,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 34,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 35,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 36,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 37,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 38,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 39,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 40,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 41,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 42,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 43,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 44,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 45,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 46,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 47,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 48,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 49,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 50,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 51,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 52,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 53,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 54,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 55,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 62,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 75,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 73,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 82,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 83,
+      "model": "GS2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 102,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 103,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 104,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 105,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 106,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 111,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 112,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 121,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 123,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 124,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 131,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 132,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 133,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 141,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 142,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 162,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 211,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 212,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 213,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 221,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 222,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 223,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 231,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 241,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 242,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 243,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 244,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 255,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 311,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 312,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 313,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 321,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 322,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 323,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 324,
+      "model": "TU3",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 331,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 332,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 333,
+      "model": "SH5",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 334,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 335,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 411,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 412,
+      "model": "GR2",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 421,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 422,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 423,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 511,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 512,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 521,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 522,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    },
+    {
+      "tileFuel": 523,
+      "model": "NONBURNABLE",
+      "rule": "Experimental depth-based analogue; not an observed land-cover correspondence"
+    }
+  ]
+}

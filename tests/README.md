@@ -30,8 +30,10 @@ ctest --test-dir build --output-on-failure
 * The test fixtures are stored in **Git LFS**. `git lfs pull` if the `.nc`
   files look like short text stubs.
 
-* *(optional)* **Meso-NH**, for the `mnh_*` tests only. Setup and the `dev` × PR
-  check: [`docs/mnh/coupledMNHInstall.md`](../docs/mnh/coupledMNHInstall.md).
+* *(optional)* **Meso-NH**, for the `mnh_*` tests only. `mnh_coupled.bash`
+  builds it, links ForeFire and runs `mnh_real_nested`; with `--compare` it
+  runs the `dev` × PR check. See
+  [`tests/mnh/README.md`](mnh/README.md).
 
   ```bash
   # sets SRC_MESONH and XYZ, which the mnh_* scripts use
@@ -100,7 +102,8 @@ are demonstrations of the API rather than tests of the physics.
 compares ForeFire against a FARSITE case, and needs `flatland.lcp`, which is
 not in the repository — `python/README.md` has the download URL.
 
-Three test scripts sit here too, and `run.bash` runs none of them:
+Eight `test_*.py` scripts sit here too, and `run.bash` runs only
+`test_validate.py`. `python/README.md` covers them all; the main ones:
 
 | File | What it checks | Where it runs |
 | --- | --- | --- |

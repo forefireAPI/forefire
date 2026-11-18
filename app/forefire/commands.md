@@ -26,7 +26,7 @@ std::string commandHelp = R"(
     FireNode[loc=(x,y,z);vel=(x,y,z);t=seconds]
     Creates a FireNode within a FireFront. The prefixed spacing defines the hierarchical level of the element.
     A FireNode inside a FireFront is defined with 4 additional spaces relative to its parent.
-    Example: FireNode[domain=0;id=1;fdepth=2;kappa=0.1;loc=(3.5,2.6,1.1);vel=(-0.1,-0.03,0.01);t=2.1;state=moving;frontId=2]
+    Example: FireNode[domain=0;id=1;fdepth=2;kappa=0.1;loc=(3.5,2.6,1.1);vel=(-0.1,-0.03,0.01);t=2.1;state=moving]
     Arguments:
      - 'loc': Spatial coordinates (x,y,z) where the node is created
      - 'vel': Initial velocity (x,y,z) of the node
@@ -35,7 +35,7 @@ std::string commandHelp = R"(
      - 'opt:id': Identifier for the fire node
      - 'opt:fdepth': Initial fire depth in meters
      - 'opt:kappa': Initial curvature factor (tan value)
-     - 'opt:state': State of the node (init, moving, splitting, merging, final);
+     - 'opt:state': State of the node (init, moving, link, final);
 
 ## @
     @t=seconds
@@ -48,12 +48,15 @@ std::string commandHelp = R"(
 
 ## startFire
     startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
-    Creates the smallest possible triangular fire front at the specified location and time
+    startFire[geojson=<file or inline GeoJSON>]
+    Creates the smallest possible triangular fire front at the specified location and time, or a front along a GeoJSON polygon
     Example: startFire[loc=(0.0,0.0,0.0);t=0.]
+    Example: startFire[geojson=ignition.geojson]
     Arguments:
      - 'loc': Starting location of the fire (coordinates x,y,z)
      - 'lonlat': WGS coordinates of the ignition point (lon,lat,z); all three values are required
-     - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date);
+     - 't': Time when the fire is started (in seconds or as an absolute ISO GMT date)
+     - 'geojson': GeoJSON file or inline text (Polygon/MultiPolygon in lon,lat,z); a top-level "valid_at" date sets the time;
 
 ## step
     step[dt=seconds]
@@ -70,14 +73,18 @@ std::string commandHelp = R"(
 
 ## trigger
     trigger[wind;vel=(vx,vy,vz)]
+    trigger[fuel;<column>=<value>]
     trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
-    Triggers a change in simulation data, such as fuel or dynamic wind conditions
+    trigger[resolution;perimeterResolution=<val>;spatialIncrement=<val>]
+    Triggers a change in simulation data, such as fuel, wind, or domain resolution
     The first argument, alone without '=', selects the change. Schedule it with @t=, a 't=' inside the brackets is not read
     Example: trigger[wind;vel=(5.0,2.0,0.0)]@t=1800
     Example: trigger[fuelIndice;loc=(10,20,0);fuelType=1]
     Arguments:
      - 'wind': Sets the wind to 'vel', the vector (vx,vy,vz) in m/s
-     - 'fuelIndice': Sets the fuel index at 'loc' (x,y,z) to the integer 'fuelType';
+     - 'fuel': Updates a fuel column across all entries in the active fuel table
+     - 'fuelIndice': Sets the fuel index at 'loc' (x,y,z) to the integer 'fuelType'
+     - 'resolution': Updates 'perimeterResolution' and 'spatialIncrement';
 
 ## emit
     emit[layer=<flux_layer>;loc=(x,y,z);radius=<m>;duration=<seconds>;flux=<per_m2>]
@@ -106,20 +113,22 @@ std::string commandHelp = R"(
      - opt: the filename for output;
 
 ## save
-    save[opt:filename=landscape_file.nc;opt:fields=(altitude,wind,fuel)]]
-    without argument saves the current simulation arrival time state in netcdf format with default name ForeFire.'domainID'.nc
+    save[opt:filename=landscape_file.nc;opt:fields=altitude,fuel,wind;opt:compression=0]
+    without argument saves the current simulation arrival time state in netcdf format with default name <experiment>.<domainID>.nc
     Example: save[]
+    Example: save[filename=landscape.nc;fields=altitude,fuel,wind]
     Arguments:
      - opt:filename if given, landscape file is saved instead
-     - opt:fields fields to save in landscape file in (altitude,wind,fuel);
+     - opt:fields comma-separated fields to save in landscape file: altitude,fuel,wind (default altitude,fuel; no parentheses)
+     - opt:compression NetCDF-4 deflate level 0-10 (default 0);
 
 ## loadData
-    loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
-    Loads a NetCDF data file into the simulation at a certain UTC date
+    loadData[landscape_file.nc;opt:YYYY-MM-DDTHH:MM:SSZ]
+    Loads a NetCDF landscape file (creates the FireDomain and sets the reference UTC date when the date is given; loads into the existing FireDomain otherwise)
     Example: loadData[data.nc;2020-02-10T17:35:54Z]
     Arguments:
-     - a netcdf landscape file
-     - the UTC date;
+     - a NetCDF landscape file
+     - opt: the reference UTC date (ISO 8601);
 
 ## plot
     plot[parameter=(speed|arrival_time|fuel|altitude|slope|windU|windV|Rothermel);
@@ -156,11 +165,11 @@ std::string commandHelp = R"(
                             to generate a KML file with a GroundOverlay referencing the output image.;
 
 ## computeSpeed
-    computeSpeed
-    Computes and returns an array of speed values using the first registered propagation model
-    Example: computeSpeed
+    computeSpeed[v1;v2;...]
+    Evaluates the active propagationModel on the semicolon-separated property values (in the order registered by the model) and prints the speed
+    Example: computeSpeed[5.0;0.0;0.1;1.0;1.0]
     Arguments:
-     - Uses the active propagation model to calculate simulation speeds;
+     - semicolon-separated numeric values for each property registered by the current propagationModel;
 
 ## setParameter
     setParameter[param=value]
@@ -197,19 +206,18 @@ std::string commandHelp = R"(
     Example: clear[]
 
 ## systemExec
-    systemExec[command=<system_command>]
-    Executes a system command
-    Example: systemExec[command=ls -la]
+    systemExec[<system_command>]
+    Executes a system shell command (refused over HTTP; *param* tokens are expanded and ':' is replaced with '-')
+    Example: systemExec[ls -la]
     Arguments:
-     - 'command': The system command to execute
+     - raw shell command string to execute (do not prefix with 'command=')
 
 ## listenHTTP
-    listenHTTP[host:port]
-    Launches an HTTP server to listen for simulation commands
+    listenHTTP[opt:host:port]
+    Launches an HTTP server for local simulation control and static files from the run directory and FOREFIREHOME/tools/htdocs (defaults to localhost:8000; systemExec is refused over HTTP)
     Example: listenHTTP[localhost:8080]
     Arguments:
-     - 'host': Hostname or IP address for the server
-     - 'port': Port number on which the server will listen;
+     - opt: 'host:port' or 'host=host:port' (default localhost:8000);
 
 ## quit
     quit[]

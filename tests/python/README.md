@@ -3,7 +3,8 @@
 Everything here needs the `pyforefire` module: either a build configured with
 `-DFOREFIRE_BUILD_PYTHON=ON`, or `pip install forefire`.
 
-`../run.bash` runs only the first two, through `$PYTHONEXE`.
+`../run.bash` runs only the first two examples and `test_validate.py`, through
+`$PYTHONEXE`.
 
 ## `percolation.py`
 
@@ -35,8 +36,8 @@ The weather it uses, `flatland_3mph0deg7hr.raws`, *is* in this directory.
 
 ## The test scripts
 
-These four are tests rather than examples, and `../run.bash` runs none of
-them. They are plain scripts, not pytest modules. `TESTING.md` covers each in
+The `test_*.py` scripts are tests rather than examples, and `../run.bash`
+runs only `test_validate.py`. They are plain scripts, not pytest modules. `TESTING.md` covers each in
 detail, including how to build the module they import.
 
 ### `test_moisture_invariants.py`
@@ -54,6 +55,21 @@ python tests/python/test_moisture_invariants.py        # -v for every probe
 ```
 
 `--model NAME` and `--test NAME`, both repeatable, narrow it down.
+
+### `test_farsite_reference.py`
+
+Compares the `Farsite` model with FARSITE's own code for the 13 standard fuel
+models, four midflame winds, three slopes and three moisture sets. The
+reference is `farsite_reference.cpp`, FARSITE's spread rate and ellipse copied
+from mbedward/farsite and compiled by the test with the system C++ compiler.
+Fails when the head rate of spread differs from the reference; flank and back
+are printed, not asserted. `--scheme splines` runs it with that normal scheme,
+where the head gap is only reported (the spline normals do not point at the head).
+Needs a C++ compiler besides `pyforefire`. Manually:
+
+```bash
+python tests/python/test_farsite_reference.py        # -v for every case
+```
 
 ### `test_runner.py`
 
@@ -76,6 +92,28 @@ decrease with time. Run in CI by `invariants.yml`. Manually:
 
 ```bash
 python tests/python/test_ensemble.py
+```
+
+### `test_fftile_ffstate.py`
+
+Writes one small synthetic `.fftile` with `tools/tiles/fftile.py`, loads it
+from Python and checks the fuel and altitude layers. A checkpoint saved in one
+worker and restored in a fresh one must then continue exactly like the
+original, for both arrival-map layouts. A corrupt checkpoint must be refused.
+Run in CI by `invariants.yml`. Manually:
+
+```bash
+python tests/python/test_fftile_ffstate.py
+```
+
+### `test_listen.py`
+
+Starts `listenHTTP` in a worker and drives a tile case over HTTP, by GET and
+POST, including the commands the web page sends. The checkpoint it saves must
+restore in a fresh worker. Run in CI by `invariants.yml`. Manually:
+
+```bash
+python tests/python/test_listen.py
 ```
 
 ### `test_threading.py`

@@ -1,4 +1,5 @@
 #include "fftile.h"
+#include "include/SHA256.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #define STBI_ONLY_JPEG
@@ -10,6 +11,7 @@
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <stdexcept>
 #include <limits>
 #include <cerrno>
@@ -136,6 +138,7 @@ FFTile::FFTile(const std::vector<uint8_t>& bytes) : header_(FFTileHeader::parse(
 void FFTile::overrideFuel(const std::vector<uint8_t>& png) {
     require(png.size() >= 8 && png[0] == 137 && png[1] == 80, "fuel override must be grayscale PNG");
     images_[0] = decode(png.data(), png.size(), header_.dimensions[0], header_.dimensions[1]);
+    fuelOverride_=png;
 }
 double FFTile::sample(FFTileField field, double lat, double lon) const {
     const auto& h = header_;
@@ -183,12 +186,67 @@ std::vector<uint8_t> FFTileFileProvider::fuelOverride(int lat, int lon) {
     auto name = filename(lat,lon); name.resize(name.size()-7);
     return local_.empty() ? std::vector<uint8_t>{} : read(local_+'/'+name+"_fuel.png");
 }
+FFTileGeographicGrid::FFTileGeographicGrid(int nx, const double* xs, int ny,
+        const double* ys, const double* latitude, const double* longitude) {
+    require(nx>=2 && ny>=2 && size_t(nx)<=16000000/size_t(ny), "invalid Meso-NH geographic grid dimensions");
+    require(xs && ys && latitude && longitude, "missing Meso-NH geographic grid arrays");
+    xs_.assign(xs,xs+nx); ys_.assign(ys,ys+ny);
+    lat_.assign(latitude,latitude+size_t(nx)*ny); lon_.resize(lat_.size());
+    for (const auto* axis : {&xs_,&ys_}) for(size_t i=0;i<axis->size();++i)
+        require(std::isfinite((*axis)[i]) && (!i || (*axis)[i]>(*axis)[i-1]), "Meso-NH mass-point axes must increase");
+    for(size_t i=0;i<lat_.size();++i) {
+        require(std::isfinite(lat_[i]) && std::abs(lat_[i])<90 && std::isfinite(longitude[i]), "invalid Meso-NH latitude/longitude");
+        lon_[i]=longitude[0]+wrap(longitude[i]-longitude[0]);
+    }
+}
+std::array<double,2> FFTileGeographicGrid::geographic(double x, double y) const {
+    require(std::isfinite(x) && std::isfinite(y), "nonfinite Meso-NH position");
+    auto cell=[](const std::vector<double>& axis, double p) {
+        // One-cell extrapolation covers the half-cell between mass points
+        // and the atmospheric domain edges, without clamping their position.
+        require(p>=axis.front()-(axis[1]-axis[0]) &&
+                p<=axis.back()+(axis.back()-axis[axis.size()-2]), "position outside Meso-NH geographic grid");
+        auto end=std::upper_bound(axis.begin(),axis.end(),p);
+        return std::min(axis.size()-2,size_t(std::max(ptrdiff_t(0),end-axis.begin()-1)));
+    };
+    size_t i=cell(xs_,x),j=cell(ys_,y),nx=xs_.size(),p=i+j*nx;
+    double u=(x-xs_[i])/(xs_[i+1]-xs_[i]),v=(y-ys_[j])/(ys_[j+1]-ys_[j]);
+    auto value=[&](const std::vector<double>& a) {
+        return (1-v)*((1-u)*a[p]+u*a[p+1])+v*((1-u)*a[p+nx]+u*a[p+nx+1]);
+    };
+    return {value(lat_),wrap(value(lon_))};
+}
+std::array<double,2> FFTileGeographicGrid::cartesian(double lat, double lon) const {
+    require(std::isfinite(lat) && std::isfinite(lon), "nonfinite geographic position");
+    // Geographic ignition is infrequent: find a nearby vertex, then invert
+    // the same bilinear map. Tile sampling itself only does axis searches.
+    size_t nearest=0;double best=std::numeric_limits<double>::infinity();
+    double c=std::cos(lat*pi/180.);
+    for(size_t i=0;i<lat_.size();++i) {
+        double a=lat_[i]-lat,b=wrap(lon_[i]-lon)*c,d=a*a+b*b;
+        if(d<best){best=d;nearest=i;}
+    }
+    double x=xs_[nearest%xs_.size()],y=ys_[nearest/xs_.size()];
+    const double hx=(xs_[1]-xs_[0])*.001,hy=(ys_[1]-ys_[0])*.001;
+    for(int iteration=0;iteration<12;++iteration) {
+        auto q=geographic(x,y);double a=q[0]-lat,b=wrap(q[1]-lon);
+        if(std::abs(a)<1e-11 && std::abs(b)<1e-11)return {x,y};
+        auto qx=geographic(x+hx,y),qy=geographic(x,y+hy);
+        double ax=(qx[0]-q[0])/hx,ay=(qy[0]-q[0])/hy;
+        double bx=wrap(qx[1]-q[1])/hx,by=wrap(qy[1]-q[1])/hy,det=ax*by-ay*bx;
+        require(std::isfinite(det) && std::abs(det)>1e-20,"singular Meso-NH geographic grid");
+        x-=(a*by-b*ay)/det;y-=(b*ax-a*bx)/det;
+    }
+    throw std::runtime_error("fftile: cannot invert Meso-NH geographic grid at this position");
+}
 std::array<double, 2> FFTileCoordinates::geographic(double px, double py) const {
+    if(grid)return grid->geographic(px,py);
     double lat = latitude + (py-y)/meters;
     double c = std::cos(lat*pi/180.);
     return {lat, std::abs(c) < 1e-12 ? longitude : wrap(longitude+(px-x)/(meters*c))};
 }
 std::array<double, 2> FFTileCoordinates::cartesian(double lat, double lon) const {
+    if(grid)return grid->cartesian(lat,lon);
     return {x+wrap(lon-longitude)*meters*std::cos(lat*pi/180.), y+(lat-latitude)*meters};
 }
 FFTileManager::FFTileManager(std::shared_ptr<FFTileProvider> p, size_t capacity)
@@ -206,7 +264,9 @@ std::shared_ptr<FFTile> FFTileManager::tileAt(double lat, double lon) {
         require(tile->header().latIndex == li && tile->header().lonIndex == lj, "provider returned wrong tile");
         auto fuel = provider_->fuelOverride(li,lj);
         if (!fuel.empty()) tile->overrideFuel(fuel);
+        if(!fuel.empty())fuelOverrides_[key]=std::move(fuel);else fuelOverrides_.erase(key);
     }
+    sources_[key]=sha256(bytes);
     if (cache_.size() >= capacity_) {
         auto oldest = std::min_element(cache_.begin(),cache_.end(),[](const auto& a,const auto& b){return a.second.touched<b.second.touched;});
         cache_.erase(oldest);
@@ -216,7 +276,34 @@ std::shared_ptr<FFTile> FFTileManager::tileAt(double lat, double lon) {
 }
 double FFTileManager::sample(FFTileField field, double x, double y) {
     auto ll = coordinates.geographic(x,y);
+    if(field==FFTileField::Fuel)for(auto m=modifiers_.rbegin();m!=modifiers_.rend();++m){
+        bool inside=false;const auto& p=m->points;
+        for(size_t i=0,j=p.size()-1;i<p.size();j=i++){
+            double ax=std::remainder(p[i][0]-ll[1],360.),bx=std::remainder(p[j][0]-ll[1],360.);
+            if((p[i][1]>ll[0])!=(p[j][1]>ll[0]) && 0<(bx-ax)*(ll[0]-p[i][1])/(p[j][1]-p[i][1])+ax)inside=!inside;
+        }
+        if(inside)return m->fuel;
+    }
     auto tile = tileAt(ll[0],ll[1]);
     return tile ? tile->sample(field,ll[0],ll[1]) : 0.;
 }
+void FFTileManager::addFuelPolygon(int fuel,const std::string& text) {
+    require(fuel>=0&&fuel<=255,"modifier fuel ID must be 0..255");
+    require(modifiers_.size()<4096,"too many fuel modifiers");
+    std::string clean=text;for(char& c:clean)if(c==','||c==':'||c=='|')c=' ';
+    std::istringstream in(clean);FuelPolygon polygon{fuel,{}};double lon,lat;
+    while(in>>lon){require(bool(in>>lat),"unpaired modifier coordinate");require(std::isfinite(lon)&&std::isfinite(lat)&&lon>=-180&&lon<=180&&std::abs(lat)<89,"invalid modifier coordinate");polygon.points.push_back({lon,lat});require(polygon.points.size()<=10000,"too many modifier vertices");}
+    require(in.eof()&&polygon.points.size()>=3,"modifier needs three geographic vertices");
+    modifiers_.push_back(std::move(polygon));
+}
+std::string FFTileManager::fuelPolygons() const {
+    std::ostringstream out;out<<std::setprecision(17);
+    for(const auto& p:modifiers_){out<<p.fuel;for(auto q:p.points)out<<' '<<q[0]<<' '<<q[1];out<<'\n';}return out.str();
+}
+void FFTileManager::restoreFuelPolygons(const std::string& text) {
+    auto previous=modifiers_;modifiers_.clear();
+    try{std::istringstream input(text);std::string line;while(std::getline(input,line)){if(line.empty())continue;std::istringstream row(line);int fuel;require(bool(row>>fuel),"invalid modifier record");std::string points;std::getline(row,points);addFuelPolygon(fuel,points);}}
+    catch(...){modifiers_=std::move(previous);throw;}
+}
+
 }

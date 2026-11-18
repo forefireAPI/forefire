@@ -24,10 +24,12 @@ class FFTile {
     FFTileHeader header_;
     std::array<std::vector<uint8_t>, 4> images_;
     std::vector<uint16_t> altitude16_;
+    std::vector<uint8_t> fuelOverride_;
 public:
     explicit FFTile(const std::vector<uint8_t>& bytes);
     const FFTileHeader& header() const { return header_; }
     void overrideFuel(const std::vector<uint8_t>& png);
+    const std::vector<uint8_t>& fuelOverride() const { return fuelOverride_; }
     double sample(FFTileField, double lat, double lon) const;
 };
 // A provider returns an empty buffer for unavailable coverage. Invalid content
@@ -66,15 +68,32 @@ struct FFTileLoadOptions {
     bool prefetch = true;
     static FFTileLoadOptions parse(const std::string& arguments);
 };
+// Meso-NH mass-point geography, with Cartesian axes in the parent-domain
+// frame. Arrays use Fortran ordering (x varies fastest), including halos.
+class FFTileGeographicGrid {
+    friend class FFState;
+    std::vector<double> xs_, ys_, lat_, lon_;
+public:
+    FFTileGeographicGrid(int nx, const double* xs, int ny, const double* ys,
+                        const double* latitude, const double* longitude);
+    std::array<double,2> geographic(double x, double y) const;
+    std::array<double,2> cartesian(double latitude, double longitude) const;
+};
 struct FFTileCoordinates {
     double latitude = 0, longitude = 0, x = 0, y = 0;
+    std::shared_ptr<const FFTileGeographicGrid> grid = nullptr;
     std::array<double, 2> geographic(double px, double py) const; // lat, lon
     std::array<double, 2> cartesian(double lat, double lon) const; // x, y
 };
 class FFTileManager {
+    friend class FFState;
     struct Entry { std::shared_ptr<FFTile> tile; uint64_t touched; };
     std::shared_ptr<FFTileProvider> provider_;
     std::map<int, Entry> cache_;
+    std::map<int,std::array<uint8_t,32>> sources_;
+    std::map<int,std::vector<uint8_t>> fuelOverrides_;
+    struct FuelPolygon { int fuel; std::vector<std::array<double,2>> points; };
+    std::vector<FuelPolygon> modifiers_;
     size_t capacity_;
     uint64_t clock_ = 0;
 public:
@@ -83,6 +102,9 @@ public:
     explicit FFTileManager(std::shared_ptr<FFTileProvider>, size_t capacity = 8);
     std::shared_ptr<FFTile> tileAt(double latitude, double longitude);
     double sample(FFTileField, double x, double y);
+    void addFuelPolygon(int fuel, const std::string& longitudeLatitudePairs);
+    std::string fuelPolygons() const;
+    void restoreFuelPolygons(const std::string&);
     struct PrefetchResult { size_t available = 0, missing = 0; };
     PrefetchResult prefetch(double westX, double southY, double eastX, double northY);
     size_t cachedTiles() const { return cache_.size(); }

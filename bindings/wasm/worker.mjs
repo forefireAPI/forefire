@@ -42,6 +42,17 @@ function build(land, model, solver) {
 	ff.setString("fuelsTable", land.fuelsTable);
 	ff.setDouble("defaultFuelType", land.defaultFuel);
 	for (const [key, value] of Object.entries(solver)) ff.setDouble(key, value);
+	if (solver.windReductionFactor !== undefined)
+		ff.setDouble("Farsite.adjustementWind", solver.windReductionFactor);
+	if (land.deadMoisture !== undefined) {
+		ff.setDouble("moistures.ones", land.deadMoisture);
+		ff.setDouble("moistures.tens", land.deadMoisture);
+		ff.setDouble("moistures.hundreds", land.deadMoisture);
+	}
+	if (land.liveMoisture !== undefined) {
+		ff.setDouble("moistures.liveh", land.liveMoisture);
+		ff.setDouble("moistures.livew", land.liveMoisture);
+	}
 	ff.setString("propagationModel", model);
 
 	ff.execute(`FireDomain[sw=(0,0,0);ne=(${side},${side},0);t=0]`);

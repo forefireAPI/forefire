@@ -12,7 +12,57 @@ history, so they summarise each release rather than list every change. The
 
 ## [Unreleased]
 
+### Changed
+
+- Opt-in `normalScheme=slopeCorrectedWeightedMedians` projects weighted-median
+  normals onto the local terrain plane and normalizes model slope per horizontal
+  distance; legacy schemes retain their existing results (issue #284).
+
+- The browser's Ultrafast preset trades road-scale detail for speed; ensemble
+  comparisons default to the same numerics as the reference.
+
+- FFTile geographic fuel polygons support persistent scenario barriers and fuel
+  replacement; FFState preserves them and ignores confirmed retired-node events.
+- WebAssembly can add perimeter ignitions at the current simulation clock.
+
+- WebAssembly node identities use a defined wide shift, fixing duplicate zero
+  IDs when serializing newly created nodes.
+
+- Coupled FFTile cases use Meso-NH's registered mass-point geography in the
+  parent Cartesian frame, including nested offsets and grid rotation. Fire
+  terrain remains tile-backed; Meso-NH altitude updates use a separate writable
+  atmospheric layer. Tile slope components are transformed to the grid frame.
+  This changes results for newly enabled tile coupling; the legacy NetCDF
+  coupling path is retained. A matching Meso-NH interface patch is provided.
+
 ### Added
+
+- Scenario Studio selects front-normal schemes and preserves the choice in
+  scenarios and FFState checkpoints.
+
+- Scenario Studio supports timeline actions, reset, FFState downloads and
+  paper-based ensemble burn probabilities; Pages stages Corsica tiles outside Git.
+
+- `saveState` / `loadState` store live fire objects, sparse arrival history,
+  parameters, forcing and fuel overrides without NetCDF. FFTile-backed states
+  attach to registered Meso-NH domains with UTC/frame transfer and checkpoint
+  flux clocks; base tiles remain external.
+
+- Standalone FFTile domains optionally store arrival times in sparse globally
+  aligned 0.1-degree blocks (`arrivalMapSubdivisions=64/128/256/512`). The web
+  default uses 256; its opt-in Super fast preview uses 128 m / 32 m front
+  numerics, 128 subdivisions and adaptive protection for small ignitions.
+  ROS and wind adjustment are unchanged. Geographic blocks are not yet enabled
+  for coupled or parallel runs.
+
+- WebAssembly tile domains accept rolling coarse east/north wind fields, with
+  bilinear spatial and linear temporal interpolation, tile response matrices,
+  and a local coordinate Jacobian. Missing forcing coverage raises an error.
+  A dedicated perimeter importer preserves disconnected polygons and holes.
+
+- A tile-backed launcher for the real nested Meso-NH case creates an isolated
+  run, validates four-rank coupling and geographic placement, and optionally
+  records summaries of wind and heat/vapour arrays at the C/Fortran boundary.
 
 - The WASM tile demo supports zoom/pan with detailed terrain sampling, multiple
   ignitions, live wind changes, simulation pacing, pause/resume and the public
@@ -31,6 +81,18 @@ history, so they summarise each release rather than list every change. The
   spread on missing coverage. The Python writer checks reconstruction error
   and uses 16-bit PNG altitude when 8-bit JPEG loses too much precision.
 
+- The browser demo includes the `Farsite` propagation model in its model
+  selector.
+- `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled
+  ForeFire + Meso-NH run: it downloads and builds Meso-NH 6.0.1, builds
+  ForeFire with MPI, links them and runs `tests/mnh_real_nested`. With
+  `--compare <branch>` it runs the case on both builds and reports the output
+  files that differ beyond run-to-run noise. ([#266])
+- A User Guide page introduces Meso-NH coupling, the supplied cases and the live 3D viewer.
+- A User Guide page lists the propagation and flux models that have a
+  published reference, with a link to it and how to select each model.
+- `tools/htdocs/mnh3d.html` shows a run coupled to Meso-NH live in 3D:
+  terrain, fuel, fire front, plume top and surface wind.
 - The browser demo can draw the DFCI grid, water points and DFCI tracks from
   the IGN Géoplateforme, in France. These layers are display only: they never
   reach the simulation.
@@ -56,6 +118,33 @@ history, so they summarise each release rather than list every change. The
 
 ### Fixed
 
+- `setParameter[key=]` with an empty value no longer crashes.
+- `listenHTTP` reads a POST body sent after its headers, as Python's `urllib` does.
+- A `listenHTTP` server started from `pyforefire` no longer crashes on its first command.
+- `setParameter[key="""..."""]` stores the value without the triple quotes, so
+  an inline multiline `fuelsTable` in a `.ff` script is read correctly. The
+  value may also contain `=`.
+- `Balbi2020.Cpa` now sets the air heat capacity; the model used a fixed
+  1150 J/kg/K whatever the parameter said. The default is now 1150, so results
+  do not change.
+- `FDCellsOutputs=0` turns off the atmospheric cell debug output. The code
+  read `FDCellOutputs`, so the output was always on when `watchedProc`
+  selected the process.
+- The Farsite model now matches the FARSITE reference (mbedward/farsite) at
+  the flanks and back of the fire, not only at the head. On slopes it is an
+  approximation. This changes Farsite results. ([#270])
+- The Farsite model reads the wind in m/s and the slope as a tangent, like the
+  other Rothermel models, and slope only speeds up spread uphill. It used to
+  read the wind as if it were in mph and double the slope, so downhill spread
+  was boosted as much as uphill, and a headwind gave NaN and dropped the slope
+  term. This changes Farsite results: about 5 times more wind effect and 4
+  times less slope effect for fuel model 1, so settings tuned on the old
+  behaviour need tuning again. ([#242])
+- On a slope, the Farsite model now matches the FARSITE reference. ForeFire
+  hands every model the sine of the slope and the wind times its cosine,
+  because the front normal carries the slope; the Farsite model converts them
+  back to the tangent and the horizontal wind. Uphill spread rises by up to a
+  third at 30°. Flat ground and `normalScheme=splines` are unchanged. ([#265])
 - Commands that need a domain print an error when there is none, instead of
   segfaulting: `FireNode`, `FireFront`, `startFire`, `goTo`, `save[]`,
   `trigger[fuel]`, `trigger[fuelIndice]`, any command scheduled with `@t` or
@@ -70,13 +159,10 @@ history, so they summarise each release rather than list every change. The
 - `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid: one row per y,
   north first, at full precision. It used to write one row per x and round
   values to six significant digits.
-- The Farsite model reads the wind in m/s and the slope as a tangent, like the
-  other Rothermel models, and slope only speeds up spread uphill. It used to
-  read the wind as if it were in mph and double the slope, so downhill spread
-  was boosted as much as uphill, and a headwind gave NaN and dropped the slope
-  term. This changes Farsite results: about 5 times more wind effect and 4
-  times less slope effect for fuel model 1, so settings tuned on the old
-  behaviour need tuning again. ([#242])
+- Documentation: removed `defaultFuelType`, which nothing reads, and the
+  `Kcurv`/`beta` columns from the WindDriven examples, which only use
+  `vv_coeff`. `minSpeed`, `relax` and `smoothing` now describe what the code
+  does, and Windows pip users are pointed to WSL.
 
 ## [v2.6.0] — 2026-10-26
 
@@ -353,4 +439,7 @@ repository stays easy to return to.
 [#205]: https://github.com/forefireAPI/forefire/issues/205
 [#171]: https://github.com/forefireAPI/forefire/issues/171
 [#172]: https://github.com/forefireAPI/forefire/issues/172
+[#265]: https://github.com/forefireAPI/forefire/issues/265
 [#242]: https://github.com/forefireAPI/forefire/pull/242
+[#270]: https://github.com/forefireAPI/forefire/pull/270
+[#266]: https://github.com/forefireAPI/forefire/issues/266

@@ -1,154 +1,107 @@
 .. _userguide-forefire-script:
 
-ForeFire Script File (.ff)
-==========================
+Script files (.ff)
+==================
 
-The ForeFire Script File, conventionally given a ``.ff`` extension, is a plain text file that contains a sequence of commands to control and execute a ForeFire simulation. It acts as the primary way to define a simulation scenario for non-interactive runs.
+A ``.ff`` script is a plain-text list of commands. It sets parameters, loads data, starts fires, schedules events and writes results. The same commands work at the ``forefire>`` prompt, over HTTP, and from Python with ``ff.execute("...")``. Every command is listed in :doc:`/reference/commands`.
 
-Purpose
--------
-
-The script file allows you to automate the entire simulation process, including:
-
-- Setting simulation parameters.
-- Loading necessary input data (landscape, fuels).
-- Defining the initial state of the fire (ignition points or lines).
-- Specifying dynamic conditions (like changing winds).
-- Controlling the simulation's time progression.
-- Generating output files at desired intervals or at the end.
-
-Basic Syntax
-------------
-
-- **One Command Per Line:** Each line in the script file generally represents a single ForeFire command.
-- **Command Structure:** Commands follow the format ``CommandName[argument1=value1;argument2=value2;...]``.
-  
-  - The command name is case-sensitive (e.g., ``setParameter`` is different from ``setparameter``).
-  - Arguments are enclosed in square brackets ``[...]``.
-  - Arguments are typically key-value pairs separated by an equals sign ``=``.
-  - Multiple arguments within the brackets are separated by semicolons ``;``.
-  - Some commands might take positional arguments (like :ref:`loadData <cmd-loadData>`) or have optional arguments (prefixed with `opt:` in the :doc:`Command Reference </reference/commands>`).
-- **Comments:** Lines beginning with a hash symbol ``#`` are treated as comments and are ignored by the interpreter. A ``#`` after a command on the same line is not a comment: ForeFire prints ``unknown post operator`` and does not run the command. Put comments on their own line.
-- **Whitespace:** Leading and trailing whitespace on a line is generally ignored, except for indentation (see below).
-
-Indentation for Hierarchy (FireFront / FireNode)
-------------------------------------------------
-
-Certain commands, specifically :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, use **leading spaces (indentation)** to define their relationship within the simulation structure when creating custom initial fire perimeters:
-
-- A ``FireFront`` defined within a :ref:`FireDomain <cmd-FireDomain>` is typically indented (e.g., 4 spaces).
-- A ``FireNode`` belonging to that ``FireFront`` is indented further relative to the `FireFront` (e.g., another 4 spaces, totaling 8).
-- An inner ``FireFront`` (representing an unburned island within another `FireFront`) would be indented relative to its parent `FireFront`.
+A typical script
+----------------
 
 .. code-block:: none
-  :caption: Example Indentation for Custom Front
 
-  # FireDomain defined earlier or implicitly...
+   # 1. Model and solver parameters (ForeFireDataDirectory=. looks in caseDirectory)
+   setParameters[ForeFireDataDirectory=.;propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
 
-      # Indented FireFront (e.g., 4 spaces)
-      FireFront[t=0]
-          # Further indented FireNode (e.g., 8 spaces total)
-          FireNode[loc=(100,100,0);t=0]
-          FireNode[loc=(200,100,0);t=0]
-          FireNode[loc=(150,150,0);t=0]
-          # ... potentially more nodes defining the outer perimeter
+   # 2. Load the NetCDF landscape (creates the FireDomain from the 'domain' variable)
+   loadData[data.nc;2024-07-15T12:00:00Z]
 
+   # 3. Ignite (WGS84 lon,lat,z, or Cartesian loc=(x,y,z))
+   startFire[lonlat=(8.85,41.78,0);t=0]
 
-.. important::
-   Consistent use of spaces (not tabs) is recommended for indentation. The exact number of spaces required might need experimentation or checking examples, but the relative indentation defines the hierarchy. Using :ref:`startFire <cmd-startFire>` is often simpler for basic point ignitions.
+   # 4. Initial wind, and a wind shift at t = 1 h
+   trigger[wind;vel=(5.0,2.0,0.0)]
+   trigger[wind;vel=(2.0,6.0,0.0)]@t=3600
 
-Typical Script Workflow
+   # 5. Run to t = 2 h
+   goTo[t=7200]
+
+   # 6. Write the final front and the arrival-time matrix
+   print[final_front.geojson]
+   save[]
+
+At the end you have ``final_front.geojson`` with the perimeter at two hours, and the arrival-time matrix written by ``save[]``. ``tests/runff/real_case.ff`` and ``tests/runff/params.ff`` in the repository are a complete real case.
+
+Syntax
+------
+
+A command is ``CommandName[arg1=val1;arg2=val2]``. Some take positional arguments, such as ``loadData[data.nc;2024-01-01T12:00:00Z]`` or ``include[params.ff]``. Command and parameter names are case-sensitive.
+
+A line that starts with ``#`` or ``*`` is a comment, except inside a ``"""`` block (see below). Comments only work on their own line.
+
+.. warning::
+   Put nothing after the closing ``]``, not even a comment or trailing spaces. Everything after ``]`` is read as a schedule operator (:ref:`@t=... <cmd-@>`). A ``# comment`` or two or more spaces there give ``unknown post operator``, and the command does not run.
+
+Scheduling
+~~~~~~~~~~
+
+``@t=<seconds>`` (absolute simulation time) or ``@nowplus=<seconds>`` (relative to now), right after ``]``, puts the command in the ``TimeTable`` instead of running it now:
+
+.. code-block:: none
+
+   trigger[wind;vel=(6.0,2.0,0.0)]@t=1800
+   print[front_t1800.geojson]@t=1800
+   save[]@nowplus=600
+
+Multiline values
+~~~~~~~~~~~~~~~~
+
+Triple quotes ``"""`` let a value span several lines, for example an inline fuel table:
+
+.. code-block:: none
+
+   setParameter[fuelsTable="""Index;vv_coeff
+   1;1.0
+   2;0.3"""]
+
+Substitution and protected values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In ``print[...]`` and ``systemExec[...]``, ``*paramName*`` is replaced with the current value of ``paramName``. Any ``:`` in the result becomes ``-``, so ISO dates are safe in file names:
+
+.. code-block:: none
+
+   print[front_*ISOdate*_step_*count*.geojson]
+
+``setParameter[key=!value]`` protects ``key``: later ``setParameter`` calls for it are ignored for the rest of the session.
+
+Drawing a front by hand
 -----------------------
 
-While the exact commands depend on the simulation, a common workflow within a ``.ff`` script looks like this:
+For a point ignition, :ref:`startFire <cmd-startFire>` creates a small clockwise triangle of 3 nodes. For any other shape, write the front with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`.
 
-1.  **Setup Parameters:** Define simulation controls, model choices, resolution, etc.
+Indentation sets the hierarchy, one tab or four spaces per level, relative to the first command of the script:
 
-  .. code-block:: none
+- Level 0: ``FireDomain[...]`` and other top-level commands.
+- Level 1: the outer ``FireFront[...]``.
+- Level 2: the ``FireNode[...]`` of the outer front, or an inner ``FireFront[...]`` (an unburned island).
+- Level 3: the ``FireNode[...]`` of the inner front.
 
-    # Include parameters from a separate file (optional)
-    # include[params.ff]
+Each ``FireNode`` needs at least ``loc=(x,y,z)``, ``vel=(vx,vy,vz)`` and ``t=<seconds>``. With fewer than 3 arguments it raises ``MissingOption``.
 
-    # Set specific parameters directly
-    setParameters[propagationModel=Rothermel;perimeterResolution=30;dumpMode=geojson]
+Node order sets the direction (see :ref:`front winding <front-winding>`): clockwise expands, counter-clockwise contracts. Here the outer front is clockwise and the island inside it is counter-clockwise:
 
-2.  **Load Input Data:** Load the geospatial context.
+.. code-block:: none
+   :caption: Expanding outer perimeter with a contracting inner island
 
-  .. code-block:: none
-
-    # Load landscape and associate with a time
-    loadData[my_landscape.nc;2024-01-01T12:00:00Z]
-    # Note: The fuels file (e.g., fuels.csv) is usually implicitly loaded
-    # based on the 'fuelsTableFile' parameter or defaults,
-    # but its path might need to be relative to 'caseDirectory'.
-
-3.  **Define Simulation Domain (if needed):** While ``loadData`` can implicitly define the domain extent based on the NetCDF file, you can also explicitly define it using ``FireDomain``.
-
-  .. code-block:: none
-
-    # Optional explicit domain definition (using projected coords)
-    # FireDomain[sw=(0,0,0);ne=(50000,50000,0);t=0]
-
-4.  **Define Initial Fire State:** Specify where and when the fire starts.
-
-  .. code-block:: none
-
-    # Simple point ignition, using geographic coordinates
-    startFire[lonlat=(9.1,42.2,0);t=0]
-
-    # --- OR ---
-
-    # Custom initial front (using projected coords and indentation)
-    # Ensure FireDomain covers these coordinates
-    #    FireFront[t=0]
-    #        FireNode[loc=(2500,3000,150);t=0]
-    #        FireNode[loc=(2600,3000,150);t=0]
-    #        FireNode[loc=(2550,3100,150);t=0]
-
-
-5.  **Set Dynamic Conditions (Optional):** Introduce time-varying inputs, like wind changes.
-
-  .. code-block:: none
-
-    # Set initial wind (applied from t=0 if not in landscape file)
-    trigger[wind;vel=(3.0,-1.0,0.0)]
-
-    # Change wind later in the simulation: new wind at 1 hour
-    trigger[wind;vel=(0.0,5.0,0.0)]@t=3600
-
-6.  **Advance Simulation Time:** Run the simulation forward.
-
-  .. code-block:: none
-
-    # Run until a specific absolute simulation time (t = 2 hours)
-    goTo[t=7200]
-
-    # --- OR ---
-
-    # Run in discrete steps (useful for periodic output),
-    # with outputs scheduled at t=600 and t=1200
-    # print[front_t600.geojson]@t=600
-    # print[front_t1200.geojson]@t=1200
-    # step[dt=600]
-    # step[dt=600]
-    # ...
-
-7.  **Generate Outputs:** Save the simulation results.
-
-  .. code-block:: none
-
-    # Save final front geometry (format set by dumpMode parameter)
-    print[final_front.geojson]
-
-    # Save final arrival time map to NetCDF
-    # (uses default filename pattern ForeFire.<domainID>.nc)
-    save[]
-
-    # Plot a specific variable to an image
-    # plot[parameter=arrival_time;filename=arrival_map.png]
-
-
-Complete Example (`real_case.ff`)
----------------------------------
-
-The file ``tests/runff/real_case.ff`` serves as a complete, working example demonstrating many of these concepts in practice. After understanding the basics outlined here and consulting the :doc:`Command </reference/commands>` and :doc:`Parameter </reference/parameters>` references, studying ``real_case.ff`` is highly recommended.
+   FireDomain[sw=(-1000,-1000,0);ne=(1000,1000,0);t=0]
+       FireFront[t=0]
+           FireNode[loc=(0,100,0);vel=(0,0,0);t=0]
+           FireNode[loc=(100,0,0);vel=(0,0,0);t=0]
+           FireNode[loc=(0,-100,0);vel=(0,0,0);t=0]
+           FireNode[loc=(-100,0,0);vel=(0,0,0);t=0]
+           FireFront[t=0]
+               FireNode[loc=(0,20,0);vel=(0,0,0);t=0]
+               FireNode[loc=(-20,0,0);vel=(0,0,0);t=0]
+               FireNode[loc=(0,-20,0);vel=(0,0,0);t=0]
+               FireNode[loc=(20,0,0);vel=(0,0,0);t=0]

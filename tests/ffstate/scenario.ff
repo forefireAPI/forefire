@@ -1,0 +1,4 @@
+# Change the effective fuel table after attachment, without replaying ignition.
+trigger[fuel;Md=0.20]
+setParameter[ffstateScenarioMarker=FFSTATE_SCENARIO_APPLIED]
+getParameter[ffstateScenarioMarker]

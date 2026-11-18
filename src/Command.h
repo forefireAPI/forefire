@@ -43,6 +43,7 @@ namespace libforefire {
  */
 
 class Command {
+    friend class FFState;
 
 	/*! \class BadOption
 	 * \brief dummy class for exception handling
@@ -84,6 +85,8 @@ class Command {
 		trans["goTo"] = &goTo;
 		trans["print"] = &printSimulation;
 		trans["save"] = &saveSimulation;
+        trans["saveState"] = &saveState;
+        trans["loadState"] = &loadState;
 		trans["plot"] = &plotSimulation;
 		trans["computeSpeed"] = &computeModelSpeed;
 		trans["addLayer"] = &addLayer;
@@ -149,7 +152,9 @@ class Command {
 	/*! \brief command to save in print format the simulation */
 	static int printSimulation(const string&, size_t&);
 	/*! \brief command to save in print format the simulation */
-	static int saveSimulation(const string&, size_t&);
+	static int saveState(const string&, size_t&);
+    static int loadState(const string&, size_t&);
+    static int saveSimulation(const string&, size_t&);
 	/*! \brief command to load in print format the simulation */
 	static int addLayer(const string&, size_t&);
 	/*! \brief command to plot in png/jpg format the simulation */
@@ -314,6 +319,16 @@ public:
 	static bool domainExists(const string& command);
 	/*! \brief command to redirect the ostringstream */
 	static void setOstringstream(ostringstream*);
+	/*! \brief sends command output to a stream until destroyed, then back to
+	 * cout, so later output (e.g. from a listenHTTP thread) never reaches a
+	 * stream that is gone */
+	class OutputCapture {
+	public:
+		explicit OutputCapture(ostringstream* out) { setOstringstream(out); }
+		~OutputCapture() { setOstringstream(nullptr); }
+		OutputCapture(const OutputCapture&) = delete;
+		OutputCapture& operator=(const OutputCapture&) = delete;
+	};
 
 	/*! \brief execute the desired command */
 	static void ExecuteCommand(string&);

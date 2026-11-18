@@ -20,6 +20,7 @@
 #include "Command.h"
 #include "FireDomain.h"
 #include "fftile.h"
+#include "GriddedWind.h"
 #include <stdexcept>
 #include <cmath>
 #include "include/Version.h"
@@ -68,6 +69,7 @@ std::vector<T> toLayerOrder(const std::vector<T> &src, size_t nx, size_t ny,
 
 class ForeFireWasm {
 	Command executor;
+    std::shared_ptr<GriddedWind> windForcing;
 
 public:
 	ForeFireWasm() : executor() {}
@@ -75,7 +77,7 @@ public:
 	/*! \brief Run one ForeFire command, returning whatever it printed. */
 	std::string execute(const std::string &command) {
 		std::ostringstream captured;
-		executor.setOstringstream(&captured);
+		Command::OutputCapture capture(&captured);
 		std::string cmd(command);
 		executor.ExecuteCommand(cmd);
 		return captured.str();
@@ -153,6 +155,82 @@ public:
 									 timespan, nnx, nny, nnz, nnt, owned);
 	}
 
+    void importPerimeters(const emscripten::val& polygons) {
+        auto* domain=executor.getDomain();
+        if(!domain)
+            throw std::runtime_error("Load a tile domain before importing perimeters");
+        using Ring=std::vector<std::array<double,2>>;
+        std::vector<std::vector<Ring>> components;
+        const unsigned count=polygons["length"].as<unsigned>();size_t vertices=0;
+        if(count>10000)throw std::runtime_error("Too many perimeter components");
+        for(unsigned i=0;i<count;++i) {
+            std::vector<Ring> rings;auto polygon=polygons[i];
+            const unsigned nr=polygon["length"].as<unsigned>();
+            if(!nr || nr>10000)throw std::runtime_error("Invalid polygon rings");
+            for(unsigned j=0;j<nr;++j) {
+                Ring ring;auto r=polygon[j];const unsigned n=r["length"].as<unsigned>();
+                if(n<3 || (vertices+=n)>100000)throw std::runtime_error("Invalid perimeter size");
+                for(unsigned k=0;k<n;++k) {
+                    double x=r[k][0].as<double>(),y=r[k][1].as<double>();
+                    if(!std::isfinite(x)||!std::isfinite(y)||x<=domain->getSWCorner().getX()||
+                       y<=domain->getSWCorner().getY()||x>=domain->getNECorner().getX()||y>=domain->getNECorner().getY())
+                        throw std::runtime_error("Perimeter lies outside the tile domain");
+                    ring.push_back({x,y});
+                }
+                double area=0;for(size_t k=0;k<ring.size();++k){auto a=ring[k],b=ring[(k+1)%ring.size()];area+=a[0]*b[1]-b[0]*a[1];}
+                if(std::abs(area)<2)throw std::runtime_error("Degenerate perimeter");
+                if((area>0)!=(j>0))std::reverse(ring.begin(),ring.end());
+                rings.push_back(std::move(ring));
+            }
+            components.push_back(std::move(rings));
+        }
+        for(const auto& rings:components) {
+            for(size_t j=0;j<rings.size();++j) {
+                const std::string indent(j?2:1,'\t');
+                execute(indent+"FireFront[t="+std::to_string(executor.getTime())+"]");
+                for(auto p:rings[j]) {
+                    std::ostringstream node;node.precision(17);
+                    node<<indent<<"\tFireNode[loc=("<<p[0]<<","<<p[1]<<",0);vel=(0,0,0);t="<<executor.getTime()<<";state=init]";
+                    execute(node.str());
+                }
+            }
+            // Restore the outer front explicitly. The legacy text reader's
+            // decreasing-indent path otherwise attaches a new component to it.
+            if(rings.size()>1) {
+                Command::completeFront(executor.currentSession.ff);
+                executor.currentSession.ff=executor.currentSession.ff->getContFront();
+                Command::decreaseLevel();
+            }
+            Command::completeFront(executor.currentSession.ff);
+        }
+    }
+
+    void setWindGrid(const emscripten::val& config) {
+        auto* domain=executor.getDomain();
+        if(!domain || !domain->getDataBroker()->getFFTileManager())
+            throw std::runtime_error("Load a tile domain before setting wind fields");
+        GriddedWind next;
+        next.nx=config["nx"].as<unsigned>();next.ny=config["ny"].as<unsigned>();
+        next.west=config["west"].as<double>();next.east=config["east"].as<double>();
+        next.south=config["south"].as<double>();next.north=config["north"].as<double>();
+        next.times=toVector<double>(config["times"]);
+        next.u=toVector<double>(config["u"]);next.v=toVector<double>(config["v"]);
+        next.validate();
+        if(!windForcing) {
+            windForcing=std::make_shared<GriddedWind>(std::move(next));
+            auto broker=domain->getDataBroker();auto manager=broker->getFFTileManager();
+            for(const auto& name:{"windU","windV"})
+                broker->registerLayer(name,new GriddedTileWindLayer(name,manager,windForcing,
+                    domain->getSWCorner(),domain->getNECorner()-domain->getSWCorner()));
+        } else *windForcing=std::move(next);
+    }
+
+    void refreshTiles() {
+        auto* domain=executor.getDomain();
+        if(domain && domain->getDataBroker()->getFFTileManager())
+            domain->getDataBroker()->getFFTileManager()->clearCache();
+    }
+
     emscripten::val tileDomain() {
         auto* domain = executor.getDomain();
         if (!domain || !domain->getDataBroker()->getFFTileManager()) return emscripten::val::null();
@@ -164,7 +242,26 @@ public:
         out.set("longitude",manager->coordinates.longitude);out.set("latitude",manager->coordinates.latitude);
         out.set("originX",manager->coordinates.x);out.set("originY",manager->coordinates.y);
         out.set("cachedTiles",manager->cachedTiles());
+        if(auto* grid=domain->geographicArrivalMap()) {
+            auto info=emscripten::val::object();info.set("blockDegrees",.1);info.set("subdivisions",grid->subdivisions());
+            info.set("spacingX",grid->spacingX());info.set("spacingY",grid->spacingY());info.set("allocatedBlocks",grid->allocatedBlocks());
+            info.set("stepDegrees",grid->stepDegrees());auto bounds=emscripten::val::array();auto b=grid->bounds();for(int i=0;i<4;++i)bounds.set(i,b[i]);info.set("bounds",bounds);out.set("arrivalGrid",info);
+        }
         return out;
+    }
+
+    bool setNumerics(double perimeter,double advance,bool protectSmall) {
+        auto* domain=executor.getDomain();if(!domain||!std::isfinite(perimeter)||!std::isfinite(advance)||perimeter<12||advance<=0||advance>perimeter*.3)throw std::runtime_error("Invalid solver resolution");
+        bool fine=false;
+        if(protectSmall)for(auto* front:domain->getMainFronts()){
+            auto* head=front->getHead();if(!head)continue;auto* node=head;size_t count=0;bool moving=false;
+            double x0=1e30,y0=1e30,x1=-1e30,y1=-1e30;
+            do {auto p=node->getLoc();x0=std::min(x0,p.getX());x1=std::max(x1,p.getX());y0=std::min(y0,p.getY());y1=std::max(y1,p.getY());moving|=node->getState()==FireNode::moving||node->getState()==FireNode::init;node=node->getNext();}while(node&&node!=head&&++count<100000);
+            if(moving&&std::max(x1-x0,y1-y0)<6*perimeter){fine=true;break;}
+        }
+        domain->setPerimeterResolution(fine?24:perimeter);domain->setSpatialIncrement(fine?6:advance);
+        executor.currentSession.params->setDouble("perimeterResolution",fine?24:perimeter);
+        executor.currentSession.params->setDouble("spatialIncrement",fine?6:advance);return !fine;
     }
 
     double sampleAt(const std::string& name, double x, double y) {
@@ -276,7 +373,11 @@ EMSCRIPTEN_BINDINGS(forefire) {
 		.function("addScalarLayer", &ForeFireWasm::addScalarLayer)
 		.function("addIndexLayer", &ForeFireWasm::addIndexLayer)
 		.function("getDoubleArray", &ForeFireWasm::getDoubleArray)
+        .function("importPerimeters", &ForeFireWasm::importPerimeters)
+        .function("setWindGrid", &ForeFireWasm::setWindGrid)
+        .function("refreshTiles", &ForeFireWasm::refreshTiles)
         .function("tileDomain", &ForeFireWasm::tileDomain)
+        .function("setNumerics", &ForeFireWasm::setNumerics)
         .function("sampleAt", &ForeFireWasm::sampleAt)
         .function("sampleLayer", &ForeFireWasm::sampleLayer)
         .function("sampleWindow", &ForeFireWasm::sampleWindow);

@@ -26,6 +26,8 @@ extern "C" {
 // Function for control of the Fire Simulation
 
 void MNHInit(const double);
+// Optional geography registration before MNHCreateDomain. C arrays are copied.
+void MNHSetGeographicGrid(int, const double*, int, const double*, const double*, const double*);
 void MNHCreateDomain(const int
 		, const int, const int
 		, const int, const double

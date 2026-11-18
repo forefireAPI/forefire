@@ -69,3 +69,9 @@ jobs:
 
       - name: Run the ensemble test
         run: ./.venv/bin/python tests/python/test_ensemble.py
+
+      - name: Run the FFTile and FFState test
+        run: ./.venv/bin/python tests/python/test_fftile_ffstate.py
+
+      - name: Run the listen mode test
+        run: ./.venv/bin/python tests/python/test_listen.py

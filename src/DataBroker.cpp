@@ -960,7 +960,14 @@ namespace libforefire
 
 	int DataBroker::getSlope(FireNode *fn, PropagationModel *model, int keynum)
 	{
-		(model->properties)[keynum] = slopeLayer->getValueAt(fn);
+        double value = slopeLayer->getValueAt(fn);
+        if (fn->usesSlopeCorrectedNormal()) {
+            auto n = fn->getNormal();
+            const double horizontal = std::sqrt(n.getVx()*n.getVx()+n.getVy()*n.getVy());
+            // Models expect dz / horizontal distance, not dz / surface distance.
+            value = horizontal > 1e-12 ? value/horizontal : 0.;
+        }
+        (model->properties)[keynum] = value;
 		return 1;
 	}
 
@@ -1174,6 +1181,14 @@ void DataBroker::loadFFTiles(const std::string& directory) {
             auto center = params->getDoubleArray("fftileCenter");
             if (center.size() != 2) throw std::runtime_error("fftile: fftileCenter must be longitude,latitude");
             tileManager->coordinates = {center[1],center[0],sw.getX()+extent.getX()/2,sw.getY()+extent.getY()/2};
+        }
+        if (domain->atmosphericCoupling) {
+            // Nested grids retain the parent's Cartesian origin. Never anchor
+            // the geographic origin independently to each MPI rank's SW corner.
+            tileManager->coordinates.grid=domain->tileGeography();
+            if (!tileManager->coordinates.grid)
+                throw std::runtime_error("fftile: coupled tiles require Meso-NH geographic grid registration before MNHCreateDomain");
+            createEmpty2DLayer("atmosphericAltitude",atmoSWCorner,atmoNECorner,atmosphericNx,atmosphericNy);
         }
         tileManager->windU = params->isValued("windU") ? params->getDouble("windU") : 0.;
         tileManager->windV = params->isValued("windV") ? params->getDouble("windV") : 0.;

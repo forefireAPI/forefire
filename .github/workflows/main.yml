@@ -25,6 +25,14 @@ permissions:
 jobs:
   build-native:
     runs-on: ubuntu-latest
+    # The Meso-NH coupling code only compiles with MPI, and the build turns MPI
+    # on by itself when it finds it. The ON run installs it so that code is
+    # compiled and tested too.
+    strategy:
+      fail-fast: false
+      matrix:
+        mpi: ['OFF', 'ON']
+    name: build-native (MPI ${{ matrix.mpi }})
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -48,7 +56,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends python3 python3-pip
           # Keep strace installed for potential future debugging
           sudo apt-get install -y --no-install-recommends strace
-          # === ADD ANY OTHER ForeFire build dependencies (e.g. MPI) ===
+          if [ "${{ matrix.mpi }}" = ON ]; then
+            sudo apt-get install -y --no-install-recommends libopenmpi-dev openmpi-bin
+          fi
           # pip install Python test dependencies
           pip3 install --no-cache-dir lxml xarray netCDF4
 
@@ -58,6 +68,12 @@ jobs:
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
+
+      - name: Check MPI linkage matches the matrix
+        run: |
+          if ldd ./lib/libforefireL.so | grep -q libmpi; then linked=ON; else linked=OFF; fi
+          echo "MPI linked: $linked"
+          [ "$linked" = "${{ matrix.mpi }}" ]
 
       # The unit tests are built by install-forefire.sh along with everything
       # else (FOREFIRE_BUILD_TESTS defaults on outside wheel builds), so this

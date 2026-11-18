@@ -37,6 +37,17 @@ public:
         auto p = fn->getLoc();
         if (getKey() != "slope") return getValueAt(p,fn->getTime());
         auto n = fn->getNormal();
+        if(manager_->coordinates.grid) {
+            // Tile gradients are east/north; fire normals are in the Meso-NH
+            // conformal frame. Apply the geographic mapping's local Jacobian.
+            auto q=manager_->coordinates.geographic(p.getX(),p.getY());
+            auto a=manager_->coordinates.geographic(p.getX()+.25*n.getVx(),p.getY()+.25*n.getVy());
+            auto b=manager_->coordinates.geographic(p.getX()-.25*n.getVx(),p.getY()-.25*n.getVy());
+            double east=std::remainder(a[1]-b[1],360.)*111195*std::cos(q[0]*3.14159265358979323846/180.)/.5;
+            double north=(a[0]-b[0])*111195/.5;
+            return manager_->sample(FFTileField::SlopeX,p.getX(),p.getY())*east +
+                   manager_->sample(FFTileField::SlopeY,p.getX(),p.getY())*north;
+        }
         return manager_->sample(FFTileField::SlopeX,p.getX(),p.getY())*n.getVx() +
                manager_->sample(FFTileField::SlopeY,p.getX(),p.getY())*n.getVy();
     }

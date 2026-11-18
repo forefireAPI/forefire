@@ -21,6 +21,7 @@ namespace libforefire {
 class DataBroker;
 
 class ForeFireModel {
+    friend class FFState;
 
 protected:
 

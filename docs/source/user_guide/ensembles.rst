@@ -18,7 +18,7 @@ A complete example
 
 The script below ignites a fire in a 4 km square domain, runs a two-minute
 spin-up once, then forks 32 members that each continue under a different
-easterly wind. It uses the minimal ``WindDriven`` model of
+eastward wind. It uses the minimal ``WindDriven`` model of
 :ref:`Running from NumPy arrays <userguide-python-arrays>` and runs as-is
 against a ``pip``-installed ForeFire.
 
@@ -30,8 +30,7 @@ against a ``pip``-installed ForeFire.
    L = 4000.0
 
    def setup(ff):
-       ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0"
-       ff["defaultFuelType"] = 1.
+       ff["fuelsTable"] = "Index;vv_coeff\n1;1.0"
        ff["windReductionFactor"] = 1.0
        ff["propagationModel"] = "WindDriven"
        ff.execute(f"FireDomain[sw=(0,0,0);ne=({L},{L},0);t=0]")
@@ -51,7 +50,7 @@ against a ``pip``-installed ForeFire.
        ff.execute(f"trigger[wind;loc=(0,0,0);vel=({u},{v},0)]")
 
    rng = np.random.default_rng(1)
-   angle = rng.normal(0, np.radians(20), 32)  # easterly, give or take 20 degrees
+   angle = rng.normal(0, np.radians(20), 32)  # blowing east, give or take 20 degrees
    speed = rng.uniform(2, 4, 32)
    winds = list(zip(speed * np.cos(angle), speed * np.sin(angle)))
 
@@ -90,7 +89,7 @@ ensemble:
    pyforefire.brier_score(p, observed)         # error of the probability map, 0 is perfect
    frequency, count = pyforefire.reliability(p, observed)
 
-* ``dice`` is 2|A ∩ B| / (|A| + |B|), one value per member.
+* ``dice`` is :math:`2|A \cap B| / (|A| + |B|)`, one value per member.
 * ``brier_score`` is the mean of ``(p - observed)²``. Applied to
   ``arrivals <= t`` it scores each member alone, so the ensemble can be
   compared with its members.

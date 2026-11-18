@@ -8,10 +8,24 @@ This is an experimental build, not a supported one yet. It answers the three
 questions the issue left open: does it link, does it run, how big is it.
 
 `.github/workflows/wasm.yml` builds the module and runs `smoke.mjs` on every
-pull request, and `.github/workflows/wasm-pages.yml` publishes the browser
-demo to GitHub Pages on every push to `dev`. The `.wasm` is built in CI rather
+pull request, and the same workflow publishes the browser demo to GitHub Pages
+on every push to `dev`. The `.wasm` is built in CI rather
 than committed: it is a megabyte of generated output, and a stale binary
 sitting next to live sources is worse than a two minute build.
+
+## Scenario Studio
+
+The current tile-based application is in
+[scenario-studio/](scenario-studio/README.md). GitHub Pages assembles it from
+source and the current WASM build, with a Corsica tile subset fetched into the
+site artifact. Generated engine assets, tiles and deployment config are ignored.
+The former small demo is retained under `/classic/` in the published artifact.
+Manual wind needs no weather archive; ERA and PHP POST launch are optional
+hosting capabilities. The source includes scenario edits, FFState and browser
+ensembles. See [TESTING.md](../../TESTING.md) for the checks.
+
+The size and timing figures below describe the original small demo build;
+they are not measurements of the current Scenario Studio application.
 
 ## What made it possible
 
@@ -94,10 +108,10 @@ map ForeFire writes natively, rebuilt from the perimeter of every frame.
 nodes on a tight curve do not wash it out.
 
 The models on offer are the ones that run on this fuel table with only slope
-and wind: Rothermel, BalbiNov2011Curv, BalbiUnsteady, TroisPourcent and Iso.
-Balbi2015, Balbi2020 and BalbiNov2011TMdMl also need moisture and temperature
-layers and abort without them; BalbiNov2011 places the front far from the
-ignition.
+and wind: Rothermel, Farsite, BalbiNov2011Curv, BalbiUnsteady, TroisPourcent
+and Iso. Balbi2015, Balbi2020 and BalbiNov2011TMdMl also need moisture and
+temperature layers and abort without them; BalbiNov2011 places the front far
+from the ignition.
 
 ### The landscape comes from map tiles
 

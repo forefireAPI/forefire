@@ -68,9 +68,9 @@ This is useful for previewing changes before committing or pushing them.
 
 - Doxygen also can generate HTML own documentation, where you can see the inheritance graphs, list os classes, functions, variables, etc
 
-    Open the generated HTML documentation in your web browser.
-    ```
-    # Path is relative to the 'docs' directory
+    Open the generated HTML documentation in your web browser:
+    ```bash
+    # From the repository root directory:
     open docs/doxygen/html/index.html
     ```
 

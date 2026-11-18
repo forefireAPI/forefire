@@ -1,0 +1,100 @@
+diff --git a/src/Makefile b/src/Makefile
+index 21689e0ae..8e9d86777 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -224,7 +224,7 @@ objmaster :  $(OBJS_LISTE_MASTER)
+ # Build the (thin) archive atomically via $(LIB_MASTER).new + mv, so a concurrent reader
+ # never sees a missing/half-written archive, and a failed build keeps the previous archive
+ # (the incomplete .new is removed by .DELETE_ON_ERROR).
+-$(LIB_MASTER) : $(wildcard $(OBJDIR_MASTER)/*.o)
++$(LIB_MASTER) : $(wildcard $(OBJDIR_MASTER)/*.o) Makefile
+ 	cd $(OBJDIR_MASTER) ; rm -f $(LIB_MASTER).new ; find . -follow -type f -name '*.o' | sort | xargs -r $(AR) $(AR_THIN) $(LIB_MASTER).new ; mv -f $(LIB_MASTER).new $(LIB_MASTER)
+ 
+ progmaster : libmaster
+@@ -381,7 +381,7 @@ $(NETCDF_C_LIB) : $(AEC_LIB)  $(ZSTD_LIB) $(HDF_LIB)
+ 	cd ${DIR_CDFC} && LD_RUN_PATH=${IO_LIBS_PATH}/lib LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${IO_LIBS_PATH}/lib \
+ 	$(LIB_PRELOAD) ./configure --disable-nczarr --disable-libxml2 --enable-filter-zstd --disable-dap --disable-byterange \
+ 	--prefix=${IO_LIBS_PATH} --libdir=${IO_LIBS_PATH}/lib  --with-plugin-dir=${HDF5_PLUGIN_PATH} \
+-	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${IO_LIBS_PATH}/lib" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lzstd -lz -ldl " && \
++	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${IO_LIBS_PATH}/lib -Wl,-rpath,${IO_LIBS_PATH}/lib" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lzstd -lz -ldl " && \
+ 	$(LIB_PRELOAD) $(MAKE) && $(LIB_PRELOAD) $(MAKE) install && $(LIB_PRELOAD) $(MAKE) clean
+ 
+ netcdf-fortran : $(NETCDF_F_LIB)
+@@ -389,7 +389,7 @@ $(NETCDF_F_LIB) : $(AEC_LIB)  $(ZSTD_LIB) $(HDF_LIB) $(NETCDF_C_LIB)
+ 	cd ${DIR_CDFF} && LD_RUN_PATH=${IO_LIBS_PATH}/lib LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${IO_LIBS_PATH}/lib \
+ 	$(LIB_PRELOAD) ./configure --prefix=${IO_LIBS_PATH} --libdir=${IO_LIBS_PATH}/lib \
+ 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
+-	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${IO_LIBS_PATH}/lib" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
++	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${IO_LIBS_PATH}/lib -Wl,-rpath,${IO_LIBS_PATH}/lib" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl " && \
+ 	$(LIB_PRELOAD) $(MAKE) && $(LIB_PRELOAD) $(MAKE) install && $(LIB_PRELOAD) $(MAKE) clean
+ 
+ io-libs : netcdf-fortran
+@@ -554,7 +554,7 @@ $(PROG_LIST) : OBJ_PROG=$(shell find $(PROG_DIR) -follow -maxdepth 1 -type f -na
+ 
+ $(PROG_LIST) :  $(LIB_MNH)
+ #	echo OBJ_PROG=$(OBJ_PROG)
+-	$(MPIFC) $(LDFLAGS) -Wl,-rpath=${IO_LIBS_PATH}/lib -o $(OBJDIR)/$@ $(OBJ_PROG) $(LIB_MNH) $(LIBS)
++	$(MPIFC) $(LDFLAGS) -Wl,-rpath,${IO_LIBS_PATH}/lib -o $(OBJDIR)/$@ $(OBJ_PROG) $(LIB_MNH) $(LIBS)
+ 
+ %-${ARCH_XYZ} :%
+ ifndef DO_COMP_USER
+@@ -661,7 +661,12 @@ ARFLAGS=r
+ # Override to 'r' for non-GNU ar (macOS BSD ar, older linkers) that do not support
+ # thin archives. Thin archives store only file paths instead of full object content,
+ # drastically reducing I/O on slow filesystems (a few KB vs hundreds of MB).
++ifeq ($(shell uname -s),Darwin)
++AR := $(shell /usr/bin/xcrun --find ar)
++AR_THIN ?= r
++else
+ AR_THIN ?= rT
++endif
+ #(%.o): %.o
+ #	$(AR) $(ARFLAGS)   $(OBJDIR)/$(@F) $(*F).o
+ #	$(RM) $(*F).o
+diff --git a/src/Makefile.MESONH.mk b/src/Makefile.MESONH.mk
+index af868e0a5..412f44cf5 100644
+--- a/src/Makefile.MESONH.mk
++++ b/src/Makefile.MESONH.mk
+@@ -427,9 +427,16 @@ DIR_ECCODES_BUILD?=${OBJDIR_MASTER}/build_eccodes-${VERSION_ECCODES}
+ DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
+ ECCODES_MOD?=$(DIR_ECCODES_INSTALL)/include/grib_api.mod
+ #
++# Match the runtime used by the platform's C++ compiler (MPI C++ wrapper).
++ifeq ($(shell uname -s),Darwin)
++MNH_CXX_RUNTIME ?= -lc++
++else
++MNH_CXX_RUNTIME ?= -lstdc++
++endif
++
+ ifdef DIR_ECCODES_SRC
+ INC_ECCODES   ?= -I$(DIR_ECCODES_INSTALL)/include
+-LIB_ECCODES   ?= -L$(DIR_ECCODES_INSTALL)/lib -L$(DIR_ECCODES_INSTALL)/lib64 -leccodes_f90 -leccodes -lstdc++
++LIB_ECCODES   ?= -L$(DIR_ECCODES_INSTALL)/lib -L$(DIR_ECCODES_INSTALL)/lib64 -leccodes_f90 -leccodes $(MNH_CXX_RUNTIME)
+ INC           += $(INC_ECCODES)
+ LIBS          += $(LIB_ECCODES)
+ VPATH         += $(DIR_ECCODES_INSTALL)/include
+@@ -647,7 +654,7 @@ ifeq "$(MNH_BITREP)" "YES"
+ DIR_MASTER += LIB/BITREP
+ VPATH += LIB/BITREP
+ OBJS_LISTE_MASTER += br_transcendentals.o
+-LIBS += -lstdc++
++LIBS += $(MNH_CXX_RUNTIME)
+ %.o : %.cpp
+ 	$(CXX) $(INC) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $(OBJDIR)/$(*F).o
+ endif
+diff --git a/src/Rules.LXgfortran.mk b/src/Rules.LXgfortran.mk
+index edfd121e8..387d3dc16 100644
+--- a/src/Rules.LXgfortran.mk
++++ b/src/Rules.LXgfortran.mk
+@@ -154,7 +154,10 @@ FX90FLAGS     =  $(OPT)
+ # -fno-lto: prevent the LTO plugin from being loaded by the linker at link time to
+ # avoid intermittent "symbol number N uses unsupported binding of 4" failures when
+ # linking against thin archives (see issue #108)
+-LDFLAGS += $(OPT) -Wl,--allow-multiple-definition -fno-lto
++LDFLAGS += $(OPT) -fno-lto
++ifneq ($(shell uname -s),Darwin)
++LDFLAGS += -Wl,--allow-multiple-definition
++endif
+ #
+ # preprocessing flags 
+ #

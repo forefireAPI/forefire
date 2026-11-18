@@ -17,6 +17,7 @@ using namespace std;
 namespace libforefire {
 
 class SimulationParameters {
+    friend class FFState;
 
     /*! values for undefined parameters */
     static string undefined;

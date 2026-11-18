@@ -44,9 +44,10 @@ If you need either, build from source (below).
 
 ### Building from source
 
-Any platform without a published wheel — Windows, musl-based Linux, or an
-unusual architecture — falls back to compiling the sdist, which needs a C++
-compiler, CMake ≥ 3.15, and the NetCDF C and legacy C++4 libraries:
+On Linux or macOS without a published wheel (musl-based Linux or an unusual
+architecture), pip compiles the sdist, which needs a C++ compiler, CMake ≥ 3.18,
+and the NetCDF C and legacy C++4 libraries. Native Windows is not supported;
+use WSL.
 
 ```bash
 # Debian/Ubuntu

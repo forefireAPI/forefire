@@ -10,6 +10,9 @@
 #define FIREDOMAIN_H_
 
 #include "ForeFireAtom.h"
+#include <array>
+#include <memory>
+#include "GeographicArrivalMap.h"
 #include "Visitable.h"
 #include "Visitor.h"
 #include "FireNode.h"
@@ -44,11 +47,15 @@ namespace libforefire{
  *  the 'dataBroker' and physical models necessary
  *  for the simulation.
  */
+class FFTileGeographicGrid;
+
 class FireDomain: public ForeFireAtom, Visitable {
+    friend class FFState;
 
 
 	/* Internal variables of the simulation */
     /*--------------------------------------*/
+	std::shared_ptr<const FFTileGeographicGrid> tileGeography_;
 	SimulationParameters* params; /*!< parameters of the simulation */
 	FireFront* domainFront; /*!< Container for the fireFront in the domain  */
 	list<FireFront*>::iterator currentfront;
@@ -102,6 +109,7 @@ class FireDomain: public ForeFireAtom, Visitable {
 	double burningMatrixResX; /*! Resolution in X direction of the global burning matrix */
 	double burningMatrixResY; /*! Resolution in Y direction of the global burning matrix */
 	double burningMatrixRes; /*! global burning matrix resolution */
+    std::unique_ptr<GeographicArrivalMap> geographicArrival_;
 
 	double inverseCellSizeX; /*! Resolution in X direction of the global burning matrix */
 	double inverseCellSizeY; /*! Resolution in Y direction of the global burning matrix */
@@ -351,6 +359,10 @@ public:
     // Getter for the longitude conversion factor.
     double getMetersPerDegreesLon() ;
 
+    std::shared_ptr<const FFTileGeographicGrid> tileGeography() const { return tileGeography_; }
+    const GeographicArrivalMap* geographicArrivalMap() const { return geographicArrival_.get(); }
+    FFPoint getPointFromLonLat(double lon, double lat, double altitude = 0);
+    std::array<double,2> getLatLonFromPoint(double x, double y);
 	double getXFromLon(double);
 	double getXFromLon(double, double y) ;
 	double getYFromLat(double) ;
@@ -372,7 +384,7 @@ public:
 	/*! \brief Default constructor */
 	FireDomain();
 	/*! \brief Constructor with boundaries and time */
-	FireDomain(const double&, FFPoint&, FFPoint&);
+	FireDomain(const double&, FFPoint&, FFPoint&, std::shared_ptr<const FFTileGeographicGrid> = {});
 	/*! \brief Constructor with boundaries, time and reference longitude and latitude */
 	FireDomain(const int&
 			, const int&, const int&
@@ -380,7 +392,7 @@ public:
 			, const double&, const double&
 			, const int&, const double*
 			, const int&, const double*
-			, const int&, const double&);
+			, const int&, const double&, std::shared_ptr<const FFTileGeographicGrid> = {});
 	/*! \brief Destructor */
 	virtual ~FireDomain();
 

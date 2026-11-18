@@ -135,7 +135,7 @@ py::object PLibForeFire::getDataMatrixPy(char *name) {
 string PLibForeFire::execute(char *command)
 {
 	ostringstream stringOut;
-	pyxecutor->setOstringstream(&stringOut);
+	Command::OutputCapture capture(&stringOut);
 	string smsg(command);
 	pyxecutor->ExecuteCommand(smsg);
 	return stringOut.str();

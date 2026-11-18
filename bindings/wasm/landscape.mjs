@@ -20,15 +20,17 @@ const IMAGERY =
 const TERRAIN = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
 
 /*! The three fuel classes, as rows of tests/runff/fuels.csv — the repository's
- *  own Rothermel table, not invented numbers. Index 0 has a fuel bed depth of
- *  zero, which is what makes it a barrier. */
+ *  own Rothermel table — followed by the FARSITE columns from
+ *  STDfarsiteFuelsTable (FM4 chaparral for shrub, FM1 short grass for grass,
+ *  NB0 for bare ground). Index 0 has a fuel bed depth of zero, which is what
+ *  makes it a barrier. */
 const FUEL_ROWS = {
-	5: "5;626.0;600.0;0.1;1.0;4325.0;5844.0;0.6;1.393;0.201;8.3;1.0;300;70000;18802000.0;18802000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3",
-	4: "4;613.0;538.0;0.1;1.0;4357.0;6524.0;0.19;1.286;0.085;8.3;1.0;300;70000;18677000.0;18677000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3",
-	0: "0;563.0;522.0;0.1;1.0;6099.0;7273.0;0;0.764;0.352;8.3;1.0;300;70000;18169000.0;18167000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3",
+	5: "5;626.0;600.0;0.1;1.0;4325.0;5844.0;0.6;1.393;0.201;8.3;1.0;300;70000;18802000.0;18802000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3;5.01;4.01;2.0;0.0;5.01;0;2000;1800;1500;6.0;0.2;8000.0;8000.0",
+	4: "4;613.0;538.0;0.1;1.0;4357.0;6524.0;0.19;1.286;0.085;8.3;1.0;300;70000;18677000.0;18677000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3;0.74;0.0;0.0;0.0;0.0;0;3500;1800;1500;1.0;0.12;8000.0;8000.0",
+	0: "0;563.0;522.0;0.1;1.0;6099.0;7273.0;0;0.764;0.352;8.3;1.0;300;70000;18169000.0;18167000.0;1800;1000;600;0.3;2.5e-05;4.0;0.3;0.0;0.0;0.0;0.0;0.0;0;0;0;0;0.0;0.0;0.0;0.0",
 };
 const FUEL_HEADER =
-	"Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal;stoch;RhoA;Ta;Tau0;Deltah;DeltaH;Cp;Cpa;Ti;X0;r00;Blai;me";
+	"Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal;stoch;RhoA;Ta;Tau0;Deltah;DeltaH;Cp;Cpa;Ti;X0;r00;Blai;me;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl";
 
 export const FUELS = [
 	{ index: 5, label: "shrub / maquis", note: "depth 0.6 m", rgb: [46, 125, 50] },
@@ -52,7 +54,12 @@ export function fuelsTable({ deadMoisture, liveMoisture, depth }) {
 		const cells = FUEL_ROWS[f.index].split(";");
 		cells[col("Md")] = String(deadMoisture);
 		cells[col("Ml")] = String(liveMoisture);
-		if (depth[f.index] !== undefined) cells[col("e")] = String(depth[f.index]);
+		if (depth[f.index] !== undefined) {
+			cells[col("e")] = String(depth[f.index]);
+			cells[col("depth")] = String(
+				(+cells[col("depth")] * depth[f.index]) / FUEL_DEFAULTS.depth[f.index]
+			);
+		}
 		return cells.join(";");
 	});
 	return [FUEL_HEADER, ...rows].join("\n");

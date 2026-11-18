@@ -19,20 +19,19 @@ The two array layers
 
 Two binding methods take NumPy arrays directly:
 
-* ``addIndexLayer(name, "fuel", SWx, SWy, SWz, Lx, Ly, Lz, array)`` — the
-  **fuel index map**. Each cell holds an integer index into the fuel table.
-* ``addScalarLayer(name, variable, SWx, SWy, SWz, Lx, Ly, Lz, array)`` — a
-  continuous field such as a **wind component**.
+* ``addIndexLayer(type, name, x0, y0, t0, width, height, timespan, array)`` — an
+  integer index layer such as the **fuel index map** (e.g. ``type="table"``, ``name="fuel"``).
+* ``addScalarLayer(type, name, x0, y0, t0, width, height, timespan, array)`` — a
+  continuous ``float64`` field such as elevation (``type="data"``, ``name="altitude"``)
+  or a projected wind component (``type="windScalDir"``, ``name="windU"`` / ``"windV"``).
 
-The ``SW*`` / ``L*`` arguments give the south-west corner and the extent of the
-layer in the simulation's Cartesian metres, so the array is stretched to cover
-the domain regardless of its pixel resolution.
+The ``x0, y0, t0`` and ``width, height, timespan`` arguments give the south-west corner, initial time, spatial extent (in Cartesian metres), and duration of the layer, so the array is stretched to cover the domain regardless of its pixel resolution.
 
 A complete example
 ------------------
 
 The script below ignites a fire at the centre of a 4 km square domain and
-drives it with a uniform easterly wind, entirely from arrays. It runs as-is
+drives it with a uniform wind blowing east (towards +x), entirely from arrays. It runs as-is
 against a ``pip``-installed ForeFire.
 
 .. code-block:: python
@@ -46,8 +45,7 @@ against a ``pip``-installed ForeFire.
    # Fuel table, inline — no CSV file needed. The columns depend on the
    # propagation model: the WindDriven model used here only needs vv_coeff
    # (see "Choosing a fuel table" below).
-   ff["fuelsTable"] = "Index;vv_coeff;Kcurv;beta\n1;1.0;1.0;1.0\n2;0.3;1.0;1.0"
-   ff["defaultFuelType"] = 1.
+   ff["fuelsTable"] = "Index;vv_coeff\n1;1.0\n2;0.3"
 
    # Solver parameters.
    for key, value in {
@@ -69,7 +67,7 @@ against a ``pip``-installed ForeFire.
    ff.execute(f"FireDomain[sw=(0,0,0);ne=({Lx},{Ly},0);t=0]")
 
    # Build the environment as arrays. The fuel map is a 4-D array shaped
-   # (1, 1, width, height); the wind components are shaped (1, 2, width, height).
+   # (1, 1, ny, nx); the wind components are shaped (1, 2, ny, nx).
    W = H = 200
    fuel_map = np.full((1, 1, W, H), 1.0)      # fuel index 1 everywhere
 
@@ -111,7 +109,7 @@ The :ref:`print <cmd-print>` command returns the fire front as text, and the
        verts[:, 0].min(), verts[:, 0].max(),
        verts[:, 1].min(), verts[:, 1].max()))
 
-With the easterly wind above, the front that started as a point at
+With the eastward wind above, the front that started as a point at
 ``(2000, 2000)`` has stretched downwind to roughly ``x = 3900`` after four
 minutes of simulated time. You now have the perimeter as an array to plot,
 post-process, or feed into whatever comes next.
@@ -123,7 +121,7 @@ The columns of ``fuelsTable`` are read by the propagation model, so they change
 with the model you select:
 
 * ``WindDriven`` — a minimal table with ``vv_coeff`` (the rate of spread is
-  ``vv_coeff × normal wind``), plus ``Kcurv`` and ``beta``. Convenient for
+  ``vv_coeff × normal wind``). Convenient for
   idealized and teaching cases.
 * ``Rothermel``, ``BalbiNov2011``, ``Balbi2015`` and the other physical models
   — the full fuel description in ``fuels.csv``. See
@@ -138,7 +136,7 @@ the map with a slower fuel:
    fuel_map[0, 0, :, H // 2:] = 2.0   # index 2 = slower fuel
 
 Where to go next
----------------
+----------------
 
 * ``tests/python/idealizedwind.py`` in the repository is a fuller worked
   version of this example: it drives the same array-based setup with a *turning*

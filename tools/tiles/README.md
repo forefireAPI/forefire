@@ -111,8 +111,9 @@ to connect), follow at most 5 redirects and limit each response to 64 MiB.
 HTTPS certificate verification remains enabled, and an HTTPS source cannot
 redirect to plain HTTP. Base service URLs cannot contain query strings or
 fragments; authentication/header configuration is not exposed by this command.
-Meso-NH coupling and browser-side HTTP loading are separate from this native
-standalone entry point.
+Meso-NH coupling uses its existing domain creation and a companion geography
+registration patch; see [the coupling notes](../../docs/mnh/fftiles-coupling.md).
+Browser-side HTTP loading uses its asynchronous adapter.
 
 ### Explicit domain configuration
 
@@ -217,3 +218,16 @@ If any budget still fails, it rejects the encoding. A constant field uses
 min=max and decodes exactly. The 1 MB size target is informational: accuracy
 wins over compressed size. Codec validation does not establish accuracy of
 the original data, reprojection or source mosaicking.
+
+### Standalone geographic arrival-time blocks
+
+Set `arrivalMapSubdivisions=256` before loading a standalone FFTile domain to
+use sparse 0.1-degree blocks with 256×256 arrival cells (roughly 43 m north/south).
+Allowed values are 64, 128, 256 and 512; absent or zero keeps the legacy map.
+This changes arrival-map sampling, not fuel resolution or FireNode relaxation.
+Blocks share a global geographic lattice and allocate only when written.
+Coupled/parallel domains reject this option: an atmospheric flux remapping
+interface is not yet provided. The web Standard preset uses 256; its opt-in
+Super fast preview uses 128 and 128 m / 32 m front numerics, with finer startup
+for small active fires. It sacrifices roads and narrow details without changing
+ROS or wind adjustment. See `tools/tiles/benchmark_wasm.mjs` for fresh-worker timing.

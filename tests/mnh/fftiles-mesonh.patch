@@ -1,0 +1,92 @@
+diff --git a/src/LIB/FOREFIRE/C_ForeFire_Interface.c b/src/LIB/FOREFIRE/C_ForeFire_Interface.c
+index daa78ecd8..d1f79bafb 100644
+--- a/src/LIB/FOREFIRE/C_ForeFire_Interface.c
++++ b/src/LIB/FOREFIRE/C_ForeFire_Interface.c
+@@ -93,6 +93,18 @@ void MNHInit(double* t) {
+ 
+ }
+ 
++/* Optional extension: preserve the existing MNHCreateDomain ABI. */
++void MNHSetGeographicGrid(int* nx, double* x, int* ny, double* y,
++                         double* lat, double* lon) {
++    if (my_lib_handle == NULL) loadLib();
++    if (my_lib_handle != NULL) {
++        void (*set_grid)(int, const double*, int, const double*, const double*, const double*);
++        *(void **) (&set_grid) = dlsym(my_lib_handle, "MNHSetGeographicGrid");
++        if (set_grid != NULL) set_grid(*nx, x, *ny, y, lat, lon);
++        /* Older ForeFire libraries continue using their original landscape path. */
++    }
++}
++
+ void MNHCreateDomain(int* id
+ 		, int* year, int* month, int* day, double* t
+ 		, double* lat, double* lon
+diff --git a/src/LIB/FOREFIRE/F_ForeFire_Interface.f90 b/src/LIB/FOREFIRE/F_ForeFire_Interface.f90
+index ba0c08b7f..4634c3052 100644
+--- a/src/LIB/FOREFIRE/F_ForeFire_Interface.f90
++++ b/src/LIB/FOREFIRE/F_ForeFire_Interface.f90
+@@ -30,6 +30,14 @@ MODULE MODD_FOREFIRE_FORTRAN_API
+         REAL(C_DOUBLE), INTENT(IN) :: T
+       END SUBROUTINE MNH_TO_FF_INIT
+ 
++      SUBROUTINE MNH_TO_FF_GEOGRAPHICGRID(NX, X, NY, Y, LAT, LON) BIND(C, NAME='MNHSetGeographicGrid')
++        IMPORT C_INT, C_DOUBLE
++        INTEGER(C_INT), INTENT(IN) :: NX, NY
++        REAL(C_DOUBLE), DIMENSION(NX), INTENT(IN) :: X
++        REAL(C_DOUBLE), DIMENSION(NY), INTENT(IN) :: Y
++        REAL(C_DOUBLE), DIMENSION(NX,NY), INTENT(IN) :: LAT, LON
++      END SUBROUTINE MNH_TO_FF_GEOGRAPHICGRID
++
+       SUBROUTINE MNH_TO_FF_CREATEDOMAIN(ID, YEAR, MONTH, DAY, TIME &
+           , LAT, LON, MDIMX, MESHX, MDIMY, MESHY, MDIMZ, SIZEIN, ZGRID, DT) BIND(C, NAME='MNHCreateDomain')
+       IMPORT C_INT, C_DOUBLE
+diff --git a/src/LIB/FOREFIRE/init_forefiren.f90 b/src/LIB/FOREFIRE/init_forefiren.f90
+index acdb0e491..1044768e6 100644
+--- a/src/LIB/FOREFIRE/init_forefiren.f90
++++ b/src/LIB/FOREFIRE/init_forefiren.f90
+@@ -43,7 +43,8 @@
+   USE MODD_CONF,        ONLY: LCARTESIAN
+   USE MODD_DYN_n,       ONLY: NFINAL_TIMESTEP
+   USE MODD_GRID,        ONLY: XLATORI, XLONORI
+-  USE MODD_GRID_n,      ONLY: XXHAT, XYHAT, XZHAT, XZS, XZZ, XLON, XLAT
++  USE MODD_GRID_n,      ONLY: XXHAT, XYHAT, XZHAT, XZS, XZZ, XLON, XLAT, XXHATM_ll, XYHATM_ll
++  USE MODE_GRIDPROJ,    ONLY: SM_LATLON
+   USE MODD_NSV,         ONLY: NSV_CHEMBEG, NSV_CHEMEND, NSV_FF, NSV_FFBEG, NSV_FFEND, CSV
+   USE MODD_CH_MNHC_n,   ONLY: LUSECHEM
+   USE MODD_CH_M9_n,     ONLY: CNAMES
+@@ -61,6 +62,8 @@
+   INTEGER          :: JSV, JCHEMV
+ 
+   LOGICAL          :: DUMPEDGRID
++  INTEGER          :: IGEO_NX, IGEO_NY, JGEO
++  REAL, ALLOCATABLE :: ZFFLAT(:,:), ZFFLON(:,:)
+ 
+ #if ( MNH_REAL == 8 ) 
+   WRITE (KLUOUT,*)  'COUPLING WITH FOREFIRE IN MODEL ', KMODEL
+@@ -148,6 +151,26 @@
+       CALL MNH_PUT_DOUBLE(C_CHAR_'SOUTH'//C_NULL_CHAR, XLAT(1, 1))
+     END IF
+ 
++    ! The nested grid uses the parent's Cartesian frame. Register mass-point
++    ! geography in that frame before ForeFire loads fuel or ignition geometry.
++    ! Global axes also let rank zero read a front outside its local partition.
++    IF (.NOT. LCARTESIAN) THEN
++      IF (.NOT. ASSOCIATED(XXHATM_ll) .OR. .NOT. ASSOCIATED(XYHATM_ll)) THEN
++        WRITE(KLUOUT,*) 'ForeFire: global mass-point axes are unavailable'
++        STOP 1
++      END IF
++      IGEO_NX = SIZE(XXHATM_ll)
++      IGEO_NY = SIZE(XYHATM_ll)
++      ALLOCATE(ZFFLAT(IGEO_NX,IGEO_NY), ZFFLON(IGEO_NX,IGEO_NY))
++      DO JGEO = 1, IGEO_NY
++        CALL SM_LATLON(XLATORI, XLONORI, SPREAD(XXHATM_ll,2,1), &
++                      SPREAD(XYHATM_ll(JGEO:JGEO),1,IGEO_NX), &
++                      ZFFLAT(:,JGEO:JGEO), ZFFLON(:,JGEO:JGEO))
++      END DO
++      CALL MNH_TO_FF_GEOGRAPHICGRID(IGEO_NX, XXHATM_ll, IGEO_NY, XYHATM_ll, ZFFLAT, ZFFLON)
++      DEALLOCATE(ZFFLAT, ZFFLON)
++    END IF
++
+     CALL MNH_TO_FF_CREATEDOMAIN(IP, KYEAR, KMONTH, KDAY, PTIME, XLATORI, XLONORI &
+         , FF_NX, XXHAT, FF_NY, XYHAT, FF_NZ, FF_NX*FF_NY*FF_NZ, XZZ, DT)
+ 

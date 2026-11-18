@@ -341,6 +341,7 @@ target_include_directories(forefireL SYSTEM PRIVATE
 # its consumers the way the shared library does.
 find_package(Threads REQUIRED)
 target_link_libraries(forefireL PUBLIC forefire_netcdf Threads::Threads)
+target_compile_definitions(forefireL PRIVATE FF_STATE_ENGINE_VERSION="${FOREFIRE_VERSION}")
 if(FOREFIRE_ENABLE_TILE_HTTP AND NOT EMSCRIPTEN)
     find_package(CURL QUIET)
     if(CURL_FOUND)

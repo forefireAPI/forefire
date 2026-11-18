@@ -89,6 +89,11 @@ jobs:
       - name: Smoke test under Node
         run: node bindings/wasm/smoke.mjs bin/forefire.mjs
 
+      - name: Check Scenario Studio source
+        run: |
+          python3 bindings/wasm/scenario-studio/prepare.py
+          node --test local/scenario-studio/tests/*.test.mjs
+
       - name: Upload the module for the release
         if: github.event_name == 'release'
         uses: actions/upload-artifact@v7
@@ -115,10 +120,13 @@ jobs:
       - name: Assemble the site
         if: steps.pages.outputs.publish == 'true'
         run: |
-          mkdir -p _site
-          cp bin/forefire.mjs bin/forefire.wasm _site/
+          python3 bindings/wasm/scenario-studio/prepare.py --output _site --corsica
+          touch _site/.nojekyll
+          # Preserve the previous lightweight demo under /classic/.
+          mkdir -p _site/classic
+          cp bin/forefire.mjs bin/forefire.wasm _site/classic/
           cp bindings/wasm/index.html bindings/wasm/worker.mjs \
-             bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs bindings/wasm/overlays.mjs _site/
+             bindings/wasm/landscape.mjs bindings/wasm/terrain3d.mjs bindings/wasm/overlays.mjs _site/classic/
 
       - name: Upload artifact
         if: steps.pages.outputs.publish == 'true'

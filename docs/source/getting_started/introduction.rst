@@ -3,65 +3,33 @@
 Introduction
 ============
 
-Welcome to the official documentation for ForeFire.
+ForeFire simulates how a wildland fire spreads over a landscape. It is a C++ engine with Python bindings, developed at CNRS / Université de Corse Pascal Paoli (`Filippi et al., 2009 <https://doi.org/10.3894/JAMES.2009.1.11>`_; `Filippi et al., 2025 <https://doi.org/10.21105/joss.08680>`_).
 
-What is ForeFire?
------------------
+ForeFire follows the fire line, not a grid. The perimeter is a set of markers that each move at their own pace, so the work goes where the fire is. This gives meter-scale resolution over large landscapes at more than 100 ha/s on one CPU core. :doc:`/user_guide/core_concepts` explains how.
 
-ForeFire is a powerful, open-source **wildfire simulation engine** written in C++. Its core purpose is to simulate the spread of wildfires over complex terrain using various physical models and geospatial data inputs.
+Ways to run it
+--------------
 
-Architecturally, it consists of two primary components:
+The same engine runs in four places:
 
-1.  **Simulation Engine (Library):**
-  
-  The core C++ logic containing the physics, data structures, and simulation algorithms. This is compiled into a **reusable shared library** (``libforefireL.so``/``.dylib``) which can be directly linked by other programs (e.g., for atmospheric coupling).
+- ``forefire``, the command-line interpreter. It runs ``.ff`` scripts (:doc:`/user_guide/forefire_script`), opens an interactive shell, and serves a browser interface with ``listenHTTP[]``.
+- ``pyforefire``, the Python package (``pip install forefire``). It drives the engine from Python, takes NumPy arrays as input (:doc:`/user_guide/python_arrays`), and runs ensembles in separate processes (:doc:`/user_guide/ensembles`).
+- ``libforefireL``, the C++17 library. Atmospheric models link to it over MPI and C/Fortran bindings, as Meso-NH does (:doc:`/user_guide/mesonh`).
+- ``forefire.wasm``, a WebAssembly build that runs the full solver in a browser or in Node.js. Try the `in-browser demo <https://forefireapi.github.io/forefire/>`_.
 
-2.  **Interpreter (Executable):**
-  
-  The ``forefire`` program acts as the primary user interface. It's a **command-line interpreter** that reads instructions and directs the underlying Simulation Engine. Users interact with the interpreter via:
+What it does
+------------
 
-  - Script files (``.ff``)
-  - Interactive console commands
-  - A web UI (powered by the ``listenHTTP[]`` command)
+- Propagation models are plug-ins: Rothermel, Balbi, Farsite, a neural-network emulator and more (:doc:`/user_guide/models`). A new model is one ``.cpp`` file.
+- Flux models (``BurnUpHeatFlux``, ``ForeFireV1HeatFlux`` and others) compute the heat and chemical species released behind the front.
+- Input comes from NumPy arrays, NetCDF landscape files, ``.fftile`` tiles (:doc:`/user_guide/tiles`) or web map tiles in the browser. Output goes to GeoJSON, KML, NetCDF, PNG, JPG or ASCII grids.
+- Coupled with `Meso-NH <https://mesonh.cnrs.fr/>`_, the wind drives the fire and the fire's heat and vapor feed back into the atmosphere.
+- A spun-up simulation can be forked into many runs to estimate burn probability under uncertain wind or parameters, and scored against an observed perimeter.
 
-This separation allows ForeFire to function both as a standalone simulation tool and as an embeddable computational engine for larger systems.
+Platforms
+---------
 
-Key Capabilities
-----------------
+- Linux (``x86_64``, ``aarch64``) and macOS (Apple Silicon): wheels with ``pip install forefire``, or a CMake build.
+- Windows: use WSL, Docker (``ghcr.io/forefireapi/forefire:latest``) or the browser demo.
 
-- **Physics-Based Simulation:** Implements established Rate of Spread (ROS) models (e.g., based on Rothermel equations) and provides a framework for adding custom models.
-- **Geospatial Data Handling:** Natively uses NetCDF files for input data layers such as elevation, fuel type, and weather variables.
-- **Fire-Atmosphere Coupling:** Explicitly designed for two-way coupling with atmospheric models (e.g., MesoNH) to capture crucial wind-fire interactions.
-- **High-Performance Computing:** The C++ core is optimized for performance, and MPI support enables efficient parallel execution on multi-core systems and clusters, allowing for large-scale and faster-than-real-time simulations.
-- **Multiple Interaction Modes:** Accessible via command-line scripts, an interactive console, a web-based visualization interface, direct C++ library linking, and potentially Python bindings.
-- **Extensibility:** Users can implement and integrate their own C++ modules for specific fire behavior (ROS) or flux calculations.
-- **Open Source:** Developed under the GPLv3 license, fostering transparency and community contributions.
-
-Intended Use Cases
-------------------
-
-ForeFire is suitable for a range of applications, including:
-
-- Wildfire behavior research
-- Detailed reanalysis of past fire events
-- Operational or near-real-time fire spread forecasting (standalone or ensemble)
-- Investigating fire-atmosphere interactions through coupled simulations
-- Testing and comparing different fire spread models
-
-Supported Platforms
--------------------
-
-ForeFire is primarily developed and tested on **Unix-like systems (Linux and macOS)**. It can run on Windows via **WSL** (Windows Subsystem for Linux) or **Docker**.
-
-About This Documentation
-------------------------
-
-This documentation aims to provide comprehensive guidance for users and developers. It is organized into the following main sections:
-
-- **Getting Started:** Installation, quick start guides, and running basic examples.
-- **User Guide:** Explanations of core concepts, configuration files, and common workflows.
-- **Reference:** Detailed reference material for commands, parameters, and file formats.
-- **API Reference:** Documentation for the C++ library classes and functions (generated from source code).
-- **About:** License, citation information, and acknowledgements.
-
-We recommend starting with the :doc:`quickstart` or :doc:`installation` guides.
+Next: :doc:`installation`, then :doc:`quickstart`.

@@ -8,6 +8,7 @@
 
 #include "Command.h"
 #include "fftile.h"
+#include "ffstate.h"
 #include "colormap.h"
 #include <sstream>
 #include <dirent.h>
@@ -18,6 +19,25 @@
 #include "stb_image_write.h"
 
 using namespace std;
+
+namespace
+{
+    // If `in`, once trimmed of surrounding whitespace, is wrapped in triple
+    // quotes, puts the text between them in `out` and returns true.
+    bool stripTripleQuotes(const std::string &in, std::string &out)
+    {
+        const std::string ws = " \t\r\n";
+        const std::size_t first = in.find_first_not_of(ws);
+        if (first == std::string::npos)
+            return false;
+        const std::string trimmed = in.substr(first, in.find_last_not_of(ws) - first + 1);
+        if (trimmed.size() < 6 || trimmed.compare(0, 3, "\"\"\"") != 0
+            || trimmed.compare(trimmed.size() - 3, 3, "\"\"\"") != 0)
+            return false;
+        out = trimmed.substr(3, trimmed.size() - 6);
+        return true;
+    }
+}
 
 namespace libforefire
 {
@@ -200,7 +220,7 @@ namespace libforefire
                     
                     currentSession.params->setParameter("runmode", "masterMNH");
 
-                    currentSession.fdp = new FireDomain(t, SW, NE);
+                    currentSession.fdp = new FireDomain(t, SW, NE, currentSession.fd->tileGeography());
                     currentSession.fdp->setTimeTable(currentSession.tt);
                     currentSession.ff = currentSession.fdp->getDomainFront();
 
@@ -309,16 +329,7 @@ namespace libforefire
                 trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
                 trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
 
-                /* Triple‑quoted inline string?  e.g.  \"\"\"{ ... }\"\"\"   */
-                bool tripleQuoted = trimmed.size() >= 6 &&
-                                    trimmed.substr(0, 3) == "\"\"\"" &&
-                                    trimmed.substr(trimmed.size() - 3) == "\"\"\"";
-
-                if (tripleQuoted)
-                {
-                    geojsonText = trimmed.substr(3, trimmed.size() - 6); // strip outer quotes
-                }
-                else
+                if (!stripTripleQuotes(trimmed, geojsonText))
                 {
                     /* Try to open it as a file path. */
                     std::ifstream jf(trimmed.c_str());
@@ -411,11 +422,8 @@ namespace libforefire
                         const double lon = triple[0];
                         const double lat = triple[1];
                         const double alt = triple[2];
-                        const double y   = getDomain()->getYFromLat(lat);
-                        const double x   = getDomain()->getXFromLon(lon,y);
-
-                        /* Add the point to the current ring. */
-                        currentRing.emplace_back(x, y, alt);
+                        /* Preserve the full grid transform, including rotation. */
+                        currentRing.push_back(getDomain()->getPointFromLonLat(lon,lat,alt));
                         triple.clear();
                     }
                 }
@@ -594,9 +602,7 @@ namespace libforefire
                 double lon, lat, alt;
                 if (!(ptStream >> lon >> lat >> alt))
                     continue;
-                double y = getDomain()->getYFromLat(lat);
-                double x = getDomain()->getXFromLon(lon,y);
-                points.push_back(FFPoint(x, y, alt));
+                points.push_back(getDomain()->getPointFromLonLat(lon,lat,alt));
             }
         }
         else if (opt == "polyencoded")
@@ -631,9 +637,7 @@ namespace libforefire
 
                 double latd = lat * 1e-5;
                 double lngd = lng * 1e-5;
-                double y = getDomain()->getYFromLat(latd);
-                double x = getDomain()->getXFromLon(lngd,y);
-                points.push_back(FFPoint(x, y, 0));
+                points.push_back(getDomain()->getPointFromLonLat(lngd,latd));
             }
         }
         else if (opt == "points")
@@ -1393,10 +1397,9 @@ namespace libforefire
                     v[idx++] = std::stod(token);
                 }
                 // Convert geographic -> cartesian
-                SWY = getDomain()->getYFromLat(v[1]); // south
-                SWX = getDomain()->getXFromLon(v[0],SWY); // west
-                NEY = getDomain()->getYFromLat(v[3]); // north
-                NEX = getDomain()->getXFromLon(v[2],NEY); // east
+                auto sw=getDomain()->getPointFromLonLat(v[0],v[1]);
+                auto ne=getDomain()->getPointFromLonLat(v[2],v[3]);
+                SWX=sw.getX();SWY=sw.getY();NEX=ne.getX();NEY=ne.getY();
             }
             else if (argMap.find("BBoxLBRT") != argMap.end())
             {
@@ -1487,10 +1490,10 @@ namespace libforefire
                     else if (lowerFilename.substr(lowerFilename.size() - 5) == ".json")
                     {
                         // Convert bounding box corners back to lat/lon, etc.
-                        double westLon = getDomain()->getLonFromX(SWX,SWY);
-                        double eastLon = getDomain()->getLonFromX(NEX,NEY);
-                        double southLat = getDomain()->getLatFromY(SWY);
-                        double northLat = getDomain()->getLatFromY(NEY);
+                        double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                        double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                        double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                        double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                         // nrows = matrixU.size(), ncols = matrixU[0].size() (assuming consistent sizing)
                         size_t ncols = matrixU.size();
@@ -1618,10 +1621,10 @@ namespace libforefire
                     // Still handle optional projectionOut if present
                     if (argMap.find("projectionOut") != argMap.end())
                     {
-                        double westLon = getDomain()->getLonFromX(SWX,SWY);
-                        double eastLon = getDomain()->getLonFromX(NEX,NEY);
-                        double southLat = getDomain()->getLatFromY(SWY);
-                        double northLat = getDomain()->getLatFromY(NEY);
+                        double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                        double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                        double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                        double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                         std::string projectionFormat = argMap["projectionOut"];
                         if (projectionFormat == "json")
@@ -1711,10 +1714,10 @@ namespace libforefire
                                  lowerFilename.substr(lowerFilename.size() - 3) == ".nc")
                         {
                             std::vector<double> latitudes, longitudes;
-                            double westLon = getDomain()->getLonFromX(SWX,SWY);
-                            double eastLon = getDomain()->getLonFromX(NEX,NEY);
-                            double southLat = getDomain()->getLatFromY(SWY);
-                            double northLat = getDomain()->getLatFromY(NEY);
+                            double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                            double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                            double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                            double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
                             size_t nlat = (enj > 0) ? enj : 100;
                             size_t nlon = (eni > 0) ? eni : 100;
                             double dLat = (northLat - southLat) / (nlat - 1);
@@ -1741,10 +1744,10 @@ namespace libforefire
                         // Optional projectionOut
                         if (argMap.find("projectionOut") != argMap.end())
                         {
-                            double westLon = getDomain()->getLonFromX(SWX,SWY);
-                            double eastLon = getDomain()->getLonFromX(NEX,NEY);
-                            double southLat = getDomain()->getLatFromY(SWY);
-                            double northLat = getDomain()->getLatFromY(NEY);
+                            double westLon = getDomain()->getLatLonFromPoint(SWX,SWY)[1];
+                            double eastLon = getDomain()->getLatLonFromPoint(NEX,NEY)[1];
+                            double southLat = getDomain()->getLatLonFromPoint(SWX,SWY)[0];
+                            double northLat = getDomain()->getLatLonFromPoint(NEX,NEY)[0];
 
                             std::string projectionPath = argMap["projectionOut"];
                             if (projectionPath == "json")
@@ -1936,6 +1939,36 @@ namespace libforefire
         return normal;
     }
 
+    int Command::saveState(const string& arg, size_t&) {
+        try {
+            auto file=getString("file",arg); if(file==stringError)file=arg;
+            if(file.empty())throw std::runtime_error("saveState requires file=...");
+            auto scenario=getString("scenario",arg);
+            FFState::save(SimulationParameters::GetPath(file),scenario==stringError?"":scenario);
+            *currentSession.outStream<<"Saved FFState: "<<file<<'\n';return normal;
+        }catch(const std::exception& e){*currentSession.outStream<<e.what()<<'\n';return error;}
+    }
+
+    int Command::loadState(const string& arg, size_t& tabs) {
+        try {
+            auto file=getString("file",arg);
+            if(file==stringError)file=arg.find('=')==std::string::npos?arg:currentSession.params->getParameter("ffstateFile");
+            auto mode=getString("mode",arg);
+            if(mode!=stringError&&mode!="attach")throw std::runtime_error("loadState mode must be attach");
+            if(file.empty())throw std::runtime_error("loadState requires file=...");
+            if(mode=="attach")currentSession.params->setParameter("ffstateAttachRequested","1");
+#ifdef MPI_COUPLING
+            if(mode=="attach"&&currentSession.fd&&!currentSession.fdp&&currentSession.fd->atmosphericCoupling&&currentSession.fd->getDomainID()==1) {
+                std::ostringstream domain;domain<<std::setprecision(17)<<"sw="<<currentSession.fd->getSWCorner().print()<<";ne="<<currentSession.fd->getNECorner().print()<<";t="<<getTime();
+                createDomain(domain.str(),tabs);
+            }
+#endif
+            auto provider=getString("provider",arg);
+            FFState::load(SimulationParameters::GetPath(file),mode=="attach",provider==stringError?"":provider);
+            *currentSession.outStream<<"Loaded FFState: "<<file<<'\n';return normal;
+        }catch(const std::exception& e){*currentSession.outStream<<e.what()<<'\n';return error;}
+    }
+
     int Command::setParameters(const string &arg, size_t &numTabs)
     {
         // Getting all the arguments, using the 'tokenize' function
@@ -2023,34 +2056,25 @@ namespace libforefire
     }
     int Command::setParameter(const string &arg, size_t &/*numTabs*/)
     {
-        // Getting all the arguments, using the 'tokenize' function
-        // Returns strings of the form 'arg=...'
-        vector<string> tmpArgs;
-        string delimiter = "=";
-        tokenize(arg, tmpArgs, delimiter);
-        if (tmpArgs.size() > 2)
+        // key=value, split on the first '=' so the value may contain '='.
+        // A leading '!' protects the key; a value wrapped in triple quotes
+        // (a multiline literal) is stored without them.
+        const size_t eq = arg.find('=');
+        if (eq == string::npos || eq == 0)
         {
             cout << "problem in the number of arguments when setting " << arg << endl;
             return error;
         }
+        const string key = arg.substr(0, eq);
+        string value = arg.substr(eq + 1);
+        const bool protect = !value.empty() && value[0] == '!';
+        if (protect)
+            value = value.substr(1);
+        stripTripleQuotes(value, value);
 
-        // Check if the parameter value begins with '!'
-        if (!tmpArgs[1].empty() && tmpArgs[1][0] == '!')
-        {
-            // Remove the leading '!' to get the actual value.
-            std::string value = tmpArgs[1].substr(1);
-            // Set the parameter with a protection flag (true).
-            currentSession.params->setParameter(tmpArgs[0], value, true);
-            std::cout << "Parameter " << tmpArgs[0]
-                      << " set to fixed protected value " << value << std::endl;
-        }
-        else
-        {
-            // Set the parameter normally (without protection).
-            currentSession.params->setParameter(tmpArgs[0], tmpArgs[1], false);
-        }
-
-        currentSession.params->setParameter(tmpArgs[0], tmpArgs[1]);
+        currentSession.params->setParameter(key, value, protect);
+        if (protect)
+            cout << "Parameter " << key << " set to fixed protected value " << value << endl;
         return normal;
     }
 
@@ -2184,6 +2208,14 @@ namespace libforefire
                 return error;
             }
         }
+        if (tmpArgs[0] == "tileFuel") {
+            if(!domainExists("trigger[tileFuel]"))return error;
+            auto manager=getDomain()->getDataBroker()->getFFTileManager();
+            if(!manager)throw std::runtime_error("tileFuel requires an FFTile domain");
+            manager->addFuelPolygon(getInt("fuelType",arg),getString("points",arg));
+            currentSession.params->setParameter("fftileFuelPolygons",manager->fuelPolygons());
+            return normal;
+        }
         if (tmpArgs[0] == "fuelIndice")
         {
             if (!domainExists("trigger[fuelIndice]"))
@@ -2259,9 +2291,7 @@ namespace libforefire
             }
             if (lonlat)
             {
-                double y = domain->getYFromLat(b);
-                double x = domain->getXFromLon(a,y);
-                return FFPoint(x, y, c);
+                return domain->getPointFromLonLat(a,b,c);
             }
             return FFPoint(a, b, c);
         };
@@ -2428,6 +2458,10 @@ namespace libforefire
 
         while (std::getline(*inputStream, line))
         {
+            // Scripts saved with CRLF line endings.
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+
             // A `quit[]` earlier in the script stops the file here rather than
             // ending the process, so the caller still gets to return normally.
             if (quitAsked)
@@ -2906,6 +2940,7 @@ namespace libforefire
 
     int Command::loadData(const string &arg, size_t &numTabs)
     {
+        if(arg.size()>=8&&arg.substr(arg.size()-8)==".ffstate")return loadState(arg,numTabs);
         if (arg.rfind("provider=",0) == 0 || fftileIsHTTP(arg))
             return loadTileService(arg,numTabs);
 
@@ -3087,7 +3122,8 @@ namespace libforefire
 
     void Command::setOstringstream(ostringstream *oss)
     {
-        currentSession.outStream = oss;
+        // nullptr goes back to cout, for callers whose stream is going away.
+        currentSession.outStream = oss ? static_cast<ostream *>(oss) : &cout;
     }
 
     void Command::tokenize(const string &str, vector<string> &tokens,
@@ -3237,10 +3273,7 @@ namespace libforefire
         if (opt == "lonlat")
         {
             // Convert spherical (lon, lat) to Cartesian coordinates (x, y).
-            double y = getDomain()->getYFromLat(v2);
-            double x = getDomain()->getXFromLon(v1,y);
-
-            return FFPoint(x, y, v3);
+            return getDomain()->getPointFromLonLat(v1,v2,v3);
         }
         else
         {

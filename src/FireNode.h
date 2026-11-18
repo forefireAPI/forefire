@@ -39,6 +39,7 @@ class FireNodeData;
  *  class and setVal the new properties of the FireNode.
  */
 class FireNode : public ForeFireAtom, Visitable {
+    friend class FFState;
 
 	static const double Pi;
 	static SimulationParameters* params;
@@ -119,8 +120,10 @@ public:
 	enum NormalScheme {
 		medians = 0,
 		weightedMedians = 1,
-		spline = 2
+		spline = 2,
+        slopeCorrectedWeightedMedians = 3
 	} ;
+	bool usesSlopeCorrectedNormal() const { return nmlScheme == slopeCorrectedWeightedMedians; }
 	static NormalScheme nmlScheme; /*!< normal scheme */
 	static void setNormalScheme(string);
 

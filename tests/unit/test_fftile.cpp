@@ -1,9 +1,13 @@
 #include "doctest/doctest.h"
 #include "fftile.h"
+#include "ffstate.h"
+#include "include/SHA256.h"
 #include "FFTileDataLayer.h"
+#include "../../bindings/wasm/GriddedWind.h"
 #include "model_sandbox.h"
 #include "FireDomain.h"
 #include "Command.h"
+#include "CLibForeFire.h"
 #include "TimeTable.h"
 #include "stb_image_write.h"
 #include <filesystem>
@@ -13,6 +17,31 @@
 #include <limits>
 
 using namespace libforefire;
+
+TEST_SUITE("fftile") {
+TEST_CASE("geographic arrivals share one global lattice and allocate blocks lazily") {
+    FFTileCoordinates frame{42.25,8.75,50000,50000};
+    GeographicArrivalMap a(frame,FFPoint(0,0,0),FFPoint(100000,100000,0),256);
+    auto shifted=frame;shifted.x=51000;shifted.y=52000;
+    GeographicArrivalMap b(shifted,FFPoint(0,0,0),FFPoint(100000,100000,0),256);
+    CHECK(a.allocatedBlocks()==0);CHECK(a.stepDegrees()==doctest::Approx(.1/256));
+    auto xy=frame.cartesian(42.26,8.76);auto uv=shifted.cartesian(42.26,8.76);size_t i,j,k,l;
+    REQUIRE(a.index(FFPoint(xy[0],xy[1],0),i,j));REQUIRE(b.index(FFPoint(uv[0],uv[1],0),k,l));
+    CHECK(std::isinf(a.get(i,j)));a.set(i,j,200);a.set(i,j,300);b.set(k,l,200);
+    CHECK(a.get(i,j)==200);CHECK(a.allocatedBlocks()==1);
+    auto p=a.vertex(i,j),q=b.vertex(k,l);auto ag=frame.geographic(p.getX(),p.getY()),bg=shifted.geographic(q.getX(),q.getY());
+    CHECK(ag[0]==doctest::Approx(bg[0]));CHECK(ag[1]==doctest::Approx(bg[1]));
+    CHECK((ag[0]+90)*2560==doctest::Approx(std::round((ag[0]+90)*2560)));
+    CHECK((ag[1]+180)*2560==doctest::Approx(std::round((ag[1]+180)*2560)));
+}
+TEST_CASE("geographic arrival scan marks polygon vertices without spreading outside its bounds") {
+    FFTileCoordinates frame{42.25,8.75,1000,1000};GeographicArrivalMap grid(frame,FFPoint(0,0,0),FFPoint(2000,2000,0),256);
+    grid.scan(FFPoint(800,800,0),FFPoint(1200,1200,0),[](FFPoint& p){return p.getX()>800&&p.getX()<1200&&p.getY()>800&&p.getY()<1200;},[](FFPoint&){return 60.;});
+    size_t i,j;REQUIRE(grid.index(FFPoint(1000,1000,0),i,j));CHECK(grid.get(i,j)==60.);
+    REQUIRE(grid.index(FFPoint(100,100,0),i,j));CHECK(std::isinf(grid.get(i,j)));
+    CHECK(grid.allocatedBlocks()>0);CHECK_THROWS(GeographicArrivalMap(frame,FFPoint(),FFPoint(1000,1000,0),100));
+}
+}
 namespace {
 using Bytes = std::vector<uint8_t>;
 void uintAt(Bytes& out, size_t at, uint64_t v, size_t n) {
@@ -88,6 +117,67 @@ struct Directory {
 };
 }
 TEST_SUITE("fftile") {
+TEST_CASE("geographic fuel modifiers survive paging and round trips without editing base tiles") {
+    auto provider=std::make_shared<Provider>();FFTileManager manager(provider,1);
+    manager.coordinates={42.2,8.2,0,0};
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==1);
+    manager.addFuelPolygon(0,"8.19,42.19|8.21,42.19|8.21,42.21|8.19,42.21");
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==0);
+    CHECK(manager.sample(FFTileField::Altitude,0,0)!=0);
+    manager.addFuelPolygon(82,"8.195,42.195|8.205,42.195|8.205,42.205|8.195,42.205");
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==82);
+    auto saved=manager.fuelPolygons();manager.clearCache();
+    CHECK(manager.sample(FFTileField::Fuel,0,0)==82);
+    FFTileManager second(provider,1);second.coordinates=manager.coordinates;second.restoreFuelPolygons(saved);
+    CHECK(second.sample(FFTileField::Fuel,0,0)==82);
+    CHECK_THROWS(second.restoreFuelPolygons("0 invalid"));
+    CHECK(second.fuelPolygons()==saved);
+    auto outside=second.coordinates.cartesian(42.25,8.25);
+    CHECK(second.sample(FFTileField::Fuel,outside[0],outside[1])==1);
+}
+TEST_CASE("coarse wind forcing interpolates both space and time without extrapolation") {
+    GriddedWind f;f.nx=f.ny=2;f.west=8;f.east=9;f.south=42;f.north=43;
+    f.times={0,3600};f.u={0,2,4,6,10,12,14,16};f.v={-6,-4,-2,0,4,6,8,10};
+    REQUIRE_NOTHROW(f.validate());auto w=f.at(42.5,8.5,1800);
+    CHECK(w[0]==doctest::Approx(8));CHECK(w[1]==doctest::Approx(2));
+    CHECK_THROWS(f.at(42.5,8.5,3601));CHECK_THROWS(f.at(43.1,8.5,0));
+    f.u[0]=std::numeric_limits<double>::quiet_NaN();CHECK_NOTHROW(f.validate());
+    CHECK(std::isnan(f.at(42.5,8.5,1800)[0]));
+    CHECK(f.at(42,9,0)[0]==doctest::Approx(2));
+    f.u[0]=std::numeric_limits<double>::infinity();CHECK_THROWS(f.validate());
+}
+TEST_CASE("coarse wind supports cyclic longitudes and a single center vector") {
+    GriddedWind f;f.nx=f.ny=1;f.west=179;f.east=181;f.south=40;f.north=42;
+    f.times={0,3600};f.u={2,6};f.v={-2,2};f.validate();
+    CHECK(f.at(41,-179.5,1800)[0]==doctest::Approx(4));
+    CHECK(f.at(41,-179.5,1800)[1]==doctest::Approx(0));
+    f.times[1]=0;CHECK_THROWS(f.validate());
+}
+TEST_CASE("masked reference wind is zero only on nonburnable missing tile coverage") {
+    auto provider=std::make_shared<Provider>();auto manager=std::make_shared<FFTileManager>(provider);
+    manager->coordinates={42.25,8.25,0,0};auto f=std::make_shared<GriddedWind>();
+    f->nx=f->ny=1;f->west=8;f->east=10.5;f->south=42;f->north=43;
+    f->times={0,3600};f->u=f->v={std::numeric_limits<double>::quiet_NaN(),std::numeric_limits<double>::quiet_NaN()};f->validate();
+    GriddedTileWindLayer u("windU",manager,f,FFPoint(),FFPoint(300000,200000,0));
+    auto land=manager->coordinates.cartesian(42.2,8.2),missing=manager->coordinates.cartesian(42.2,10.2);
+    CHECK_THROWS(u.getValueAt(FFPoint(land[0],land[1],0),0));
+    CHECK(u.getValueAt(FFPoint(missing[0],missing[1],0),0)==0);
+}
+TEST_CASE("gridded winds retain tile responses and invert the geographic Jacobian") {
+    auto provider=std::make_shared<Provider>();auto manager=std::make_shared<FFTileManager>(provider);
+    manager->coordinates={42.25,8.25,0,0};
+    auto f=std::make_shared<GriddedWind>();f->nx=f->ny=1;f->west=8;f->east=8.5;f->south=42;f->north=42.5;
+    f->times={0,3600};f->u={3,7};f->v={4,8};f->validate();
+    FFPoint origin(-25000,-25000,0),extent(50000,50000,0);
+    GriddedTileWindLayer u("windU",manager,f,origin,extent),v("windV",manager,f,origin,extent);
+    auto xy=manager->coordinates.cartesian(42.3,8.4);FFPoint p(xy[0],xy[1],0);
+    double east=manager->sample(FFTileField::Muu,xy[0],xy[1])*5+manager->sample(FFTileField::Muv,xy[0],xy[1])*6;
+    double north=manager->sample(FFTileField::Mvu,xy[0],xy[1])*5+manager->sample(FFTileField::Mvv,xy[0],xy[1])*6;
+    double shear=xy[0]*std::tan(42.3*3.14159265358979323846/180.)*3.14159265358979323846/(180.*111195.);
+    CHECK(u.getValueAt(p,1800)==doctest::Approx(east-shear*north).epsilon(1e-6));
+    CHECK(v.getValueAt(p,1800)==doctest::Approx(north).epsilon(1e-6));
+}
+
 TEST_CASE("south origin, signed fields and atlas components survive decoding") {
     FFTile tile(tileBytes(264,376,-1));
     CHECK(tile.sample(FFTileField::Fuel,42.1,8.25)==2);
@@ -168,6 +258,76 @@ TEST_CASE("local files precede global tiles and fuel PNG overrides precede both"
     CHECK(m.tileAt(42.1,8.1)->sample(FFTileField::Fuel,42.1,8.1)==3);
     local.write("42_8_fuel.png",image(8,8,Bytes(64,0),true));m.clearCache();
     CHECK(m.tileAt(42.1,8.1)->sample(FFTileField::Fuel,42.1,8.1)==0);
+}
+TEST_CASE("Meso-NH geographic grids preserve nested offsets, rotation and Fortran ordering") {
+    const double x[]={100000,101000,102000,103000};
+    const double y[]={200000,201000,202000};
+    double lat[12],lon[12];
+    for(int j=0;j<3;++j)for(int i=0;i<4;++i){
+        lat[i+4*j]=42.+(j*1000+i*400)/111195.;
+        lon[i+4*j]=8.+(i*900-j*300)/(111195.*std::cos(42.*3.141592653589793/180.));
+    }
+    FFTileGeographicGrid grid(4,x,3,y,lat,lon);
+    for(auto xy : {std::array<double,2>{100000,200000},{101350,201550},{99500,199500},{103500,202500}}){
+        auto ll=grid.geographic(xy[0],xy[1]);auto restored=grid.cartesian(ll[0],ll[1]);
+        CHECK(restored[0]==doctest::Approx(xy[0]).epsilon(1e-10));
+        CHECK(restored[1]==doctest::Approx(xy[1]).epsilon(1e-10));
+    }
+    CHECK(grid.geographic(x[2],y[1])[0]==doctest::Approx(lat[6]));
+    CHECK(grid.geographic(x[2],y[1])[1]==doctest::Approx(lon[6]));
+    auto domainMap=std::make_shared<FFTileGeographicGrid>(4,x,3,y,lat,lon);
+    FFTileCoordinates coordinates;coordinates.grid=domainMap;
+    auto ll=coordinates.geographic(101350,201550);
+    CHECK(coordinates.cartesian(ll[0],ll[1])[0]==doctest::Approx(101350));
+    CHECK_THROWS(grid.geographic(0,0));
+    double bad[]={0,0,1,2};CHECK_THROWS(FFTileGeographicGrid(4,bad,3,y,lat,lon));
+    // Across the antimeridian, interpolation must follow 180, not Greenwich.
+    const double ax[]={0,1000},ay[]={0,1000},al[]={42,42,42.01,42.01},ao[]={179.99,-179.99,179.99,-179.99};
+    FFTileGeographicGrid seam(2,ax,2,ay,al,ao);
+    auto mid=seam.geographic(500,500);
+    CHECK(std::abs(mid[1])==doctest::Approx(180));
+    CHECK(seam.cartesian(mid[0],mid[1])[0]==doctest::Approx(500));
+}
+TEST_CASE("coupled tiles retain atmospheric winds and separate writable Meso-NH altitude") {
+    Directory data;data.write("42_8.fftile",tileBytes());
+    ff_test::ModelSandbox sandbox;
+    auto* params=sandbox.parameters();
+    params->setParameter("caseDirectory",data.path.string());
+    params->setParameter("ForeFireDataDirectory","");
+    params->setParameter("PPath",data.path.string());
+    params->setParameter("fftilesPath",data.path.string());
+    params->setParameter("propagationModel","Iso");
+    params->setDouble("Iso.speed",1);
+    params->setDouble("spatialIncrement",10);params->setDouble("perimeterResolution",20);
+    const double gx[]={100000,101000,102000,103000},gy[]={200000,201000,202000};
+    double lat[12],lon[12];
+    for(int j=0;j<3;++j)for(int i=0;i<4;++i){lat[i+4*j]=42.1+j*.01+i*.002;lon[i+4*j]=8.1+i*.01-j*.003;}
+    auto geography=std::make_shared<FFTileGeographicGrid>(4,gx,3,gy,lat,lon);
+    const double mx[]={101000,101100,101200},my[]={201000,201100,201200};
+    FireDomain domain(1,2026,11,11,0.,42.,8.,3,mx,3,my,2,1.,geography);
+    auto* broker=domain.getDataBroker();auto manager=broker->getFFTileManager();
+    REQUIRE(manager);CHECK(manager->coordinates.grid==geography);
+    auto ll=domain.getLatLonFromPoint(101050,201050);
+    auto xy=domain.getPointFromLonLat(ll[1],ll[0]);
+    CHECK(xy.getX()==doctest::Approx(101050));CHECK(xy.getY()==doctest::Approx(201050));
+    CHECK(domain.getDataLayer("fuel")->getValueAt(xy,0)==1);
+    CHECK(dynamic_cast<FFTileDataLayer*>(domain.getDataLayer("windU"))==nullptr);
+    CHECK(dynamic_cast<FFTileDataLayer*>(domain.getDataLayer("windV"))==nullptr);
+    REQUIRE(broker->hasLayer("atmosphericAltitude"));
+    double input[9];std::fill(input,input+9,1500.);
+    std::string name="altitude";size_t count=9,out=1;
+    struct SessionDomain {
+        FireDomain* saved;
+        SessionDomain(FireDomain* domain):saved(Command::currentSession.fd){Command::currentSession.fd=domain;}
+        ~SessionDomain(){Command::currentSession.fd=saved;}
+    } session(&domain);
+    // Exercise the actual C entry point Meso-NH uses, not just the layer setter.
+    CHECK_NOTHROW(FFGetDoubleArray("altitude",0.,input,count,out));
+    FFArray<double>* array=nullptr;domain.getDataLayer("atmosphericAltitude")->getMatrix(&array,0.);
+    REQUIRE(array);CHECK(array->getData()[0]==1500.);
+    CHECK(domain.getDataLayer("altitude")->getValueAt(xy,0)<1500.);
+    // Fire fluxes are still evaluated on the atmospheric grid with tile fuel.
+    CHECK(domain.addFluxLayer("heatFlux"));CHECK(domain.addFluxLayer("vaporFlux"));
 }
 TEST_CASE("broker integrates tile fuel properties, wind and zero spread on no data") {
     Directory data;
@@ -401,3 +561,60 @@ TEST_CASE("HTTP redirects work and disk caches are isolated per service") {
 }
 }
 #endif
+
+
+TEST_SUITE("ffstate") {
+TEST_CASE("tile fingerprints match standard SHA256 vectors including padding boundaries") {
+    auto hex=[](const Bytes& b){auto hash=sha256(b);std::ostringstream out;out<<std::hex<<std::setfill('0');for(auto c:hash)out<<std::setw(2)<<unsigned(c);return out.str();};
+    CHECK(hex({})=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    CHECK(hex(Bytes{'a','b','c'})=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    CHECK(hex(Bytes(1000000,'a'))=="cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+}
+TEST_CASE("checkpoint restores live pending nodes and lossless arrivals without initialization") {
+    Directory data;
+    data.write("42_8.5.fftile",tileBytes(264,377,82));
+    ff_test::ModelSandbox snapshot;
+    auto run=[](std::string command){Command::ExecuteCommand(command);};
+    run("clear[]");
+    struct Cleanup {~Cleanup(){std::string c="clear[]";Command::ExecuteCommand(c);}} cleanup;
+    auto* p=snapshot.parameters();
+    p->setParameter("caseDirectory",data.path.string());p->setParameter("ForeFireDataDirectory","");
+    p->setParameter("propagationModel","Iso");p->setDouble("Iso.speed",1);
+    p->setInt("outputsUpdate",0);p->setDouble("minimalPropagativeFrontDepth",0);
+    p->setDouble("perimeterResolution",12);p->setDouble("spatialIncrement",3);
+    p->setInt("arrivalMapSubdivisions",256);
+    bool geographic=true,stopped=false,override=false,pin=false,live=false,modifiers=false;
+    SUBCASE("geographic"){}
+    SUBCASE("geographic scenario modifiers"){modifiers=true;}
+    SUBCASE("Cartesian"){geographic=false;p->setInt("arrivalMapSubdivisions",0);}
+    SUBCASE("stopped boundary segment"){stopped=true;}
+    SUBCASE("fuel override survives deletion"){override=true;data.write("tiles/42_8.5_fuel.png",image(8,8,Bytes(64,3),true));}
+    SUBCASE("changed external tile is rejected"){pin=true;}
+    SUBCASE("live solver values override stale parameter strings"){live=true;}
+    run("loadData[provider="+data.path.string()+";center=(8.6,42.1);size=(.02,.02);date=2025-08-05T12:00:00Z]");
+    REQUIRE(Command::getDomain()!=nullptr);
+    run("startFire[lonlat=(8.6,42.1,0);t=0]");run("step[dt=30]");
+    auto* d=Command::getDomain();auto* front=d->getMainFronts().front();
+    if(live){d->getMaxTimeStep()=.25;FireNode::setRelax(.3);p->setDouble("relax",.9);p->setDouble("propagationSpeedAdjustmentFactor",7);}
+    auto* node=front->getHead();if(stopped)node->setState(FireNode::final);auto pos=node->getLoc(),next=node->getNextLoc();auto vel=node->getVel();
+    auto time=node->getTime(),update=node->getUpdateTime();auto state=node->getState();auto count=front->getNumFN();auto id=node->getID();
+    if(override){auto m=d->getDataBroker()->getFFTileManager();auto ll=m->coordinates.geographic(pos.getX(),pos.getY());m->tileAt(ll[0],ll[1])->overrideFuel(image(8,8,Bytes(64,4),true));}
+    if(modifiers)run("trigger[tileFuel;fuelType=3;points=8.599,42.099|8.601,42.099|8.601,42.101|8.599,42.101]");
+    auto path=(data.path/"fire.ffstate").string();REQUIRE_NOTHROW(FFState::save(path));
+    CHECK_THROWS(FFState::load(path));CHECK(Command::getDomain()==d);
+    run("clear[]");if(override)std::filesystem::remove(data.path/"tiles/42_8.5_fuel.png");REQUIRE_NOTHROW(FFState::load(path));
+    d=Command::getDomain();front=d->getMainFronts().front();node=front->getHead();
+    if(live){CHECK(d->getMaxTimeStep()==.25);CHECK(p->getDouble("relax")==.3);CHECK(p->getDouble("propagationSpeedAdjustmentFactor")==1);}
+    if(modifiers){auto m=d->getDataBroker()->getFFTileManager();auto q=m->coordinates.cartesian(42.1,8.6);CHECK(m->sample(FFTileField::Fuel,q[0],q[1])==3);}
+    CHECK(Command::getTime()==30);CHECK(front->getNumFN()==count);CHECK(node->getID()==id);
+    CHECK(node->getTime()==time);CHECK(node->getUpdateTime()==update);CHECK(node->getState()==state);
+    if(override){auto loc=node->getLoc();CHECK(d->getDataLayer("fuel")->getValueAt(loc,30)==4);}
+    CHECK(node->getLoc().getX()==pos.getX());CHECK(node->getNextLoc().getY()==next.getY());CHECK(node->getVel().getVx()==vel.getVx());
+    if(geographic)CHECK(d->geographicArrivalMap()->allocatedBlocks()>0);else CHECK(d->geographicArrivalMap()==nullptr);
+    run("step[dt=30]");CHECK(Command::getTime()==60);CHECK(front->getArea()>0);
+    // A checksum failure must leave the current live domain untouched.
+    std::ifstream in(path,std::ios::binary);Bytes file((std::istreambuf_iterator<char>(in)),{});file.back()^=1;
+    data.write("bad.ffstate",file);CHECK_THROWS(FFState::load((data.path/"bad.ffstate").string(),true));CHECK(Command::getDomain()==d);CHECK(Command::getTime()==60);
+    if(pin){run("clear[]");auto changed=tileBytes(264,377,82);changed[255]^=1;data.write("42_8.5.fftile",changed);CHECK_THROWS(FFState::load(path));CHECK(Command::getDomain()==nullptr);data.write("42_8.5.fftile",tileBytes(264,377,82));CHECK_NOTHROW(FFState::load(path));}
+}
+}
