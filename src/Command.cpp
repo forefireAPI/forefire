@@ -24,6 +24,19 @@ using namespace std;
 
 namespace
 {
+    // Seconds are the only time unit: "1h" used to be read as 1 s. Anything
+    // that is not a letter may follow the number, as in the "t=0.000000."
+    // that loadData builds itself.
+    bool hasTimeUnit(const std::string &value)
+    {
+        std::istringstream iss(value);
+        double number;
+        std::string rest;
+        iss >> number >> rest;
+        return rest != "s" && std::any_of(rest.begin(), rest.end(),
+                                          [](unsigned char c) { return std::isalpha(c); });
+    }
+
     // If `in`, once trimmed of surrounding whitespace, is wrapped in triple
     // quotes, puts the text between them in `out` and returns true.
     bool stripTripleQuotes(const std::string &in, std::string &out)
@@ -972,9 +985,9 @@ namespace libforefire
             return normal;
 
         double dt = getFloat("dt", arg);
-        if (dt == FLOATERROR)
+        if (dt == FLOATERROR || hasTimeUnit(getString("dt", arg)))
         {
-            cout << "Error: step needs dt=<seconds>" << endl;
+            cout << "Error: step needs dt in seconds, as in step[dt=600]" << endl;
             return error;
         }
         endTime = startTime + dt;
@@ -993,9 +1006,9 @@ namespace libforefire
 
         /* Advancing simulation to the prescribed time */
         double target = getFloat("t", arg);
-        if (target == FLOATERROR)
+        if (target == FLOATERROR || hasTimeUnit(getString("t", arg)))
         {
-            cout << "Error: goTo needs t=<seconds>" << endl;
+            cout << "Error: goTo needs t in seconds, as in goTo[t=600]" << endl;
             return error;
         }
         endTime = target;
@@ -3217,24 +3230,30 @@ namespace libforefire
         /* The 'getFloat()' method simply casts the results
          * of the search for the option 'opt' given by 'getString()' */
         string tmpstr = getString(opt, arg);
-        if (tmpstr == stringError)
+        if (tmpstr == stringError || tmpstr.empty())
             return FLOATERROR;
-        istringstream iss(tmpstr);
-        double d;
-        string rest;
-        bool read = static_cast<bool>(iss >> d);
-        iss >> rest;
-        // Seconds are the only unit: "1h" used to be read as 1 s. Anything
-        // that is not a letter may follow, as in the "t=0.000000." that
-        // loadData builds itself.
-        bool unit = rest != "s" && any_of(rest.begin(), rest.end(),
-                                          [](unsigned char c) { return isalpha(c); });
-        if (!read || unit)
+        string s;
+        string::reverse_iterator it = tmpstr.rbegin();
+        if (*it == 's')
         {
-            cout << "Error: " << opt << "=" << tmpstr << " is not a number" << endl;
+            // removing it
+            size_t len = tmpstr.length();
+            s = tmpstr.substr(0, len - 1);
+        }
+        else
+        {
+            s = tmpstr;
+        }
+        istringstream iss(s);
+        double d;
+        if (iss >> d)
+        {
+            return d;
+        }
+        else
+        {
             return FLOATERROR;
         }
-        return d;
     }
 
     FFPoint Command::getPoint(string opt, string arg)

@@ -120,7 +120,8 @@ history, so they summarise each release rather than list every change. The
 
 - `setParameter[key=]` with an empty value no longer crashes.
 - `step`, `goTo` and `startFire` refuse a time they cannot read (missing `dt`,
-  a unit other than seconds, a date without `Z`) instead of running with it.
+  a unit other than seconds, a date not in `YYYY-MM-DDTHH:MM:SSZ`) instead of
+  running with it.
 - `listenHTTP` reads a POST body sent after its headers, as Python's `urllib` does.
 - A `listenHTTP` server started from `pyforefire` no longer crashes on its first command.
 - `setParameter[key="""..."""]` stores the value without the triple quotes, so
