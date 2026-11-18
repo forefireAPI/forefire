@@ -244,8 +244,10 @@ loadData
 
    loadData[landscape_file.nc;YYYY-MM-DDTHH:MM:SSZ]
    loadData[landscape_file.nc]
+   loadData[provider=<directory_or_url>;center=(lon,lat);opt:size=(dlon,dlat);opt:date=<ISO8601>;opt:prefetch=0]
+   loadData[state.ffstate]
 
-Loads NetCDF environmental data into the simulation (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``). Arguments are positional and separated by ``;``:
+**NetCDF** (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``). Arguments are positional and separated by ``;``:
 
 * **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Sets the ``NetCDFfile`` parameter to the given path, builds a new ``FireDomain`` from the ``domain`` variable attributes, loads the NetCDF layers, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
 * **One argument** (``loadData[landscape.nc]``): Loads NetCDF layers from the given file into the ``DataBroker`` of an already created ``FireDomain``.
@@ -255,6 +257,51 @@ Loads NetCDF environmental data into the simulation (requires a build with ``FOR
 .. code-block:: none
 
    loadData[data.nc;2024-07-15T08:00:00Z]
+
+**Tiles** (see :doc:`/user_guide/tiles`): creates a ``FireDomain`` centered on ``center`` from ``.fftile`` files in a directory or at an HTTP(S) URL. Fails if a domain already exists.
+
+* ``provider=``: tile directory or base URL serving ``{lat}_{lon}.fftile``.
+* ``center=(lon,lat)``: domain center, **longitude first**.
+* ``opt:size=(dlon,dlat)``: extent in degrees, each at most 2 (default ``(2,2)``).
+* ``opt:date=``: reference date (ISO 8601 UTC); simulation time starts at 0.
+* ``opt:prefetch=0``: download tiles only when the simulation needs them.
+
+**Checkpoint:** a path ending in ``.ffstate`` is the same as :ref:`loadState[file=...] <cmd-loadState>`.
+
+.. code-block:: none
+
+   loadData[provider=/data/tiles;center=(8.5,42);size=(0.5,0.5)]
+   loadData[current.ffstate]
+
+
+.. _cmd-saveState:
+
+saveState
+~~~~~~~~~
+
+.. code-block:: none
+
+   saveState[file=<path.ffstate>;opt:scenario=<script.ff>]
+
+Writes the current fire (fronts, nodes, pending motion, arrival times, effective parameters and fuel table) to a ``.ffstate`` checkpoint. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. ``scenario=`` stores a script in the file; loading never runs it. Fails, without writing, if the state contains something it cannot save. See :doc:`/user_guide/tiles`.
+
+
+.. _cmd-loadState:
+
+loadState
+~~~~~~~~~
+
+.. code-block:: none
+
+   loadState[file=<path.ffstate>;opt:provider=<directory_or_url>]
+   loadState[file=<path.ffstate>;mode=attach]
+
+Restores a ``.ffstate`` checkpoint at its saved time without advancing it. Without a domain, it creates one; with an existing domain, it fails unless ``mode=attach`` is given (attach to a coupled Meso-NH domain). ``provider=`` points a standalone state to another tile location; tile hashes must still match. Without ``file=``, the :ref:`ffstateFile <param-ffstateFile>` parameter is used.
+
+.. code-block:: none
+
+   loadState[file=current.ffstate]
+   step[dt=3600]
 
 
 .. _cmd-addLayer:
@@ -293,9 +340,12 @@ trigger
    trigger[wind;vel=(vx,vy,vz)]
    trigger[fuel;<column>=<value>]
    trigger[fuelIndice;loc=(x,y,z);fuelType=<int>]
+   trigger[tileFuel;fuelType=<int>;points=lon,lat|lon,lat|lon,lat...]
    trigger[resolution;perimeterResolution=<val>;spatialIncrement=<val>]
 
 Updates dynamic environmental conditions at the moment the command executes. The first token (without ``=``) selects the target layer. To apply the change at a future time, schedule the command with :ref:`@t=... <cmd-@>` (a ``t=`` inside the brackets is ignored by ``wind`` and ``fuelIndice``).
+
+On tile domains, ``fuelIndice`` does not apply; ``tileFuel`` sets the fuel ID inside a polygon of at least three longitude/latitude vertices, and the change is kept by :ref:`saveState <cmd-saveState>`.
 
 **Example:**
 
@@ -303,6 +353,7 @@ Updates dynamic environmental conditions at the moment the command executes. The
 
    trigger[wind;vel=(5.0,2.0,0.0)]@t=1800
    trigger[fuelIndice;loc=(1000,1500,0);fuelType=0]
+   trigger[tileFuel;fuelType=0;points=8.599,42.099|8.601,42.099|8.601,42.101]
 
 
 .. _cmd-emit:
