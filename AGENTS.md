@@ -19,7 +19,8 @@ not part of routine development.
 
 - Native build: CMake 3.15+, C++17. NetCDF, MPI, CLI, Python, WASM and tests
   are `FOREFIRE_*` options in CMakeLists.txt. The version lives only in
-  `src/include/Version.h` and changes in the release commit, never on `dev`.
+  `src/include/Version.h` and changes only in a release commit (a pre-release
+  such as `2.7.0b1` is tagged on `dev`).
 - Python: the root pyproject.toml builds `pyforefire`. The core keeps global
   state, so a second `ForeFire()` in one process inherits the first one's
   parameters. Use `ForeFireRunner` for sweeps and parallel runs.
