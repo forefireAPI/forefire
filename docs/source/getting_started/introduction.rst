@@ -21,9 +21,10 @@ What it does
 ------------
 
 - Propagation models are plug-ins: Rothermel, Balbi, Farsite, a neural-network emulator and more (:doc:`/user_guide/models`). A new model is one ``.cpp`` file.
+- Flux models (``BurnUpHeatFlux``, ``ForeFireV1HeatFlux`` and others) compute the heat and chemical species released behind the front.
 - Input comes from NumPy arrays, NetCDF landscape files, ``.fftile`` tiles (:doc:`/user_guide/tiles`) or web map tiles in the browser. Output goes to GeoJSON, KML, NetCDF, PNG, JPG or ASCII grids.
 - Coupled with `Meso-NH <https://mesonh.cnrs.fr/>`_, the wind drives the fire and the fire's heat and vapor feed back into the atmosphere.
-- A spun-up simulation can be forked into many runs to estimate burn probability under uncertain wind or parameters.
+- A spun-up simulation can be forked into many runs to estimate burn probability under uncertain wind or parameters, and scored against an observed perimeter.
 
 Platforms
 ---------

@@ -37,7 +37,7 @@ Syntax
 
 A command is ``CommandName[arg1=val1;arg2=val2]``. Some take positional arguments, such as ``loadData[data.nc;2024-01-01T12:00:00Z]`` or ``include[params.ff]``. Command and parameter names are case-sensitive.
 
-A line that starts with ``#`` or ``*`` is a comment. Comments only work on their own line.
+A line that starts with ``#`` or ``*`` is a comment, except inside a ``"""`` block (see below). Comments only work on their own line.
 
 .. warning::
    Put nothing after the closing ``]``, not even a comment or trailing spaces. Everything after ``]`` is read as a schedule operator (:ref:`@t=... <cmd-@>`). A ``# comment`` or two or more spaces there give ``unknown post operator``, and the command does not run.
