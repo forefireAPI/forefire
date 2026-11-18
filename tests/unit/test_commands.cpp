@@ -19,6 +19,10 @@
  * A front reaching the domain edge over a gridded altitude used to fill the
  * whole arrival map at one time: the slope past the edge was NaN, and so
  * were the node positions it moved.
+ *
+ * A step or goTo whose time could not be read used to run anyway: a missing
+ * dt ran to t = 1234567890, and "1h" was read as 1 s. A startFire date
+ * without the trailing Z left the ignition time uninitialised.
  */
 
 #include "doctest/doctest.h"
@@ -253,6 +257,50 @@ TEST_CASE("a front that reaches the edge on sloping ground leaves the far side u
     }
     CHECK(burnt > 0);
     CHECK(burntInWestThird == 0);
+}
+
+TEST_CASE("step and goTo refuse a time they cannot read") {
+    // The domain clock is set at the start of each step, so a valid step
+    // after the bad command shows where the bad one left the simulation.
+    Command executor;
+    run(executor, "clear[]");
+    run(executor, "FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]");
+    REQUIRE(Command::getDomain() != nullptr);
+    REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
+    run(executor, "startFire[loc=(1000,500,0)]");
+    run(executor, "goTo[t=100]");
+    const char* commands[] = {
+        "step[Dt=600]",
+        "step[dt=1h]",
+        "step[dt=]",
+        "step[dt]",
+        "goTo[t=10min]",
+        "goTo[]",
+    };
+    double expected = 100;
+    for (const char* command : commands) {
+        CAPTURE(command);
+        run(executor, command);
+        run(executor, "step[dt=10s]");
+        CHECK(Command::getDomain()->getTime() == expected);
+        expected += 10;
+    }
+}
+
+TEST_CASE("startFire refuses a date without the trailing Z") {
+    Command executor;
+    run(executor, "clear[]");
+    run(executor, "setParameter[bmapLayer=1]");
+    run(executor, "FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]");
+    REQUIRE(Command::getDomain() != nullptr);
+    REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
+    run(executor, "startFire[loc=(300,800,0);date=2024-01-01T00:00:00]");
+    run(executor, "goTo[t=300]");
+    size_t burnt = 0;
+    for (const auto& column : Command::getDomain()->getDataMatrix("arrival_time"))
+        for (double t : column)
+            if (std::isfinite(t)) burnt++;
+    CHECK(burnt == 0);
 }
 
 } /* TEST_SUITE */

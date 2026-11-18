@@ -11,6 +11,8 @@
 #include "ffstate.h"
 #include "colormap.h"
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 #include <dirent.h>
 #include <cmath> 
 #include <fstream>
@@ -291,7 +293,11 @@ namespace libforefire
         {
             int year, yday;
             double secs;
-            simParam->ISODateDecomposition(date, secs, year, yday);
+            if (!simParam->ISODateDecomposition(date, secs, year, yday))
+            {
+                cout << "Error: Invalid date format " << date << " Expected YYYY-MM-DDTHH:MM:SSZ" << endl;
+                return error;
+            }
             t = simParam->SecsBetween(simParam->getDouble("refTime"),
                                        simParam->getInt("refYear"),
                                        simParam->getInt("refDay"),
@@ -966,6 +972,11 @@ namespace libforefire
             return normal;
 
         double dt = getFloat("dt", arg);
+        if (dt == FLOATERROR)
+        {
+            cout << "Error: step needs dt=<seconds>" << endl;
+            return error;
+        }
         endTime = startTime + dt;
         ostringstream etime;
         etime.precision(numeric_limits<double>::digits10);
@@ -981,7 +992,13 @@ namespace libforefire
             return error;
 
         /* Advancing simulation to the prescribed time */
-        endTime = getFloat("t", arg); 
+        double target = getFloat("t", arg);
+        if (target == FLOATERROR)
+        {
+            cout << "Error: goTo needs t=<seconds>" << endl;
+            return error;
+        }
+        endTime = target;
         if (init)
         {
             /* finishing the initialization process */
@@ -3155,19 +3172,11 @@ namespace libforefire
         tokenize(arg, tmpArgs, delimiter1);
         // Checking every 'tmpArgs' to see if it contains 'opt'
         // on the right-hand-side of 'arg=...' (i.e. arg=opt)
-        vector<string> inArg;
-        for (size_t i = 0, size = tmpArgs.size(); i < size; ++i)
+        for (const string &option : tmpArgs)
         {
-            string delimiter2 = "=";
-            tokenize(tmpArgs[i], inArg, delimiter2);
-            if (opt.compare(inArg[0]) == 0)
-            {
-                return inArg[1];
-            }
-            else
-            {
-                inArg.clear();
-            }
+            size_t eq = option.find('=');
+            if (eq != string::npos && option.compare(0, eq, opt) == 0)
+                return option.substr(eq + 1);
         }
         return stringError;
     }
@@ -3177,7 +3186,7 @@ namespace libforefire
         /* The 'getFloat()' method simply casts the results
          * of the search for the option 'opt' given by 'getString()' */
         string tmpstr = getString(opt, arg);
-        if (tmpstr == stringError)
+        if (tmpstr == stringError || tmpstr.empty())
             return INTERROR;
         string s;
         string::reverse_iterator it = tmpstr.rbegin();
@@ -3210,28 +3219,22 @@ namespace libforefire
         string tmpstr = getString(opt, arg);
         if (tmpstr == stringError)
             return FLOATERROR;
-        string s;
-        string::reverse_iterator it = tmpstr.rbegin();
-        if (*it == 's')
-        {
-            // removing it
-            size_t len = tmpstr.length();
-            s = tmpstr.substr(0, len - 1);
-        }
-        else
-        {
-            s = tmpstr;
-        }
-        istringstream iss(s);
+        istringstream iss(tmpstr);
         double d;
-        if (iss >> d)
+        string rest;
+        bool read = static_cast<bool>(iss >> d);
+        iss >> rest;
+        // Seconds are the only unit: "1h" used to be read as 1 s. Anything
+        // that is not a letter may follow, as in the "t=0.000000." that
+        // loadData builds itself.
+        bool unit = rest != "s" && any_of(rest.begin(), rest.end(),
+                                          [](unsigned char c) { return isalpha(c); });
+        if (!read || unit)
         {
-            return d;
-        }
-        else
-        {
+            cout << "Error: " << opt << "=" << tmpstr << " is not a number" << endl;
             return FLOATERROR;
         }
+        return d;
     }
 
     FFPoint Command::getPoint(string opt, string arg)
