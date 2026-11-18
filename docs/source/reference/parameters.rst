@@ -266,13 +266,21 @@ See :doc:`/user_guide/tiles`.
 
 fftilesPath
 ~~~~~~~~~~~
-* **Description:** Directory or HTTP(S) URL with ``{lat}_{lon}.fftile`` files. Set it **before** ``FireDomain`` to read the landscape from tiles. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. Tiles in ``ForeFireDataDirectory/tiles/`` take precedence. Without it, ``LAYERS_PATH`` (parameter or environment variable) is used. Set automatically by ``loadData[provider=...]``.
-* **Default:** ``""``
+* **Description:** Directory or HTTP(S) URL with ``{lat}_{lon}.fftile`` files. Set it **before** ``FireDomain`` to read the landscape from tiles. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. Tiles in ``ForeFireDataDirectory/tiles/`` take precedence. If it is not set, the domain loads NetCDF data instead. Set automatically by ``loadData[provider=...]``.
+* **Default:** not set
 
 fftileCacheSize
 ~~~~~~~~~~~~~~~
 * **Description:** Number of decoded tiles kept in memory per domain, including tiles known to be missing.
 * **Default:** ``8``
+
+
+.. _param-fftileCacheDirectory:
+
+fftileCacheDirectory
+~~~~~~~~~~~~~~~~~~~~
+* **Description:** Where tiles downloaded over HTTP(S) are cached, relative to ``caseDirectory/ForeFireDataDirectory`` unless absolute.
+* **Default:** ``tiles-cache``
 
 arrivalMapSubdivisions
 ~~~~~~~~~~~~~~~~~~~~~~

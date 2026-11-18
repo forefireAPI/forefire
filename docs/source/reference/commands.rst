@@ -260,9 +260,9 @@ loadData
 
 **Tiles** (see :doc:`/user_guide/tiles`): creates a ``FireDomain`` centered on ``center`` from ``.fftile`` files in a directory or at an HTTP(S) URL. Fails if a domain already exists.
 
-* ``provider=``: tile directory or base URL serving ``{lat}_{lon}.fftile``.
+* ``provider=``: tile directory or base URL serving ``{lat}_{lon}.fftile``. A URL can also be given as the first argument without ``provider=``.
 * ``center=(lon,lat)``: domain center, **longitude first**.
-* ``opt:size=(dlon,dlat)``: extent in degrees, each at most 2 (default ``(2,2)``).
+* ``opt:size=(dlon,dlat)``: extent in degrees, each at most 2 (default ``(2,2)``). The domain must not cross a pole.
 * ``opt:date=``: reference date (ISO 8601 UTC); simulation time starts at 0.
 * ``opt:prefetch=0``: download tiles only when the simulation needs them.
 

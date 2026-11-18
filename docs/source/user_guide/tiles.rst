@@ -22,7 +22,7 @@ A tile is named after its south-west corner, ``{lat}_{lon}.fftile`` (e.g. ``41.5
 
 The fuel properties, the propagation model and the weather are not in the tile; they stay in the case. Each tile has a halo around its core so interpolation across tile borders is continuous.
 
-Write and inspect tiles with ``tools/tiles/fftile.py``; the binary layout is in ``tools/tiles/README.md`` and ``fftile_implementation_plan.md`` in the source tree.
+Write and inspect tiles with ``tools/tiles/fftile.py``; the binary layout is in ``tools/tiles/README.md`` in the source tree.
 
 .. code-block:: bash
 
@@ -38,7 +38,7 @@ Running on tiles
    loadData[provider=/path/to/tiles;center=(8.5,42);size=(0.5,0.5)]
    loadData[provider=https://example.org/tiles;center=(8.5,42);date=2026-07-15T12:00:00Z]
 
-See :ref:`loadData <cmd-loadData>` for the arguments. HTTP tiles are cached in ``ForeFireDataDirectory/tiles-cache/`` and reused offline. A missing tile (or HTTP 404/410) gives zero fuel and no spread; a corrupt tile or any other network error stops the run instead.
+See :ref:`loadData <cmd-loadData>` for the arguments. HTTP tiles are cached in ``ForeFireDataDirectory/tiles-cache/`` (see :ref:`fftileCacheDirectory <param-fftileCacheDirectory>`) and reused offline. A missing tile (or HTTP 404/410) gives zero fuel and no spread; a corrupt tile or any other network error stops the run instead.
 
 **With an explicit domain**, set :ref:`fftilesPath <param-fftilesPath>` and ``SWLngLat`` before ``FireDomain``. The domain can then be any size and may extend beyond the available tiles:
 
