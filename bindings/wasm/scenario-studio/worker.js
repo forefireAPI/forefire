@@ -1,10 +1,10 @@
 import {tileProvider} from './config.js';
-import {perturbVector} from './ensemble.js?v=ensemble-2';
-import {validateEvents,modifierCommands,moistureAt,footprints,DANGER} from './scenario.js?v=ensemble-2';
-import {stateMetadata} from './ffstate.js?v=ensemble-2';
-import createForeFire from './assets/forefire.js?v=ensemble-2';
-import {loadTileService,terrainRegions} from './tile-service.js?v=ensemble-2';
-import {project,geographic,parseFronts,polygonArea,HOUR,solverSettings,arrivalSettings} from './core.js?v=ensemble-2';
+import {perturbVector} from './ensemble.js?v=normal-1';
+import {validateEvents,modifierCommands,moistureAt,footprints,DANGER} from './scenario.js?v=normal-1';
+import {stateMetadata} from './ffstate.js?v=normal-1';
+import createForeFire from './assets/forefire.js?v=normal-1';
+import {loadTileService,terrainRegions} from './tile-service.js?v=normal-1';
+import {project,geographic,parseFronts,polygonArea,HOUR,solverSettings,arrivalSettings} from './core.js?v=normal-1';
 let Module,ff,domain,config,running=false,cancelled=false,mode='manual',coverage=-Infinity,manual=[6,0],requestId=0,tileService,speedShown=false,lastSpeedTime=-Infinity,fuelIds=new Set(),totalRunWall=0,totalRunSim=0;
 let events=[],applied=new Set(),danger='high',moistureBucket=-1,intensityShown=false,fuelRows=new Map(),pendingExport=false,exportMeta=null;
 const requests=new Map(),send=(type,data={})=>self.postMessage({type,...data});
@@ -32,9 +32,9 @@ async function ensureWind(){const ms=config.epoch+ff.getTime()*1000;if(coverage>
  if(mode==='era')setWindow(window);
 }
 async function initialize(c){c={...c,numerics:c.numerics??'super'};config=c;events=validateEvents(c.events);if(c.wind.mode!=='manual'&&events.some(e=>e.type==='wind'))throw Error('Manual wind actions cannot override forced weather.');danger=c.danger??'high';config.dangerPresets=JSON.parse(JSON.stringify(c.dangerPresets??DANGER));applied=new Set();moistureBucket=-1;send('status',{message:'Starting WebAssembly'});
- const diagnostics=[];const binary=await fetch(new URL('./assets/forefire.wasm?v=ensemble-2',import.meta.url));if(!binary.ok)throw Error('WASM binary unavailable.');Module=await createForeFire({wasmBinary:new Uint8Array(await binary.arrayBuffer()),print:t=>diagnostics.push(t),printErr:t=>diagnostics.push(t)});ff=new Module.ForeFire();
+ const diagnostics=[];const binary=await fetch(new URL('./assets/forefire.wasm?v=normal-1',import.meta.url));if(!binary.ok)throw Error('WASM binary unavailable.');Module=await createForeFire({wasmBinary:new Uint8Array(await binary.arrayBuffer()),print:t=>diagnostics.push(t),printErr:t=>diagnostics.push(t)});ff=new Module.ForeFire();
  const response=await fetch(new URL('./assets/fuels-experimental.csv',import.meta.url));if(!response.ok)throw Error('Fuel table unavailable.');const table=(c.fuelsTable??await response.text()).trim();if(c.model==='Farsite'&&!['Index','h1','h10','h100','lh','lw','dynamic','sav1','savlh','savlw','depth','xmext','heatd','heatl'].every(k=>table.split(/\r?\n/)[0].split(';').includes(k)))throw Error('Farsite requires a matching tile-ID fuel table with Farsite properties.');ff.setString('fuelsTable',table);fuelIds=new Set(table.trim().split(/\r?\n/).slice(1).map(r=>+r.split(';')[0]));const rows=table.split(/\r?\n/).map(r=>r.split(';'));fuelIds=new Set(rows.slice(1).map(r=>+r[rows[0].indexOf('Index')]));fuelRows=new Map(rows.slice(1).map(r=>[+r[rows[0].indexOf('Index')],Object.fromEntries(rows[0].map((k,i)=>[k,+r[i]]))]));
- ff.setString('propagationModel',c.model??'Rothermel');ff.setString('caseDirectory','/');ff.setString('ForeFireDataDirectory','');const epoch=new Date(c.epoch),jan=Date.UTC(epoch.getUTCFullYear(),0,1);ff.setDouble('refYear',epoch.getUTCFullYear());ff.setDouble('refDay',Math.floor((Date.UTC(epoch.getUTCFullYear(),epoch.getUTCMonth(),epoch.getUTCDate())-jan)/86400000)+1);ff.setDouble('refTime',epoch.getUTCHours()*3600+epoch.getUTCMinutes()*60+epoch.getUTCSeconds());
+ ff.setString('normalScheme',c.normalScheme??'medians');ff.setString('propagationModel',c.model??'Rothermel');ff.setString('caseDirectory','/');ff.setString('ForeFireDataDirectory','');const epoch=new Date(c.epoch),jan=Date.UTC(epoch.getUTCFullYear(),0,1);ff.setDouble('refYear',epoch.getUTCFullYear());ff.setDouble('refDay',Math.floor((Date.UTC(epoch.getUTCFullYear(),epoch.getUTCMonth(),epoch.getUTCDate())-jan)/86400000)+1);ff.setDouble('refTime',epoch.getUTCHours()*3600+epoch.getUTCMinutes()*60+epoch.getUTCSeconds());
  for(const [k,v] of Object.entries({...solverSettings(c.numerics??'super'),...arrivalSettings(c.numerics??'super'),...(c.numerics==='super'?{perimeterResolution:24,spatialIncrement:6}:{}),minimalPropagativeFrontDepth:10,initialFrontDepth:.1,relax:.5,smoothing:0,minSpeed:c.minSpeed??.001,bmapLayer:0,windReductionFactor:c.windAdjustment??.7,'Farsite.adjustementWind':c.windAdjustment??.7,temperature:300,moisture:.1,propagationSpeedAdjustmentFactor:1,fftileCacheSize:6}))ff.setDouble(k,v);
  if(c.state){Module.FS.writeFile('/input.ffstate',c.state);}
  const loaded=tileService=await loadTileService(Module,ff,{provider:new URL(tileProvider,self.location.href).href,center:c.center,size:c.size,regions:c.state?stateMetadata(c.state).tileRegions:terrainRegions(c.polygons,c.points,c.center,5000),restore:c.state?'/input.ffstate':null,onLoadStart:p=>send('tile-loading',p),onProgress:p=>send('tiles',p)});domain=loaded.domain;

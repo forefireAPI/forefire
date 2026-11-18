@@ -208,7 +208,7 @@ void FFState::save(const std::string& filename,const std::string& scenario){
     setting("minimalPropagativeFrontDepth",FireNode::minFrontDepth);setting("frontDepthComputation",FireNode::fdepth);setting("curvatureComputation",FireNode::ccurvature);
     setting("ffstateMaxTimeStep",d->dtMax);
     setting("arrivalMapResolution",d->BMapsResolution);
-    parameters["normalScheme"]=FireNode::nmlScheme==FireNode::spline?"splines":FireNode::nmlScheme==FireNode::weightedMedians?"weightedMedians":"medians";
+    parameters["normalScheme"]=FireNode::nmlScheme==FireNode::slopeCorrectedWeightedMedians?"slopeCorrectedWeightedMedians":FireNode::nmlScheme==FireNode::spline?"splines":FireNode::nmlScheme==FireNode::weightedMedians?"weightedMedians":"medians";
     parameters["curvatureScheme"]=FireNode::curvScheme==FireNode::angle?"angle":"circumradius";
     // Save the live fuel table, including trigger[fuel] changes.
     auto& table=d->dataBroker->fuelPropertiesTable;std::set<std::string> keys;

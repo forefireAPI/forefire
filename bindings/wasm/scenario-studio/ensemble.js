@@ -38,7 +38,7 @@ export function probabilityPixels(counts,n,quantile=0,initialCounts=null){
 }
 export function runMember(config,{onProgress=()=>{},signal,makeWorker=(url,opts)=>new Worker(url,opts)}={}){
  return new Promise((resolve,reject)=>{
-  const worker=makeWorker(new URL('./worker.js?v=ensemble-2',import.meta.url),{type:'module'}),weather=makeWorker(new URL('./weather-worker.js?v=ensemble-2',import.meta.url)),frames=[];
+  const worker=makeWorker(new URL('./worker.js?v=normal-1',import.meta.url),{type:'module'}),weather=makeWorker(new URL('./weather-worker.js?v=normal-1',import.meta.url)),frames=[];
   let timer,last;const cleanup=()=>{clearTimeout(timer);worker.terminate();weather.terminate();signal?.removeEventListener('abort',abort);};
   const abort=()=>{cleanup();reject(new DOMException('Ensemble cancelled','AbortError'));};if(signal?.aborted){abort();return;}signal?.addEventListener('abort',abort,{once:true});
   const fail=e=>{cleanup();reject(Error(e.message||String(e)));};worker.onerror=weather.onerror=fail;

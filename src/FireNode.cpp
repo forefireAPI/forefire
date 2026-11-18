@@ -319,6 +319,7 @@ double FireNode::getCurvature(){
 void FireNode::setNormalScheme(string scheme){
 	if ( scheme == "medians" or scheme == "Medians" ) nmlScheme = medians;
 	if ( scheme == "weightedMedians" ) nmlScheme = weightedMedians;
+    if ( scheme == "slopeCorrectedWeightedMedians" ) nmlScheme = slopeCorrectedWeightedMedians;
 	if ( scheme == "splines" or scheme == "Splines" ) nmlScheme = spline;
 }
 
@@ -568,7 +569,7 @@ FFVector FireNode::computeNormal(){
 				, tl.getVx()+tr.getVx());
 		nml.normalize();
 
-	} else if ( nmlScheme == weightedMedians ) {
+	} else if ( nmlScheme == weightedMedians || usesSlopeCorrectedNormal() ) {
 		// weighted medians scheme
 		double norml = tl.norm();
 		double normr = tr.norm();
@@ -584,6 +585,29 @@ FFVector FireNode::computeNormal(){
 	} else {
 		return normal;
 	}
+
+    if (usesSlopeCorrectedNormal()) {
+        nml.normalize();
+        auto* altitude = domain->getDataLayer("altitude");
+        if (!altitude) return nml;
+        const double h = domain->getSpatialIncrement();
+        auto derivative = [&](const FFPoint& delta) {
+            const double ahead = altitude->getValueAt(location + delta, getTime());
+            const double behind = altitude->getValueAt(location - delta, getTime());
+            if (std::isfinite(ahead) && std::isfinite(behind)) return (ahead-behind)/(2*h);
+            const double center = altitude->getValueAt(location, getTime());
+            if (std::isfinite(center) && std::isfinite(ahead)) return (ahead-center)/h;
+            if (std::isfinite(center) && std::isfinite(behind)) return (center-behind)/h;
+            return 0.;
+        };
+        const double gx = derivative(FFPoint(h,0,0)), gy = derivative(FFPoint(0,h,0));
+        // Project the horizontal front normal, rather than lift it vertically:
+        // only orthogonal projection preserves orthogonality to the surface front.
+        const double projection = (gx*nml.getVx()+gy*nml.getVy())/(1+gx*gx+gy*gy);
+        nml = FFVector(nml.getVx()-gx*projection,nml.getVy()-gy*projection,projection);
+        nml.normalize();
+        return nml;
+    }
 
 	normal = nml;
 

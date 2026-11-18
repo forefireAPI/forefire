@@ -81,3 +81,9 @@ Meso-NH coupling; see [tests/ffstate](../../../tests/ffstate/README.md).
 Vendored JS licenses and provenance are in `vendor/`. The compiled engine uses
 the repository LICENSE. `assets/fuels-experimental.csv` and its mapping JSON
 must be reviewed before interpreting Farsite results scientifically.
+
+The **Front normal** selector chooses medians (legacy default), weighted medians,
+splines, or terrain-corrected weighted medians. Use **Restart with settings** to
+apply a change from the initial case. A loaded FFState retains its saved scheme;
+its selector is locked. The corrected scheme can change spread results and uses
+finite differences of altitude at the current spatial increment.

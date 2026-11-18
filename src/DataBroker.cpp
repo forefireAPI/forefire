@@ -960,7 +960,14 @@ namespace libforefire
 
 	int DataBroker::getSlope(FireNode *fn, PropagationModel *model, int keynum)
 	{
-		(model->properties)[keynum] = slopeLayer->getValueAt(fn);
+        double value = slopeLayer->getValueAt(fn);
+        if (fn->usesSlopeCorrectedNormal()) {
+            auto n = fn->getNormal();
+            const double horizontal = std::sqrt(n.getVx()*n.getVx()+n.getVy()*n.getVy());
+            // Models expect dz / horizontal distance, not dz / surface distance.
+            value = horizontal > 1e-12 ? value/horizontal : 0.;
+        }
+        (model->properties)[keynum] = value;
 		return 1;
 	}
 

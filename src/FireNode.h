@@ -120,8 +120,10 @@ public:
 	enum NormalScheme {
 		medians = 0,
 		weightedMedians = 1,
-		spline = 2
+		spline = 2,
+        slopeCorrectedWeightedMedians = 3
 	} ;
+	bool usesSlopeCorrectedNormal() const { return nmlScheme == slopeCorrectedWeightedMedians; }
 	static NormalScheme nmlScheme; /*!< normal scheme */
 	static void setNormalScheme(string);
 

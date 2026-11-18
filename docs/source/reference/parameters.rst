@@ -96,7 +96,7 @@ SWLngLat / DefaultSWLngLat
 
 normalScheme
 ~~~~~~~~~~~~
-* **Description:** Scheme used to compute the outward unit normal vector at each ``FireNode``. Valid values: ``medians``, ``weightedMedians``, ``splines``.
+* **Description:** Scheme used to compute the outward unit normal vector at each ``FireNode``. Valid values: ``medians``, ``weightedMedians``, ``splines``, ``slopeCorrectedWeightedMedians``.
 * **Default:** ``medians``
 
 curvatureComputation
@@ -256,3 +256,23 @@ watchedProc / CommandOutputs / FireDomainOutputs / FireFrontOutputs / FireNodeOu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * **Description:** Verbose diagnostic flags and MPI rank filter (``watchedProc = -2`` silences all ranks, ``-1`` prints all ranks, ``n >= 0`` prints only rank ``n``).
 * **Default:** ``watchedProc = -2``, ``CommandOutputs = 0``, ``FireDomainOutputs = 0``, ``FireFrontOutputs = 1``, ``FireNodeOutputs = 1``, ``FDCellsOutputs = 1``, ``HaloOutputs = 1``
+
+Terrain-corrected normal scheme
+-------------------------------
+
+``normalScheme=slopeCorrectedWeightedMedians`` is an opt-in alternative to the
+legacy defaults. It forms the horizontal weighted-median front normal, estimates
+two altitude derivatives using centred differences at ``spatialIncrement`` (a
+one-sided difference when one neighbour is unavailable), then projects onto the
+estimated terrain tangent plane and normalizes. An axis without usable samples
+uses zero derivative. Altitude sampling follows the domain coordinate frame,
+including tile-backed terrain; no aspect layer is needed. This first version
+samples altitude rather than using stored FFTile gradient components.
+
+The model ``slope`` property is divided by the horizontal normal length only
+for this scheme, preserving the convention of altitude change per horizontal
+distance. Wind projection and node motion use the same stored normal. The new
+scheme adds four altitude samples per normal update away from coverage edges,
+and a square root/division per model slope lookup. Existing schemes and the
+``medians`` default are unchanged. DEM resolution and derivative sampling scale
+still affect results; spline normals are not modified by this option.

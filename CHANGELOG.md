@@ -14,6 +14,10 @@ history, so they summarise each release rather than list every change. The
 
 ### Changed
 
+- Opt-in `normalScheme=slopeCorrectedWeightedMedians` projects weighted-median
+  normals onto the local terrain plane and normalizes model slope per horizontal
+  distance; legacy schemes retain their existing results (issue #284).
+
 - The browser's Ultrafast preset trades road-scale detail for speed; ensemble
   comparisons default to the same numerics as the reference.
 
@@ -32,6 +36,9 @@ history, so they summarise each release rather than list every change. The
   coupling path is retained. A matching Meso-NH interface patch is provided.
 
 ### Added
+
+- Scenario Studio selects front-normal schemes and preserves the choice in
+  scenarios and FFState checkpoints.
 
 - Scenario Studio supports timeline actions, reset, FFState downloads and
   paper-based ensemble burn probabilities; Pages stages Corsica tiles outside Git.
