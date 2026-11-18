@@ -71,39 +71,10 @@ See :doc:`/user_guide/ensembles` for worked examples of these functions:
 C++ API Reference
 -----------------
 
-This section provides an overview of the primary C++ classes in ``libforefire``.
+Most people only touch the C++ code to add a model. :ref:`custom-cpp-models` shows how; the classes below are the ones a model uses.
 
-Core Simulation Objects
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenclass:: libforefire::FireDomain
-   :project: ForeFire
-   :members:
-
-.. doxygenclass:: libforefire::FireFront
-   :project: ForeFire
-   :members:
-
-.. doxygenclass:: libforefire::FireNode
-   :project: ForeFire
-   :members:
-
-Data Management
-~~~~~~~~~~~~~~~
-
-.. doxygenclass:: libforefire::DataBroker
-   :project: ForeFire
-   :members:
-
-.. doxygenclass:: libforefire::DataLayer
-   :project: ForeFire
-   :members:
-
-.. note::
-   ForeFire provides specializations of ``DataLayer`` for in-memory arrays, NetCDF variables, fuel tables, and atmospheric fields, including ``ArrayDataLayer``, ``NCXYZTDataLayer``, ``FuelDataLayer``, and ``FluxLayer``.
-
-Scientific Model Interfaces
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Model interfaces
+~~~~~~~~~~~~~~~~
 
 .. doxygenclass:: libforefire::PropagationModel
    :project: ForeFire
@@ -113,24 +84,38 @@ Scientific Model Interfaces
    :project: ForeFire
    :members:
 
-User Interaction & Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. doxygenclass:: libforefire::Command
-   :project: ForeFire
-   :members:
-
 .. doxygenclass:: libforefire::SimulationParameters
    :project: ForeFire
    :members:
 
-Fundamental Utilities
-~~~~~~~~~~~~~~~~~~~~~
+Other core classes
+~~~~~~~~~~~~~~~~~~
+
+The engine itself. Their methods are documented in the source under ``src/``.
+
+.. doxygenclass:: libforefire::FireDomain
+   :project: ForeFire
+
+.. doxygenclass:: libforefire::FireFront
+   :project: ForeFire
+
+.. doxygenclass:: libforefire::FireNode
+   :project: ForeFire
+
+.. doxygenclass:: libforefire::DataBroker
+   :project: ForeFire
+
+.. doxygenclass:: libforefire::DataLayer
+   :project: ForeFire
+
+.. note::
+   ForeFire provides specializations of ``DataLayer`` for in-memory arrays, NetCDF variables, fuel tables, and atmospheric fields, including ``ArrayDataLayer``, ``NCXYZTDataLayer``, ``FuelDataLayer``, and ``FluxLayer``.
+
+.. doxygenclass:: libforefire::Command
+   :project: ForeFire
 
 .. doxygenclass:: libforefire::FFPoint
    :project: ForeFire
-   :members:
 
 .. doxygenclass:: libforefire::FFVector
    :project: ForeFire
-   :members:

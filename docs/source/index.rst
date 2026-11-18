@@ -87,6 +87,7 @@ Going further
    user_guide/models
    user_guide/fuels_and_models
    user_guide/landscape_file
+   user_guide/tiles
    user_guide/forefire_script
    user_guide/python_arrays
    user_guide/ensembles

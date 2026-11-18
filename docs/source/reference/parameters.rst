@@ -257,6 +257,43 @@ watchedProc / CommandOutputs / FireDomainOutputs / FireFrontOutputs / FireNodeOu
 * **Description:** Verbose diagnostic flags and MPI rank filter (``watchedProc = -2`` silences all ranks, ``-1`` prints all ranks, ``n >= 0`` prints only rank ``n``).
 * **Default:** ``watchedProc = -2``, ``CommandOutputs = 0``, ``FireDomainOutputs = 0``, ``FireFrontOutputs = 1``, ``FireNodeOutputs = 1``, ``FDCellsOutputs = 1``, ``HaloOutputs = 1``
 
+Tiles & Checkpoints
+-------------------
+
+See :doc:`/user_guide/tiles`.
+
+.. _param-fftilesPath:
+
+fftilesPath
+~~~~~~~~~~~
+* **Description:** Directory or HTTP(S) URL with ``{lat}_{lon}.fftile`` files. Set it **before** ``FireDomain`` to read the landscape from tiles. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. Tiles in ``ForeFireDataDirectory/tiles/`` take precedence. If it is not set, the domain loads NetCDF data instead. Set automatically by ``loadData[provider=...]``.
+* **Default:** not set
+
+fftileCacheSize
+~~~~~~~~~~~~~~~
+* **Description:** Number of decoded tiles kept in memory per domain, including tiles known to be missing.
+* **Default:** ``8``
+
+
+.. _param-fftileCacheDirectory:
+
+fftileCacheDirectory
+~~~~~~~~~~~~~~~~~~~~
+* **Description:** Where tiles downloaded over HTTP(S) are cached, relative to ``caseDirectory/ForeFireDataDirectory`` unless absolute.
+* **Default:** ``tiles-cache``
+
+arrivalMapSubdivisions
+~~~~~~~~~~~~~~~~~~~~~~
+* **Description:** On a standalone tile domain, stores arrival times in sparse 0.1-degree blocks of N×N cells (``64``, ``128``, ``256`` or ``512``; 256 is about 43 m). Changes only the arrival map, not the fuel resolution or the front. Rejected on coupled or parallel domains. Set before ``FireDomain``.
+* **Default:** ``0`` (regular arrival map)
+
+.. _param-ffstateFile:
+
+ffstateFile
+~~~~~~~~~~~
+* **Description:** ``.ffstate`` checkpoint used by ``loadState`` without ``file=``. In Meso-NH coupling, set it in ``Params.ff`` so the fire settings are prepared before the domain is built, then call ``loadState[mode=attach]``.
+* **Default:** ``""``
+
 Terrain-corrected normal scheme
 -------------------------------
 

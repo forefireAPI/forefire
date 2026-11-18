@@ -1,69 +1,95 @@
 .. _userguide-forefire-script:
 
-ForeFire Script File (.ff)
-==========================
+Script files (.ff)
+==================
 
-A ForeFire script (conventionally ``.ff``) is a plain-text sequence of interpreter commands that configures parameters, loads data, initializes fire fronts, schedules events, and exports results. Every command available in a ``.ff`` file can also be executed interactively at the ``forefire>`` prompt, sent over HTTP, or passed to ``ff.execute("...")`` in Python.
+A ``.ff`` script is a plain-text list of commands. It sets parameters, loads data, starts fires, schedules events and writes results. The same commands work at the ``forefire>`` prompt, over HTTP, and from Python with ``ff.execute("...")``. Every command is listed in :doc:`/reference/commands`.
 
-Grammar & Syntax Rules
-----------------------
+A typical script
+----------------
 
-1. **Command Format:**
-   Each command takes the form ``CommandName[arg1=val1;arg2=val2]`` (or positional arguments such as ``loadData[data.nc;2024-01-01T12:00:00Z]`` and ``include[params.ff]``). Command and parameter names are **case-sensitive**.
+.. code-block:: none
 
-2. **Comments (Whole Line Only):**
-   Lines starting with ``#`` or ``*`` (outside multiline blocks) are ignored as comments.
+   # 1. Model and solver parameters (ForeFireDataDirectory=. looks in caseDirectory)
+   setParameters[ForeFireDataDirectory=.;propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
 
-   .. warning::
-      **Never place a comment or trailing spaces after the closing bracket** ``]`` **on the same line.** Everything after ``]`` is parsed as a schedule post-operator (:ref:`@t=... <cmd-@>`). A trailing ``# comment`` or two or more trailing spaces after ``]`` triggers ``unknown post operator`` and **prevents the command from running**.
+   # 2. Load the NetCDF landscape (creates the FireDomain from the 'domain' variable)
+   loadData[data.nc;2024-07-15T12:00:00Z]
 
-3. **Schedule Operator** (``@t=`` and ``@nowplus=``):
-   Append ``@t=<seconds>`` (absolute simulation time) or ``@nowplus=<seconds>`` (relative to current domain time) immediately after ``]`` to queue a command in the event ``TimeTable`` instead of executing it immediately:
+   # 3. Ignite (WGS84 lon,lat,z, or Cartesian loc=(x,y,z))
+   startFire[lonlat=(8.85,41.78,0);t=0]
 
-   .. code-block:: none
+   # 4. Initial wind, and a wind shift at t = 1 h
+   trigger[wind;vel=(5.0,2.0,0.0)]
+   trigger[wind;vel=(2.0,6.0,0.0)]@t=3600
 
-      trigger[wind;vel=(6.0,2.0,0.0)]@t=1800
-      print[front_t1800.geojson]@t=1800
-      save[]@nowplus=600
+   # 5. Run to t = 2 h
+   goTo[t=7200]
 
-4. **Multiline Arguments** (``"""..."""``):
-   Wrap an argument value in triple quotes ``"""`` to span multiple lines—for example, to embed an inline fuel table inside a script:
+   # 6. Write the final front and the arrival-time matrix
+   print[final_front.geojson]
+   save[]
 
-   .. code-block:: none
+At the end you have ``final_front.geojson`` with the perimeter at two hours, and the arrival-time matrix written by ``save[]``. ``tests/runff/real_case.ff`` and ``tests/runff/params.ff`` in the repository are a complete real case.
 
-      setParameter[fuelsTable="""Index;vv_coeff
-      1;1.0
-      2;0.3"""]
+Syntax
+------
 
-5. **Parameter Substitution** (``*param*``) **and Protected Values** (``!``):
+A command is ``CommandName[arg1=val1;arg2=val2]``. Some take positional arguments, such as ``loadData[data.nc;2024-01-01T12:00:00Z]`` or ``include[params.ff]``. Command and parameter names are case-sensitive.
 
-   * In ``print[...]`` and ``systemExec[...]``, any ``*paramName*`` token in the argument string is replaced with the current value of ``paramName`` (and any ``:`` in the resulting string is replaced with ``-`` so ISO timestamps are safe in filenames):
+A line that starts with ``#`` or ``*`` is a comment, except inside a ``"""`` block (see below). Comments only work on their own line.
 
-     .. code-block:: none
+.. warning::
+   Put nothing after the closing ``]``, not even a comment or trailing spaces. Everything after ``]`` is read as a schedule operator (:ref:`@t=... <cmd-@>`). A ``# comment`` or two or more spaces there give ``unknown post operator``, and the command does not run.
 
-        print[front_*ISOdate*_step_*count*.geojson]
+Scheduling
+~~~~~~~~~~
 
-   * Prefixing a value with ``!`` in ``setParameter[key=!value]`` marks ``key`` as **protected**: subsequent ``setParameter`` calls for that key are ignored for the rest of the session.
+``@t=<seconds>`` (absolute simulation time) or ``@nowplus=<seconds>`` (relative to now), right after ``]``, puts the command in the ``TimeTable`` instead of running it now:
 
-Hierarchy & Front Orientation (FireFront / FireNode)
-----------------------------------------------------
+.. code-block:: none
 
-When constructing custom fire perimeters with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`, ForeFire uses **indentation** and **node ordering (winding)**:
+   trigger[wind;vel=(6.0,2.0,0.0)]@t=1800
+   print[front_t1800.geojson]@t=1800
+   save[]@nowplus=600
 
-* **Indentation rule:** Each hierarchy level is indented by **one tab** (``\t``) **or four spaces** relative to the first command in the script:
+Multiline values
+~~~~~~~~~~~~~~~~
 
-  * Level 0 (no indent): ``FireDomain[...]`` and top-level commands.
-  * Level 1 (4 spaces or 1 tab): outer ``FireFront[...]`` inside the ``FireDomain``.
-  * Level 2 (8 spaces or 2 tabs): ``FireNode[...]`` belonging to the outer ``FireFront``, **or** an inner ``FireFront[...]`` (unburned island) nested inside the outer front.
-  * Level 3 (12 spaces or 3 tabs): ``FireNode[...]`` belonging to the inner ``FireFront``.
+Triple quotes ``"""`` let a value span several lines, for example an inline fuel table:
 
-* **Required** ``FireNode`` **arguments:** Every ``FireNode`` requires at least three arguments: ``loc=(x,y,z)``, ``vel=(vx,vy,vz)``, and ``t=<seconds>`` (fewer than 3 arguments raises ``MissingOption``).
+.. code-block:: none
 
-* **Winding direction (Expanding vs. Contracting fronts):**
-  The normal vector direction is determined by the winding order of the ``FireNode`` markers:
+   setParameter[fuelsTable="""Index;vv_coeff
+   1;1.0
+   2;0.3"""]
 
-  * **Clockwise order** :math:`\rightarrow` outward normal (**expanding** fire perimeter).
-  * **Counter-clockwise order** :math:`\rightarrow` inward normal (**contracting** perimeter, used for unburned islands inside an outer front).
+Substitution and protected values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In ``print[...]`` and ``systemExec[...]``, ``*paramName*`` is replaced with the current value of ``paramName``. Any ``:`` in the result becomes ``-``, so ISO dates are safe in file names:
+
+.. code-block:: none
+
+   print[front_*ISOdate*_step_*count*.geojson]
+
+``setParameter[key=!value]`` protects ``key``: later ``setParameter`` calls for it are ignored for the rest of the session.
+
+Drawing a front by hand
+-----------------------
+
+For a point ignition, :ref:`startFire <cmd-startFire>` creates a small clockwise triangle of 3 nodes. For any other shape, write the front with :ref:`FireFront <cmd-FireFront>` and :ref:`FireNode <cmd-FireNode>`.
+
+Indentation sets the hierarchy, one tab or four spaces per level, relative to the first command of the script:
+
+- Level 0: ``FireDomain[...]`` and other top-level commands.
+- Level 1: the outer ``FireFront[...]``.
+- Level 2: the ``FireNode[...]`` of the outer front, or an inner ``FireFront[...]`` (an unburned island).
+- Level 3: the ``FireNode[...]`` of the inner front.
+
+Each ``FireNode`` needs at least ``loc=(x,y,z)``, ``vel=(vx,vy,vz)`` and ``t=<seconds>``. With fewer than 3 arguments it raises ``MissingOption``.
+
+Node order sets the direction (see :ref:`front winding <front-winding>`): clockwise expands, counter-clockwise contracts. Here the outer front is clockwise and the island inside it is counter-clockwise:
 
 .. code-block:: none
    :caption: Expanding outer perimeter with a contracting inner island
@@ -79,32 +105,3 @@ When constructing custom fire perimeters with :ref:`FireFront <cmd-FireFront>` a
                FireNode[loc=(-20,0,0);vel=(0,0,0);t=0]
                FireNode[loc=(0,-20,0);vel=(0,0,0);t=0]
                FireNode[loc=(20,0,0);vel=(0,0,0);t=0]
-
-For simple point ignitions, :ref:`startFire <cmd-startFire>` automatically creates a small clockwise triangular front of 3 nodes.
-
-Typical Script Workflow
------------------------
-
-.. code-block:: none
-
-   # 1. Configure model and solver parameters (ForeFireDataDirectory=. looks in caseDirectory)
-   setParameters[ForeFireDataDirectory=.;propagationModel=Rothermel;fuelsTableFile=fuels.csv;perimeterResolution=30;spatialIncrement=2;dumpMode=geojson]
-
-   # 2. Load the NetCDF landscape (creates the FireDomain from the 'domain' variable)
-   loadData[data.nc;2024-07-15T12:00:00Z]
-
-   # 3. Ignite the fire (in WGS84 lon,lat,z or Cartesian loc=(x,y,z))
-   startFire[lonlat=(8.85,41.78,0);t=0]
-
-   # 4. Set initial wind and schedule a wind shift at t = 1 hour
-   trigger[wind;vel=(5.0,2.0,0.0)]
-   trigger[wind;vel=(2.0,6.0,0.0)]@t=3600
-
-   # 5. Advance simulation clock by 2 hours
-   goTo[t=7200]
-
-   # 6. Export final front perimeter and arrival-time matrix
-   print[final_front.geojson]
-   save[]
-
-See ``tests/runff/real_case.ff`` and ``tests/runff/params.ff`` in the repository for a complete real-world setup.
