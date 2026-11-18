@@ -27,7 +27,7 @@ namespace
     // Seconds are the only time unit, so "1h" is refused rather than read as
     // 1. Anything that is not a letter may follow the number, as in the
     // "t=0.000000." that loadData builds itself.
-    bool hasTimeUnit(const std::string &value)
+    bool hasNonSecondUnit(const std::string &value)
     {
         std::istringstream iss(value);
         double number;
@@ -985,7 +985,7 @@ namespace libforefire
             return normal;
 
         double dt = getFloat("dt", arg);
-        if (dt == FLOATERROR || hasTimeUnit(getString("dt", arg)))
+        if (dt == FLOATERROR || hasNonSecondUnit(getString("dt", arg)))
         {
             cout << "Error: step needs dt in seconds, as in step[dt=600]" << endl;
             return error;
@@ -1006,7 +1006,7 @@ namespace libforefire
 
         /* Advancing simulation to the prescribed time */
         double target = getFloat("t", arg);
-        if (target == FLOATERROR || hasTimeUnit(getString("t", arg)))
+        if (target == FLOATERROR || hasNonSecondUnit(getString("t", arg)))
         {
             cout << "Error: goTo needs t in seconds, as in goTo[t=600]" << endl;
             return error;

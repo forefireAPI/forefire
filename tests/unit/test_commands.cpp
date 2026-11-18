@@ -288,19 +288,17 @@ TEST_CASE("step and goTo refuse a time they cannot read") {
 }
 
 TEST_CASE("startFire refuses a date without the trailing Z") {
+    // The old code started the fire at an uninitialised time, so whether it
+    // burnt depended on the garbage; the front itself was always created.
     Command executor;
     run(executor, "clear[]");
-    run(executor, "setParameter[bmapLayer=1]");
     run(executor, "FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]");
     REQUIRE(Command::getDomain() != nullptr);
     REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
     run(executor, "startFire[loc=(300,800,0);date=2024-01-01T00:00:00]");
-    run(executor, "goTo[t=300]");
-    size_t burnt = 0;
-    for (const auto& column : Command::getDomain()->getDataMatrix("arrival_time"))
-        for (double t : column)
-            if (std::isfinite(t)) burnt++;
-    CHECK(burnt == 0);
+    CHECK(Command::getDomain()->getNumFF() == 0);
+    run(executor, "startFire[loc=(300,800,0);date=2024-01-01T00:00:00Z]");
+    CHECK(Command::getDomain()->getNumFF() == 1);
 }
 
 } /* TEST_SUITE */
