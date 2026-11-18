@@ -50,8 +50,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # For git tags like v1.2.3, create a Docker tag 1.2.3
-            type=semver,pattern={{version}}
+            # v1.2.3 -> 1.2.3 and latest; v1.2.3b1 -> 1.2.3b1 without latest.
+            # type=semver would skip PEP 440 pre-releases.
+            type=pep440,pattern={{version}}
             # For all other events (pushes to master, PRs)
             type=sha,prefix=,format=short
 

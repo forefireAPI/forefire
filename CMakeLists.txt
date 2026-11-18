@@ -4,11 +4,14 @@ cmake_minimum_required(VERSION 3.15)
 # Version (single source of truth: src/include/Version.h)
 # ----------------------------------
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/include/Version.h" _ff_version_header)
-string(REGEX MATCH "ff_version[ \t]*=[ \t]*\"v?([0-9]+\\.[0-9]+\\.[0-9]+)\"" _ff_version_match "${_ff_version_header}")
+# An optional PEP 440 pre-release suffix (2.7.0b1, 2.7.0rc1) is allowed;
+# project() only takes the numeric part.
+string(REGEX MATCH "ff_version[ \t]*=[ \t]*\"v?([0-9]+\\.[0-9]+\\.[0-9]+)([0-9a-z.]*)\"" _ff_version_match "${_ff_version_header}")
 if(NOT _ff_version_match)
     message(FATAL_ERROR "Could not parse ff_version from src/include/Version.h")
 endif()
 set(FOREFIRE_VERSION "${CMAKE_MATCH_1}")
+set(FOREFIRE_VERSION_FULL "${CMAKE_MATCH_1}${CMAKE_MATCH_2}")
 
 project(forefire VERSION ${FOREFIRE_VERSION})
 
@@ -341,7 +344,7 @@ target_include_directories(forefireL SYSTEM PRIVATE
 # its consumers the way the shared library does.
 find_package(Threads REQUIRED)
 target_link_libraries(forefireL PUBLIC forefire_netcdf Threads::Threads)
-target_compile_definitions(forefireL PRIVATE FF_STATE_ENGINE_VERSION="${FOREFIRE_VERSION}")
+target_compile_definitions(forefireL PRIVATE FF_STATE_ENGINE_VERSION="${FOREFIRE_VERSION_FULL}")
 if(FOREFIRE_ENABLE_TILE_HTTP AND NOT EMSCRIPTEN)
     find_package(CURL QUIET)
     if(CURL_FOUND)
@@ -558,7 +561,7 @@ endif()
 string(STRIP "${CMAKE_CXX_FLAGS}" _ff_sum_flags)
 
 message(STATUS "")
-message(STATUS "🔥 ForeFire v${FOREFIRE_VERSION} configuration")
+message(STATUS "🔥 ForeFire v${FOREFIRE_VERSION_FULL} configuration")
 message(STATUS "  NetCDF ....... ${_ff_sum_netcdf}")
 message(STATUS "  MPI .......... ${_ff_sum_mpi}")
 message(STATUS "  Flags ........ ${_ff_sum_flags}")
