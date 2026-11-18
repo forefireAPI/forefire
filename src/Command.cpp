@@ -24,9 +24,9 @@ using namespace std;
 
 namespace
 {
-    // Seconds are the only time unit: "1h" used to be read as 1 s. Anything
-    // that is not a letter may follow the number, as in the "t=0.000000."
-    // that loadData builds itself.
+    // Seconds are the only time unit, so "1h" is refused rather than read as
+    // 1. Anything that is not a letter may follow the number, as in the
+    // "t=0.000000." that loadData builds itself.
     bool hasTimeUnit(const std::string &value)
     {
         std::istringstream iss(value);
