@@ -77,7 +77,7 @@ public:
 	/*! \brief Run one ForeFire command, returning whatever it printed. */
 	std::string execute(const std::string &command) {
 		std::ostringstream captured;
-		executor.setOstringstream(&captured);
+		Command::OutputCapture capture(&captured);
 		std::string cmd(command);
 		executor.ExecuteCommand(cmd);
 		return captured.str();

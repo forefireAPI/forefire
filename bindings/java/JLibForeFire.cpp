@@ -47,7 +47,7 @@ JNIEXPORT jstring JNICALL Java_fprop_coupling_CCoupling_executeCommand  (JNIEnv 
 	}
 
 	ostringstream stringOut;
-	executor->setOstringstream(&stringOut);
+	Command::OutputCapture capture(&stringOut);
 
 
 	string smsg(msg);

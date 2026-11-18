@@ -2051,11 +2051,14 @@ namespace libforefire
         vector<string> tmpArgs;
         string delimiter = "=";
         tokenize(arg, tmpArgs, delimiter);
-        if (tmpArgs.size() > 2)
+        if (tmpArgs.empty() || tmpArgs.size() > 2
+            || arg.find(delimiter) == string::npos || arg.compare(0, delimiter.size(), delimiter) == 0)
         {
             cout << "problem in the number of arguments when setting " << arg << endl;
             return error;
         }
+        // "key=" sets an empty value; tokenize drops the empty token.
+        if (tmpArgs.size() == 1) tmpArgs.push_back("");
 
         // Check if the parameter value begins with '!'
         if (!tmpArgs[1].empty() && tmpArgs[1][0] == '!')
@@ -3117,7 +3120,8 @@ namespace libforefire
 
     void Command::setOstringstream(ostringstream *oss)
     {
-        currentSession.outStream = oss;
+        // nullptr goes back to cout, for callers whose stream is going away.
+        currentSession.outStream = oss ? static_cast<ostream *>(oss) : &cout;
     }
 
     void Command::tokenize(const string &str, vector<string> &tokens,

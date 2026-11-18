@@ -319,6 +319,16 @@ public:
 	static bool domainExists(const string& command);
 	/*! \brief command to redirect the ostringstream */
 	static void setOstringstream(ostringstream*);
+	/*! \brief sends command output to a stream until destroyed, then back to
+	 * cout, so later output (e.g. from a listenHTTP thread) never reaches a
+	 * stream that is gone */
+	class OutputCapture {
+	public:
+		explicit OutputCapture(ostringstream* out) { setOstringstream(out); }
+		~OutputCapture() { setOstringstream(nullptr); }
+		OutputCapture(const OutputCapture&) = delete;
+		OutputCapture& operator=(const OutputCapture&) = delete;
+	};
 
 	/*! \brief execute the desired command */
 	static void ExecuteCommand(string&);
