@@ -17,7 +17,7 @@ author = 'Filippi, Jean Baptiste'
 # scikit-build-core read. Hard-coding it here left the site advertising 2.0.0
 # for three releases.
 _version_header = pathlib.Path(__file__).resolve().parents[2] / 'src' / 'include' / 'Version.h'
-_match = re.search(r'ff_version\s*=\s*"v?([0-9]+\.[0-9]+\.[0-9]+)"',
+_match = re.search(r'ff_version\s*=\s*"v?([0-9]+\.[0-9]+\.[0-9]+[0-9a-z.]*)"',
                    _version_header.read_text(encoding='utf-8'))
 if not _match:
 	raise RuntimeError(f'could not parse ff_version from {_version_header}')
