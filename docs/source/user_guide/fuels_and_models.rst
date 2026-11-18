@@ -1,66 +1,56 @@
 .. _userguide-fuels-and-models:
 
-Fuel Tables & Model Parameterization
-====================================
+Fuel tables
+===========
 
-ForeFire is a general Rate of Spread (ROS) and flux solver. When a model is instantiated, it informs the ``DataBroker`` which fuel properties it needs via ``registerProperty("fuel.<column>")`` (see :doc:`core_concepts`). Consequently, **the required columns in your fuel table depend on the model you select**.
+Each model asks for the fuel properties it needs, with ``registerProperty("fuel.<column>")`` (see :doc:`core_concepts`). So the columns your fuel table needs depend on the model you pick. The models themselves, with their papers, are in :doc:`models`.
 
-.. seealso::
-   For the list of propagation and flux models with published scientific references and how to select each one, see :doc:`models`.
+Loading a table
+---------------
 
-How Fuel Tables Are Loaded
---------------------------
+There are two ways:
 
-You can supply a fuel table in two ways:
+- From a CSV file: ``setParameter[fuelsTableFile=fuels.csv]``. The default is ``fuels.ff``, resolved relative to ``caseDirectory/ForeFireDataDirectory``. Set ``ForeFireDataDirectory=.`` when the file sits directly in ``caseDirectory``.
+- As a string in the ``fuelsTable`` parameter: from Python with ``ff["fuelsTable"] = ...``, inline in a script (:doc:`forefire_script`), or with a built-in table such as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``.
 
-1. **External CSV file** (``fuelsTableFile``):
-   Set ``setParameter[fuelsTableFile=fuels.csv]`` (default ``fuels.ff``, resolved relative to ``caseDirectory/ForeFireDataDirectory``; set ``ForeFireDataDirectory=.`` when the file sits directly in ``caseDirectory``).
-2. **Inline string parameter** (``fuelsTable``):
-   Pass the CSV content directly into the ``fuelsTable`` parameter (for example from Python via ``ff["fuelsTable"] = ...``, or using one of the built-in standard tables such as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``).
+Either way:
 
-In both cases:
+- Columns are separated by ``;``.
+- The first line is a header that starts with ``Index``.
+- Each integer in the landscape's ``fuel`` layer is looked up in the ``Index`` column. Index ``0`` is by convention non-burnable ground (water, rock, roads, buildings), with bed depth ``e = 0``.
+- Only the ``fuel.*`` columns that the active models registered are read.
 
-* The delimiter is a **semicolon** (``;``).
-* The first line must be a header row starting with ``Index``.
-* Each integer value in the landscape's ``fuel`` index layer is looked up against the ``Index`` column. Index ``0`` is conventionally reserved for non-burnable ground (water, bare rock, roads, or buildings, with bed depth ``e = 0``).
-* Only the ``fuel.*`` columns registered by the active propagation and flux models are read from the table.
-
-Model Families and Their Fuel Columns
--------------------------------------
+Columns per model
+-----------------
 
 .. list-table::
    :header-rows: 1
    :widths: 28 72
 
-   * - Model(s)
-     - Required Fuel Columns
+   * - Model
+     - Fuel columns
    * - ``Iso``
-     - **None.** Spreads at the constant speed given by ``setParameter[Iso.speed=0.5]`` (m/s) in all directions.
+     - None. Spreads at ``Iso.speed`` (m/s) in every direction, e.g. ``setParameter[Iso.speed=0.5]``.
    * - ``WindDriven``
-     - ``Index;vv_coeff``: the rate of spread is ``vv_coeff × normal wind`` (idealized wind-driven model used in :doc:`python_arrays` and :doc:`ensembles`).
+     - ``Index;vv_coeff``. The rate of spread is ``vv_coeff × normal wind``. Used in :doc:`python_arrays` and :doc:`ensembles`.
    * - ``Rothermel``, ``BalbiNov2011``, ``Balbi2020``, ``Balbi2015``
-     - The standard 23-column Rothermel/Balbi fuel table detailed in :ref:`rothermel-fuel-file` below.
+     - The 23-column Rothermel/Balbi table below (:ref:`rothermel-fuel-file`).
    * - ``RothermelAndrews2018``
-     - Imperial Rothermel columns from Andrews (2018): ``Index;fl1h_tac;fd_ft;SAVcar_ftinv;mdOnDry1h_r;fuelDens_lbft3;H_BTUlb;Dme_pc;totMineral_r;effectMineral_r``.
+     - Imperial columns from Andrews (2018): ``Index;fl1h_tac;fd_ft;SAVcar_ftinv;mdOnDry1h_r;fuelDens_lbft3;H_BTUlb;Dme_pc;totMineral_r;effectMineral_r``.
    * - ``Farsite``
-     - Multi-class Scott & Burgan (2005) columns (built into ForeFire via ``setParameter[fuelsTable=STDfarsiteFuelsTable]``): ``Index;code;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl;desc``.
-
-----
+     - Scott & Burgan (2005) columns, built in as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``: ``Index;code;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl;desc``.
 
 .. _rothermel-fuel-file:
 
-The Standard Rothermel / Balbi Fuel Table (fuels.csv)
------------------------------------------------------
+The Rothermel/Balbi table (fuels.csv)
+-------------------------------------
 
-The standard ``fuels.csv`` format (used in ``tests/runff/fuels.csv`` and ``STDlandIndexedFuelsTable``) provides 23 semicolon-separated columns covering both Rothermel (1972) and the Balbi physical propagation and flux models:
+This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandIndexedFuelsTable``. Its 23 columns cover Rothermel (1972) and the Balbi propagation and flux models:
 
 .. code-block:: text
 
    Index;Rhod;Rhol;Md;Ml;sd;sl;e;Sigmad;Sigmal;stoch;RhoA;Ta;Tau0;Deltah;DeltaH;Cp;Cpa;Ti;X0;r00;Blai;me
    1;500.0;500.0;0.1;0.7;5000.0;5000.0;0.5;0.8;0.2;8.3;1.0;300.0;70000.0;2300000.0;1.8e7;1800.0;1000.0;600.0;0.3;2.5e-5;3.0;0.3
-
-Column Reference
-~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
@@ -68,11 +58,11 @@ Column Reference
 
    * - Column
      - Units
-     - Physical Meaning
-     - Primary Models
+     - Meaning
+     - Used by
    * - ``Index``
      - integer
-     - Unique non-negative fuel type identifier matching the ``fuel`` index raster (``0`` = non-burnable).
+     - Fuel type ID, matching the ``fuel`` index raster (``0`` = non-burnable).
      - All
    * - ``Rhod``
      - :math:`\text{kg/m}^3`
@@ -84,23 +74,23 @@ Column Reference
      - ``BalbiNov2011``
    * - ``Md``
      - ratio (0–1)
-     - Dead fuel moisture content on a dry-mass basis (e.g., ``0.10`` for 10%).
+     - Dead fuel moisture on a dry-mass basis (``0.10`` for 10%).
      - ``Rothermel``, ``Balbi*``, ``ForeFireV1*``
    * - ``Ml``
      - ratio
-     - Live fuel moisture content on a dry-mass basis (e.g., ``0.5–2.0``).
+     - Live fuel moisture on a dry-mass basis (e.g. ``0.5–2.0``).
      - ``BalbiNov2011``, ``ForeFireV1*``
    * - ``sd``
      - :math:`\text{m}^{-1}`
-     - Surface-area-to-volume ratio of dead fuel particles (e.g., ``2000–6000``).
+     - Surface-area-to-volume ratio of dead particles (e.g. ``2000–6000``).
      - ``Rothermel``, ``Balbi*``, ``ForeFireV1*``
    * - ``sl``
      - :math:`\text{m}^{-1}`
-     - Surface-area-to-volume ratio of live fuel particles.
+     - Surface-area-to-volume ratio of live particles.
      - ``BalbiNov2011``
    * - ``e``
      - :math:`\text{m}`
-     - Fuel bed depth (height of the surface fuel layer; ``0`` stops propagation).
+     - Fuel bed depth. ``0`` stops propagation.
      - ``Rothermel``, ``Balbi*``
    * - ``Sigmad``
      - :math:`\text{kg/m}^2`
@@ -124,7 +114,7 @@ Column Reference
      - ``Balbi*``
    * - ``Tau0``
      - :math:`\text{s/m}`
-     - Anderson flame residence-time constant :math:`\tau_0` (residence time :math:`\tau = \tau_0 / s_d`, typically ``70000–75590``).
+     - Anderson residence-time constant :math:`\tau_0`; residence time is :math:`\tau = \tau_0 / s_d` (typically ``70000–75590``).
      - ``Balbi*``, ``heatFluxNominal``
    * - ``Deltah``
      - :math:`\text{J/kg}`
@@ -136,47 +126,48 @@ Column Reference
      - ``Rothermel``, ``Balbi*``, ``BurnUpHeatFlux``, ``ForeFireV1*``
    * - ``Cp``
      - :math:`\text{J/(kg}\cdot\text{K)}`
-     - Specific heat capacity of fuel particles (typically ``1800–2030``).
+     - Specific heat of fuel particles (typically ``1800–2030``).
      - ``Balbi*``
    * - ``Cpa``
      - :math:`\text{J/(kg}\cdot\text{K)}`
-     - Specific heat capacity of air (typically ``1000–1150``).
+     - Specific heat of air (typically ``1000–1150``).
      - ``Rothermel`` (registered)
    * - ``Ti``
      - :math:`\text{K}`
-     - Fuel ignition temperature :math:`T_i` (typically ``600``).
+     - Ignition temperature :math:`T_i` (typically ``600``).
      - ``Balbi*``
    * - ``X0``
      - ratio (0–1)
-     - Radiant heat fraction factor :math:`\chi_0` (typically ``0.3``).
+     - Radiant heat fraction :math:`\chi_0` (typically ``0.3``).
      - ``Balbi*``
    * - ``r00``
      - :math:`\text{m}`
-     - Balbi radiative length-scale parameter :math:`r_{00}` (typically ``2.5e-5``).
+     - Balbi radiative length scale :math:`r_{00}` (typically ``2.5e-5``).
      - ``Balbi*``
    * - ``Blai``
      - ratio
-     - Leaf Area Index (LAI, typically ``2.0–4.0``).
+     - Leaf area index (typically ``2.0–4.0``).
      - ``BalbiNov2011``, ``ForeFireV1*``
    * - ``me``
      - ratio (0–1)
-     - Dead fuel moisture content of extinction (typically ``0.25–0.30``).
+     - Dead fuel moisture of extinction (typically ``0.25–0.30``).
      - ``Rothermel``, ``ForeFireV1*``
 
-.. note::
-   ``BurnUpHeatFlux`` additionally registers ``fuel.w`` (characteristic burn time in seconds), ``fuel.Sigmad``, and ``fuel.DeltaH`` (see :doc:`models`).
+``BurnUpHeatFlux`` also registers ``fuel.w``, the characteristic burn time in seconds (see :doc:`models`).
 
-Validating Your Fuel Table Against a Landscape
-----------------------------------------------
+Checking a table against a landscape
+------------------------------------
 
-Before running a simulation with a NetCDF landscape file, run ``forefire-validate`` (installed with ``pip install forefire``) to verify that every integer fuel index present in the raster is defined in your CSV table:
+``forefire-validate`` (installed with ``pip install forefire``) checks that every fuel index in a NetCDF landscape is defined in your table:
 
 .. code-block:: bash
 
    forefire-validate data.nc fuels.csv
 
-Reference Fuel Libraries
-------------------------
+If an index is missing, it tells you which one, before you spend time on a run.
 
-- **In-tree test cases:** ``tests/runff/fuels.csv`` and the built-in ``STDlandIndexedFuelsTable`` / ``STDfarsiteFuelsTable`` tables in ``src/SimulationParameters.cpp``.
-- **Companion ROS toolbox:** ``tools/wildfire_ROS_models/`` in the repository includes Python implementations, polar plots, and Sobol sensitivity analyses for ``Rothermel1972``, ``RothermelAndrews2018``, ``Balbi2020``, and ``Cruz`` crown fire models, along with standard fuel databases in ``fuels_database.py``.
+More fuel tables
+----------------
+
+- In the repository: ``tests/runff/fuels.csv``, and the built-in ``STDlandIndexedFuelsTable`` and ``STDfarsiteFuelsTable`` in ``src/SimulationParameters.cpp``.
+- ``tools/wildfire_ROS_models/`` has Python versions of ``Rothermel1972``, ``RothermelAndrews2018``, ``Balbi2020`` and the ``Cruz`` crown fire models, with polar plots, Sobol sensitivity analyses and fuel databases in ``fuels_database.py``.
