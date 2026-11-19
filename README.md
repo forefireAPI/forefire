@@ -46,45 +46,30 @@ command-line interpreter. NumPy and Matplotlib come with it.
 pip install forefire
 ```
 
-Save this as `spread.py` and run `python spread.py`. It lights a fire on a
-4 km square of uniform fuel with an 8 m/s wind and draws the front every
-30 seconds into `fronts.png`:
+Save this as `spread.py` and run `python spread.py`. It lights a fire in the
+middle of a 10 km square and draws the front every 200 seconds into `fronts.png`:
 
 ```python
-import numpy as np
 import matplotlib.pyplot as plt
 import pyforefire as forefire
 from pyforefire.helpers import printToPathe
 
 ff = forefire.ForeFire()
-ff["fuelsTable"] = "Index;vv_coeff\n1;1.0"
-ff["propagationModel"] = "WindDriven"
-ff.execute("FireDomain[sw=(0,0,0);ne=(4000,4000,0);t=0]")
+ff.execute("FireDomain[sw=(0,0,0);ne=(10000,10000,0);t=0]")
+ff.addLayer("propagation", "Iso", "propagationModel")
+ff.execute("startFire[loc=(5000,5000,0)]")
 
-# Uniform fuel and a wind field, as NumPy arrays over the 4 km domain
-fuel = np.ones((1, 1, 200, 200))
-wind = np.zeros((2, 2, 200, 200))
-wind[0, 0] = 1.0  # windU, unit vector in x
-wind[1, 1] = 1.0  # windV, unit vector in y
-ff.addLayer("propagation", "WindDriven", "propagationModel")
-ff.addIndexLayer("table", "fuel", 0, 0, 0, 4000, 4000, 0, fuel)
-ff.addScalarLayer("windScalDir", "windU", 0, 0, 0, 4000, 4000, 0, wind[0:1])
-ff.addScalarLayer("windScalDir", "windV", 0, 0, 0, 4000, 4000, 0, wind[1:2])
-
-ff.execute("startFire[loc=(1000,2000,0);t=0]")
-ff.execute("trigger[wind;loc=(0,0,0);vel=(8,3,0)]")
-for _ in range(8):
-    ff.execute("step[dt=30]")
+for _ in range(5):
+    ff.execute("step[dt=200]")
     for path in printToPathe(ff.execute("print[]")):
         plt.plot(*path.vertices.T, color="tab:red")
 
 plt.gca().set_aspect("equal")
 plt.savefig("fronts.png")
-print("wrote fronts.png")
 ```
 
-Open `fronts.png`: eight nested perimeters, stretched downwind. To paint your
-own fuel map, wind field or terrain, see
+Open `fronts.png`: five rings, since `Iso` spreads at the same speed in every
+direction. To add fuel, wind and terrain from NumPy arrays, see
 [Running from NumPy arrays](https://forefire.readthedocs.io/en/latest/user_guide/python_arrays.html).
 
 The `pyforefire` module drives the same engine as the interpreter. To run
