@@ -1,24 +1,32 @@
-# pyproject.toml
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "wildfire_ROS_models"
 version = "0.1.0"
-description = "A package for wildfire ROS model development, benchmarking and testing"
+description = "Rate of spread models for wildfire, their sensitivity analysis and neural-network emulation"
 readme = "README.md"
-requires-python = ">=3.7"
-license = { text = "MIT" }
-authors = [
-    { name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr" }
-]
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Jean-Baptiste Filippi", email = "filippi_j@univ-corse.fr" }]
 dependencies = [
-    "matplotlib",
-    "numpy",
-    "SALib",
+    "matplotlib>=3.5",
+    "numpy>=1.21",
+    "SALib>=1.5.3",
+    "scikit-learn>=1.0.2",
 ]
 
+[project.optional-dependencies]
+nn = ["tensorflow>=2.16"]
+
 [project.urls]
-Homepage = "https://github.com/forefireAPI/wildfire_ROS_models/"
+Homepage = "https://github.com/forefireAPI/forefire/tree/master/tools/wildfire_ROS_models"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "wildfire_ROS_models"
+module-root = ""

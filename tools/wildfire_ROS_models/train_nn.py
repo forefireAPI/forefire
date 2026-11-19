@@ -4,6 +4,7 @@ Ex: python train_nn.py --root /home/ai4geo/Documents/nn_ros_models --target_ros_
 
 from wildfire_ROS_models.sensitivity import generate_problem_set
 from wildfire_ROS_models.tf_ros_model import *
+from wildfire_ROS_models.ffann import export_ffann, check_ffann
 from wildfire_ROS_models.utils import *
 
 import os
@@ -55,6 +56,7 @@ def main(args):
             N=n_train_samples,
             val_prop=train_config["val_prop"],
             selected_params=args.selected_params,
+            bounds=args.bounds,
         )
         ptime = (time.time() - stime) / 60
         logger.info(f"Built data in {ptime:.2f}min")
@@ -86,9 +88,8 @@ def main(args):
     # Train a dense neural network
     save_to_json(train_config, os.path.join(nn_model_path, "config.json"))
 
-    if args.overwrite or not os.path.exists(
-        os.path.join(nn_model_path, "saved_model.pb")
-    ):
+    keras_path = os.path.join(nn_model_path, "nn.keras")
+    if args.overwrite or not os.path.exists(keras_path):
         logger.info("Optimize neural network")
         stime = time.time()
         train_wildfire_speed_emulator(model, train_set, nn_model_path, train_config)
@@ -98,6 +99,12 @@ def main(args):
         logger.info(
             f"Neural network has already been trained - params saved in {nn_model_path}"
         )
+        model = tf.keras.models.load_model(keras_path)
+
+    ffann_path = os.path.join(nn_model_path, target_ros_model + ".ffann")
+    names = export_ffann(model, ffann_path, train_set["names"])
+    diff = check_ffann(model, ffann_path, train_set["input"]["val"])
+    logger.info(f"Wrote {ffann_path} (inputs {', '.join(names)}; max diff {diff:.2e})")
 
 
 if __name__ == "__main__":
@@ -139,8 +146,14 @@ if __name__ == "__main__":
         "--overwrite", action="store_true", help="Whether to overwrite trained model"
     )
     args = parser.parse_args()
+    args.selected_params = None
+    args.bounds = None
 
     if args.target_ros_model == "RothermelAndrews2018":
+        # Named as ForeFire's RothermelAndrews2018 reads them, so the network
+        # loads there (see wildfire_ROS_models/ffann.py). Wind is sampled
+        # negative too: the back of the front sees wind against it.
+        args.bounds = {"wind": [-10, 10]}
         args.selected_params = [
             "fl1h_tac",
             "fd_ft",

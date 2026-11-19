@@ -149,6 +149,8 @@ def RothermelAndrews2018(Z, print_calculus=False):
             C = 7.47 * math.exp(-0.1333 * math.pow(fpsa, 0.55))
             E = 0.715 * math.exp(-3.59 * 10**-4 * fpsa)
             # WC = C * wv**B * math.pow(Beta / Beta_op, -E) #wind coefficient
+            if wv < 0:  # wind against the front counts as no wind, as in ForeFire
+                wv = 0
             if wv > (0.9 * RI):  # important - don't know source. Matches BEHAVE
                 wv = 0.9 * RI
 
