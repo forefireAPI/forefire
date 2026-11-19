@@ -1,13 +1,13 @@
 # ForeFire test suite
 
-Six sets of tests, one per directory, covering the different interfaces and
-use-cases of ForeFire.
+Six sets of tests, covering the different interfaces and use-cases of
+ForeFire.
 
 | Directory | What it covers | Needs |
 | --- | --- | --- |
 | `unit` | C++ tests of one model at a time, without running a simulation, covering every registered propagation and flux model | Nothing beyond the build; see `unit/README.md` |
-| `mnh_ideal` | ForeFire / **Meso-NH** coupling on an idealised atmospheric case | Meso-NH profile loaded; Meso-NH compiled with the ForeFire library in its `exe` directory |
-| `mnh_real_nested` | ForeFire / **Meso-NH** coupling on a real nested case | Same as above |
+| `mnh/ideal` | ForeFire / **Meso-NH** coupling on an idealised atmospheric case | Meso-NH profile loaded; Meso-NH compiled with the ForeFire library in its `exe` directory |
+| `mnh/real_nested` | ForeFire / **Meso-NH** coupling on a real nested case | Same as above |
 | `python` | The Python bindings, through two example simulations | `PYTHONEXE` set to a Python interpreter that can `import pyforefire` |
 | `runANN` | The built-in feed-forward network evaluator, on a network fitted to Rothermel | `bin/ANN_test`, built by default (`-DFOREFIRE_BUILD_TOOLS=ON`) |
 | `runff` | The command-line interpreter: run a case, save and reload state, export KML and GeoJSON | ForeFire only |
@@ -30,13 +30,13 @@ ctest --test-dir build --output-on-failure
 * The test fixtures are stored in **Git LFS**. `git lfs pull` if the `.nc`
   files look like short text stubs.
 
-* *(optional)* **Meso-NH**, for the `mnh_*` tests only. `mnh_coupled.bash`
-  builds it, links ForeFire and runs `mnh_real_nested`; with `--compare` it
+* *(optional)* **Meso-NH**, for the `mnh/*` tests only. `mnh/coupled.bash`
+  builds it, links ForeFire and runs `mnh/real_nested`; with `--compare` it
   runs the `dev` × PR check. See
   [`tests/mnh/README.md`](mnh/README.md).
 
   ```bash
-  # sets SRC_MESONH and XYZ, which the mnh_* scripts use
+  # sets SRC_MESONH and XYZ, which the mnh/* scripts use
   . /path/to/mesonh/conf/profile_mesonh-LXgfortran-R8I4-MNH-V6-0-1-MPIAUTO-O2
   ```
 
@@ -63,7 +63,7 @@ cd tests
 bash run.bash     # or: make test
 ```
 
-`run.bash` skips the `mnh_*` tests when `SRC_MESONH` is unset and the `python`
+`run.bash` skips the `mnh/*` tests when `SRC_MESONH` is unset and the `python`
 tests when `PYTHONEXE` is unset, runs `runff` and `runANN` unconditionally, and
 prints a pass/fail summary. It exits non-zero if any suite failed.
 
@@ -75,12 +75,12 @@ bash clean.bash   # or: make clean
 
 ## What each set does
 
-### `mnh_ideal`
+### `mnh/ideal`
 
 Validates the coupling on a simplified atmospheric profile. Expect a fire front
 consistent with the prescribed wind, plus NetCDF and KML outputs.
 
-### `mnh_real_nested`
+### `mnh/real_nested`
 
 Reproduces a real fire scenario across two nested Meso-NH domains (real forcing
 plus a high-resolution nest). It also exercises high-frequency output and the

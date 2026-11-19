@@ -24,12 +24,12 @@ run_test() {
     fi
 }
 
-# Run mnh_* tests if SRC_MESONH is set
+# Run mnh/* tests if SRC_MESONH is set
 if [ -z "$SRC_MESONH" ]; then
-    echo "SRC_MESONH not set: skipping mnh_* tests."
+    echo "SRC_MESONH not set: skipping mnh/* tests."
 else
-    run_test "mnh_ideal" "mnh_ideal"
-    run_test "mnh_real_nested" "mnh_real_nested"
+    run_test "mnh/ideal" "mnh/ideal"
+    run_test "mnh/real_nested" "mnh/real_nested"
 fi
 
 # Run python tests if PYTHONEXE is set

@@ -87,7 +87,7 @@ fixture is weak: its outputs take only four values.
 
 ## Everything at once
 
-`tests/run.bash` runs `runff` and `runANN`, the `mnh_*` coupled cases when
+`tests/run.bash` runs `runff` and `runANN`, the `mnh/*` coupled cases when
 `SRC_MESONH` is set, and `tests/python/run.bash` when `PYTHONEXE` is set.
 CI does not use it.
 

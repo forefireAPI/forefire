@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run this nested case with native FFTile providers in an isolated directory.
 
-python3 tests/mnh_real_nested/run_tiles.py --mesonh-root /path/to/meso-nh-6-dev
-python3 tests/mnh_real_nested/run_tiles.py --validate /path/to/completed/run
+python3 tests/mnh/real_nested/run_tiles.py --mesonh-root /path/to/meso-nh-6-dev
+python3 tests/mnh/real_nested/run_tiles.py --validate /path/to/completed/run
 Uses Python's standard library; simulation runs in the MPI Meso-NH executable.
 """
 import argparse

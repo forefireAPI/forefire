@@ -17,7 +17,7 @@ import time
 from smoke import chunks
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT/'tests/mnh_real_nested'))
+sys.path.insert(0, str(ROOT/'tests/mnh/real_nested'))
 from run_tiles import prepare, front_frame
 
 

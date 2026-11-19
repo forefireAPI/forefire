@@ -7,10 +7,10 @@ set -eo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: tests/mnh_coupled.bash [options]
+Usage: tests/mnh/coupled.bash [options]
 
 Builds Meso-NH 6.0.1 and ForeFire (with MPI), links them, and runs the
-tests/mnh_real_nested case (Pedrógão Grande, 4 MPI processes, about 7 min).
+tests/mnh/real_nested case (Pedrógão Grande, 4 MPI processes, about 7 min).
 Steps that are already done are skipped, so running it again is cheap.
 
 Options:
@@ -35,8 +35,8 @@ EOF
 
 # --- settings -----------------------------------------------------------------
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CASE="tests/mnh_real_nested"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CASE="tests/mnh/real_nested"
 PORT=8080
 
 MNH_NAME="mesonh-code-PACK-MNH-V6-0-1"
