@@ -1,4 +1,4 @@
-#!//gpfs/home/UDCPP/filippi_j/soft/bin/python2.7
+#!/usr/bin/env python3
 '''
 Created on 4 avr. 2011
 

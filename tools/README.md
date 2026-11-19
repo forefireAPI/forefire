@@ -1,7 +1,23 @@
-These scripts create the files needed to run a simulation coupled with Meso-NH.
-To couple, also edit the `&NAM_FOREFIRE` namelist in the EXSEG file. The
-Meso-NH guide (`docs/source/user_guide/mesonh.rst`) walks through a full
-coupled run.
+# tools
+
+Scripts and pages that users run around ForeFire. Build and CI helpers live in
+`scripts/`.
+
+| Folder / file | What it is |
+| --- | --- |
+| `htdocs/` | Web pages served by `listenHTTP[]` from `$FOREFIREHOME/tools/htdocs`; see `htdocs/README.md` |
+| `tiles/` | `fftile.py` writes and inspects `.fftile` landscapes; see `tiles/README.md` |
+| `wildfire_ROS_models/` | Python rate of spread models and `.ffann` export; see its `README.md` |
+| `preprocessing/` | Landscape and Meso-NH case preparation (below) |
+| `postprocessing/` | VTK export and plots of ForeFire and Meso-NH outputs (below) |
+| `3nestFFCASE/` | Template of a three-nest Meso-NH case for SLURM, with site-specific paths |
+| `sampleUses.py` | Example chaining the pre and postprocessing steps of a Meso-NH case |
+| `TODO.md` | Planned tools |
+
+The rest of this page covers the Meso-NH workflow. These scripts create the
+files needed to run a simulation coupled with Meso-NH. To couple, also edit
+the `&NAM_FOREFIRE` namelist in the EXSEG file. The Meso-NH guide
+(`docs/source/user_guide/mesonh.rst`) walks through a full coupled run.
 
 #  Preprocessing Scripts
 
@@ -54,10 +70,18 @@ The **InitFile** file contains the location of the fire front at initialization 
 ### prealCF2Case
 
 creates the **NetCDFfile**  file containing the data needed by the simulation (data.nc), otput uses the *FiretoNC* routine
-**Usage:** python prealCF2Case inMNH_PGD_File.nc outFFDCaseFile.nc   opt:pngFuelFile"
-- INPUT: the pgd file at the specified path *(inMNH_PGD_File.nc)*
-- OUTPUT: the data.nc file at the specified path *(outFFDCaseFile.nc)*
-- OPTIONAL: the png on which the fuel distribution is constructed *(opt:pngFuelFile)*
+
+**Usage:** a Python module, not a command. From `tools/`:
+```python
+from preprocessing.prealCF2Case import PGD2Case
+PGD2Case(pgd_path, png_path, out_path, dateStartDom)
+```
+- `pgd_path`: the Meso-NH PGD file (`inMNH_PGD_File.nc`)
+- `png_path`: the png on which the fuel distribution is constructed
+- `out_path`: the data.nc file to write
+- `dateStartDom`: the start date of the domain
+
+`sampleUses.py` shows it in a full case.
 
 ouutput is generated from the *FiretoNC* routine in *genForeFireCase.py*
 
@@ -118,16 +142,11 @@ python3 kmlDomain.py PGDFile >  kmlfile
 - OUTPUT:the desired kml file (ex: *KTEST_2D/001_pgd/kmlD160.kml*)
 
 
-#  Processing Scripts
-
-List of postprocessing scripts:
-
-- ***plotcontour.py***
-
 #  Postprocessing Scripts
 
 List of postprocessing scripts:
 - ***pMNHFF2VTK.py***
+- ***plotcontour.py***
 
 `ffToGeoJson.py` (GeoJSON and KML export) lives in `preprocessing/`.
 
