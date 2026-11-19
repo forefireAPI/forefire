@@ -27,6 +27,7 @@ COPY --link CMakeLists.txt LICENSE pyproject.toml ./
 COPY --link app/ ./app/
 COPY --link src/ ./src/
 COPY --link third_party/ ./third_party/
+COPY --link bindings/ ./bindings/
 
 # -march=native is off: this image is published and has to run on CPUs other
 # than the builder's. The LFS check, the unit tests and ANN_test are off
@@ -38,8 +39,6 @@ COPY --link third_party/ ./third_party/
 # and ANN_test executables here as well would just be a wasted compile.
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DFOREFIRE_NATIVE_ARCH=OFF -DFOREFIRE_CHECK_LFS=OFF -DFOREFIRE_BUILD_TESTS=OFF -DFOREFIRE_BUILD_TOOLS=OFF \
  && cmake --build build -j"$(nproc)" --target forefireL
-
-COPY --link bindings/ ./bindings/
 
 # The wheel is built from the repository root, where pyproject.toml drives
 # CMake through scikit-build-core. It carries both the pyforefire module and
