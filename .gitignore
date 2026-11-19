@@ -8,6 +8,7 @@ sconsbuild
 local
 tools/cache
 tools/cmaps
+scripts/cmaps
 bindings/python/src/pyforefire.egg-info
 paper/jats
 #python packaging
