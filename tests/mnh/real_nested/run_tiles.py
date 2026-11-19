@@ -24,7 +24,7 @@ import sys
 import time
 
 SOURCE = Path(__file__).resolve().parent
-ROOT = SOURCE.parents[1]
+ROOT = SOURCE.parents[2]
 INPUTS = ('RUN12.1.PRUN1.004.nc', 'RUN12.1.PRUN1.004.des',
           'M2.20170617.00.15.nc', 'M2.20170617.00.15.des',
           'PGD_D3200mA.nested.nc', 'PGD_D800mA.nested.nc')

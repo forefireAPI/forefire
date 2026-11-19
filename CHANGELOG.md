@@ -32,7 +32,7 @@ Entries below v2.5.0 were reconstructed from release notes and commit history.
 - The browser demo can run the Farsite model. ([#274])
 - `pyforefire.run_ensemble` and `burn_probability` map an ensemble's burn probability; `dice`, `brier_score` and `reliability` score it against an observed burnt area. ([#172])
 - `ForeFireRunner.fork()`, `ForeFireRunner(stdout=, stderr=)` and `pyforefire.arrival_time()`. ([#172])
-- `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled Meso-NH run, with `--compare <branch>`. ([#266])
+- `tests/mnh/coupled.bash` goes from a bare Linux machine to a coupled Meso-NH run, with `--compare <branch>`. ([#266])
 - `tools/htdocs/mnh3d.html` shows a Meso-NH coupled run live in 3D. ([#271])
 - The browser demo shows DFCI grid, water points and tracks from IGN (display only).
 - Published releases carry the WebAssembly module and its `SHA256SUMS`. ([#244])
