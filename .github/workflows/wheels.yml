@@ -43,11 +43,9 @@ jobs:
           # its jobs queue forever instead of failing, and the replacements
           # (macos-15-intel, macos-26-intel) need their billing confirmed for
           # public repositories first. Intel Mac users build from the sdist.
-          # macos-14 is deprecated but still current enough to keep the
-          # supported floor at macOS 14 rather than 15.
-          - os: macos-14
+          - os: macos-15
             arch: arm64
-            macos_target: "14.0"
+            macos_target: "15.0"
     steps:
       # No `lfs: true` here: wheels are built from source only, and the LFS
       # fixtures are ~60 MB that no wheel job reads.
