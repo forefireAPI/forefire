@@ -9,26 +9,32 @@
 
 **ForeFire** is an open-source wildfire spread simulator written in C++,
 developed by CNRS at the [Université de Corse Pascal Paoli](https://www.univ-corse.fr/).
+It is part of the [FireCaster](https://firecaster.org/) research portal.
 
 ## Try it now, no install
 
-**[In-browser demo](https://forefireapi.github.io/forefire/)** · **[Live demo](https://forefire.univ-corse.fr/forefire/)**
-
-The in-browser demo is the engine compiled to WebAssembly, running in your tab
-on terrain and fuel built from map tiles. Click the map to light a fire, set the wind, and watch it spread.
+**[Try it in your browser](https://forefireapi.github.io/forefire/)**: the engine
+compiled to WebAssembly, running in your tab. It opens on Scenario Studio: set a
+start time and place, load the Corsica landscape tiles, and watch the fire spread
+hour by hour, or run an ensemble.
 
 <p align="center">
   <a href="https://forefireapi.github.io/forefire/">
-    <img src="./docs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire browser demo" width="800">
+    <img src="./docs/source/_static/scenario-studio.jpg" alt="ForeFire Scenario Studio: six hours of fire spread in Corsica, coloured by hour" width="800">
   </a>
 </p>
 
-Scenario Studio adds a scenario timeline, dynamic FFTile loading, FFState
-restart and experimental ensemble probability maps. Its source and static-site
-build instructions are in [bindings/wasm/scenario-studio](bindings/wasm/scenario-studio/README.md).
-The Pages workflow stages a Corsica tile subset; terrain data and generated WASM
-stay outside Git. The previous lightweight demo remains available under `/classic/`
-after the next Pages deployment.
+The lighter demo is under [`/classic/`](https://forefireapi.github.io/forefire/classic/):
+click the map to light a fire, set the wind, and watch it spread.
+
+<p align="center">
+  <a href="https://forefireapi.github.io/forefire/classic/">
+    <img src="./docs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire classic browser demo" width="600">
+  </a>
+</p>
+
+Scenario Studio source and build instructions are in
+[bindings/wasm/scenario-studio](bindings/wasm/scenario-studio/README.md).
 
 ## Run it from Python
 
@@ -81,6 +87,10 @@ Open `fronts.png`: eight nested perimeters, stretched downwind. To paint your
 own fuel map, wind field or terrain, see
 [Running from NumPy arrays](https://forefire.readthedocs.io/en/latest/user_guide/python_arrays.html).
 
+The `pyforefire` module drives the same engine as the interpreter. To run
+simulations side by side in worker processes, use `ForeFireRunner`; see
+[bindings/python/README.md](bindings/python/README.md).
+
 Published wheels are built without MPI. For fire-atmosphere coupling with
 Meso-NH, or to tune the build for your CPU, [build from source](#build-from-source).
 
@@ -95,36 +105,13 @@ docker run -it --rm -p 127.0.0.1:8000:8000 ghcr.io/forefireapi/forefire:latest
 
 `127.0.0.1:` keeps the port on this machine. A bare `-p 8000:8000` publishes
 it on every interface, so anyone on the network could send commands to the
-server. To build the image yourself instead, run `docker build -t forefire .`
-in a clone and use `forefire` as the image name.
-
-Inside the container, start the interpreter next to the sample data and open
-the HTTP server. Bind it to `0.0.0.0` so the published port reaches it
-(`listenHTTP[]` alone listens only on the container's own localhost):
-
-```bash
-cd tests/runff
-forefire
-```
-
-```text
-forefire> listenHTTP[0.0.0.0:8000]
-```
-
-Open <http://localhost:8000/>, click **`include`** (or type
-`include[real_case.ff]`) and **Send**, then **Refresh Map**. Running the
-`include` again restarts the case; send `step[dt=600]` to continue it. The
-`systemExec is not available over
-HTTP` line it prints is expected: the script's data check only runs from the
-console.
-
-![ForeFire Web UI showing a simulation example](docs/source/_static/images/gui_real_case_ff.jpg)
-
-The sample data under `tests/` is stored in Git LFS. If you work from a clone
-rather than the published image, install Git LFS before cloning, or `data.nc`
-will be a small pointer file instead of the dataset.
+server. The [quickstart](https://forefire.readthedocs.io/en/latest/getting_started/quickstart.html#quickstart-docker)
+walks through starting the server and running the case from the browser.
 
 ## Build from source
+
+The sample data under `tests/` is stored in Git LFS: install Git LFS before
+cloning, or `data.nc` will be a small pointer file instead of the dataset.
 
 `install-forefire.sh` (Linux) and `install-forefire-osx.sh` (macOS) install the
 dependencies and build; the
@@ -173,19 +160,13 @@ Options, the live 3D view and the manual setup are in the
 - The `forefire` interpreter: `.ff` scripts, an interactive console, and a web
   GUI served by `listenHTTP[]`.
 - `libforefireL` for embedding, and Python bindings that take NumPy arrays.
-- Landscape input from NetCDF or from arrays; output to KML, GeoJSON, NetCDF
-  and text.
+- Landscape from [`.fftile` tiles](https://forefire.readthedocs.io/en/latest/user_guide/tiles.html),
+  NetCDF or arrays; checkpoint and restart with `.ffstate`; output to KML,
+  GeoJSON, NetCDF and text.
 - Two-way coupling with the Meso-NH atmospheric model through MPI.
 
 More: [documentation](https://forefire.readthedocs.io/en/latest/) ·
-[website](https://forefire.univ-corse.fr/) · [changelog](CHANGELOG.md)
-
-## Python bindings
-
-The `pyforefire` module drives the same engine as the interpreter: run `.ff`
-commands, pass layers as NumPy arrays, and run simulations side by side in
-worker processes with `ForeFireRunner`. See
-[bindings/python/README.md](bindings/python/README.md).
+[FireCaster](https://firecaster.org/) · [changelog](CHANGELOG.md)
 
 ## Contributing
 
@@ -207,7 +188,7 @@ If you use ForeFire in your work, please cite:
 **BibTex**
 ```bibtex
 @article{ForeFireJOSS2025,
-  title = {ForeFire: A Modular,  Scriptable C++ Simulation Engine and Library for Wildland-Fire Spread},
+  title = {ForeFire: A Modular, Scriptable C++ Simulation Engine and Library for Wildland-Fire Spread},
   volume = {10},
   ISSN = {2475-9066},
   url = {http://dx.doi.org/10.21105/joss.08680},
@@ -215,7 +196,7 @@ If you use ForeFire in your work, please cite:
   number = {116},
   journal = {Journal of Open Source Software},
   publisher = {The Open Journal},
-  author = {Filippi,  Jean-Baptiste and Baggio,  Roberta and Paugam,  Ronan and Bosseur,  Frédéric and Leblanc,  Antonio and Alonso-Pinar,  Alberto},
+  author = {Filippi, Jean-Baptiste and Baggio, Roberta and Paugam, Ronan and Bosseur, Frédéric and Leblanc, Antonio and Alonso-Pinar, Alberto},
   year = {2025},
   month = dec,
   pages = {8680}
