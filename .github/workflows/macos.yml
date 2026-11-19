@@ -4,7 +4,11 @@ on:
   pull_request:
     # commands.md is compiled into the CLI, so it is not ignored like other .md
     paths: [ "**", "!docs/**", "!**/*.md", "app/forefire/commands.md" ]
-    branches: [ "master", "dev" ]
+    branches: [ "master" ]
+  # dev gets a weekly run instead of one per PR push: it also catches GitHub
+  # retiring a macOS runner image before a release tag does.
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 # A new push to a PR cancels its older run. Pushes to branches, tags and
@@ -23,6 +27,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          # Scheduled runs start on master, the default branch; test dev.
+          ref: ${{ github.event_name == 'schedule' && 'dev' || '' }}
           lfs: false # only tests/runff is needed, fetched below
 
       - uses: ./.github/actions/lfs-runff
