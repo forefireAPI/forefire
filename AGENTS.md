@@ -26,8 +26,9 @@ not part of routine development.
   parameters. Use `ForeFireRunner` for sweeps and parallel runs.
 - Browser: the WASM build has no NetCDF. Do not assume a native feature works
   there without running `bindings/wasm/smoke.mjs`.
-- Meso-NH coupling (`MPI_COUPLING`, `tests/mnh`, `tests/mnh_*`) is not built in
-  CI. Report coupled behaviour as untested unless you ran it.
+- Meso-NH coupling (`MPI_COUPLING`) is compiled in the CI MPI job, but no coupled
+  case (`tests/mnh`, `tests/mnh_*`) runs in CI. Report coupled behaviour as
+  untested unless you ran it.
 - Tests: CTest unit tests, `tests/runff` and `tests/python`, see TESTING.md.
   `*.ref` files are in Git LFS; configure with `-DFOREFIRE_CHECK_LFS=OFF` when
   only `tests/runff` was pulled. Report a test you could not run as skipped.
