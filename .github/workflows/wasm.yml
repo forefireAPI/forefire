@@ -121,6 +121,8 @@ jobs:
         if: steps.pages.outputs.publish == 'true'
         run: |
           python3 bindings/wasm/scenario-studio/prepare.py --output _site --corsica
+          # The logo links to ../, which is outside the Pages site.
+          sed -i 's|class="brand" href="\.\./"|class="brand" href="./"|' _site/index.html
           touch _site/.nojekyll
           # Preserve the previous lightweight demo under /classic/.
           mkdir -p _site/classic
