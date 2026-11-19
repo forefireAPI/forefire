@@ -1,325 +1,109 @@
 # Changelog
 
-All notable changes to ForeFire are recorded here.
+All notable changes to ForeFire, one line each. The linked pull request or
+issue has the details. Entries that change simulation results are listed first.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Version numbers are the tags in this repository and the values reported by
-`forefire -v`; they are also what `pip install forefire==<version>` resolves.
-
-Entries below v2.5.0 were reconstructed from the release notes and the commit
-history, so they summarise each release rather than list every change. The
-`Full Changelog` link on each version gives the complete commit range.
+Version numbers are the tags in this repository, the values reported by
+`forefire -v`, and what `pip install forefire==<version>` resolves.
+Entries below v2.5.0 were reconstructed from release notes and commit history.
 
 ## [Unreleased]
 
-### Changed
+### Changes results
 
-- Opt-in `normalScheme=slopeCorrectedWeightedMedians` projects weighted-median
-  normals onto the local terrain plane and normalizes model slope per horizontal
-  distance; legacy schemes retain their existing results (issue #284).
-
-- The browser's Ultrafast preset trades road-scale detail for speed; ensemble
-  comparisons default to the same numerics as the reference.
-
-- FFTile geographic fuel polygons support persistent scenario barriers and fuel
-  replacement; FFState preserves them and ignores confirmed retired-node events.
-- WebAssembly can add perimeter ignitions at the current simulation clock.
-
-- WebAssembly node identities use a defined wide shift, fixing duplicate zero
-  IDs when serializing newly created nodes.
-
-- Coupled FFTile cases use Meso-NH's registered mass-point geography in the
-  parent Cartesian frame, including nested offsets and grid rotation. Fire
-  terrain remains tile-backed; Meso-NH altitude updates use a separate writable
-  atmospheric layer. Tile slope components are transformed to the grid frame.
-  This changes results for newly enabled tile coupling; the legacy NetCDF
-  coupling path is retained. A matching Meso-NH interface patch is provided.
+- Farsite reads the wind in m/s and the slope as a tangent, upslope only: about 5× more wind effect and 4× less slope effect on fuel model 1. Retune old settings. ([#242])
+- Farsite matches the FARSITE reference (mbedward/farsite) at the flanks, the back and on slopes; uphill up to a third faster at 30°. ([#269], [#270])
+- Time-varying data layers interpolate forwards, past 24 h too. ([#235])
+- A front reaching the domain edge no longer floods the arrival map. ([#240])
+- A domain built without `loadData` takes its propagation model from the parameters. ([#243])
+- The `BMap` layer holds the arrival times again; it returned zeros. ([#229])
+- Meso-NH coupling on `.fftile` uses Meso-NH's grid geography (nesting, rotation). The NetCDF coupling is unchanged; a Meso-NH patch is provided. ([#245])
 
 ### Added
 
-- Scenario Studio selects front-normal schemes and preserves the choice in
-  scenarios and FFState checkpoints.
-
-- Scenario Studio supports timeline actions, reset, FFState downloads and
-  paper-based ensemble burn probabilities; Pages stages Corsica tiles outside Git.
-
-- `saveState` / `loadState` store live fire objects, sparse arrival history,
-  parameters, forcing and fuel overrides without NetCDF. FFTile-backed states
-  attach to registered Meso-NH domains with UTC/frame transfer and checkpoint
-  flux clocks; base tiles remain external.
-
-- Standalone FFTile domains optionally store arrival times in sparse globally
-  aligned 0.1-degree blocks (`arrivalMapSubdivisions=64/128/256/512`). The web
-  default uses 256; its opt-in Super fast preview uses 128 m / 32 m front
-  numerics, 128 subdivisions and adaptive protection for small ignitions.
-  ROS and wind adjustment are unchanged. Geographic blocks are not yet enabled
-  for coupled or parallel runs.
-
-- WebAssembly tile domains accept rolling coarse east/north wind fields, with
-  bilinear spatial and linear temporal interpolation, tile response matrices,
-  and a local coordinate Jacobian. Missing forcing coverage raises an error.
-  A dedicated perimeter importer preserves disconnected polygons and holes.
-
-- A tile-backed launcher for the real nested Meso-NH case creates an isolated
-  run, validates four-rank coupling and geographic placement, and optionally
-  records summaries of wind and heat/vapour arrays at the C/Fortran boundary.
-
-- The WASM tile demo supports zoom/pan with detailed terrain sampling, multiple
-  ignitions, live wind changes, simulation pacing, pause/resume and the public
-  Corsican tile service (through a local CORS forwarding endpoint).
-- A local WASM tile demo serves `.fftile` landscapes over HTTP and runs
-  Rothermel in a browser worker, with terrain previews, wind controls and
-  timeline playback. The browser adapter stages compressed tiles for the
-  existing C++ reader.
-
-- `loadData[provider=...;center=(longitude,latitude)]` creates a fixed tile
-  domain, prefetches available HTTP tiles to disk, and retains decoded tiles
-  only as needed.
-  Native HTTP support uses optional libcurl; 404/410 coverage is nonburnable.
-- `.fftile` landscapes work in builds with NetCDF disabled. Tiles page in
-  through a replaceable provider, with case-local fuel overrides and zero
-  spread on missing coverage. The Python writer checks reconstruction error
-  and uses 16-bit PNG altitude when 8-bit JPEG loses too much precision.
-
-- The browser demo includes the `Farsite` propagation model in its model
-  selector.
-- `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled
-  ForeFire + Meso-NH run: it downloads and builds Meso-NH 6.0.1, builds
-  ForeFire with MPI, links them and runs `tests/mnh_real_nested`. With
-  `--compare <branch>` it runs the case on both builds and reports the output
-  files that differ beyond run-to-run noise. ([#266])
-- A User Guide page introduces Meso-NH coupling, the supplied cases and the live 3D viewer.
-- A User Guide page lists the propagation and flux models that have a
-  published reference, with a link to it and how to select each model.
-- `tools/htdocs/mnh3d.html` shows a run coupled to Meso-NH live in 3D:
-  terrain, fuel, fire front, plume top and surface wind.
-- The browser demo can draw the DFCI grid, water points and DFCI tracks from
-  the IGN Géoplateforme, in France. These layers are display only: they never
-  reach the simulation.
-- `pyforefire.run_ensemble` runs one simulation per member in parallel
-  worker processes and returns their arrival-time maps;
-  `pyforefire.burn_probability` turns them into a burn-probability map. A
-  User Guide page shows a wind ensemble end to end. ([#172])
-- `pyforefire.dice`, `pyforefire.brier_score` and `pyforefire.reliability`
-  score an ensemble against an observed burnt area: the overlap of each
-  member, the error of the probability map, and how often each probability
-  bin actually burnt. ([#172])
-- `ForeFireRunner.fork()` returns a new runner holding a copy of the
-  simulation, so ensemble members can branch from one spin-up instead of
-  rerunning it. The worker forks itself, which takes a few milliseconds where
-  a new runner takes about 80. ([#172])
-- `ForeFireRunner(stdout=..., stderr=...)` redirects the kernel's output, as
-  in `subprocess.Popen`. ([#172])
-- `pyforefire.arrival_time(ff, path, bbox=None)` reads the arrival-time map
-  as an array, through the `plot` command. ([#172])
-- Each published release carries the WebAssembly module (`forefire.wasm`,
-  `forefire.mjs`, `worker.mjs`) and its `SHA256SUMS`, so it can be pinned to a
-  version instead of the GitHub Pages copy, which follows `dev`.
+- `.fftile` landscapes: tiled, loaded on demand, over HTTP with `loadData[provider=…;center=(lon,lat)]` (optional libcurl), no NetCDF needed. Missing tiles are non-burnable. ([#245])
+- `.ffstate` checkpoints: `saveState` / `loadState` save and resume a run, and can attach to a Meso-NH domain (`mode=attach`). ([#245])
+- Persistent fuel modifiers on tiles (barriers, fuel replacement), kept in `.ffstate`. ([#245])
+- Sparse arrival-time storage for tile domains (`arrivalMapSubdivisions`). ([#245])
+- Opt-in `normalScheme=slopeCorrectedWeightedMedians` for front normals on slopes; the default is unchanged. ([#284])
+- Scenario Studio, a browser scenario editor on Corsica tiles with ensembles and `.ffstate` download, is now the GitHub Pages demo; the previous demo moved to `/classic/`.
+- WebAssembly: tile domains, rolling wind fields, perimeter import and ignitions at the current time. ([#245])
+- The browser demo can run the Farsite model. ([#274])
+- `pyforefire.run_ensemble` and `burn_probability` map an ensemble's burn probability; `dice`, `brier_score` and `reliability` score it against an observed burnt area. ([#172])
+- `ForeFireRunner.fork()`, `ForeFireRunner(stdout=, stderr=)` and `pyforefire.arrival_time()`. ([#172])
+- `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled Meso-NH run, with `--compare <branch>`. ([#266])
+- `tools/htdocs/mnh3d.html` shows a Meso-NH coupled run live in 3D. ([#271])
+- The browser demo shows DFCI grid, water points and tracks from IGN (display only).
+- Published releases carry the WebAssembly module and its `SHA256SUMS`. ([#244])
+- User Guide pages on Meso-NH coupling, tiles and checkpoints, and every model with its reference.
 
 ### Fixed
 
-- `setParameter[key=]` with an empty value no longer crashes.
-- `listenHTTP` reads a POST body sent after its headers, as Python's `urllib` does.
-- A `listenHTTP` server started from `pyforefire` no longer crashes on its first command.
-- `setParameter[key="""..."""]` stores the value without the triple quotes, so
-  an inline multiline `fuelsTable` in a `.ff` script is read correctly. The
-  value may also contain `=`.
-- `Balbi2020.Cpa` now sets the air heat capacity; the model used a fixed
-  1150 J/kg/K whatever the parameter said. The default is now 1150, so results
-  do not change.
-- `FDCellsOutputs=0` turns off the atmospheric cell debug output. The code
-  read `FDCellOutputs`, so the output was always on when `watchedProc`
-  selected the process.
-- The Farsite model now matches the FARSITE reference (mbedward/farsite) at
-  the flanks and back of the fire, not only at the head. On slopes it is an
-  approximation. This changes Farsite results. ([#270])
-- The Farsite model reads the wind in m/s and the slope as a tangent, like the
-  other Rothermel models, and slope only speeds up spread uphill. It used to
-  read the wind as if it were in mph and double the slope, so downhill spread
-  was boosted as much as uphill, and a headwind gave NaN and dropped the slope
-  term. This changes Farsite results: about 5 times more wind effect and 4
-  times less slope effect for fuel model 1, so settings tuned on the old
-  behaviour need tuning again. ([#242])
-- On a slope, the Farsite model now matches the FARSITE reference. ForeFire
-  hands every model the sine of the slope and the wind times its cosine,
-  because the front normal carries the slope; the Farsite model converts them
-  back to the tangent and the horizontal wind. Uphill spread rises by up to a
-  third at 30°. Flat ground and `normalScheme=splines` are unchanged. ([#265])
-- Commands that need a domain print an error when there is none, instead of
-  segfaulting: `FireNode`, `FireFront`, `startFire`, `goTo`, `save[]`,
-  `trigger[fuel]`, `trigger[fuelIndice]`, any command scheduled with `@t` or
-  `@nowplus`, and a `FireDomain[...]` with missing options. A script whose
-  `loadData` failed used to crash on the next `startFire`.
-- `clear[]` followed by a new domain no longer crashes on the first
-  `startFire`. The destroyed domain's layers stayed in the `DataBroker`
-  shortcuts, so the new domain never created its own altitude and wind
-  layers.
-- The `BMap` layer holds the arrival times again; its recomputation had been
-  commented out, so `getDoubleArray("BMap")` returned zeros.
-- `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid: one row per y,
-  north first, at full precision. It used to write one row per x and round
-  values to six significant digits.
-- Documentation: removed `defaultFuelType`, which nothing reads, and the
-  `Kcurv`/`beta` columns from the WindDriven examples, which only use
-  `vv_coeff`. `minSpeed`, `relax` and `smoothing` now describe what the code
-  does, and Windows pip users are pointed to WSL.
+- Commands that need a domain print an error instead of segfaulting when there is none. ([#229])
+- `clear[]` followed by a new domain no longer crashes on the first `startFire`. ([#229])
+- `plot[...;filename=*.asc]` writes a valid ESRI ASCII grid. ([#229])
+- `setParameter` handles `"""…"""` values, `=` inside them, and empty values. ([#276], [#283])
+- `Balbi2020.Cpa` and `FDCellsOutputs=0` take effect; defaults give the same results. ([#276])
+- `listenHTTP` reads a POST body sent after the headers, and no longer crashes when started from `pyforefire`. ([#283])
+- WebAssembly node IDs are no longer duplicated.
 
 ## [v2.6.0] — 2026-10-26
 
+### Changes results
+
+- `Rothermel` wind exponent coefficient is 3.59e-4, not 3.59e-3: +6% on `runff` at 5 m/s, much more in loose fuel beds. ([#195])
+- `Balbi2020` divides by the surface-to-volume ratio in eq. C7, and its rate of spread is floored at zero downslope with no wind. ([#196])
+- A fuel map that misses the domain is stretched over it, like the other layers. ([#220])
+- Rate of spread stays finite and decreasing at high dead fuel moisture. ([#158])
+- Release builds use `-ffp-contract=off`, so x86, ARM and `-march=native` give the same results.
+
 ### Added
 
-- C++ unit tests covering every propagation and flux model, built by default
-  and registered with CTest. They exercise the models one call at a time,
-  which the `runff` regression test cannot reach. ([#156])
-- A dead fuel moisture invariant suite (`tests/python/test_moisture_invariants.py`)
-  and the `invariants.yml` workflow that runs it. Unlike `runff` it holds no
-  reference data: every assertion follows from the published spread equations,
-  so it stays valid across recalibration. ([#158])
-- A blocking AddressSanitizer job, and `-DFOREFIRE_SANITIZE=<list>` to build
-  with `-fsanitize=<list>` on the compile line, the executables and the shared
-  library. ([#180])
-- Characterisation tests pinning the HTTP command server's current behaviour.
-  ([#174])
-- A concurrency stress test for free-threaded CPython
-  (`tests/python/test_threading.py`). It does not pass yet: it is the failing
-  test for the shared-state work in [#175]. ([#176])
-- `-Wall -Wextra` on ForeFire's own sources, with `FOREFIRE_ENABLE_WARNINGS`
-  and `FOREFIRE_WARNINGS_AS_ERRORS` to control them. NetCDF's headers are
-  included as system headers so their warnings do not appear. ([#156])
-- `FOREFIRE_BUILD_TESTS` (default on outside wheel builds) to build the unit
-  tests. ([#156])
-- `TESTING.md` now documents every suite, how to run it, and which ones CI
-  validates.
-- `pyforefire.ForeFireRunner`, a `ForeFire` that runs in its own worker
-  process, so several simulations in one Python process no longer share
-  state, and a crash in the kernel raises `pyforefire.WorkerDied` instead of
-  ending Python. `ForeFire()` itself is unchanged. ([#175])
-- `forefire-validate landscape.nc fuels.csv` checks a landscape against its
-  fuel table before a run: fuel indices missing from the table, a fuel and
-  elevation shape mismatch, and missing elevation or wind. ([#190])
-- `tools/preprocessing/genForeFireCase.py` is back as a general landscape
-  writer. Its 3-D and 4-D fields are written in the right axis order, it uses
-  `netCDF4` instead of the deprecated `scipy.io.netcdf`, and it checks the
-  required `parametersProperties` keys before writing. ([#179])
-- A User Guide page on driving a simulation from NumPy arrays, with no
-  landscape file and no GIS. ([#189])
-- `-DFOREFIRE_ENABLE_NETCDF=OFF` builds the engine without NetCDF or HDF5,
-  the first step towards a WebAssembly build and a slim wheel. Commands that
-  read or write NetCDF files report that the build has no NetCDF support.
-  The default stays on. ([#171])
-- An experimental WebAssembly build: `emcmake cmake` compiles the engine
-  without NetCDF into an ES module whose embind API mirrors `pyforefire`, with
-  typed arrays in place of NumPy arrays. `FOREFIRE_BUILD_CLI` and
-  `FOREFIRE_BUILD_WASM` control the two executables. See
-  `bindings/wasm/README.md`. ([#171])
-- A browser demo of the WebAssembly build (`bindings/wasm/index.html`): pick
-  a square of ground on a map, and the page builds fuel and elevation layers
-  from satellite and terrain tiles, runs the fire in a worker, and plays it
-  back in 2D or on 3D terrain. Explore mode lights a fire where you click;
-  Research mode exposes the model, its tuning factors, the numerics, and the
-  fuel moisture and classes. ([#171])
-- The browser demo colours the burnt area by arrival time, with labelled
-  isochrones, and the fire front by its rate of spread. ([#171])
-
-### Fixed
-
-- `pyforefire` calls that read the domain (`ff[key]`, `addLayer`,
-  `addScalarLayer`, `addIndexLayer`, `getDoubleArray`) segfaulted Python when
-  run before `FireDomain[...]`. They now raise `RuntimeError`. ([#202])
-- `clear[]` after `loadData` freed the propagative layer twice and crashed.
-  The data broker lists that layer but no longer deletes it; the domain does.
-  ([#205])
-- Rate of spread stayed finite and decreasing at high dead fuel moisture, and
-  `DataBroker` no longer serves `moisture` through the five-slot getter, which
-  returned a neighbouring property. ([#158])
-- The model properties array was freed twice on destruction. ([#157])
-- `~ForeFireModel` freed an uninitialised pointer when construction had not
-  reached the allocation. ([#156])
-- `runANN` had failed on its second line since it was committed: it diffed
-  against `result.txt.ref`, a file that is not in the repository. It now checks
-  the root mean squared error that `ANN_test` already computes, which does not
-  depend on the last digit of a machine-specific reference, and it runs in CI.
-  ([#183])
-- The `ForeFireAtom` instance counter is now atomic and the `SimulationParameters`
-  singleton is initialised safely, so two threads no longer race for ids or
-  construct the singleton twice. ([#177])
-- `StringRepresentation` kept its output buffer, current level and GeoJSON
-  cursor in file-scope globals shared by every instance. They are now members.
-  ([#178])
-- A fire front reduced to two nodes kept a deleted node as its head, and the
-  next burning scan crashed the simulation. ([#198])
-- `clear[]` no longer crashes after a simulation whose fire front stopped
-  everywhere, for instance an ignition in non-burnable fuel. ([#194])
-- `Balbi2020` multiplied by the fuel surface-to-volume ratio instead of
-  dividing by it in eq. C7, which drove the radiant fraction to zero. It now
-  matches `Balbi2020.py` in `wildfire_ROS_models`, and its rate of spread is
-  floored at zero on a downslope with no wind. ([#196])
-- A fuel map loaded with `loadData` that does not overlap the domain is now
-  stretched over it, as the warning says and as the other layers already were.
-  It was left at its own extent, so the whole domain read the fuel of its first
-  cell. ([#220])
-- `Rothermel` wrote the wind exponent coefficient as `3.59*10E-4`, which is
-  3.59e-3 in C++, ten times the 3.59e-4 of Rothermel (1972), so wind raised
-  the rate of spread too little. Results with wind
-  change: +6% on the `runff` fuel at 5 m/s, several times more in loose fuel
-  beds such as sparse shrub. The `runff` references and the unit test pin are
-  regenerated. ([#195])
+- C++ unit tests for every propagation and flux model, `-Wall -Wextra`, and the `FOREFIRE_BUILD_TESTS`, `FOREFIRE_ENABLE_WARNINGS` and `FOREFIRE_WARNINGS_AS_ERRORS` options. ([#156])
+- Dead fuel moisture invariant tests and their workflow. ([#158])
+- AddressSanitizer CI job and `-DFOREFIRE_SANITIZE=<list>`. ([#180])
+- Tests of the HTTP server, and a free-threading stress test that does not pass yet. ([#174], [#176])
+- `pyforefire.ForeFireRunner` runs a simulation in its own worker process; a kernel crash raises `WorkerDied`. ([#175])
+- `forefire-validate landscape.nc fuels.csv` checks a landscape against its fuel table. ([#190])
+- `genForeFireCase.py` is back as a landscape writer. ([#179])
+- `-DFOREFIRE_ENABLE_NETCDF=OFF` builds without NetCDF or HDF5. ([#171])
+- Experimental WebAssembly build and browser demo. ([#171])
+- User Guide page on running from NumPy arrays. ([#189])
 
 ### Changed
 
-- Release builds compile with `-ffp-contract=off`, so the compiler no longer
-  fuses multiply-adds (FMA) where the CPU allows it. `-march=native` and ARM
-  builds now give the same simulation results as x86 builds without it.
-- Linux wheels are built against a NetCDF without DAP and HDF4, roughly halving
-  the wheel. ([#154])
-- Free-threaded (`cp314t`) wheels are no longer published, because the core is
-  not yet thread-safe; CPython 3.14 is declared supported. ([#155])
-- `import pyforefire` no longer loads matplotlib; it is imported only when
-  `printToPathe` or `plot_simulation` is called. `plt`, `cm`, `mpath`,
-  `mpatches` and `ListedColormap` are no longer reachable as `pyforefire`
-  attributes. ([#193])
-- `listenHTTP[]` binds to `localhost` by default and to the host given in
-  `listenHTTP[host:port]`; use `listenHTTP[0.0.0.0:8000]` for the network
-  (and inside Docker), which prints a warning.
-  `systemExec` is refused over HTTP, the static file server only serves the run
-  directory and `FOREFIREHOME/tools/htdocs`, and commands from another site or
-  host name are refused. Other commands can still read and write files, so the
-  server is meant for trusted local use. ([#199], [#203])
-- A safe-topology failure in a step no longer ends the process; the command
-  reports an error and the coupled run continues. ([#181])
-- `stb_image_write.h` moved to `third_party/`, with its version, origin and
-  MIT / public-domain licence recorded. ([#192])
-- One-line accessors called from the propagation loops (`FireNode`, `FFPoint`,
-  `FFEvent`, `FireDomain` corners) are defined in their headers so they can be
-  inlined, which makes simulations faster with identical output. ([#221])
+- `listenHTTP[]` binds to `localhost` by default (`listenHTTP[0.0.0.0:8000]` for the network or Docker), refuses `systemExec`, and serves only the run directory and `tools/htdocs`. For trusted local use. ([#199], [#203])
+- Linux wheels are about half the size ([#154]); free-threaded wheels are no longer published ([#155]).
+- `import pyforefire` no longer loads matplotlib. ([#193])
+- A safe-topology failure no longer ends the process. ([#181])
+- Faster propagation loops, same results. ([#221])
+- `stb_image_write.h` moved to `third_party/`. ([#192])
+
+### Fixed
+
+- `pyforefire` calls before `FireDomain[...]` raise `RuntimeError` instead of segfaulting. ([#202])
+- Crashes in `clear[]` after `loadData` ([#205]) or after a stopped front ([#194]), and with a front reduced to two nodes ([#198]).
+- Double free and uninitialised pointer in model destruction. ([#156], [#157])
+- `runANN` works and runs in CI. ([#183])
+- Thread safety of atom ids, the parameters singleton and string representations. ([#177], [#178])
 
 ## [v2.5.0] — 2026-08-11
 
 ### Added
 
-- **Pip-installable wheels** for Linux (x86_64, aarch64) and macOS on Apple
-  Silicon, CPython 3.9 and newer. `pip install forefire` gives both the
-  `forefire` command-line interpreter and the `pyforefire` module, with NetCDF
-  bundled inside the wheel. Wheels are built without MPI and without
-  `-march=native`. There is no Intel macOS wheel — the `macos-13` runner was
-  retired before the release, so Intel Macs build from the source
-  distribution. ([#151])
+- Pip wheels for Linux (x86_64, aarch64) and macOS Apple Silicon: `pip install forefire` gives the `forefire` CLI and `pyforefire`. Intel Macs build from the sdist. ([#151])
 
 ### Changed
 
-- The Dockerfile is a multi-stage build, and only `libforefireL` is built in
-  the builder stage. ([#147])
-- The `install-forefire.sh` build is driven by an option-based `CMakeLists.txt`
-  (`FOREFIRE_ENABLE_MPI`, `FOREFIRE_NATIVE_ARCH`, `FOREFIRE_BUILD_PYTHON`,
-  `FOREFIRE_STATIC_CORE`, `FOREFIRE_BUILD_TOOLS`, `FOREFIRE_CHECK_LFS`).
+- Multi-stage Dockerfile. ([#147])
+- `install-forefire.sh` uses an option-based `CMakeLists.txt`.
 
 ### Fixed
 
 - A double free in `FireFront` cleanup. ([#145])
-- `CMakeLists.txt` was matched by `.gitignore`, so it was missing from the
-  source distribution. ([#152])
-- Bugs in `tests/run.bash`, including a `runANN` typo and an unreachable
-  `./clean.bash`. ([#146])
+- `CMakeLists.txt` was missing from the source distribution. ([#152])
+- Bugs in `tests/run.bash`. ([#146])
 
 **Full Changelog**: <https://github.com/forefireAPI/forefire/compare/v2.4.2...v2.5.0>
 
@@ -443,3 +227,15 @@ repository stays easy to return to.
 [#242]: https://github.com/forefireAPI/forefire/pull/242
 [#270]: https://github.com/forefireAPI/forefire/pull/270
 [#266]: https://github.com/forefireAPI/forefire/issues/266
+[#229]: https://github.com/forefireAPI/forefire/pull/229
+[#235]: https://github.com/forefireAPI/forefire/pull/235
+[#240]: https://github.com/forefireAPI/forefire/pull/240
+[#243]: https://github.com/forefireAPI/forefire/pull/243
+[#244]: https://github.com/forefireAPI/forefire/pull/244
+[#269]: https://github.com/forefireAPI/forefire/pull/269
+[#271]: https://github.com/forefireAPI/forefire/pull/271
+[#274]: https://github.com/forefireAPI/forefire/pull/274
+[#276]: https://github.com/forefireAPI/forefire/pull/276
+[#283]: https://github.com/forefireAPI/forefire/pull/283
+[#284]: https://github.com/forefireAPI/forefire/issues/284
+[#245]: https://github.com/forefireAPI/forefire/issues/245
