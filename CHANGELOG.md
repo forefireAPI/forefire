@@ -47,6 +47,8 @@ Entries below v2.5.0 were reconstructed from release notes and commit history.
 - `Balbi2020.Cpa` and `FDCellsOutputs=0` take effect; defaults give the same results. ([#276])
 - `listenHTTP` reads a POST body sent after the headers, and no longer crashes when started from `pyforefire`. ([#283])
 - WebAssembly node IDs are no longer duplicated.
+- `step` and `goTo` refuse a missing time or a unit other than seconds, and `startFire` a date without the trailing `Z`, instead of running with it. ([#285])
+- Command option values keep everything after the first `=` (`key=a=b` gives `a=b`). ([#285])
 
 ## [v2.6.0] — 2026-10-26
 
@@ -238,4 +240,5 @@ repository stays easy to return to.
 [#276]: https://github.com/forefireAPI/forefire/pull/276
 [#283]: https://github.com/forefireAPI/forefire/pull/283
 [#284]: https://github.com/forefireAPI/forefire/issues/284
+[#285]: https://github.com/forefireAPI/forefire/pull/285
 [#245]: https://github.com/forefireAPI/forefire/issues/245

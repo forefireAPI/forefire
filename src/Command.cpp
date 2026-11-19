@@ -11,6 +11,8 @@
 #include "ffstate.h"
 #include "colormap.h"
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 #include <dirent.h>
 #include <cmath> 
 #include <fstream>
@@ -22,6 +24,19 @@ using namespace std;
 
 namespace
 {
+    // Seconds are the only time unit, so "1h" is refused rather than read as
+    // 1. Anything that is not a letter may follow the number, as in the
+    // "t=0.000000." that loadData builds itself.
+    bool hasNonSecondUnit(const std::string &value)
+    {
+        std::istringstream iss(value);
+        double number;
+        std::string rest;
+        iss >> number >> rest;
+        return rest != "s" && std::any_of(rest.begin(), rest.end(),
+                                          [](unsigned char c) { return std::isalpha(c); });
+    }
+
     // If `in`, once trimmed of surrounding whitespace, is wrapped in triple
     // quotes, puts the text between them in `out` and returns true.
     bool stripTripleQuotes(const std::string &in, std::string &out)
@@ -291,7 +306,11 @@ namespace libforefire
         {
             int year, yday;
             double secs;
-            simParam->ISODateDecomposition(date, secs, year, yday);
+            if (!simParam->ISODateDecomposition(date, secs, year, yday))
+            {
+                cout << "Error: Invalid date format " << date << " Expected YYYY-MM-DDTHH:MM:SSZ" << endl;
+                return error;
+            }
             t = simParam->SecsBetween(simParam->getDouble("refTime"),
                                        simParam->getInt("refYear"),
                                        simParam->getInt("refDay"),
@@ -966,6 +985,11 @@ namespace libforefire
             return normal;
 
         double dt = getFloat("dt", arg);
+        if (dt == FLOATERROR || hasNonSecondUnit(getString("dt", arg)))
+        {
+            cout << "Error: step needs dt in seconds, as in step[dt=600]" << endl;
+            return error;
+        }
         endTime = startTime + dt;
         ostringstream etime;
         etime.precision(numeric_limits<double>::digits10);
@@ -981,7 +1005,13 @@ namespace libforefire
             return error;
 
         /* Advancing simulation to the prescribed time */
-        endTime = getFloat("t", arg); 
+        double target = getFloat("t", arg);
+        if (target == FLOATERROR || hasNonSecondUnit(getString("t", arg)))
+        {
+            cout << "Error: goTo needs t in seconds, as in goTo[t=600]" << endl;
+            return error;
+        }
+        endTime = target;
         if (init)
         {
             /* finishing the initialization process */
@@ -3155,19 +3185,11 @@ namespace libforefire
         tokenize(arg, tmpArgs, delimiter1);
         // Checking every 'tmpArgs' to see if it contains 'opt'
         // on the right-hand-side of 'arg=...' (i.e. arg=opt)
-        vector<string> inArg;
-        for (size_t i = 0, size = tmpArgs.size(); i < size; ++i)
+        for (const string &option : tmpArgs)
         {
-            string delimiter2 = "=";
-            tokenize(tmpArgs[i], inArg, delimiter2);
-            if (opt.compare(inArg[0]) == 0)
-            {
-                return inArg[1];
-            }
-            else
-            {
-                inArg.clear();
-            }
+            size_t eq = option.find('=');
+            if (eq != string::npos && option.compare(0, eq, opt) == 0)
+                return option.substr(eq + 1);
         }
         return stringError;
     }
@@ -3177,7 +3199,7 @@ namespace libforefire
         /* The 'getFloat()' method simply casts the results
          * of the search for the option 'opt' given by 'getString()' */
         string tmpstr = getString(opt, arg);
-        if (tmpstr == stringError)
+        if (tmpstr == stringError || tmpstr.empty())
             return INTERROR;
         string s;
         string::reverse_iterator it = tmpstr.rbegin();
@@ -3208,7 +3230,7 @@ namespace libforefire
         /* The 'getFloat()' method simply casts the results
          * of the search for the option 'opt' given by 'getString()' */
         string tmpstr = getString(opt, arg);
-        if (tmpstr == stringError)
+        if (tmpstr == stringError || tmpstr.empty())
             return FLOATERROR;
         string s;
         string::reverse_iterator it = tmpstr.rbegin();
