@@ -288,8 +288,8 @@ TEST_CASE("step and goTo refuse a time they cannot read") {
 }
 
 TEST_CASE("startFire refuses a date without the trailing Z") {
-    // The old code started the fire at an uninitialised time, so whether it
-    // burnt depended on the garbage; the front itself was always created.
+    // Counts fronts, not burnt area: with a bad date, whether it burnt was
+    // left to chance.
     Command executor;
     run(executor, "clear[]");
     run(executor, "FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]");
