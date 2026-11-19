@@ -28,6 +28,7 @@ def generate_problem_set(
     N=4096,
     val_prop=None,
     selected_params=None,
+    bounds=None,
 ):
     """
     Generate a problem set for sensitivity analysis using the Sobol method.
@@ -39,6 +40,8 @@ def generate_problem_set(
         N (int): Number of samples to generate.
         val_prop (float): Proportion of validation data.
         selected_params (list): selection of parameters to use.
+        bounds (dict): sampling range per parameter name, replacing the one
+            in var_properties.
 
     Returns:
         dict: A dictionary containing the problem setup and results.
@@ -71,10 +74,12 @@ def generate_problem_set(
         "model_name": model_key,
         "num_vars": len(fm_var_set.keys()),
         "names": list(fm_var_set.keys()),
-        "bounds": [s_properties[name]["range"] for name in fm_var_set.keys()],
+        "bounds": [
+            (bounds or {}).get(name, s_properties[name]["range"])
+            for name in fm_var_set.keys()
+        ],
     }
 
-    print("SSSSS ", problem["bounds"], fm_var_set.keys())
     param_values = sobolsample.sample(problem, N)
     problem["input"] = param_values
 

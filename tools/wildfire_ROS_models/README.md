@@ -13,6 +13,7 @@ simulator build.
   - `runROS.py`: `run_model` sweeps one input over a range, `plot_results` plots the sweeps.
   - `sensitivity.py`: Sobol sensitivity analysis (SALib).
   - `neuralNetROS.py`, `tf_ros_model.py`, `tf_helpers.py`: neural-network emulation.
+  - `ffann.py`: exports a trained network to the `.ffann` file ForeFire loads.
   - `py_ROS_models_to_forefire_cpp.py`: translates a Python model function into a ForeFire C++ class.
   - `interactive_polar_plot.py`, `utils.py`: helpers.
 - `tests/`: `test_models.py` (model sweeps and plots) and `test_sensitivity_analysis.py`.
@@ -21,14 +22,36 @@ simulator build.
 
 ## Install
 
+With [uv](https://docs.astral.sh/uv/):
+
 ```bash
 cd tools/wildfire_ROS_models
-pip install -r requirements.txt tensorflow
-pip install --editable .
+uv sync               # models, sensitivity analysis
+uv sync --extra nn    # adds TensorFlow, for the neural-network emulation
+uv run pytest
 ```
 
-Importing the package loads `tf_ros_model.py`, so it needs TensorFlow even if
-you only run the models; `requirements.txt` does not list it.
+The models run without TensorFlow; the modules that need it
+(`tf_ros_model`, `tf_helpers`, `neuralNetROS`, `ffann`) load on first use.
+
+## Train an emulator and run it in ForeFire
+
+```bash
+uv run --extra nn python train_nn.py --root ~/nn_ros_models     --target_ros_model RothermelAndrews2018 --n_samples 4096 --epochs 60
+```
+
+This samples the model inputs, fits a network, saves `nn.keras` and writes
+`RothermelAndrews2018.ffann` next to it, with the inputs named as ForeFire's
+`RothermelAndrews2018` reads them (`fuel.fl1h_tac`, ..., `normalWind`,
+`slope`). Load it in ForeFire with:
+
+```
+setParameter[propagationModel=ANNPropagationModel]
+setParameter[FFANNPropagationModelPath=RothermelAndrews2018.ffann]
+```
+
+The fuel table needs a column for each `fuel.` input. ForeFire caps the
+network's output to [0, 2] m/s.
 
 ## Example
 
