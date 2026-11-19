@@ -18,17 +18,18 @@ Entries below v2.5.0 were reconstructed from release notes and commit history.
 - A front reaching the domain edge no longer floods the arrival map. ([#240])
 - A domain built without `loadData` takes its propagation model from the parameters. ([#243])
 - The `BMap` layer holds the arrival times again; it returned zeros. ([#229])
-- Meso-NH coupling on `.fftile` uses Meso-NH's grid geography (nesting, rotation). The NetCDF coupling is unchanged; a Meso-NH patch is provided.
+- Meso-NH coupling on `.fftile` uses Meso-NH's grid geography (nesting, rotation). The NetCDF coupling is unchanged; a Meso-NH patch is provided. ([#245])
 
 ### Added
 
-- `.fftile` landscapes: tiled, loaded on demand, over HTTP with `loadData[provider=…;center=(lon,lat)]` (optional libcurl), no NetCDF needed. Missing tiles are non-burnable.
-- `.ffstate` checkpoints: `saveState` / `loadState` save and resume a run, and can attach to a Meso-NH domain (`mode=attach`).
-- Persistent fuel modifiers on tiles (barriers, fuel replacement), kept in `.ffstate`.
-- Sparse arrival-time storage for tile domains (`arrivalMapSubdivisions`).
+- `.fftile` landscapes: tiled, loaded on demand, over HTTP with `loadData[provider=…;center=(lon,lat)]` (optional libcurl), no NetCDF needed. Missing tiles are non-burnable. ([#245])
+- `.ffstate` checkpoints: `saveState` / `loadState` save and resume a run, and can attach to a Meso-NH domain (`mode=attach`). ([#245])
+- Persistent fuel modifiers on tiles (barriers, fuel replacement), kept in `.ffstate`. ([#245])
+- Sparse arrival-time storage for tile domains (`arrivalMapSubdivisions`). ([#245])
 - Opt-in `normalScheme=slopeCorrectedWeightedMedians` for front normals on slopes; the default is unchanged. ([#284])
 - Scenario Studio, a browser scenario editor on Corsica tiles with ensembles and `.ffstate` download, is now the GitHub Pages demo; the previous demo moved to `/classic/`.
-- WebAssembly: tile domains, rolling wind fields, perimeter import, ignitions at the current time, and Farsite in the demo. ([#274])
+- WebAssembly: tile domains, rolling wind fields, perimeter import and ignitions at the current time. ([#245])
+- The browser demo can run the Farsite model. ([#274])
 - `pyforefire.run_ensemble` and `burn_probability` map an ensemble's burn probability; `dice`, `brier_score` and `reliability` score it against an observed burnt area. ([#172])
 - `ForeFireRunner.fork()`, `ForeFireRunner(stdout=, stderr=)` and `pyforefire.arrival_time()`. ([#172])
 - `tests/mnh_coupled.bash` goes from a bare Linux machine to a coupled Meso-NH run, with `--compare <branch>`. ([#266])
@@ -237,3 +238,4 @@ repository stays easy to return to.
 [#276]: https://github.com/forefireAPI/forefire/pull/276
 [#283]: https://github.com/forefireAPI/forefire/pull/283
 [#284]: https://github.com/forefireAPI/forefire/issues/284
+[#245]: https://github.com/forefireAPI/forefire/issues/245
