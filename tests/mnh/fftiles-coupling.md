@@ -5,7 +5,7 @@ providers while Meso-NH retains its domain, atmospheric mesh, winds, time
 steps, MPI decomposition and flux exchange. No domain expansion is involved.
 This integration has native unit coverage. The complete patched Meso-NH MPI
 build and installation succeeded on macOS on 2026-11-11. The tile-backed
-[real nested case](../../tests/mnh_real_nested/README.tiles.md) completed twice
+[real nested case](real_nested/README.tiles.md) completed twice
 with four MPI ranks and 1,200 simulated seconds.
 
 ## Matching sources
@@ -241,7 +241,7 @@ own validation.
 
 ## Completed tile-backed run
 
-The [case launcher](../../tests/mnh_real_nested/run_tiles.py) stages an isolated
+The [case launcher](real_nested/run_tiles.py) stages an isolated
 copy and validates perimeters, atmospheric fields and direct coupling-array
 summaries. In the full four-rank/1,200-second run, fire area increased from
 1.44 to 58.67 ha; winds changed and positive heat/vapour fluxes returned to

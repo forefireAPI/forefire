@@ -16,18 +16,18 @@ BASE_URL="https://github.com/forefireAPI/forefire/raw/refs/heads/master"
 
 # File list: md5:path
 FILES_MD5_LIST="
-a4e76c91af4b72d2770759fce508b640:tests/mnh_ideal/ForeFire/ForeFire.0.nc.ref
-6ab0615f365868ede4cb74a9234ed229:tests/mnh_ideal/RELIEF3D.des
-53f1165f78ad3a697e8d12eee8af2b44:tests/mnh_ideal/RELIEF3D.lfi
-4e98a1093da9167e545df07a6693582c:tests/mnh_ideal/RELIEF3DX.lfi
-92d4a0008e01e2cca58468bd8aa0da37:tests/mnh_real_nested/ForeFire/ForeFire.0.nc.ref
-98d167f873fc70a238c2d33c1da9a114:tests/mnh_real_nested/ForeFire/data.nc
-5d9c55102c51621f0178a101d5238953:tests/mnh_real_nested/M2.20170617.00.15.des
-4df6c56bc7012d41da26d26add903095:tests/mnh_real_nested/M2.20170617.00.15.nc
-da97d0c3dd63f6f6d2d941524c526e75:tests/mnh_real_nested/PGD_D3200mA.nested.nc
-b64f537ae25fad1d002085cc48a6e5d4:tests/mnh_real_nested/PGD_D800mA.nested.nc
-a62bcbef1eb263735f21d0262e2a0597:tests/mnh_real_nested/RUN12.1.PRUN1.004.des
-cd6cf1c61b5433b425728b0c10a6870f:tests/mnh_real_nested/RUN12.1.PRUN1.004.nc
+a4e76c91af4b72d2770759fce508b640:tests/mnh/ideal/ForeFire/ForeFire.0.nc.ref
+6ab0615f365868ede4cb74a9234ed229:tests/mnh/ideal/RELIEF3D.des
+53f1165f78ad3a697e8d12eee8af2b44:tests/mnh/ideal/RELIEF3D.lfi
+4e98a1093da9167e545df07a6693582c:tests/mnh/ideal/RELIEF3DX.lfi
+92d4a0008e01e2cca58468bd8aa0da37:tests/mnh/real_nested/ForeFire/ForeFire.0.nc.ref
+98d167f873fc70a238c2d33c1da9a114:tests/mnh/real_nested/ForeFire/data.nc
+5d9c55102c51621f0178a101d5238953:tests/mnh/real_nested/M2.20170617.00.15.des
+4df6c56bc7012d41da26d26add903095:tests/mnh/real_nested/M2.20170617.00.15.nc
+da97d0c3dd63f6f6d2d941524c526e75:tests/mnh/real_nested/PGD_D3200mA.nested.nc
+b64f537ae25fad1d002085cc48a6e5d4:tests/mnh/real_nested/PGD_D800mA.nested.nc
+a62bcbef1eb263735f21d0262e2a0597:tests/mnh/real_nested/RUN12.1.PRUN1.004.des
+cd6cf1c61b5433b425728b0c10a6870f:tests/mnh/real_nested/RUN12.1.PRUN1.004.nc
 fe3a89db4253de28e9c42cea22ec91cc:tests/python/360wind.png.ref
 badddd3b68c3bf0c011700bf0d3b9880:tests/runff/ForeFire.0.nc.ref
 f66abd2723db31ecaa8a56662c49d972:tests/runff/data.nc

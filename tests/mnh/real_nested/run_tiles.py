@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run this nested case with native FFTile providers in an isolated directory.
 
-python3 tests/mnh_real_nested/run_tiles.py --mesonh-root /path/to/meso-nh-6-dev
-python3 tests/mnh_real_nested/run_tiles.py --validate /path/to/completed/run
+python3 tests/mnh/real_nested/run_tiles.py --mesonh-root /path/to/meso-nh-6-dev
+python3 tests/mnh/real_nested/run_tiles.py --validate /path/to/completed/run
 Uses Python's standard library; simulation runs in the MPI Meso-NH executable.
 """
 import argparse
@@ -24,7 +24,7 @@ import sys
 import time
 
 SOURCE = Path(__file__).resolve().parent
-ROOT = SOURCE.parents[1]
+ROOT = SOURCE.parents[2]
 INPUTS = ('RUN12.1.PRUN1.004.nc', 'RUN12.1.PRUN1.004.des',
           'M2.20170617.00.15.nc', 'M2.20170617.00.15.des',
           'PGD_D3200mA.nested.nc', 'PGD_D800mA.nested.nc')

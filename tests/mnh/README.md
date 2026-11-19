@@ -16,7 +16,7 @@ For tile-backed landscapes and nested-grid geography, see the
 From a ForeFire clone, in Bash:
 
 ```bash
-tests/mnh_coupled.bash
+tests/mnh/coupled.bash
 ```
 
 It goes from a bare Linux machine to a finished coupled run, and skips
@@ -29,7 +29,7 @@ whatever is already done, so running it again is cheap:
 3. Builds Meso-NH: about 15 minutes on 12 cores.
 4. Builds the ForeFire library with MPI, from the clone the script is in.
 5. Links it as `$SRC_MESONH/exe/libForeFire.so`.
-6. Runs `tests/mnh_real_nested` in a fresh copy: Pedrógão Grande 2017, two
+6. Runs `tests/mnh/real_nested` in a fresh copy: Pedrógão Grande 2017, two
    nested domains, 4 MPI processes, about 7 minutes.
 
 To watch the run in 3D (terrain, fire front, plume, wind), open
@@ -50,7 +50,7 @@ sudo apt install build-essential gfortran openmpi-bin libopenmpi-dev \
 ## 2. Check that a change does not alter coupled results
 
 ```bash
-tests/mnh_coupled.bash --compare my-branch
+tests/mnh/coupled.bash --compare my-branch
 ```
 
 `--compare` takes a branch, tag or commit of the same clone, or a directory
@@ -101,9 +101,9 @@ sources when it is reachable (it needs Git LFS).
   ln -sf /path/to/libforefireL.so "$SRC_MESONH/exe/libForeFire.so"
   ```
 
-- **Case data.** The `mnh_*` inputs are in Git LFS. If they are short text
+- **Case data.** The `mnh/*` inputs are in Git LFS. If they are short text
   stubs, the script runs `git lfs pull` for the case.
-- **Port 8080.** `mnh_real_nested/ForeFire/Init.ff` starts
+- **Port 8080.** `real_nested/ForeFire/Init.ff` starts
   `listenHTTP[host=127.0.0.1:8080]`, so the port must be free; the script
   stops if it is not. With `FOREFIREHOME` set to the ForeFire clone, which
   the script does, that server also serves the pages in `tools/htdocs`.
@@ -113,9 +113,9 @@ sources when it is reachable (it needs Git LFS).
   (680×680 on 6.0.1, 666×666 reported on 6.1). The comparison in section 2
   is the meaningful check.
 
-The other coupled case, `tests/mnh_ideal` (idealised relief, single domain, a
+The other coupled case, `tests/mnh/ideal` (idealised relief, single domain, a
 few seconds), is not run by the script. With the profile loaded and the link
-in place: `cd tests/mnh_ideal && bash clean.bash && bash run.bash`. It needs
+in place: `cd tests/mnh/ideal && bash clean.bash && bash run.bash`. It needs
 `ncgen`, from `netcdf-bin`.
 
 ## macOS notes (Meso-NH 5.7)

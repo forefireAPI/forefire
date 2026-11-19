@@ -51,9 +51,9 @@ The repository includes two examples:
 
    * - Case
      - Purpose
-   * - ``tests/mnh_ideal``
+   * - ``tests/mnh/ideal``
      - A short run with idealised relief and one atmospheric domain.
-   * - ``tests/mnh_real_nested``
+   * - ``tests/mnh/real_nested``
      - The Pedrogao Grande 2017 case, with two nested atmospheric domains.
        It runs 20 minutes of simulated time using four MPI processes.
 
@@ -73,7 +73,7 @@ checkout in the same shell, before launching the case:
 .. code-block:: bash
 
    export FOREFIREHOME=/path/to/forefire
-   cd "$FOREFIREHOME/tests/mnh_real_nested"
+   cd "$FOREFIREHOME/tests/mnh/real_nested"
    bash run.bash
 
 While it runs, open ``http://localhost:8080/mnh3d.html``. The page displays

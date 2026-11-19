@@ -16,13 +16,13 @@ recurring plot commands are omitted; physical settings are preserved.
 ## Run
 
 Build the patched Meso-NH MPI executable and MPI-enabled ForeFire library
-first; see [coupling/build notes](../mnh/fftiles-coupling.md).
+first; see [coupling/build notes](../fftiles-coupling.md).
 Meso-NH must load that library through `exe/libForeFire.so`.
 Use an MPI launcher matching the runtime used to build both programs.
 From the Firefront repository root:
 
 ```bash
-python3 tests/mnh_real_nested/run_tiles.py \
+python3 tests/mnh/real_nested/run_tiles.py \
   --mesonh-root /path/to/meso-nh-6-dev \
   --mpiexec /path/to/matching/mpiexec
 ```

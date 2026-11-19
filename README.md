@@ -131,7 +131,7 @@ One script takes a bare Linux machine to a running fire-atmosphere case with
 [Meso-NH](https://mesonh.cnrs.fr/) (Pedrógão Grande, 4 MPI processes, about 7 min):
 
 ```bash
-tests/mnh_coupled.bash
+tests/mnh/coupled.bash
 ```
 
 Options, the live 3D view and the manual setup are in the
