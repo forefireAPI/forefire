@@ -1,7 +1,13 @@
 ForeFire
 ========
 
-**ForeFire** is a modular, scriptable, discrete-event-driven C++ simulation engine and Python library for wildland fire spread, developed by CNRS at the `Université de Corse Pascal Paoli <https://www.univ-corse.fr/>`_.
+**ForeFire** simulates how a wildfire spreads across a landscape: from the fuel, the terrain, the wind and where the fire starts, it computes where the fire front is at each moment. It runs from Python, from the command line or in the browser, and is developed by CNRS at the `Université de Corse Pascal Paoli <https://www.univ-corse.fr/>`_.
+
+.. figure:: _static/scenario-studio.jpg
+   :alt: Six hours of fire spread in Corsica, coloured by hour, in the ForeFire Scenario Studio
+   :target: https://forefireapi.github.io/forefire/
+
+   Six hours of a fire in Corsica, one colour per hour, in the Scenario Studio. Click to open it in your browser.
 
 .. code-block:: bash
 
@@ -9,70 +15,7 @@ ForeFire
 
 `Try it in the browser <https://forefireapi.github.io/forefire/>`_ · `Server-side demo <https://forefire.univ-corse.fr/sim>`_ · `GitHub <https://github.com/forefireAPI/forefire>`_ · `JOSS paper <https://doi.org/10.21105/joss.08680>`_
 
-Where to start
---------------
-
-.. grid:: 1 2 2 2
-   :gutter: 3
-
-   .. grid-item-card:: Your first fire
-      :link: getting_started/quickstart
-      :link-type: doc
-
-      In the browser, from Python, or from the command line.
-
-   .. grid-item-card:: What a simulation needs
-      :link: user_guide/simulation_inputs
-      :link-type: doc
-
-      Domain, landscape, fuel, wind, model and ignition, and where each one comes from.
-
-   .. grid-item-card:: Script files (.ff)
-      :link: user_guide/forefire_script
-      :link-type: doc
-
-      The command language that drives every simulation.
-
-   .. grid-item-card:: Real terrain from tiles
-      :link: user_guide/tiles
-      :link-type: doc
-
-      Fuel, elevation and wind over the globe, ready to run.
-
-The science
------------
-
-The physical models in ForeFire come from published papers: Rothermel (1972) and its revision by Andrews (2018), the Balbi models, Farsite after Scott & Burgan (2005), and the heat and vapour fluxes used for coupling with the atmosphere. :doc:`user_guide/models` lists every propagation and flux model with its reference, the fuel columns it reads and how to select it.
-
-Going further
--------------
-
-.. grid:: 1 2 2 2
-   :gutter: 3
-
-   .. grid-item-card:: Made-up landscapes in Python
-      :link: user_guide/python_arrays
-      :link-type: doc
-
-      Build fuel, terrain and wind as NumPy arrays.
-
-   .. grid-item-card:: When the wind is uncertain
-      :link: user_guide/ensembles
-      :link-type: doc
-
-      Many runs at once and a burn probability map.
-
-   .. grid-item-card:: When the fire changes the wind
-      :link: user_guide/mesonh
-      :link-type: doc
-
-      Coupled with the Meso-NH atmospheric model.
-
-   .. grid-item-card:: How ForeFire works
-      :link: user_guide/core_concepts
-      :link-type: doc
-
-      Markers on the front, data layers and the arrival-time map.
+New here? Light your first fire in :doc:`getting_started/quickstart`, from the browser, Python or the command line.
 
 .. toctree::
    :maxdepth: 1

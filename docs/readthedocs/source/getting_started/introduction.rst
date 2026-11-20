@@ -7,6 +7,12 @@ ForeFire simulates how a wildland fire spreads over a landscape. It is a C++ eng
 
 ForeFire follows the fire line, not a grid. The perimeter is a set of markers that each move at their own pace, so the work goes where the fire is. This gives meter-scale resolution over large landscapes at more than 100 ha/s on one CPU core. :doc:`/user_guide/core_concepts` explains how.
 
+.. figure:: /_static/forefire-demo.gif
+   :alt: A fire spreading east with the wind in the ForeFire browser demo
+   :target: https://forefireapi.github.io/forefire/classic/
+
+   The front moving with the wind in the browser demo. Click the map there to light a fire of your own.
+
 Ways to run it
 --------------
 
