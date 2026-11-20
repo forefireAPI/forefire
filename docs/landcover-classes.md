@@ -1,4 +1,8 @@
-## ESA CCI Land Cover Classes (ESA CCI Land Cover Product User Guide, Version 2.0, 2017)
+# Land cover classes
+
+Class codes of three land cover products, for building fuel maps. ForeFire does not read these codes: a fuel map holds the IDs of the fuel table.
+
+## ESA WorldCover Classes (WorldCover Product User Manual)
 
 | Map code | Land Cover Class     | LCCS code                    | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Color code (RGB)     | Corine Land Cover |
 |-----------|----------------------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|-------------------|
