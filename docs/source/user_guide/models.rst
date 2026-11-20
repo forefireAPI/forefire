@@ -1,7 +1,7 @@
 .. _userguide-models:
 
-Models and References
-=====================
+Propagation and flux models
+===========================
 
 These are the propagation and flux models registered in ForeFire, along with
 their published scientific references, required fuel table columns or dynamic
@@ -38,7 +38,7 @@ Rothermel
        setParameter[propagationModel=Rothermel]
 
     It reads the standard fuel table described in
-    :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`,
+    :ref:`rothermel-fuel-file`,
     plus ``slope`` and ``normalWind``. ``windReductionFactor`` (default
     ``0.4``) scales the wind it uses; when ``windReductionFactor < 1.0``, the
     Andrews et al. (2013) wind speed limit is applied. Setting
@@ -83,7 +83,7 @@ Balbi2020
 
     It registers ``slope``, ``normalWind``, ``moisture``, ``temperature`` and
     the standard 20 ``fuel.*`` columns in
-    :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`
+    :ref:`rothermel-fuel-file`
     (from ``fuel.Rhod`` to ``fuel.Blai``). Optional parameters:
     ``Balbi2020.cooling`` (default ``0``) and ``Balbi2020.Cpa`` (default
     ``1150``).
@@ -118,7 +118,7 @@ BalbiNov2011, BalbiNov2011Curv and BalbiNov2011TMdMl
     columns (``Rhod``, ``Rhol``, ``Md``, ``Ml``, ``sd``, ``sl``, ``e``,
     ``Sigmad``, ``Sigmal``, ``stoch``, ``RhoA``, ``Ta``, ``Tau0``, ``Deltah``,
     ``DeltaH``, ``Cp``, ``Ti``, ``X0``, ``r00``, ``Blai``) from
-    :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`:
+    :ref:`rothermel-fuel-file`:
 
     *   ``BalbiNov2011`` takes ``Md``, ``Ml`` and ``Ta`` directly from the
         fuel table. Optional parameters: ``BalbiNov2011.Cpa`` (default ``1004``),
@@ -359,7 +359,7 @@ ForeFireV1HeatFlux and ForeFireV1VaporFlux
 
     Both models register ``fuel.sd``, ``fuel.Md``, ``fuel.Ml``,
     ``fuel.Sigmad``, ``fuel.Sigmal``, ``fuel.Blai`` and ``fuel.me`` from
-    :ref:`The Standard Rothermel / Balbi Fuel Table <rothermel-fuel-file>`,
+    :ref:`rothermel-fuel-file`,
     and ``ForeFireV1HeatFlux`` additionally registers ``fuel.DeltaH``.
 
     Required vector parameters: ``FFfluxes.LAICoeffs`` (2 values) and

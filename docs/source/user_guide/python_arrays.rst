@@ -125,7 +125,7 @@ with the model you select:
   idealized and teaching cases.
 * ``Rothermel``, ``BalbiNov2011``, ``Balbi2015`` and the other physical models
   — the full fuel description in ``fuels.csv``. See
-  :ref:`Fuels and Models <userguide-fuels-and-models>` for the columns.
+  :doc:`fuels_and_models` for the columns.
 
 To make propagation vary across the domain, add rows to the fuel table and
 paint their indices into ``fuel_map``. For instance, filling the right half of
@@ -141,8 +141,8 @@ Where to go next
 * ``tests/python/idealizedwind.py`` in the repository is a fuller worked
   version of this example: it drives the same array-based setup with a *turning*
   wind and plots each step.
-* To run on real terrain instead of arrays, build a
-  :ref:`NetCDF landscape file <userguide-landscape-file>` and load it with
+* To run on real terrain instead of arrays, load a
+  :doc:`NetCDF landscape <landscape_file>` or :doc:`tiles <tiles>` with
   :ref:`loadData <cmd-loadData>`.
-* :ref:`Fuels and Models <userguide-fuels-and-models>` explains the fuel table
+* :doc:`fuels_and_models` explains the fuel table
   used by the physical propagation models.

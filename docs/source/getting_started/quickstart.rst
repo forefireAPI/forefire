@@ -9,7 +9,9 @@ ForeFire can be run in four ways: directly in your browser (via WebAssembly), fr
 1. Try it in the browser (no install)
 -------------------------------------
 
-The `in-browser WebAssembly demo <https://forefireapi.github.io/forefire/>`_ runs the C++ engine directly in your browser tab over elevation and fuel layers decoded from map tiles:
+The `in-browser demo <https://forefireapi.github.io/forefire/>`_ runs the C++ engine in your browser tab, compiled to WebAssembly. It opens on Scenario Studio, which runs fires and ensembles over tiles of Corsica (:doc:`/user_guide/scenario_studio`).
+
+The `lighter demo <https://forefireapi.github.io/forefire/classic/>`_ runs over elevation and fuel layers decoded from map tiles, with two modes:
 
 - **Explore mode:** click anywhere on the map to ignite a fire, adjust wind speed and direction on the dial, and scrub the timeline in 2D or 3D terrain view.
 - **Research mode:** switch propagation models (``Rothermel``, ``BalbiNov2011Curv``, ``BalbiUnsteady``, ``TroisPourcent``, ``Iso``), tune fuel moistures (``Md``, ``Ml``), bed depth (``e``), ``windReductionFactor``, ``perimeterResolution``, and ``spatialIncrement``, and inspect arrival-time isochrones or front spread speeds.
@@ -148,6 +150,7 @@ The official container image ``ghcr.io/forefireapi/forefire:latest`` bundles the
 Where to Go Next
 ----------------
 
+- :doc:`/user_guide/simulation_inputs` — the pieces of a simulation and where each one comes from.
 - :doc:`/user_guide/forefire_script` — syntax and structure of ``.ff`` scripts.
-- :doc:`/user_guide/models` & :doc:`/user_guide/fuels_and_models` — choosing a propagation model and preparing ``fuels.csv``.
+- :doc:`/user_guide/fuels_and_models` & :doc:`/user_guide/models` — preparing ``fuels.csv`` and choosing a propagation model.
 - :doc:`/user_guide/python_arrays` & :doc:`/user_guide/ensembles` — driving ForeFire and ensembles from Python.

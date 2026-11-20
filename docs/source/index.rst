@@ -27,11 +27,11 @@ Where to start
 
       In the browser, from Python, or from the command line.
 
-   .. grid-item-card:: Core concepts
-      :link: user_guide/core_concepts
+   .. grid-item-card:: What a simulation needs
+      :link: user_guide/simulation_inputs
       :link-type: doc
 
-      Front tracking, data layers, arrival-time maps, and adding a model.
+      Domain, landscape, fuel, wind, model and ignition, and where each one comes from.
 
    .. grid-item-card:: Script files (.ff)
       :link: user_guide/forefire_script
@@ -45,12 +45,6 @@ Going further
 .. grid:: 1 2 2 2
    :gutter: 3
 
-   .. grid-item-card:: Propagation models
-      :link: user_guide/models
-      :link-type: doc
-
-      Every rate-of-spread model in the engine, with its paper.
-
    .. grid-item-card:: Python and NumPy
       :link: user_guide/python_arrays
       :link-type: doc
@@ -62,6 +56,12 @@ Going further
       :link-type: doc
 
       Many runs at once and burn probability maps.
+
+   .. grid-item-card:: Propagation models
+      :link: user_guide/models
+      :link-type: doc
+
+      Every rate-of-spread model in the engine, with its paper.
 
    .. grid-item-card:: Coupling with Meso-NH
       :link: user_guide/mesonh
@@ -81,18 +81,24 @@ Going further
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: User Guide
+   :caption: Setting Up a Simulation
 
-   user_guide/core_concepts
-   user_guide/models
-   user_guide/fuels_and_models
-   user_guide/landscape_file
-   user_guide/tiles
+   user_guide/simulation_inputs
    user_guide/forefire_script
    user_guide/python_arrays
+   user_guide/landscape_file
+   user_guide/tiles
+   user_guide/fuels_and_models
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Going Further
+
    user_guide/ensembles
    user_guide/scenario_studio
    user_guide/mesonh
+   user_guide/core_concepts
 
 .. toctree::
    :maxdepth: 1
@@ -101,6 +107,7 @@ Going further
 
    reference/commands
    reference/parameters
+   user_guide/models
    reference/api_reference
 
 .. toctree::
