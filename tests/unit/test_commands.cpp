@@ -287,6 +287,23 @@ TEST_CASE("step and goTo refuse a time they cannot read") {
     }
 }
 
+TEST_CASE("ExecuteCommand returns error when the command is unknown or fails") {
+    // Callers such as the Python binding had no way to tell a failed command
+    // from a good one: the error was only printed.
+    Command executor;
+    auto status = [&](std::string command) { return executor.ExecuteCommand(command); };
+    status("clear[]");
+    CHECK(status("FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]") == Command::normal);
+    REQUIRE(Command::getDomain() != nullptr);
+    REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
+    CHECK(status("startFire[loc=(1000,500,0)]") == Command::normal);
+    CHECK(status("step[dt=10]") == Command::normal);
+    CHECK(status("# a comment") == Command::normal);
+    CHECK(status("noSuchCommand[]") == Command::error);
+    CHECK(status("step[dt=1h]") == Command::error);
+    CHECK(status("startFire[loc=(300,800,0);date=2024-01-01T00:00:00]") == Command::error);
+}
+
 TEST_CASE("startFire refuses a date without the trailing Z") {
     // Counts fronts, not burnt area: with a bad date, whether it burnt was
     // left to chance.

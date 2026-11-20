@@ -3412,7 +3412,7 @@ namespace libforefire
         return arg;
     }
 
-    void Command::ExecuteCommand(string &line)
+    int Command::ExecuteCommand(string &line)
     {
         /* The method 'ExecuteCommands' uses the 'tokenize' class
          * to execute the command given by the user
@@ -3423,7 +3423,8 @@ namespace libforefire
         // Getting all the arguments, using the 'tokenize' function
       
         if (line.size() == 0)
-            return;
+            return normal;
+        int status = normal;
         vector<string> command;
         size_t numTabs;
         string scmd;
@@ -3477,7 +3478,7 @@ namespace libforefire
                 if (!domainExists(scmd + " scheduled with @"))
                 {
                     command.clear();
-                    return;
+                    return error;
                 }
                 string atCommand = line.substr(0, line.rfind("]") + 1);
                 string whenCommand = line.substr(line.rfind("]") + 1, -1);
@@ -3495,6 +3496,7 @@ namespace libforefire
                 else
                 {
                     cout << whenDouble << "unknown post operator  >" << whenCommand << "< , press 'Tab' for command list." << endl;
+                    status = error;
                 }
             }
             else
@@ -3503,7 +3505,10 @@ namespace libforefire
                 if (curcmd == translator.end())
                 {
                     if (scmd.at(0) != '!')
+                    {
                         cout << "unknown command  >" << scmd << "< , press 'Tab' for command list." << endl;
+                        status = error;
+                    }
                 }
                 else
                 {
@@ -3514,7 +3519,8 @@ namespace libforefire
                     {
                         // calling the right function
                           //            cout << "executing command '" << scmd << "' with argument(s) '" << command[1] << "'" << endl;
-                        (curcmd->second)(command[1], numTabs);
+                        if ((curcmd->second)(command[1], numTabs) != normal)
+                            status = error;
                     }
                     catch (BadOption &)
                     {
@@ -3522,6 +3528,7 @@ namespace libforefire
                              << "argument(s) '" << command[1] << "' is (are) not fit for command '"
                              << command[0] << "'" << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
+                        status = error;
                     }
                     catch (MissingOption &mo)
                     {
@@ -3529,21 +3536,25 @@ namespace libforefire
                              << "command '" << command[0] << "' misses "
                              << mo.num << " options." << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
+                        status = error;
                     }
                     catch (MissingTime &)
                     {
                         cout << where()
                              << "you have to specify a time for that command (as in 't=0.')" << endl;
+                        status = error;
                     }
                     catch (...)
                     {
                         cout << where()
                              << " PROBLEM: Command associated to " << line << " ended in error" << endl;
+                        status = error;
                     }
                 }
             }
         }
         command.clear();
+        return status;
     }
 
     std::string Command::executeCommandAndCaptureOutput(const std::string &cmd)
