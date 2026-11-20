@@ -125,7 +125,7 @@ At a glance
      - The landscape, or ``setParameter[fuel=...]`` for one fuel everywhere.
    * - Fuel table
      - Most models
-     - ``fuelsTableFile`` (CSV), ``fuelsTable`` (string or built-in). Columns per model: :ref:`fuel-columns-per-model`. ``Iso`` needs no fuel.
+     - ``fuelsTableFile`` (CSV), ``fuelsTable`` (string or built-in). Columns per model: :ref:`fuel-columns-per-model`. On tiles, a table that knows the tile's IDs (:ref:`tiles-fuel-table`). ``Iso`` needs no fuel.
    * - Elevation
      - Optional
      - The landscape. Flat without it.

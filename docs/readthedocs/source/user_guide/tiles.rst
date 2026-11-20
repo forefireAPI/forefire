@@ -22,6 +22,23 @@ A tile is named after its south-west corner, ``{lat}_{lon}.fftile`` (e.g. ``41.5
 
 The fuel properties, the propagation model and the weather are not in the tile; they stay in the case. Each tile has a halo around its core so interpolation across tile borders is continuous.
 
+.. _tiles-fuel-table:
+
+Which fuel table
+~~~~~~~~~~~~~~~~
+
+The tile only says which fuel ID sits in each cell; the fuel table of the case says what each ID means (:doc:`fuels_and_models`). The table has to know the IDs the tile uses:
+
+- **Rothermel and the Balbi models:** the built-in ``STDlandIndexedFuelsTable``.
+- **Farsite:** ``bindings/wasm/scenario-studio/assets/fuels-experimental.csv`` in the source tree, the table the Scenario Studio loads. It is ``STDlandIndexedFuelsTable`` with the Farsite columns added, which are experimental.
+
+.. code-block:: none
+
+   setParameters[fuelsTable=STDlandIndexedFuelsTable;propagationModel=Rothermel]
+   loadData[provider=/path/to/tiles;center=(9.2,42.2);size=(0.1,0.1)]
+
+Nothing stops a run with the wrong table. With no table at all, ForeFire looks for ``fuels.ff``, prints ``WARNING: could not load file for fuel properties``, and the fire never leaves its ignition. An ID that the table lacks gets zero for every property, without a message, so the fire stops wherever that fuel is.
+
 Write and inspect tiles with ``tools/tiles/fftile.py``; the binary layout is in ``tools/tiles/README.md`` in the source tree.
 
 .. code-block:: bash
