@@ -24,7 +24,8 @@ Rothermel
 
     *   Rothermel, R.C. (1972). *A mathematical model for predicting fire
         spread in wildland fuels*. USDA Forest Service Research Paper
-        INT-115. https://doi.org/10.2737/INT-RP-115
+        INT-115. https://doi.org/10.2737/INT-RP-115 (open access:
+        https://wiki.openwfm.org/images/5/52/Rothermel-1972-MMP.pdf)
     *   For the wind limit: Andrews, P.L., Cruz, M.G., Rothermel, R.C. (2013).
         *Examination of the wind speed limit function in the Rothermel
         surface fire spread model*. International Journal of Wildland Fire
@@ -51,7 +52,8 @@ RothermelAndrews2018
 *   **Reference:** Andrews, P.L. (2018). *The Rothermel surface fire spread
     model and associated developments: A comprehensive explanation*. USDA
     Forest Service General Technical Report RMRS-GTR-371.
-    https://doi.org/10.2737/RMRS-GTR-371
+    https://doi.org/10.2737/RMRS-GTR-371 (open access:
+    https://d10.nrfirescience.org/sites/default/files/2023-07/rmrs_gtr371.pdf)
 *   **How to select it:**
 
     .. code-block:: none
