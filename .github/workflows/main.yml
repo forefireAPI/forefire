@@ -64,7 +64,30 @@ jobs:
 
       - name: ForeFire build
         # The LFS check would curl back the LFS files the step above skips.
-        run: sudo env FOREFIRE_CHECK_LFS=OFF bash ./install-forefire.sh -y
+        run: |
+          set -o pipefail
+          sudo env FOREFIRE_CHECK_LFS=OFF bash ./install-forefire.sh -y 2>&1 | tee build.log
+
+      # Counted, never enforced (FOREFIRE_WARNINGS_AS_ERRORS stays OFF). A
+      # header warning repeats once per file that includes it, so the summary
+      # lists each source line once with how often it came up.
+      - name: Count compiler warnings
+        if: always()
+        run: |
+          [ -f build.log ] || exit 0
+          grep -E ': warning: .*\[-W' build.log \
+            | sed -E "s|^$GITHUB_WORKSPACE/||; :a; s|[^/:]+/\.\./||; ta; s|^([^:]+:[0-9]+):[0-9]+: warning: .*\[(-W[^]=]+)[^]]*\]$|\2  \1|" \
+            | sort | uniq -c | sort -rn > warnings.txt || true
+          total=$(awk '{s+=$1} END {print s+0}' warnings.txt)
+          distinct=$(wc -l < warnings.txt)
+          {
+            echo "### Compiler warnings (MPI ${{ matrix.mpi }}): $total ($distinct distinct)"
+            if [ "$distinct" -gt 0 ]; then
+              echo '```'
+              cat warnings.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check ForeFire version
         run: ./bin/forefire -v
