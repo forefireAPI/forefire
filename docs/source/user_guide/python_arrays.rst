@@ -1,7 +1,7 @@
 .. _userguide-python-arrays:
 
-Running from NumPy arrays (no NetCDF, no GIS)
-=============================================
+Made-up landscapes in Python
+============================
 
 ForeFire can run a complete simulation from plain NumPy arrays. You do **not**
 need a :ref:`NetCDF landscape file <userguide-landscape-file>`, and you do not

@@ -45,11 +45,11 @@ Going further
 .. grid:: 1 2 2 2
    :gutter: 3
 
-   .. grid-item-card:: Python and NumPy
+   .. grid-item-card:: Made-up landscapes in Python
       :link: user_guide/python_arrays
       :link-type: doc
 
-      Run from arrays, without NetCDF or GIS files.
+      Build fuel, terrain and wind as NumPy arrays.
 
    .. grid-item-card:: Ensembles
       :link: user_guide/ensembles
@@ -85,10 +85,16 @@ Going further
 
    user_guide/simulation_inputs
    user_guide/forefire_script
+   user_guide/fuels_and_models
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Landscapes
+
    user_guide/python_arrays
    user_guide/landscape_file
    user_guide/tiles
-   user_guide/fuels_and_models
 
 .. toctree::
    :maxdepth: 1

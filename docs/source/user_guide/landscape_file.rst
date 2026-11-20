@@ -1,7 +1,7 @@
 .. _userguide-landscape-file:
 
-NetCDF landscape (.nc)
-======================
+Your own rasters (NetCDF)
+=========================
 
 The NetCDF landscape file (``.nc``) packages the domain geometry and spatial data layers (fuel index map, elevation, and optional wind fields) for geospatial simulations.
 

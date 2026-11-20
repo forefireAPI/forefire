@@ -1,7 +1,7 @@
 .. _userguide-tiles:
 
-Tiles and Checkpoints (.fftile, .ffstate)
-=========================================
+Real terrain from tiles
+=======================
 
 ``.fftile`` stores the landscape of one half-degree cell of the globe, and ``.ffstate`` stores one fire at one instant so a run can resume. Neither needs NetCDF, HDF5 or PROJ: a build with ``-DFOREFIRE_ENABLE_NETCDF=OFF`` reads both, and so do the Python wheels and the WebAssembly build. NetCDF landscapes (:doc:`landscape_file`) keep working.
 
