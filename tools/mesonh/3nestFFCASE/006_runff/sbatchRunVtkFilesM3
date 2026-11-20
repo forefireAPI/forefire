@@ -30,7 +30,7 @@ echo "ID $SLURM_ARRAY_TASK_ID computing $startSTEP to $endSTEP"
 
 for i in `seq ${startSTEP} ${seqSTEP} ${endSTEP}`; 
 do
-srun -n1 --exclusive python3.9 ~/soft/firefront/tools/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps $i $(($i + $seqSTEP)) & 
+srun -n1 --exclusive python3.9 ~/soft/firefront/tools/mesonh/postprocessing/pMNHFF2VTK.py  MODEL3/output ForeFire/Outputs/output vtkout3/ -steps $i $(($i + $seqSTEP)) & 
 done
 wait
 

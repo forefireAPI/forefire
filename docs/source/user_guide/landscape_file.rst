@@ -53,7 +53,7 @@ If no wind variable is present in the NetCDF file, supply wind via ``addScalarLa
 Creating a Landscape File from Python
 -------------------------------------
 
-The helper ``tools/preprocessing/genForeFireCase.py`` builds a compliant NetCDF file directly from NumPy arrays:
+The helper ``tools/mesonh/preprocessing/genForeFireCase.py`` builds a compliant NetCDF file directly from NumPy arrays:
 
 .. code-block:: python
 
