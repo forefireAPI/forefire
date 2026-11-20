@@ -56,20 +56,19 @@ Going further
 
       Build fuel, terrain and wind as NumPy arrays.
 
-   .. grid-item-card:: Ensembles
+   .. grid-item-card:: When the wind is uncertain
       :link: user_guide/ensembles
       :link-type: doc
 
-      Many runs at once and burn probability maps.
+      Many runs at once and a burn probability map.
 
-
-   .. grid-item-card:: Coupling with Meso-NH
+   .. grid-item-card:: When the fire changes the wind
       :link: user_guide/mesonh
       :link-type: doc
 
-      Fire-atmosphere simulations with the Meso-NH model.
+      Coupled with the Meso-NH atmospheric model.
 
-   .. grid-item-card:: How it works
+   .. grid-item-card:: How ForeFire works
       :link: user_guide/core_concepts
       :link-type: doc
 

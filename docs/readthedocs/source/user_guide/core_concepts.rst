@@ -1,7 +1,7 @@
 .. _userguide-core-concepts:
 
-Core concepts
-=============
+How ForeFire works
+==================
 
 ForeFire moves a fire front over a 2D surface and computes what the fire releases into the atmosphere behind it. Three ideas cover how it works: markers on the front, data layers, and the arrival-time map. Adding a model of your own is in :ref:`custom-cpp-models`.
 
@@ -20,7 +20,7 @@ Updates live in a priority queue, the ``TimeTable``. When a node comes up at tim
 
 1. It moves to its scheduled position, a fixed step ``spatialIncrement`` (:math:`\Delta x`) away.
 2. ``FireDomain`` keeps the front consistent. If two neighbours are more than twice ``perimeterResolution`` apart, a node is inserted between them. Nodes closer than ``perimeterResolution`` are merged. Two colliding front segments merge.
-3. The node computes its normal (``normalScheme``: ``medians``, ``weightedMedians`` or ``splines``) and curvature (``curvatureScheme``: ``circumradius`` or ``angle``).
+3. The node computes its normal (``normalScheme``: ``medians``, ``weightedMedians``, ``slopeCorrectedWeightedMedians`` or ``splines``) and curvature (``curvatureScheme``: ``circumradius`` or ``angle``).
 4. It asks the ``PropagationModel`` for its rate of spread :math:`R_i` along :math:`\vec{n}_i` and schedules its next update at :math:`t_i + \Delta x / R_i`.
 
 Each node advances at its own pace, :math:`\Delta t_i = \Delta x / R_i`. Head-fire nodes update often, flank and backing nodes rarely.

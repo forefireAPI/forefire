@@ -1,5 +1,5 @@
-Fire-atmosphere coupling with Meso-NH
-============================================================
+When the fire changes the wind
+==============================
 
 ForeFire can run coupled to `Meso-NH <https://mesonh.cnrs.fr/>`_, an
 atmospheric research model developed by CNRS and Meteo-France. In a coupled
@@ -64,7 +64,7 @@ case. The guide was tested with Meso-NH 6.0.1 on Ubuntu 24.04 and also
 explains how to compare coupled results between ForeFire versions.
 
 Watch the simulation in 3D
-------------------------------------------------------------
+--------------------------
 
 The Pedrogao case starts a local HTTP server on port 8080. After completing
 the setup in the guide, set ``FOREFIREHOME`` to the root of your ForeFire

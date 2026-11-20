@@ -1,7 +1,7 @@
 .. _userguide-ensembles:
 
-Ensembles and burn probability
-==============================
+When the wind is uncertain
+==========================
 
 A single simulation gives one perimeter for one wind. Wind forecasts are
 uncertain, so the more useful answer is often a **burn-probability map**: run
@@ -19,7 +19,7 @@ A complete example
 The script below ignites a fire in a 4 km square domain, runs a two-minute
 spin-up once, then forks 32 members that each continue under a different
 eastward wind. It uses the minimal ``WindDriven`` model of
-:ref:`Running from NumPy arrays <userguide-python-arrays>` and runs as-is
+:doc:`python_arrays` and runs as-is
 against a ``pip``-installed ForeFire.
 
 .. code-block:: python
@@ -31,7 +31,6 @@ against a ``pip``-installed ForeFire.
 
    def setup(ff):
        ff["fuelsTable"] = "Index;vv_coeff\n1;1.0"
-       ff["windReductionFactor"] = 1.0
        ff["propagationModel"] = "WindDriven"
        ff.execute(f"FireDomain[sw=(0,0,0);ne=({L},{L},0);t=0]")
        ff.addLayer("propagation", "WindDriven", "propagationModel")
@@ -42,12 +41,12 @@ against a ``pip``-installed ForeFire.
        ff.addScalarLayer("windScalDir", "windU", 0., 0., 0., L, L, 0., wind[0:1])
        ff.addScalarLayer("windScalDir", "windV", 0., 0., 0., L, L, 0., wind[1:2])
        ff.execute("startFire[loc=(1000,2000,0);t=0]")
-       ff.execute("trigger[wind;loc=(0,0,0);vel=(3,0,0)]")
+       ff.execute("trigger[wind;vel=(3,0,0)]")
        ff.execute("goTo[t=120]")  # spin-up shared by every member
 
    def perturb(ff, wind):
        u, v = wind
-       ff.execute(f"trigger[wind;loc=(0,0,0);vel=({u},{v},0)]")
+       ff.execute(f"trigger[wind;vel=({u},{v},0)]")
 
    rng = np.random.default_rng(1)
    angle = rng.normal(0, np.radians(20), 32)  # blowing east, give or take 20 degrees
@@ -133,8 +132,8 @@ Size and output
   resolution. On a large domain, pass ``bbox=(left, bottom, right, top)`` in
   domain coordinates to keep only the area the fire can reach.
 * Members run one per CPU by default; ``max_workers`` changes that.
-* The kernel's output is discarded. Pass ``stdout=None`` to see it, or an open
-  file to keep it.
+* The kernel's standard output, where most of its messages go, is discarded.
+  Pass ``stdout=None`` to see it, or an open file to keep it.
 * An exception in ``setup``, ``perturb`` or a member's run is raised again by
   ``run_ensemble``; a crash of a member's kernel raises
   ``pyforefire.WorkerDied``.
