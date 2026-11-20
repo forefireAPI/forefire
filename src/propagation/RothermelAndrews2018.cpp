@@ -158,7 +158,7 @@ double RothermelAndrews2018::getSpeed(double* valueOf){
         double PFR = pow(192.0 + 0.2595 * fpsa, -1) * exp((0.792 + 0.681 * pow(fpsa, 0.5)) * (Beta + 0.1));  // Propogating flux ratio
         // Wind Coefficien t
         double B = 0.02526 * pow(fpsa, 0.54);
-        double C = 7.47 * exp(-0.1333 * pow(fpsa, 0.55));
+        double C = 7.47 * exp(-0.133 * pow(fpsa, 0.55));
         double E = 0.715 * exp(-3.59 * pow(10, -4) * fpsa);
         if (wv > (0.9 * RI)) wv = 0.9 * RI;
 		double WC = (C * pow(wv, B)) * pow((Beta / Beta_op), (-E));

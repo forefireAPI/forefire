@@ -12,6 +12,7 @@ Entries below v2.5.0 were reconstructed from release notes and commit history.
 
 ### Changes results
 
+- RothermelAndrews2018 wind factor uses 0.133 as in Andrews 2018 (table 3): about 2% faster with wind. The `wildfire_ROS_models` Rothermel models match Andrews 2018 table 17. ([#300])
 - Farsite reads the wind in m/s and the slope as a tangent, upslope only: about 5× more wind effect and 4× less slope effect on fuel model 1. Retune old settings. ([#242])
 - Farsite matches the FARSITE reference (mbedward/farsite) at the flanks, the back and on slopes; uphill up to a third faster at 30°. ([#269], [#270])
 - Time-varying data layers interpolate forwards, past 24 h too. ([#235])
@@ -241,4 +242,5 @@ repository stays easy to return to.
 [#283]: https://github.com/forefireAPI/forefire/pull/283
 [#284]: https://github.com/forefireAPI/forefire/issues/284
 [#285]: https://github.com/forefireAPI/forefire/pull/285
+[#300]: https://github.com/forefireAPI/forefire/pull/300
 [#245]: https://github.com/forefireAPI/forefire/issues/245

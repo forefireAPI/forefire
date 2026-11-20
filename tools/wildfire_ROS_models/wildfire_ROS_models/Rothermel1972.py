@@ -73,10 +73,10 @@ def Rothermel1972(Z, print_calculus=False):
 
     slope_factor = 5.275 * packing_ratio**-0.3 * tan_slope**2
 
-    C = 7.74 * np.exp(-0.133 * sa_vol_ratio**0.55)
+    C = 7.47 * np.exp(-0.133 * sa_vol_ratio**0.55)
     B = 0.02526 * sa_vol_ratio**0.54
     E = 0.715 * np.exp(sa_vol_ratio * -3.59e-4)
-    wind_factor = C * wind**B * (packing_ratio / optimal_packing) ** E
+    wind_factor = C * wind**B * (packing_ratio / optimal_packing) ** -E
 
     propagating_flux = (192 + 0.2595 * sa_vol_ratio) ** -1 * np.exp(
         (0.792 + 0.681 * sa_vol_ratio**0.5) * (packing_ratio + 0.1)

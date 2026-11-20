@@ -146,7 +146,7 @@ def RothermelAndrews2018(Z, print_calculus=False):
             )  # Propogating flux ratio
             ## Wind Coefficient
             B = 0.02526 * math.pow(fpsa, 0.54)
-            C = 7.47 * math.exp(-0.1333 * math.pow(fpsa, 0.55))
+            C = 7.47 * math.exp(-0.133 * math.pow(fpsa, 0.55))
             E = 0.715 * math.exp(-3.59 * 10**-4 * fpsa)
             # WC = C * wv**B * math.pow(Beta / Beta_op, -E) #wind coefficient
             if wv < 0:  # wind against the front counts as no wind, as in ForeFire
