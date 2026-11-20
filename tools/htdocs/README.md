@@ -10,4 +10,4 @@ Start `forefire` in a case directory, run `listenHTTP[]` and open
 <http://localhost:8000/>. Step by step with Docker: the
 [quickstart](https://forefire.readthedocs.io/en/latest/getting_started/quickstart.html#quickstart-docker).
 
-![ForeFire web console running the real case in Corsica](../../docs/source/_static/images/gui_real_case_ff.jpg)
+![ForeFire web console running the real case in Corsica](../../docs/readthedocs/source/_static/images/gui_real_case_ff.jpg)

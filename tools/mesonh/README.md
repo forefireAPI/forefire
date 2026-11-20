@@ -12,7 +12,7 @@ Run the Python modules from this folder (`sampleUses.py` imports `preprocessing.
 These scripts create the files needed to run a simulation coupled with
 Meso-NH. To couple, also edit
 the `&NAM_FOREFIRE` namelist in the EXSEG file. The Meso-NH guide
-(`docs/source/user_guide/mesonh.rst`) walks through a full coupled run.
+(`docs/readthedocs/source/user_guide/mesonh.rst`) walks through a full coupled run.
 
 #  Preprocessing Scripts
 

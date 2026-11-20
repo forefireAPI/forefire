@@ -1,7 +1,7 @@
 /**
  * Smoke test for the WebAssembly build (issue #171).
  *
- * The JS twin of docs/source/user_guide/python_arrays.rst: a 4 km square
+ * The JS twin of docs/readthedocs/source/user_guide/python_arrays.rst: a 4 km square
  * domain, a uniform fuel map and a wind field, all built as typed arrays, with
  * no NetCDF and no files. Run it with:
  *

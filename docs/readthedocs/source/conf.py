@@ -16,7 +16,7 @@ author = 'Filippi, Jean Baptiste'
 # Single source of truth for the version, the same file CMake and
 # scikit-build-core read. Hard-coding it here left the site advertising 2.0.0
 # for three releases.
-_version_header = pathlib.Path(__file__).resolve().parents[2] / 'src' / 'include' / 'Version.h'
+_version_header = pathlib.Path(__file__).resolve().parents[3] / 'src' / 'include' / 'Version.h'
 _match = re.search(r'ff_version\s*=\s*"v?([0-9]+\.[0-9]+\.[0-9]+[0-9a-z.]*)"',
                    _version_header.read_text(encoding='utf-8'))
 if not _match:
@@ -67,6 +67,6 @@ html_theme_options = {
 	},
 	'source_repository': 'https://github.com/forefireAPI/forefire/',
 	'source_branch': 'dev',
-	'source_directory': 'docs/source/',
+	'source_directory': 'docs/readthedocs/source/',
 }
 

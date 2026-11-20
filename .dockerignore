@@ -26,8 +26,8 @@ __pycache__/
 
 # Documentation build output
 docs/build/
-docs/doxygen/html/
-docs/doxygen/xml/
+docs/readthedocs/doxygen/html/
+docs/readthedocs/doxygen/xml/
 
 # IDE configuration files
 .vscode/

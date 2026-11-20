@@ -42,7 +42,7 @@ file to make a test pass.
 
 ## Documentation
 
-The docs are reStructuredText in `docs/source/`, built with Sphinx and
+The docs are reStructuredText in `docs/readthedocs/source/`, built with Sphinx and
 published on [Read the Docs](https://forefire.readthedocs.io/). Changes go
 through the same pull request flow as code.
 

@@ -33,8 +33,8 @@ venv
 .ipynb_checkpoints
 
 #docs
-docs/doxygen/xml
-docs/doxygen/html
+docs/readthedocs/doxygen/xml
+docs/readthedocs/doxygen/html
 
 # build
 # Do not ignore CMakeLists.txt here: it is tracked, and ignoring it makes

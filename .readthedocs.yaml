@@ -10,13 +10,13 @@ build:
     - doxygen 
 
   jobs:
-    pre_build: # Run doxygen first, assuming Doxyfile is in docs/doxygen
-      - "doxygen docs/doxygen/Doxyfile"
+    pre_build: # Run doxygen first, assuming Doxyfile is in docs/readthedocs/doxygen
+      - "doxygen docs/readthedocs/doxygen/Doxyfile"
 
 sphinx:
-   configuration: docs/source/conf.py
+   configuration: docs/readthedocs/source/conf.py
 
 
 python:
    install:
-   - requirements: docs/source/requirements.txt
+   - requirements: docs/readthedocs/source/requirements.txt

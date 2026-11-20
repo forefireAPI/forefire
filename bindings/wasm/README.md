@@ -235,7 +235,7 @@ prefetch into MEMFS rather than separate JS terrain arrays.
 `forefire.mjs` is an ES module exporting a `createForeFire()` factory. It
 mirrors the pybind11 module in `bindings/python`, with typed arrays in place of
 NumPy arrays — see
-[Running from NumPy arrays](../../docs/source/user_guide/python_arrays.rst) for
+[Running from NumPy arrays](../../docs/readthedocs/source/user_guide/python_arrays.rst) for
 the concepts, which carry over unchanged.
 
 ```js

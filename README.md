@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/source/_static/forefire.svg" alt="ForeFire Logo" width="400">
+  <img src="./docs/readthedocs/source/_static/forefire.svg" alt="ForeFire Logo" width="400">
 </p>
 
 [![Linux CI](https://github.com/forefireAPI/forefire/actions/workflows/main.yml/badge.svg)](https://github.com/forefireAPI/forefire/actions/workflows/main.yml)
@@ -19,7 +19,7 @@ hour by hour, or run an ensemble.
 
 <p align="center">
   <a href="https://forefireapi.github.io/forefire/">
-    <img src="./docs/source/_static/scenario-studio.jpg" alt="ForeFire Scenario Studio: six hours of fire spread in Corsica, coloured by hour" width="800">
+    <img src="./docs/readthedocs/source/_static/scenario-studio.jpg" alt="ForeFire Scenario Studio: six hours of fire spread in Corsica, coloured by hour" width="800">
   </a>
 </p>
 
@@ -28,7 +28,7 @@ click the map to light a fire, set the wind, and watch it spread.
 
 <p align="center">
   <a href="https://forefireapi.github.io/forefire/classic/">
-    <img src="./docs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire classic browser demo" width="600">
+    <img src="./docs/readthedocs/source/_static/forefire-demo.gif" alt="A fire spreading east with the wind in the ForeFire classic browser demo" width="600">
   </a>
 </p>
 

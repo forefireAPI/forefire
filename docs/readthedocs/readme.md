@@ -23,9 +23,9 @@ This is useful for previewing changes before committing or pushing them.
 
 1.  **Set up Python Virtual Environment:**
 
-    Navigate to the `docs` directory and create/activate a virtual environment to isolate dependencies.
+    Navigate to the `docs/readthedocs` directory and create/activate a virtual environment to isolate dependencies.
     ```bash
-    cd docs
+    cd docs/readthedocs
     python -m venv .venv
     source .venv/bin/activate
     ```
@@ -43,15 +43,15 @@ This is useful for previewing changes before committing or pushing them.
     Run Doxygen to parse the C++ source code and generate the XML files that Breathe needs. **Run this from the repository root directory.**
     ```bash
     # Make sure you are in the ROOT directory of the repository
-    # If you are inside 'docs', cd ..
-    doxygen docs/doxygen/Doxyfile
+    # If you are inside docs/readthedocs, cd ../..
+    doxygen docs/readthedocs/doxygen/Doxyfile
     ```
 
 4.  **Build the Documentation with Sphinx:**
 
-    Now, run the Sphinx build process using the Makefile provided by Sphinx. Make sure you are in the `docs` directory (where the Makefile resides).
+    Now, run the Sphinx build process using the Makefile provided by Sphinx. Make sure you are in the `docs/readthedocs` directory (where the Makefile resides).
     ```bash
-    # cd docs
+    # cd docs/readthedocs
 
     # Optional: Clean previous builds
     make clean
@@ -60,7 +60,7 @@ This is useful for previewing changes before committing or pushing them.
     make html
     ```
 
-    The generated HTML files will be in the build/html directory. Check `docs/build/html/index.html` 
+    The generated HTML files will be in the build/html directory. Check `docs/readthedocs/build/html/index.html` 
 
 **Optional**
 
@@ -71,7 +71,7 @@ This is useful for previewing changes before committing or pushing them.
     Open the generated HTML documentation in your web browser:
     ```bash
     # From the repository root directory:
-    open docs/doxygen/html/index.html
+    open docs/readthedocs/doxygen/html/index.html
     ```
 
 Note: This opens the HTML documentation generated directly by Doxygen, which can be useful for debugging or viewing diagrams. It is separate from the integrated documentation built via make html.
