@@ -283,7 +283,7 @@ saveState
 
    saveState[file=<path.ffstate>;opt:scenario=<script.ff>]
 
-Writes the current fire (fronts, nodes, pending motion, arrival times, effective parameters and fuel table) to a ``.ffstate`` checkpoint. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. ``scenario=`` stores a script in the file; loading never runs it. Fails, without writing, if the state contains something it cannot save. See :doc:`/user_guide/tiles`.
+Writes the current fire (fronts, nodes, pending motion, arrival times, effective parameters and fuel table) to a ``.ffstate`` checkpoint. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. ``scenario=`` stores a script in the file; loading never runs it. Fails, without writing, if the state contains something it cannot save. See :doc:`/user_guide/checkpoints`.
 
 
 .. _cmd-loadState:

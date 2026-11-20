@@ -97,7 +97,7 @@ Seeing the result
 
 - :ref:`print <cmd-print>` writes the front: text, GeoJSON or KML.
 - :ref:`save <cmd-save>` writes the arrival-time map, when the fire reached each cell, to NetCDF.
-- :ref:`saveState <cmd-saveState>` writes a ``.ffstate`` checkpoint to resume from (:doc:`tiles`).
+- :ref:`saveState <cmd-saveState>` writes a ``.ffstate`` checkpoint to resume from (:doc:`checkpoints`).
 
 Add ``@t=...`` after a command to run it later instead of now, for example a ``print`` every hour (:doc:`forefire_script`).
 

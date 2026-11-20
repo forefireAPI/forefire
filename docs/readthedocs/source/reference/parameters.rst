@@ -198,6 +198,8 @@ caseDirectory
 * **Description:** Base directory for resolving relative input paths (such as ``fuelsTableFile``).
 * **Default:** Current working directory (``getenv("PWD")``, or ``.``)
 
+.. _param-ForeFireDataDirectory:
+
 ForeFireDataDirectory
 ~~~~~~~~~~~~~~~~~~~~~
 * **Description:** Subdirectory inside ``caseDirectory`` searched for auxiliary ForeFire data files.

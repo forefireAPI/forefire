@@ -108,6 +108,7 @@ Going further
    :caption: Going Further
 
    user_guide/ensembles
+   user_guide/checkpoints
    user_guide/scenario_studio
    user_guide/mesonh
    user_guide/core_concepts

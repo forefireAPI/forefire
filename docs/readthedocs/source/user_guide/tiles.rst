@@ -3,7 +3,7 @@
 Real terrain from tiles
 =======================
 
-``.fftile`` stores the landscape of one half-degree cell of the globe, and ``.ffstate`` stores one fire at one instant so a run can resume. Neither needs NetCDF, HDF5 or PROJ: a build with ``-DFOREFIRE_ENABLE_NETCDF=OFF`` reads both, and so do the Python wheels and the WebAssembly build. NetCDF landscapes (:doc:`landscape_file`) keep working.
+``.fftile`` stores the landscape of one half-degree cell of the globe. Tiles need no NetCDF, HDF5 or PROJ: a build with ``-DFOREFIRE_ENABLE_NETCDF=OFF`` reads them, and so do the Python wheels and the WebAssembly build. NetCDF landscapes (:doc:`landscape_file`) keep working. A fire running on tiles can be saved and resumed (:doc:`checkpoints`).
 
 .. code-block:: bash
 
@@ -76,34 +76,3 @@ Tiles are read-only, so ``trigger[fuelIndice]`` does not apply. Two alternatives
 
 * :ref:`trigger[tileFuel] <cmd-trigger>` sets a fuel ID inside a longitude/latitude polygon.
 * A case-local ``tiles/{lat}_{lon}_fuel.png`` (8-bit grayscale, south row first, same size as the tile's fuel image) replaces the fuel of that tile.
-
-Checkpoints (.ffstate)
-----------------------
-
-.. code-block:: none
-
-   saveState[file=current.ffstate]
-
-In a new session:
-
-.. code-block:: none
-
-   loadData[current.ffstate]
-   step[dt=3600]
-
-The file holds the fronts and nodes with their pending motion, the arrival times, the effective parameters and fuel table, the wind and the fuel changes. The tiles stay outside and are identified by hash, so a changed tile is rejected. Loading restores the saved time and does not advance it. To branch a scenario from a saved fire:
-
-.. code-block:: none
-
-   loadState[file=current.ffstate]
-   include[scenarios/fuelbreak.ff]
-   step[dt=3600]
-   saveState[file=fuelbreak-result.ffstate]
-
-Current limits:
-
-* Models: ``Rothermel``, ``Balbi2015``, ``Farsite``, ``Iso`` and ``WindDriven``, on tile domains.
-* Custom raster layers, spatial flux-model maps, ANN models and pending script commands are not saved; ``saveState`` fails rather than writing a partial file.
-* Initialize before saving: ``step[dt=0]`` or a real step.
-
-A standalone state can be attached to a running Meso-NH simulation with ``loadState[mode=attach]``; see ``tests/ffstate/README.md`` and ``tests/mnh/fftiles-coupling.md`` in the source tree.
