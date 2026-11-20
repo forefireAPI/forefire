@@ -39,6 +39,11 @@ Where to start
 
       Fuel, elevation and wind over the globe, ready to run.
 
+The science
+-----------
+
+The physical models in ForeFire come from published papers: Rothermel (1972) and its revision by Andrews (2018), the Balbi models, Farsite after Scott & Burgan (2005), and the heat and vapour fluxes used for coupling with the atmosphere. :doc:`user_guide/models` lists every propagation and flux model with its reference, the fuel columns it reads and how to select it.
+
 Going further
 -------------
 
@@ -57,17 +62,18 @@ Going further
 
       Many runs at once and burn probability maps.
 
-   .. grid-item-card:: Propagation models
-      :link: user_guide/models
-      :link-type: doc
-
-      Every rate-of-spread model in the engine, with its paper.
 
    .. grid-item-card:: Coupling with Meso-NH
       :link: user_guide/mesonh
       :link-type: doc
 
       Fire-atmosphere simulations with the Meso-NH model.
+
+   .. grid-item-card:: How it works
+      :link: user_guide/core_concepts
+      :link-type: doc
+
+      Markers on the front, data layers and the arrival-time map.
 
 .. toctree::
    :maxdepth: 1
@@ -85,6 +91,7 @@ Going further
    user_guide/simulation_inputs
    user_guide/forefire_script
    user_guide/fuels_and_models
+   user_guide/models
 
 .. toctree::
    :maxdepth: 1
@@ -112,7 +119,6 @@ Going further
 
    reference/commands
    reference/parameters
-   user_guide/models
 
 .. toctree::
    :maxdepth: 1
@@ -120,6 +126,7 @@ Going further
    :caption: For Developers
 
    getting_started/installation
+   user_guide/writing_models
    reference/api_reference
 
 .. toctree::

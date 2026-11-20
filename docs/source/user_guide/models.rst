@@ -1,7 +1,7 @@
 .. _userguide-models:
 
-Propagation and flux models
-===========================
+Models and their papers
+=======================
 
 These are the propagation and flux models registered in ForeFire, along with
 their published scientific references, required fuel table columns or dynamic

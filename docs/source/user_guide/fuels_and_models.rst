@@ -3,7 +3,7 @@
 Fuel tables
 ===========
 
-Each model asks for the fuel properties it needs, with ``registerProperty("fuel.<column>")`` (see :doc:`core_concepts`). So the columns your fuel table needs depend on the model you pick. The models themselves, with their papers, are in :doc:`models`.
+Each model asks for the fuel properties it needs, with ``registerProperty("fuel.<column>")`` (see :ref:`custom-cpp-models`). So the columns your fuel table needs depend on the model you pick. The models themselves, with their papers, are in :doc:`models`.
 
 Loading a table
 ---------------
@@ -18,7 +18,7 @@ Either way:
 - Columns are separated by ``;``.
 - The first line is a header that starts with ``Index``.
 - Each integer in the landscape's ``fuel`` layer is looked up in the ``Index`` column. Index ``0`` is by convention non-burnable ground (water, rock, roads, buildings), with bed depth ``e = 0``.
-- Only the ``fuel.*`` columns that the active models registered are read.
+- Each model asks for a fixed list of columns. Extra columns are ignored. A column the model asks for and the table lacks prints ``Parameter <column> could not be found for fuel <index>`` once per fuel and counts as ``0``. A missing ``e`` is a bed depth of ``0``, and nothing burns.
 
 .. _fuel-columns-per-model:
 
@@ -41,13 +41,23 @@ Columns per model
      - Imperial columns from Andrews (2018): ``Index;fl1h_tac;fd_ft;SAVcar_ftinv;mdOnDry1h_r;fuelDens_lbft3;H_BTUlb;Dme_pc;totMineral_r;effectMineral_r``.
    * - ``Farsite``
      - Scott & Burgan (2005) columns, built in as ``setParameter[fuelsTable=STDfarsiteFuelsTable]``: ``Index;code;h1;h10;h100;lh;lw;dynamic;sav1;savlh;savlw;depth;xmext;heatd;heatl;desc``.
+   * - ``IsotropicFuel``
+     - ``Index;vv_coeff``.
+   * - ``CurvatureDriven``
+     - ``Index;vv_coeff;Kcurv;beta``.
+   * - ``FrontDepthDriven``
+     - ``Index;vv_coeff;Kdepth``.
+
+The variants ``BalbiNov2011Curv``, ``BalbiNov2011TMdMl`` and ``BalbiUnsteady`` take the same table as ``BalbiNov2011``. The other models are in :doc:`models`.
 
 .. _rothermel-fuel-file:
 
 The Rothermel/Balbi table (fuels.csv)
 -------------------------------------
 
-This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandIndexedFuelsTable``. Its 23 columns cover Rothermel (1972) and the Balbi propagation and flux models:
+This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandIndexedFuelsTable``. Its 23 columns cover Rothermel (1972) and the Balbi propagation and flux models.
+
+``Rothermel`` asks for all 22 value columns, and the Balbi models for all but ``Cpa`` and ``me``, even though each formula reads only some of them. Keep every column in the table. The last column below says which formulas read each value, that is, which values change the result:
 
 .. code-block:: text
 
@@ -61,7 +71,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - Column
      - Units
      - Meaning
-     - Used by
+     - Read by
    * - ``Index``
      - integer
      - Fuel type ID, matching the ``fuel`` index raster (``0`` = non-burnable).
@@ -73,7 +83,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``Rhol``
      - :math:`\text{kg/m}^3`
      - Live fuel particle density (typically ``500–720``).
-     - ``BalbiNov2011``
+     - ``BalbiNov2011``, ``Balbi2015``
    * - ``Md``
      - ratio (0–1)
      - Dead fuel moisture on a dry-mass basis (``0.10`` for 10%).
@@ -81,7 +91,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``Ml``
      - ratio
      - Live fuel moisture on a dry-mass basis (e.g. ``0.5–2.0``).
-     - ``BalbiNov2011``, ``ForeFireV1*``
+     - ``BalbiNov2011``, ``Balbi2015``, ``ForeFireV1*``
    * - ``sd``
      - :math:`\text{m}^{-1}`
      - Surface-area-to-volume ratio of dead particles (e.g. ``2000–6000``).
@@ -89,7 +99,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``sl``
      - :math:`\text{m}^{-1}`
      - Surface-area-to-volume ratio of live particles.
-     - ``BalbiNov2011``
+     - ``BalbiNov2011``, ``Balbi2015``
    * - ``e``
      - :math:`\text{m}`
      - Fuel bed depth. ``0`` stops propagation.
@@ -101,11 +111,11 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``Sigmal``
      - :math:`\text{kg/m}^2`
      - Live fuel load per unit ground area.
-     - ``BalbiNov2011``, ``ForeFireV1*``
+     - ``BalbiNov2011``, ``Balbi2015``, ``ForeFireV1*``
    * - ``stoch``
      - ratio
      - Stoichiometric air-to-fuel mass ratio :math:`s_t` (typically ``8.3–17``).
-     - ``BalbiNov2011``
+     - ``BalbiNov2011``, ``Balbi2015``
    * - ``RhoA``
      - :math:`\text{kg/m}^3`
      - Ambient air density :math:`\rho_a` (typically ``1.0–1.225``).
@@ -133,7 +143,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``Cpa``
      - :math:`\text{J/(kg}\cdot\text{K)}`
      - Specific heat of air (typically ``1000–1150``).
-     - ``Rothermel`` (registered)
+     - None (``Rothermel`` asks for it but does not read it).
    * - ``Ti``
      - :math:`\text{K}`
      - Ignition temperature :math:`T_i` (typically ``600``).
@@ -149,7 +159,7 @@ This is the format of ``tests/runff/fuels.csv`` and of the built-in ``STDlandInd
    * - ``Blai``
      - ratio
      - Leaf area index (typically ``2.0–4.0``).
-     - ``BalbiNov2011``, ``ForeFireV1*``
+     - ``BalbiNov2011``, ``Balbi2015``, ``ForeFireV1*``
    * - ``me``
      - ratio (0–1)
      - Dead fuel moisture of extinction (typically ``0.25–0.30``).
