@@ -113,6 +113,12 @@ def test_errors_are_raised_here():
             failures.append("reading a missing parameter did not raise")
         except RuntimeError:
             pass
+        runner.execute("step[dt=1h]")
+        try:
+            runner.execute("step[dt=1h]", check=True)
+            failures.append("a failed command with check=True did not raise")
+        except RuntimeError:
+            pass
         runner["perimeterResolution"] = 3.0
         if runner["perimeterResolution"] != 3.0:
             failures.append("the worker stopped answering after an error")

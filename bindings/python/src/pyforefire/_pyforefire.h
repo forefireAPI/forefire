@@ -29,7 +29,7 @@ class PLibForeFire {
 
 public:
 PLibForeFire();
-std::string execute(char *);
+std::string execute(char *, bool check = false);
 void createDomain( int id
 		,  int year,  int month
 		,  int day,  double t

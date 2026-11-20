@@ -287,6 +287,36 @@ TEST_CASE("step and goTo refuse a time they cannot read") {
     }
 }
 
+TEST_CASE("ExecuteCommand returns error when the command is unknown or fails") {
+    Command executor;
+    auto status = [&](std::string command) { return executor.ExecuteCommand(command); };
+    status("clear[]");
+    CHECK(status("FireDomain[sw=(0,0,0);ne=(2000,1000,0);t=0]") == Command::normal);
+    REQUIRE(Command::getDomain() != nullptr);
+    REQUIRE(Command::getDomain()->addPropagativeLayer("Iso"));
+    CHECK(status("startFire[loc=(1000,500,0)]") == Command::normal);
+    CHECK(status("step[dt=10]") == Command::normal);
+    CHECK(status("# a comment") == Command::normal);
+    CHECK(status("noSuchCommand[]") == Command::error);
+    CHECK(status("step[dt=1h]") == Command::error);
+    CHECK(status("startFire[loc=(300,800,0);date=2024-01-01T00:00:00]") == Command::error);
+    CHECK(status("[no command]") == Command::error);
+    CHECK(status("\t") == Command::normal);
+    CHECK(status("setParameters[perimeterResolution=3;b]") == Command::error);
+
+    const std::string script = "ff_test_status.ff";
+    std::ofstream(script) << "step[dt=10]\nstep[dt=1h]\nstep[dt=10]\n";
+    CHECK(status("include[" + script + "]") == Command::error);
+    std::ofstream(script) << "step[dt=10]\n# a comment\n";
+    CHECK(status("include[" + script + "]") == Command::normal);
+    std::remove(script.c_str());
+    CHECK(status("include[ff_test_no_such_file.ff]") == Command::error);
+
+    status("clear[]");
+    CHECK(status("step[dt=10]") == Command::error);
+    CHECK(status("print[]") == Command::error);
+}
+
 TEST_CASE("startFire refuses a date without the trailing Z") {
     // Counts fronts, not burnt area: with a bad date, whether it burnt was
     // left to chance.

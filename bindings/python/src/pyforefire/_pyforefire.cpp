@@ -132,12 +132,14 @@ py::object PLibForeFire::getDataMatrixPy(char *name) {
     return py::array_t<double>({rows, cols}, flat_data.data());
 }
 
-string PLibForeFire::execute(char *command)
+string PLibForeFire::execute(char *command, bool check)
 {
 	ostringstream stringOut;
 	Command::OutputCapture capture(&stringOut);
 	string smsg(command);
-	pyxecutor->ExecuteCommand(smsg);
+	int status = pyxecutor->ExecuteCommand(smsg);
+	if (check && status != Command::normal)
+		throw std::runtime_error("ForeFire command failed: " + smsg + "\n" + stringOut.str());
 	return stringOut.str();
 }
 
@@ -278,7 +280,9 @@ PYBIND11_MODULE(_pyforefire, m) {
 		.def("getDouble", &PLibForeFire::getDouble)
 		.def("setString", &PLibForeFire::setString)
 		.def("getString", &PLibForeFire::getString)
-		.def("execute", &PLibForeFire::execute)
+		.def("execute", &PLibForeFire::execute, py::arg("command"), py::arg("check") = false,
+			"Run one ForeFire command and return its output. With check=True, "
+			"raise RuntimeError when the command is unknown or fails.")
 		.def("addScalarLayer", [](PLibForeFire& self, char *type, char *name, double x0 , double y0, double t0, double width , double height, double timespan, py::array_t<double> values) {
             size_t nn[] = {1, 1, 1, 1};
             const long* shape = values.shape();

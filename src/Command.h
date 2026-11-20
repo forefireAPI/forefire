@@ -119,10 +119,6 @@ class Command {
 	static double startTime;
 	static double endTime;
 
-	enum Status {
-		normal = 0,	error = 1
-	};
-
 	static bool firstCommand;
 	/*! \brief set by quit(), read by quitRequested() */
 	static bool quitAsked;
@@ -330,9 +326,14 @@ public:
 		OutputCapture& operator=(const OutputCapture&) = delete;
 	};
 
-	/*! \brief execute the desired command */
-	static void ExecuteCommand(string&);
-	static void executeLoop(ifstream* inputStream);
+	enum Status {
+		normal = 0,	error = 1
+	};
+
+	/*! \brief execute the desired command
+	 *  \return normal, or error when the command is unknown or fails */
+	static int ExecuteCommand(string&);
+	static int executeLoop(ifstream* inputStream);
 
 	/*! \brief complete the last front */
 	static void completeFront(FireFront*);

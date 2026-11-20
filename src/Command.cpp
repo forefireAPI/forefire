@@ -207,8 +207,7 @@ namespace libforefire
                     
                     // Optionally, set or use 'dom' as needed.
                     cout << "Domain string created: " << domCommand << endl;
-                    ExecuteCommand(domCommand);
-                    return normal;
+                    return ExecuteCommand(domCommand);
                 } else {
                     cout << "Error: Unable to create domain string due to insufficient data." << endl;
                 }
@@ -982,7 +981,7 @@ namespace libforefire
     int Command::stepSimulation(const string &arg, size_t &numTabs)
     {
         if (getDomain() == 0)
-            return normal;
+            return error;
 
         double dt = getFloat("dt", arg);
         if (dt == FLOATERROR || hasNonSecondUnit(getString("dt", arg)))
@@ -994,9 +993,7 @@ namespace libforefire
         ostringstream etime;
         etime.precision(numeric_limits<double>::digits10);
         etime << "t=" << endTime;
-        goTo(etime.str().c_str(), numTabs);
-
-        return normal;
+        return goTo(etime.str().c_str(), numTabs);
     }
 
     int Command::goTo(const string &arg, size_t &numTabs)
@@ -1174,7 +1171,7 @@ namespace libforefire
     int Command::printSimulation(const string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == 0)
-            return normal;
+            return error;
 
         SimulationParameters *simParam = SimulationParameters::GetInstance();
         string finalStr = "";
@@ -1338,7 +1335,7 @@ namespace libforefire
     int Command::plotSimulation(const std::string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == nullptr)
-            return normal;
+            return error;
 
         SimulationParameters *simParam = SimulationParameters::GetInstance();
 
@@ -1855,7 +1852,7 @@ namespace libforefire
     int Command::addLayer(const std::string &arg, size_t &/*numTabs*/)
     {
         if (getDomain() == nullptr)
-            return normal;
+            return error;
 
         if (arg.empty())
         {
@@ -2006,11 +2003,13 @@ namespace libforefire
         vector<string> tmpArgs;
         string delimiter = ";";
         tokenize(arg, tmpArgs, delimiter);
+        int status = normal;
         for (size_t i = 0, size = tmpArgs.size(); i < size; ++i)
         {
-            setParameter(tmpArgs[i], numTabs);
+            if (setParameter(tmpArgs[i], numTabs) != normal)
+                status = error;
         }
-        return normal;
+        return status;
     }
 
     int Command::computeModelSpeed(const std::string &cmd, size_t &/*numTabs*/)
@@ -2477,7 +2476,7 @@ namespace libforefire
         return normal;
     }
 
-    void Command::executeLoop(ifstream* inputStream)
+    int Command::executeLoop(ifstream* inputStream)
     {
         // Support multiline commands whose arguments are wrapped in triple quotes (""").
         // A block begins the first time we meet an *unmatched* \"\"\" and is closed by
@@ -2485,6 +2484,7 @@ namespace libforefire
         std::string line;
         std::string bufferedCmd;
         bool inTripleQuote = false;
+        int status = normal;
 
         while (std::getline(*inputStream, line))
         {
@@ -2516,14 +2516,16 @@ namespace libforefire
                     {
                         // Opening and closing on the same line → execute immediately
                         inTripleQuote = false;
-                        ExecuteCommand(bufferedCmd);
+                        if (ExecuteCommand(bufferedCmd) != normal)
+                            status = error;
                         bufferedCmd.clear();
                     }
                 }
                 else
                 {
                     // Regular single‑line command
-                    ExecuteCommand(line);
+                    if (ExecuteCommand(line) != normal)
+                        status = error;
                 }
             }
             else
@@ -2536,11 +2538,13 @@ namespace libforefire
                 {
                     // Closing delimiter reached → execute the whole buffered command
                     inTripleQuote = false;
-                    ExecuteCommand(bufferedCmd);
+                    if (ExecuteCommand(bufferedCmd) != normal)
+                        status = error;
                     bufferedCmd.clear();
                 }
             }
         }
+        return status;
     }
     
     int Command::include(const string &arg, size_t &/*numTabs*/)
@@ -2551,14 +2555,12 @@ namespace libforefire
         if (instream)
         {
             // If the file is successfully opened, execute the command loop
-            executeLoop(&instream);
+            int status = executeLoop(&instream);
             instream.close();
+            return status;
         }
-        else
-        {
-            cout << "wrong input file, check your settings..." << endl;
-        }
-        return normal;
+        cout << "wrong input file, check your settings..." << endl;
+        return error;
     }
 
 #ifdef FF_NO_NETCDF
@@ -3089,7 +3091,8 @@ namespace libforefire
                 com += oss.str();
             }
 
-            ExecuteCommand(com);
+            if (ExecuteCommand(com) != normal)
+                return error;
 #endif /* FF_NO_NETCDF */
         }
         if (args.size() == 1)
@@ -3412,7 +3415,7 @@ namespace libforefire
         return arg;
     }
 
-    void Command::ExecuteCommand(string &line)
+    int Command::ExecuteCommand(string &line)
     {
         /* The method 'ExecuteCommands' uses the 'tokenize' class
          * to execute the command given by the user
@@ -3423,7 +3426,8 @@ namespace libforefire
         // Getting all the arguments, using the 'tokenize' function
       
         if (line.size() == 0)
-            return;
+            return normal;
+        int status = normal;
         vector<string> command;
         size_t numTabs;
         string scmd;
@@ -3465,7 +3469,7 @@ namespace libforefire
         }
 
         // calling the right method using the 'translator'
-        if (((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
+        if ((scmd.empty() && command.size() == 1) || ((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
         {
             // this line is commented, nothing to do
         }
@@ -3477,7 +3481,7 @@ namespace libforefire
                 if (!domainExists(scmd + " scheduled with @"))
                 {
                     command.clear();
-                    return;
+                    return error;
                 }
                 string atCommand = line.substr(0, line.rfind("]") + 1);
                 string whenCommand = line.substr(line.rfind("]") + 1, -1);
@@ -3495,6 +3499,7 @@ namespace libforefire
                 else
                 {
                     cout << whenDouble << "unknown post operator  >" << whenCommand << "< , press 'Tab' for command list." << endl;
+                    status = error;
                 }
             }
             else
@@ -3502,8 +3507,11 @@ namespace libforefire
                 commandMap::const_iterator curcmd = translator.find(scmd);
                 if (curcmd == translator.end())
                 {
-                    if (scmd.at(0) != '!')
+                    if (scmd[0] != '!')
+                    {
                         cout << "unknown command  >" << scmd << "< , press 'Tab' for command list." << endl;
+                        status = error;
+                    }
                 }
                 else
                 {
@@ -3514,7 +3522,8 @@ namespace libforefire
                     {
                         // calling the right function
                           //            cout << "executing command '" << scmd << "' with argument(s) '" << command[1] << "'" << endl;
-                        (curcmd->second)(command[1], numTabs);
+                        if ((curcmd->second)(command[1], numTabs) != normal)
+                            status = error;
                     }
                     catch (BadOption &)
                     {
@@ -3522,6 +3531,7 @@ namespace libforefire
                              << "argument(s) '" << command[1] << "' is (are) not fit for command '"
                              << command[0] << "'" << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
+                        status = error;
                     }
                     catch (MissingOption &mo)
                     {
@@ -3529,21 +3539,25 @@ namespace libforefire
                              << "command '" << command[0] << "' misses "
                              << mo.num << " options." << endl;
                         cout << "type 'man[" << command[0] << "]' for more information" << endl;
+                        status = error;
                     }
                     catch (MissingTime &)
                     {
                         cout << where()
                              << "you have to specify a time for that command (as in 't=0.')" << endl;
+                        status = error;
                     }
                     catch (...)
                     {
                         cout << where()
                              << " PROBLEM: Command associated to " << line << " ended in error" << endl;
+                        status = error;
                     }
                 }
             }
         }
         command.clear();
+        return status;
     }
 
     std::string Command::executeCommandAndCaptureOutput(const std::string &cmd)
