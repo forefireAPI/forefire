@@ -8,7 +8,7 @@ This page lists all commands recognized by the ForeFire interpreter (``.ff`` scr
 .. note::
    - ``FireFront`` and ``FireNode`` use **indentation** (one tab ``\t`` or ``4`` spaces per level relative to the first command) to define their parent–child hierarchy.
    - In the syntax blocks below, ``opt:`` marks an optional argument—do not type ``opt:`` in your command (write ``cmap=turbo``, not ``opt:cmap=turbo``).
-   - A ``#`` starts a comment **only at the beginning of a line**. Anything after the closing ``]`` on a command line is parsed as a schedule operator (:ref:`@ <cmd-@>`); trailing comments or two or more trailing spaces after ``]`` cause ``unknown post operator`` and prevent the command from executing.
+   - A line whose first character after the indentation is ``#`` (or ``*``) is a comment. A comment cannot follow a command on the same line. Anything after the closing ``]`` on a command line is parsed as a schedule operator (:ref:`@ <cmd-@>`); trailing comments or two or more trailing spaces after ``]`` cause ``unknown post operator`` and prevent the command from executing.
 
 List of Commands
 ----------------
@@ -29,6 +29,10 @@ Creates the simulation domain. Fronts, nodes, and data layers live inside this `
 * ``sw=(x,y,z)``: Southwest corner coordinates in Cartesian meters.
 * ``ne=(x,y,z)``: Northeast corner coordinates in Cartesian meters.
 * ``t=seconds``: Initial simulation time in seconds (``FireDomain`` does not accept ``date=``).
+
+Fewer than three arguments gives ``misses N options``. If a domain already exists, a standalone ``FireDomain`` does nothing; run :ref:`clear <cmd-clear>` first.
+
+**From a Meso-NH PGD file** (NetCDF builds only): ``FireDomain[pgdNcFile=<pgd.nc>;ISOdate=YYYY-MM-DDTHH:MM:SSZ]`` reads the ``XHAT``/``YHAT`` coordinates of the file, sets the reference date to ``ISOdate``, and creates the domain over that grid, starting at the time of day of ``ISOdate`` in seconds.
 
 **Georeferencing:** To place a standalone ``FireDomain`` on the globe without ``loadData``, set the ``BBoxWSEN`` parameter (``westLon,southLat,eastLon,northLat`` in WGS84, without parentheses) **before** calling ``FireDomain``. ``SWLngLat``, if set, takes precedence; with neither, the domain defaults to ``DefaultSWLngLat`` (in Corsica).
 
@@ -53,13 +57,13 @@ Creates a ``FireFront`` contour inside the active ``FireDomain`` (1 indent level
 
 **Arguments:**
 
-* ``t=<seconds>``: Simulation time in seconds.
+* ``t=<seconds>``: Simulation time in seconds. Other keys (such as the ``id=`` and ``domain=`` that ``print`` writes) are ignored. With no argument at all, the command fails with ``you have to specify a time``.
 
 **Example:**
 
 .. code-block:: none
 
-       FireFront[id=26;domain=0;t=0]
+       FireFront[t=0]
 
 
 .. _cmd-FireNode:
@@ -105,7 +109,7 @@ Appends a Lagrangian marker node to the current ``FireFront`` (indented one leve
    command[arguments]@t=seconds
    command[arguments]@nowplus=seconds
 
-Queues the preceding command in the event ``TimeTable`` to execute when simulation time reaches ``t`` (or ``current_time + nowplus``).
+Queues the preceding command in the event ``TimeTable`` to execute when simulation time reaches ``t`` (or ``current_time + nowplus``). A domain must exist when the line is read.
 
 **Example:**
 
@@ -124,15 +128,19 @@ startFire
 
    startFire[loc=(x,y,z)|lonlat=(lon,lat,z);t=seconds|date=YYYY-MM-DDTHH:MM:SSZ]
    startFire[geojson=<file or inline GeoJSON>]
+   startFire[points=(x,y,z),(x,y,z),...;t=seconds]
 
-Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at the given location and time, or a front along a GeoJSON polygon.
+Ignites a minimal clockwise triangular fire front (3 ``FireNode`` markers) at the given location and time, or a front along a polygon.
 
 **Arguments:**
 
 * ``loc=(x,y,z)``: Ignition point in Cartesian domain coordinates (meters).
 * ``lonlat=(lon,lat,z)``: Ignition point in WGS84 coordinates (longitude, latitude, elevation). All three components are required (``lonlat=(lon,lat)`` is ignored).
-* ``t=seconds`` or ``date=YYYY-MM-DDTHH:MM:SSZ``: Ignition time in seconds or ISO 8601 UTC format.
-* ``geojson=``: Path to a GeoJSON file, or the GeoJSON text inline between triple quotes. The ``Polygon`` or ``MultiPolygon`` coordinates are ``[lon, lat, z]``. A top-level ``"valid_at"`` date, if present, sets the ignition time. See ``tests/runff/rungeojson.ff``.
+* ``t=seconds`` or ``date=YYYY-MM-DDTHH:MM:SSZ``: Ignition time in seconds or ISO 8601 UTC format. Without either, the current domain time is used. A ``date`` before the reference date gives a warning and ignites at ``t=0``.
+* ``geojson=``: Path to a GeoJSON file, or the GeoJSON text inline between triple quotes. Every point of the ``Polygon`` or ``MultiPolygon`` coordinates must have three values, ``[lon, lat, z]``. The first ring becomes a front; each following ring becomes an inner front nested in the previous one. A ``"valid_at"`` date, if present, sets the ignition time. See ``tests/runff/rungeojson.ff``.
+* ``points=(x,y,z),(x,y,z),...``: Polygon vertices in Cartesian domain coordinates (meters), in order.
+
+A point ignition outside the domain, or on ground already burnt, is skipped without a message.
 
 **Example:**
 
@@ -152,7 +160,7 @@ step
 
    step[dt=seconds]
 
-Advances the simulation clock by the relative duration ``dt`` (in seconds).
+Advances the simulation clock by ``dt`` seconds from the end of the previous ``step``/``goTo`` (or from the domain start time). A trailing ``s`` is accepted (``dt=600s``); any other unit, such as ``dt=10min``, is refused with an error. After the step, the :ref:`ISOdate <param-ISOdate>` parameter holds the new simulation date.
 
 **Example:**
 
@@ -170,7 +178,7 @@ goTo
 
    goTo[t=seconds]
 
-Advances the simulation clock until absolute simulation time ``t`` (in seconds).
+Advances the simulation clock until absolute simulation time ``t`` (in seconds). Units are checked as for ``step``. A ``t`` at or before the current time advances nothing.
 
 **Example:**
 
@@ -189,7 +197,7 @@ setParameter
    setParameter[paramName=value]
    setParameter[paramName=!value]
 
-Sets a single simulation parameter. Prefixing the value with ``!`` protects the parameter from being overwritten by later ``setParameter`` calls during the session.
+Sets a single simulation parameter. Only the first ``=`` separates name and value, so the value may contain ``=``. A value wrapped in triple quotes (``"""..."""``, possibly over several lines) is stored without them. Prefixing the value with ``!`` protects the parameter: any later change in the session is ignored, including changes ForeFire itself makes.
 
 **Example:**
 
@@ -208,7 +216,7 @@ setParameters
 
    setParameters[param1=val1;param2=val2;...;paramN=valN]
 
-Sets multiple semicolon-separated simulation parameters in one call.
+Sets multiple semicolon-separated simulation parameters in one call (so no value can contain ``;``).
 
 **Example:**
 
@@ -226,13 +234,14 @@ getParameter
 
    getParameter[key]
 
-Returns (and prints) the current string value of parameter ``key``.
+Returns (and prints) the current string value of parameter ``key``. An unknown key prints ``Parameter doesn't exist``. Two names are special, and need a domain: ``parameterNames`` lists every parameter name and ``layerNames`` lists the data layers of the domain.
 
 **Example:**
 
 .. code-block:: none
 
    getParameter[propagationModel]
+   getParameter[layerNames]
 
 
 .. _cmd-loadData:
@@ -247,10 +256,10 @@ loadData
    loadData[provider=<directory_or_url>;center=(lon,lat);opt:size=(dlon,dlat);opt:date=<ISO8601>;opt:prefetch=0]
    loadData[state.ffstate]
 
-**NetCDF** (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``). Arguments are positional and separated by ``;``:
+**NetCDF** (requires a build with ``FOREFIRE_ENABLE_NETCDF=ON``). Arguments are positional and separated by ``;``. A relative path resolves under ``caseDirectory/ForeFireDataDirectory`` (set ``ForeFireDataDirectory=.`` when the file sits in the case directory).
 
-* **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Sets the ``NetCDFfile`` parameter to the given path, builds a new ``FireDomain`` from the ``domain`` variable attributes, loads the NetCDF layers, and initializes the simulation reference date from the ISO 8601 UTC timestamp.
-* **One argument** (``loadData[landscape.nc]``): Loads NetCDF layers from the given file into the ``DataBroker`` of an already created ``FireDomain``.
+* **Two arguments** (``loadData[landscape.nc;YYYY-MM-DDTHH:MM:SSZ]``): Sets the :ref:`NetCDFfile <param-NetCDFfile>` parameter to the given path, copies every attribute of the ``domain`` variable into a parameter of the same name (``SWx``, ``Lx``, ``t0``, ``BBoxWSEN``...), sets ``atmoNX``/``atmoNY`` from the ``nx``/``ny`` dimensions, sets the reference date from the ISO 8601 UTC timestamp, then builds a new ``FireDomain``, which loads the NetCDF layers.
+* **One argument** (``loadData[landscape.nc]``): Loads NetCDF layers from the given file into the ``DataBroker`` of an already created ``FireDomain``. Without a domain it does nothing.
 
 **Example:**
 
@@ -283,7 +292,7 @@ saveState
 
    saveState[file=<path.ffstate>;opt:scenario=<script.ff>]
 
-Writes the current fire (fronts, nodes, pending motion, arrival times, effective parameters and fuel table) to a ``.ffstate`` checkpoint. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. ``scenario=`` stores a script in the file; loading never runs it. Fails, without writing, if the state contains something it cannot save. See :doc:`/user_guide/checkpoints`.
+Writes the current fire (fronts, nodes, pending motion, arrival times, effective parameters and fuel table) to a ``.ffstate`` checkpoint. Relative paths resolve under ``caseDirectory/ForeFireDataDirectory``. ``scenario=`` stores a script in the file; loading never runs it. ``saveState[path.ffstate]`` (without ``file=``) also works. Fails, without writing, if the state contains something it cannot save. See :doc:`/user_guide/checkpoints`.
 
 
 .. _cmd-loadState:
@@ -296,7 +305,7 @@ loadState
    loadState[file=<path.ffstate>;opt:provider=<directory_or_url>]
    loadState[file=<path.ffstate>;mode=attach]
 
-Restores a ``.ffstate`` checkpoint at its saved time without advancing it. Without a domain, it creates one; with an existing domain, it fails unless ``mode=attach`` is given (attach to a coupled Meso-NH domain). ``provider=`` points a standalone state to another tile location; tile hashes must still match. Without ``file=``, the :ref:`ffstateFile <param-ffstateFile>` parameter is used.
+Restores a ``.ffstate`` checkpoint at its saved time without advancing it. Without a domain, it creates one; with an existing domain, it fails unless ``mode=attach`` is given (attach to a coupled Meso-NH domain). ``provider=`` points a standalone state to another tile location; tile hashes must still match. ``loadState[path.ffstate]`` (a bare path) is the same as ``file=``. With other arguments but no ``file=``, the :ref:`ffstateFile <param-ffstateFile>` parameter is used.
 
 .. code-block:: none
 
@@ -313,7 +322,7 @@ addLayer
 
    addLayer[name=<layerName>;opt:type=<layerType>;opt:modelName=<model>;opt:value=<V>]
 
-Adds a uniform ``DataLayer`` (or model layer) spanning the active ``FireDomain`` to the ``DataBroker``.
+Adds a uniform ``DataLayer`` (or model layer) spanning the active ``FireDomain`` to the ``DataBroker``. Without a domain it does nothing.
 
 **Arguments:**
 
@@ -344,6 +353,8 @@ trigger
    trigger[resolution;perimeterResolution=<val>;spatialIncrement=<val>]
 
 Updates dynamic environmental conditions at the moment the command executes. The first token (without ``=``) selects the target layer. To apply the change at a future time, schedule the command with :ref:`@t=... <cmd-@>` (a ``t=`` inside the brackets is ignored by ``wind`` and ``fuelIndice``).
+
+``resolution`` changes the values the running domain uses; ``getParameter`` still shows the old ones.
 
 On tile domains, ``fuelIndice`` does not apply; ``tileFuel`` sets the fuel ID inside a polygon of at least three longitude/latitude vertices, and the change is kept by :ref:`saveState <cmd-saveState>`.
 
@@ -395,7 +406,7 @@ print
 Formats the current fire front state according to ``dumpMode`` (``ff``, ``json``, ``geojson``, or ``kml``).
 
 * Without arguments (``print[]``), writes to the standard output stream.
-* With ``filename``, writes to ``filename`` **relative to the current working directory** (not ``fireOutputDirectory``), increments the ``count`` parameter, expands any ``*paramName*`` tokens in ``filename``, and replaces ``:`` with ``-``.
+* With ``filename``, writes to ``filename`` **relative to the current working directory** (not ``fireOutputDirectory``), increments the ``count`` parameter, expands any ``*paramName*`` tokens in ``filename``, and replaces ``:`` with ``-``. If the file cannot be opened, the front goes to the standard output instead and ``count`` is not incremented.
 
 **Example:**
 
@@ -419,7 +430,7 @@ save
 Saves simulation outputs to NetCDF (requires ``FOREFIRE_ENABLE_NETCDF=ON``). ``save`` has two modes:
 
 1. **Arrival-time Burning Map** (``save[]`` with no arguments):
-   Writes the 2D ``arrival_time_of_front`` matrix (with ``-9999`` for unburned cells, deflate level 6) to ``<fireOutputDirectory>/<experiment>.<domainID>.nc`` (by default ``./ForeFire.0.nc``).
+   Writes the 2D ``arrival_time_of_front`` matrix (with ``-9999`` for unburned cells, deflate level 6) to ``<caseDirectory>/<fireOutputDirectory>/<experiment>.<domainID>.nc`` (by default ``ForeFire.0.nc`` in the current directory). Each call overwrites the file.
 2. **Landscape Snapshot** (``save[filename=...]``):
    Writes the ``domain`` variable and selected environmental layers from the ``DataBroker`` to ``filename``.
 
@@ -450,14 +461,14 @@ Exports or renders a 2D matrix of ``parameter`` over the domain.
 
 **Arguments:**
 
-* ``parameter=<param_name>``: Layer or property name (e.g., ``speed``, ``arrival_time``, ``fuel``, ``altitude``, ``slope``, ``windU``, ``windV``).
-* ``filename=<fname>``: Output file path; the extension selects the format (``.png``, ``.jpg``, ``.nc``, or ``.asc``).
-* ``opt:range=(min,max)``: Value range for colormapping.
-* ``opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)`` / ``opt:BBoxLBRT=(leftX,bottomY,rightX,topY)`` / ``opt:BBoxLBRT=active``: Sub-region to export (defaults to the full domain).
-* ``opt:size=eni,enj``: Output grid width and height in pixels/cells, written without parentheses.
-* ``opt:cmap=<map_name>``: Colormap name (e.g., ``turbo``, ``viridis``, ``jet``, ``fuel``).
-* ``opt:histbins=<N>``: Number of histogram bins.
-* ``opt:projectionOut=(json|<fname.kml>)``: Prints bounding box JSON to the console or writes a KML ``GroundOverlay`` file alongside image outputs.
+* ``parameter=<param_name>``: ``speed`` (maximum spread speed), ``arrival_time``, or the name of any data or flux layer (e.g., ``fuel``, ``altitude``, ``slope``, ``windU``, ``windV``, ``heatFlux``). ``parameter=wind`` combines ``windU`` and ``windV``: a ``.json`` file gets both components (one object each), a ``.png``/``.jpg`` the wind speed.
+* ``filename=<fname>``: Output file path, relative to the current working directory; the extension selects the format (``.png``, ``.jpg``, ``.nc``, or ``.asc``). ``*paramName*`` tokens are expanded, except one at the very start of the name, and ``:`` becomes ``-``. **Required.**
+* ``opt:range=(min,max)``: Value range for colormapping, with the parentheses. Defaults to the data range.
+* ``opt:BBoxWSEN=(w_lon,s_lat,e_lon,n_lat)`` / ``opt:BBoxLBRT=(leftX,bottomY,rightX,topY)`` / ``opt:BBoxLBRT=active``: Sub-region to export (defaults to the full domain). ``BBoxLBRT`` coordinates need the parentheses.
+* ``opt:size=eni,enj``: Output grid width and height in pixels/cells, written without parentheses. Defaults to the layer's own resolution (the arrival-time map resolution for ``speed`` and ``arrival_time``).
+* ``opt:cmap=<map_name>``: Colormap name: ``turbo``, ``viridis``, ``plasma``, ``plasma_r``, ``coolwarm``, ``grey``, ``hot``, ``hot_r``, ``spring``, ``jet``, or ``fuel``. Defaults to the ``defaultColormap`` parameter (grey if that name is unknown too).
+* ``opt:histbins=<N>``: For ``.png``/``.jpg``, also writes a histogram with ``N`` bins as ``spectrum<filename>``.
+* ``opt:projectionOut=(json|kml|<fname.kml>)``: ``json`` prints the bounding box (lon/lat) and data range; ``kml`` prints a KML ``GroundOverlay`` for the image; a name ending in ``.kml`` writes that KML to the file.
 
 **Example:**
 
@@ -499,7 +510,7 @@ include
 
    include[filename.ff]
 
-Reads and executes commands sequentially from ``filename.ff`` (resolved relative to the current working directory).
+Reads and executes commands sequentially from ``filename.ff`` (resolved relative to the current working directory, not ``caseDirectory``). A ``quit[]`` inside the file stops reading it. A missing file prints ``wrong input file``.
 
 **Example:**
 
@@ -556,7 +567,9 @@ listenHTTP
 Starts the embedded HTTP command and visualization server (intended for trusted local use).
 
 * With no argument (``listenHTTP[]``), binds to ``localhost:8000`` and prints ``ForeFire HTTP command server listening at http://localhost:8000``.
+* ``listenHTTP[:9000]`` means ``localhost:9000``; ``host=`` before the address is also accepted.
 * Inside a Docker container, pass ``listenHTTP[0.0.0.0:8000]`` so ports published on the host can reach the server.
+* Writes the address to connect to in ``httpConnectInfo.txt`` in the current directory.
 * Static files are served only from the current working directory and ``$FOREFIREHOME/tools/htdocs`` (paths containing ``..`` or leading ``/`` are rejected, and ``systemExec`` commands are refused over HTTP).
 
 **Example:**
