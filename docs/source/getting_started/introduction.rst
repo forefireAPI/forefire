@@ -32,4 +32,4 @@ Platforms
 - Linux (``x86_64``, ``aarch64``) and macOS (Apple Silicon): wheels with ``pip install forefire``, or a CMake build.
 - Windows: use WSL, Docker (``ghcr.io/forefireapi/forefire:latest``) or the browser demo.
 
-Next: :doc:`installation`, then :doc:`quickstart`, then :doc:`/user_guide/simulation_inputs`.
+Next: :doc:`quickstart`.

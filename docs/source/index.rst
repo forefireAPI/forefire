@@ -15,13 +15,7 @@ Where to start
 .. grid:: 1 2 2 2
    :gutter: 3
 
-   .. grid-item-card:: Install
-      :link: getting_started/installation
-      :link-type: doc
-
-      With pip, or build from source with CMake.
-
-   .. grid-item-card:: Run your first fire
+   .. grid-item-card:: Your first fire
       :link: getting_started/quickstart
       :link-type: doc
 
@@ -38,6 +32,12 @@ Where to start
       :link-type: doc
 
       The command language that drives every simulation.
+
+   .. grid-item-card:: Real terrain from tiles
+      :link: user_guide/tiles
+      :link-type: doc
+
+      Fuel, elevation and wind over the globe, ready to run.
 
 Going further
 -------------
@@ -75,7 +75,6 @@ Going further
    :caption: Getting Started
 
    getting_started/introduction
-   getting_started/installation
    getting_started/quickstart
 
 .. toctree::
@@ -114,6 +113,13 @@ Going further
    reference/commands
    reference/parameters
    user_guide/models
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: For Developers
+
+   getting_started/installation
    reference/api_reference
 
 .. toctree::

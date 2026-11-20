@@ -10,6 +10,8 @@ This page builds one up, a piece at a time. Every script below runs as-is with `
 The smallest fire
 -----------------
 
+The fire from :doc:`/getting_started/quickstart`, as a script:
+
 .. code-block:: none
 
    setParameters[propagationModel=Iso;Iso.speed=0.5]

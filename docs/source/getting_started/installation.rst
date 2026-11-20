@@ -1,86 +1,18 @@
-Installation
-============
-
-There are three ways to install ForeFire, depending on how you intend to use it:
-
-.. list-table::
-  :header-rows: 1
-  :widths: 20 45 35
-
-  * - Method
-    - Use it when
-    - Section
-  * - **pip**
-    - You want to run simulations from Python or the command line on Linux or macOS.
-    - :ref:`install-pip`
-  * - **Docker**
-    - You want the interactive web console and sample datasets ready to run on any OS (including Windows).
-    - :ref:`quickstart-docker`
-  * - **From source**
-    - You need MPI coupling with Meso-NH, a CPU-tuned build, WebAssembly, or you are modifying ForeFire's C++ code.
-    - :ref:`install-source`
-
-.. _install-pip:
-
-Install with pip
-----------------
-
-This is the fastest route. It requires no compiler, no CMake, and no system NetCDF installation — NetCDF is bundled inside the wheel.
-
-.. code-block:: bash
-
-  pip install forefire
-
-Requirements
-~~~~~~~~~~~~
-
-- **CPython 3.9 to 3.14.** Free-threaded builds (``cp314t``) are intentionally not published because the C++ engine keeps process-wide state; use :class:`pyforefire.ForeFireRunner` for parallel runs (see :doc:`/user_guide/ensembles`).
-- **Linux** on ``x86_64`` or ``aarch64`` (``manylinux_2_28`` or newer), or **macOS 14+ on Apple Silicon**.
-
-There is no wheel for Intel macOS, musl-based Linux (Alpine), 32-bit targets, native Windows, or PyPy. On Windows, run ``pip install forefire`` inside **WSL**, use **Docker** (:ref:`quickstart-docker`), or use the `in-browser WebAssembly demo <https://forefireapi.github.io/forefire/>`_.
-
-What you get
-~~~~~~~~~~~~
-
-One package installs the ``forefire`` CLI, the ``forefire-validate`` checker, and the ``pyforefire`` Python module:
-
-.. code-block:: bash
-
-  forefire -v
-  forefire-validate --help
-
-.. code-block:: python
-
-  import pyforefire as forefire
-
-  ff = forefire.ForeFire()
-  ff.execute("FireDomain[sw=(0,0,0);ne=(10000,10000,0);t=0]")
-  ff.addLayer("propagation", "Iso", "propagationModel")
-  ff.execute("startFire[loc=(5000,5000,0.0)]")
-  ff.execute("step[dt=1000]")
-  print(ff.execute("print[]"))
-
-.. note::
-
-  The PyPI distribution is named ``forefire``; the Python module keeps its historical import name, ``pyforefire``.
-
-What you do not get in the wheel
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Published wheels are built for portability across machines, so four things require a source checkout or source build:
-
-- **MPI coupling:** coupled fire–atmosphere runs with Meso-NH require ``FOREFIRE_ENABLE_MPI=ON`` in a source build.
-- **Host CPU tuning:** wheels omit ``-march=native`` so they run on any CPU of the target architecture. Build from source with ``FOREFIRE_NATIVE_ARCH=ON`` for maximum local speed.
-- **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS=ON``.
-- **Web UI static assets** (``tools/htdocs``): ``listenHTTP[]`` serves the browser UI from ``$FOREFIREHOME/tools/htdocs``. A ``pip``-only install does not ship ``tools/htdocs``; either point ``FOREFIREHOME`` at a git checkout of the repository or use the Docker image.
-
 .. _install-source:
 
-Build from source
------------------
+Building from source
+====================
+
+``pip install forefire`` covers running simulations from Python and the command line (:doc:`quickstart`). The wheels are built to run on any machine, so a few things need a build of your own:
+
+- **Coupling with Meso-NH**, which needs MPI (``FOREFIRE_ENABLE_MPI=ON``, see :doc:`/user_guide/mesonh`).
+- **Full speed on your CPU**: the wheels leave out ``-march=native``.
+- **The WebAssembly module** for the browser.
+- **Changing the C++**, for example to add a propagation model (:ref:`custom-cpp-models`).
+- **The** ``ANN_test`` **helper**, built by ``FOREFIRE_BUILD_TOOLS=ON``.
 
 Prerequisites
-~~~~~~~~~~~~~
+-------------
 
 - **A C++17 compiler** (``g++`` or ``clang++``).
 - **CMake** 3.15 or newer, and **Make**.
@@ -104,7 +36,7 @@ Prerequisites
   If NetCDF lives in a custom prefix, pass ``-DNETCDF_HOME=/path/to/netcdf`` (and ``-DNETCDF_CXX_HOME=...`` if separate).
 
 Option 1: install scripts (Debian/Ubuntu and macOS)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------
 
 The repository includes helper scripts that install dependencies via ``apt`` or Homebrew and run the CMake build:
 
@@ -120,7 +52,7 @@ The repository includes helper scripts that install dependencies via ``apt`` or 
   bash install-forefire-osx.sh
 
 Option 2: manual CMake build
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 .. code-block:: bash
 
@@ -136,7 +68,7 @@ The executable lands in ``bin/forefire`` and the shared library in ``lib/libfore
   ./bin/forefire -v
 
 CMake build options
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Pass ``-DFOREFIRE_<OPTION>=...`` at configure time (for example, ``cmake -S . -B build -DFOREFIRE_ENABLE_MPI=OFF``). Below are the defaults for a standard native build:
 
@@ -192,7 +124,7 @@ When driven by ``pip`` / ``scikit-build-core``, seven options flip automatically
 When driven by ``emcmake`` (Emscripten), CMake automatically sets ``NETCDF=OFF``, ``MPI=OFF``, ``CLI=OFF``, ``WASM=ON``, and ``STATIC_CORE=ON`` to produce ``bin/forefire.wasm`` and ``bin/forefire.mjs``. See ``bindings/wasm/README.md`` in the repository for details on building and serving the WebAssembly target.
 
 Environment variables (PATH and FOREFIREHOME)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------
 
 After a source build, add ``bin/`` to ``PATH`` and set ``FOREFIREHOME`` to the repository root:
 
