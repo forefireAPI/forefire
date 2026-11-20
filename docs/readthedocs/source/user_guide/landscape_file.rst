@@ -82,6 +82,8 @@ The wind response
    windU = wind[0, 0] × u + wind[0, 1] × v
    windV = wind[1, 0] × u + wind[1, 1] × v
 
+``wind`` can instead be shaped ``(2, 8, ny, nx)``: eight precomputed wind fields, one per direction, with ``wind[0, k]`` the ``windU`` and ``wind[1, k]`` the ``windV`` of field ``k``. Field ``k`` is used for a trigger wind blowing toward ``k × 45°`` counter-clockwise from east: 0 toward the east, 2 toward the north, 4 toward the west, 6 toward the south. A wind between two directions mixes the two nearest fields linearly, and the result is scaled by the trigger speed divided by 10, so each field is what a 10 m/s wind gives. Before the first ``trigger[wind]``, field 0 is used as stored.
+
 Without a ``wind`` variable, ``trigger[wind]`` does nothing. Give a uniform wind with the ``windU`` and ``windV`` parameters instead (:doc:`simulation_inputs`).
 
 A file can also hold ``windU`` and ``windV`` variables, of type ``"data"`` and shaped like the elevation. They are the wind itself, in m/s, and stay as they are: ``trigger[wind]`` does not change them.
