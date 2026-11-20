@@ -1,4 +1,4 @@
-"""Smoke test for tools/preprocessing/genForeFireCase.py.
+"""Smoke test for tools/mesonh/preprocessing/genForeFireCase.py.
 
 The landscape file is the thing standing between a new user and their first
 simulation, so this checks the whole path rather than the writer alone: build
@@ -21,7 +21,7 @@ import traceback
 
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..",
-    "tools", "preprocessing"))
+    "tools", "mesonh", "preprocessing"))
 
 import numpy as np  # noqa: E402
 from netCDF4 import Dataset  # noqa: E402

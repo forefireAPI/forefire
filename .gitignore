@@ -42,7 +42,7 @@ docs/doxygen/html
 build.sh
 
 #tools
-tools/postprocessing/loadInParaview.py
+tools/mesonh/postprocessing/loadInParaview.py
 tests/config_firecast_local.bash
 tools/config_firecast_local.bash
 tools/ai
