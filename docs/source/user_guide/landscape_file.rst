@@ -1,15 +1,12 @@
 .. _userguide-landscape-file:
 
-Landscape File (landscape.nc)
-=============================
+NetCDF landscape (.nc)
+======================
 
 The NetCDF landscape file (``.nc``) packages the domain geometry and spatial data layers (fuel index map, elevation, and optional wind fields) for geospatial simulations.
 
 .. tip::
-   To run without NetCDF, use landscape tiles instead (see :doc:`tiles`).
-
-.. tip::
-   If you are working in Python with idealized grids or custom rasters in memory, you do not need to create a NetCDF file—pass NumPy arrays directly with ``addIndexLayer`` and ``addScalarLayer`` (see :doc:`python_arrays`).
+   A NetCDF file is one of three ways to give ForeFire a landscape. The others are NumPy arrays (:doc:`python_arrays`) and tiles (:doc:`tiles`); :doc:`simulation_inputs` compares them.
 
 How ForeFire Reads a Landscape File
 -----------------------------------

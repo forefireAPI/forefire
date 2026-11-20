@@ -20,6 +20,8 @@ Either way:
 - Each integer in the landscape's ``fuel`` layer is looked up in the ``Index`` column. Index ``0`` is by convention non-burnable ground (water, rock, roads, buildings), with bed depth ``e = 0``.
 - Only the ``fuel.*`` columns that the active models registered are read.
 
+.. _fuel-columns-per-model:
+
 Columns per model
 -----------------
 
