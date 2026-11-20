@@ -303,6 +303,8 @@ TEST_CASE("ExecuteCommand returns error when the command is unknown or fails") {
     CHECK(status("step[dt=1h]") == Command::error);
     CHECK(status("startFire[loc=(300,800,0);date=2024-01-01T00:00:00]") == Command::error);
     CHECK(status("[no command]") == Command::error);
+    CHECK(status("\t") == Command::normal);
+    CHECK(status("setParameters[perimeterResolution=3;b]") == Command::error);
 
     const std::string script = "ff_test_status.ff";
     std::ofstream(script) << "step[dt=10]\nstep[dt=1h]\nstep[dt=10]\n";

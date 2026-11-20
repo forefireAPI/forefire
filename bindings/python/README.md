@@ -133,7 +133,7 @@ A command that is unknown or fails only prints an error by default. Pass
 is checked when it is scheduled, not when it runs.
 
 ```python
-ff.execute("step[dt=1h]", check=True)  # raises: dt is not in seconds
+ff.execute("step[dt=1h]", check=True)  # raises RuntimeError
 ```
 
 ### More advanced examples

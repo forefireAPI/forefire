@@ -2003,11 +2003,13 @@ namespace libforefire
         vector<string> tmpArgs;
         string delimiter = ";";
         tokenize(arg, tmpArgs, delimiter);
+        int status = normal;
         for (size_t i = 0, size = tmpArgs.size(); i < size; ++i)
         {
-            setParameter(tmpArgs[i], numTabs);
+            if (setParameter(tmpArgs[i], numTabs) != normal)
+                status = error;
         }
-        return normal;
+        return status;
     }
 
     int Command::computeModelSpeed(const std::string &cmd, size_t &/*numTabs*/)
@@ -3467,7 +3469,7 @@ namespace libforefire
         }
 
         // calling the right method using the 'translator'
-        if (((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
+        if ((scmd.empty() && command.size() == 1) || ((scmd)[0] == '#') || ((scmd)[0] == '*') || ((scmd)[0] == '\n') || ((scmd)[0] == '\r'))
         {
             // this line is commented, nothing to do
         }
