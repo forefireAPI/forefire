@@ -110,12 +110,12 @@ class ForeFireRunner:
         self._process = process
         self._lock = threading.Lock()
 
-    def _call(self, name, *args, fd=None):
+    def _call(self, name, *args, fd=None, kwargs=None):
         with self._lock:
             if self._conn is None:
                 raise WorkerDied("the runner is closed")
             try:
-                self._conn.send((name, args))
+                self._conn.send((name, args, kwargs or {}))
                 if fd is not None:
                     send_handle(self._conn, fd, self._process.pid)
                 ok, value = self._conn.recv()
@@ -132,7 +132,7 @@ class ForeFireRunner:
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
-        return lambda *args: self._call(name, *args)
+        return lambda *args, **kwargs: self._call(name, *args, kwargs=kwargs)
 
     def __getitem__(self, key):
         return self._call("__getitem__", key)

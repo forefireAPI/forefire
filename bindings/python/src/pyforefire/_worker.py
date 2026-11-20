@@ -45,7 +45,7 @@ def _serve(conn):
             return
         if request is None:
             return
-        name, args = request
+        name, args, kwargs = request
         try:
             if name == "__fork__":
                 copy = _fork(conn)
@@ -54,7 +54,7 @@ def _serve(conn):
                     continue
                 reply = (True, None)
             else:
-                reply = (True, getattr(ff, name)(*args))
+                reply = (True, getattr(ff, name)(*args, **kwargs))
         except Exception as e:
             reply = (False, e)
         try:

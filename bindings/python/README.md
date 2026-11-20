@@ -128,6 +128,13 @@ ff["dumpMode"] = "kml"
 ff.execute("print[circle.kml]")
 ```
 
+A command that is unknown or fails only prints an error by default. Pass
+`check=True` to raise `RuntimeError` instead:
+
+```python
+ff.execute("step[dt=1h]", check=True)  # raises: dt is not in seconds
+```
+
 ### More advanced examples
 
 For examples that use real-world data (fuel, topography, wind), see the scripts
