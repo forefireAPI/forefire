@@ -333,7 +333,7 @@ public:
 	/*! \brief execute the desired command
 	 *  \return normal, or error when the command is unknown or fails */
 	static int ExecuteCommand(string&);
-	static void executeLoop(ifstream* inputStream);
+	static int executeLoop(ifstream* inputStream);
 
 	/*! \brief complete the last front */
 	static void completeFront(FireFront*);

@@ -129,7 +129,8 @@ ff.execute("print[circle.kml]")
 ```
 
 A command that is unknown or fails only prints an error by default. Pass
-`check=True` to raise `RuntimeError` instead:
+`check=True` to raise `RuntimeError` instead. A command scheduled with `@t=`
+is checked when it is scheduled, not when it runs.
 
 ```python
 ff.execute("step[dt=1h]", check=True)  # raises: dt is not in seconds
