@@ -29,7 +29,6 @@ version = release
 
 extensions = [
 	'breathe',
-	'sphinx_design',
 ]
 
 breathe_projects = {
