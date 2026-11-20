@@ -288,8 +288,6 @@ TEST_CASE("step and goTo refuse a time they cannot read") {
 }
 
 TEST_CASE("ExecuteCommand returns error when the command is unknown or fails") {
-    // Callers such as the Python binding had no way to tell a failed command
-    // from a good one: the error was only printed.
     Command executor;
     auto status = [&](std::string command) { return executor.ExecuteCommand(command); };
     status("clear[]");

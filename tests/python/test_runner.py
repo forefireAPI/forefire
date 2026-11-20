@@ -113,7 +113,6 @@ def test_errors_are_raised_here():
             failures.append("reading a missing parameter did not raise")
         except RuntimeError:
             pass
-        # A failed command is only printed unless the caller asks to check it.
         runner.execute("step[dt=1h]")
         try:
             runner.execute("step[dt=1h]", check=True)
